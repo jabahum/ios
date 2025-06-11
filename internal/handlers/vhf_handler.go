@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"case/internal/models"
+	"case/internal/services"
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"strconv"
 	"time"
@@ -12,88 +14,189 @@ import (
 )
 
 // HandlerVHFPatientSubmit handles the submission of patient information
-func HandlerVHFPatientSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFPatientSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config, smsService *services.SMSService) error {
+	// Parse form data
 	patient := &models.VHFPatient{
-		Surname:            c.FormValue("surname"),
-		OtherNames:         c.FormValue("other_names"),
-		Gender:             c.FormValue("gender"),
-		PatientPhone:       c.FormValue("patient_phone"),
-		PhoneOwner:         c.FormValue("phone_owner"),
-		NextOfKin:          c.FormValue("next_of_kin"),
-		NextOfKinPhone:     c.FormValue("next_of_kin_phone"),
-		Status:             c.FormValue("status"),
-		HeadOfHousehold:    c.FormValue("head_of_household"),
-		VillageTown:        c.FormValue("village_town"),
-		Parish:             c.FormValue("parish"),
-		Subcounty:          c.FormValue("subcounty"),
-		District:           c.FormValue("district"),
-		CountryOfResidence: c.FormValue("country_of_residence"),
-		Occupation:         c.FormValue("occupation"),
-		IllVillageTown:     c.FormValue("ill_village_town"),
-		IllSubcounty:       c.FormValue("ill_subcounty"),
-		IllDistrict:        c.FormValue("ill_district"),
+		Surname:                     c.FormValue("surname"),
+		OtherNames:                  c.FormValue("other_names"),
+		DateOfBirth:                 sql.NullTime{Time: parseDate(c.FormValue("dob")), Valid: true},
+		AgeYears:                    sql.NullInt32{Int32: parseInt32(c.FormValue("age_years")), Valid: true},
+		AgeMonths:                   sql.NullInt32{Int32: parseInt32(c.FormValue("age_months")), Valid: true},
+		Gender:                      c.FormValue("gender"),
+		PatientPhone:                c.FormValue("patient_phone"),
+		PhoneOwner:                  c.FormValue("phone_owner"),
+		NextOfKin:                   c.FormValue("next_of_kin"),
+		NextOfKinPhone:              c.FormValue("next_of_kin_phone"),
+		DataCapturerName:            sql.NullString{String: c.FormValue("data_capturer_name"), Valid: true},
+		DataCapturerPhone:           c.FormValue("data_capturer_phone"),
+		ReportingHealthFacilityName: c.FormValue("reporting_health_facility_name"),
+		CaseCode:                    c.FormValue("case_code"),
+		Status:                      c.FormValue("status"),
+		HeadOfHousehold:             c.FormValue("head_of_household"),
+		VillageTown:                 c.FormValue("village_town"),
+		Parish:                      c.FormValue("parish"),
+		Subcounty:                   c.FormValue("subcounty"),
+		District:                    c.FormValue("district"),
+		CountryOfResidence:          c.FormValue("country_of_residence"),
+		Occupation:                  c.FormValue("occupation"),
+		IllVillageTown:              c.FormValue("ill_village_town"),
+		IllSubcounty:                c.FormValue("ill_subcounty"),
+		IllDistrict:                 c.FormValue("ill_district"),
+		CreatedAt:                   time.Now(),
 	}
 
-	// Parse date fields
-	if dob := c.FormValue("dob"); dob != "" {
-		if t, err := time.Parse("2006-01-02", dob); err == nil {
-			patient.DateOfBirth = sql.NullTime{Time: t, Valid: true}
-		}
-	}
-
-	if dod := c.FormValue("date_of_death"); dod != "" {
-		if t, err := time.Parse("2006-01-02", dod); err == nil {
-			patient.DateOfDeath = sql.NullTime{Time: t, Valid: true}
-		}
-	}
-
-	// Parse age fields
-	if ageYears := c.FormValue("age_years"); ageYears != "" {
-		if y, err := strconv.ParseInt(ageYears, 10, 32); err == nil {
-			patient.AgeYears = sql.NullInt32{Int32: int32(y), Valid: true}
-		}
-	}
-
-	if ageMonths := c.FormValue("age_months"); ageMonths != "" {
-		if m, err := strconv.ParseInt(ageMonths, 10, 32); err == nil {
-			patient.AgeMonths = sql.NullInt32{Int32: int32(m), Valid: true}
-		}
-	}
-
-	// Parse location fields
-	if lat := c.FormValue("latitude"); lat != "" {
-		if l, err := strconv.ParseFloat(lat, 64); err == nil {
-			patient.Latitude = sql.NullFloat64{Float64: l, Valid: true}
-		}
-	}
-
-	if lng := c.FormValue("longitude"); lng != "" {
-		if l, err := strconv.ParseFloat(lng, 64); err == nil {
-			patient.Longitude = sql.NullFloat64{Float64: l, Valid: true}
-		}
-	}
-
-	// Parse date range fields
-	if from := c.FormValue("date_residing_from"); from != "" {
-		if t, err := time.Parse("2006-01-02", from); err == nil {
-			patient.DateResidingFrom = sql.NullTime{Time: t, Valid: true}
-		}
-	}
-
-	if to := c.FormValue("date_residing_to"); to != "" {
-		if t, err := time.Parse("2006-01-02", to); err == nil {
-			patient.DateResidingTo = sql.NullTime{Time: t, Valid: true}
-		}
-	}
-
-	// Save to database
+	// Save patient data
 	if err := models.SaveVHFPatient(db, patient); err != nil {
-		sl.Error("Failed to save patient", "error", err)
-		return c.Status(500).SendString("Failed to save patient information")
+		sl.Error("Failed to save patient data", "error", err)
+		return c.Status(500).SendString("Failed to save patient data")
 	}
 
-	// Redirect to clinical signs form with patient ID
-	return c.Redirect("/vhf-cif/clinical-signs/" + strconv.FormatInt(patient.ID, 10))
+	// Parse and save clinical signs
+	clinicalSigns := &models.VHFClinicalSigns{
+		PatientID:        patient.ID,
+		DateInitialOnset: sql.NullTime{Time: parseDate(c.FormValue("date_initial_onset")), Valid: true},
+		Fever:            sql.NullBool{Bool: parseBool(c.FormValue("fever")), Valid: true},
+		DateFever:        sql.NullTime{Time: parseDate(c.FormValue("date_fever")), Valid: true},
+		Temperature:      sql.NullFloat64{Float64: parseFloat(c.FormValue("temperature")), Valid: true},
+		Vomiting:         sql.NullBool{Bool: parseBool(c.FormValue("vomiting")), Valid: true},
+		DateVomiting:     sql.NullTime{Time: parseDate(c.FormValue("date_vomiting")), Valid: true},
+		Diarrhea:         sql.NullBool{Bool: parseBool(c.FormValue("diarrhea")), Valid: true},
+		DateDiarrhea:     sql.NullTime{Time: parseDate(c.FormValue("date_diarrhea")), Valid: true},
+		CreatedAt:        time.Now(),
+	}
+
+	if err := models.SaveVHFClinicalSigns(db, clinicalSigns); err != nil {
+		sl.Error("Failed to save clinical signs", "error", err)
+		return c.Status(500).SendString("Failed to save clinical signs")
+	}
+
+	// Parse and save hospitalization data
+	hospitalization := &models.VHFHospitalization{
+		PatientID:          patient.ID,
+		Hospitalized:       parseBool(c.FormValue("hospitalized")),
+		AdmissionDate:      sql.NullTime{Time: parseDate(c.FormValue("admission_date")), Valid: true},
+		HealthFacilityName: c.FormValue("health_facility_name"),
+		InIsolation:        parseBool(c.FormValue("in_isolation")),
+		IsolationDate:      sql.NullTime{Time: parseDate(c.FormValue("isolation_date")), Valid: true},
+		CreatedAt:          time.Now(),
+	}
+
+	if err := models.SaveVHFHospitalization(db, hospitalization); err != nil {
+		sl.Error("Failed to save hospitalization data", "error", err)
+		return c.Status(500).SendString("Failed to save hospitalization data")
+	}
+
+	// Parse and save risk factors
+	riskFactors := &models.VHFRiskFactors{
+		PatientID:       patient.ID,
+		ContactWithCase: sql.NullBool{Bool: parseBool(c.FormValue("contactWithCase")), Valid: true},
+		ContactName:     c.FormValue("contact_name"),
+		ContactRelation: c.FormValue("contact_relation"),
+		ContactDates:    c.FormValue("contact_dates"),
+		ContactVillage:  c.FormValue("contact_village"),
+		ContactDistrict: c.FormValue("contact_district"),
+		ContactStatus:   c.FormValue("contact_status"),
+		ContactTypes:    c.FormValue("contact_types"),
+		CreatedAt:       time.Now(),
+	}
+
+	// Parse contact death date if provided
+	if deathDate := c.FormValue("contact_death_date"); deathDate != "" {
+		if t, err := time.Parse("2006-01-02", deathDate); err == nil {
+			riskFactors.ContactDeathDate = sql.NullTime{Time: t, Valid: true}
+		}
+	}
+
+	if err := models.SaveVHFRiskFactors(db, riskFactors); err != nil {
+		sl.Error("Failed to save risk factors", "error", err)
+		return c.Status(500).SendString("Failed to save risk factors")
+	}
+
+	// Parse and save laboratory data
+	laboratory := &models.VHFLaboratory{
+		PatientID:            patient.ID,
+		SampleCollectionDate: sql.NullTime{Time: parseDate(c.FormValue("sample_collection_date")), Valid: true},
+		SampleCollectionTime: sql.NullString{String: c.FormValue("sample_collection_time"), Valid: true},
+		SampleType:           c.FormValue("sample_type"),
+		OtherSampleType:      c.FormValue("other_sample_type"),
+		CreatedAt:            time.Now(),
+	}
+
+	if err := models.SaveVHFLaboratory(db, laboratory); err != nil {
+		sl.Error("Failed to save laboratory data", "error", err)
+		return c.Status(500).SendString("Failed to save laboratory data")
+	}
+
+	// Parse and save investigator data
+	investigator := &models.VHFInvestigator{
+		PatientID:         patient.ID,
+		InvestigatorName:  c.FormValue("investigator_name"),
+		Phone:             c.FormValue("phone"),
+		Email:             c.FormValue("email"),
+		Position:          c.FormValue("position"),
+		District:          c.FormValue("district"),
+		HealthFacility:    c.FormValue("health_facility"),
+		InformationSource: c.FormValue("information_source"),
+		ProxyName:         c.FormValue("proxy_name"),
+		ProxyRelation:     c.FormValue("proxy_relation"),
+		CreatedAt:         time.Now(),
+	}
+
+	if err := models.SaveVHFInvestigator(db, investigator); err != nil {
+		sl.Error("Failed to save investigator data", "error", err)
+		return c.Status(500).SendString("Failed to save investigator data")
+	}
+
+	// Send SMS notification if phone number is provided
+	if patient.DataCapturerPhone != "" {
+		message := fmt.Sprintf("VHF Case %s has been successfully registered. Patient: %s %s",
+			patient.CaseCode, patient.Surname, patient.OtherNames)
+		if err := smsService.SendSMS(patient.DataCapturerPhone, message); err != nil {
+			sl.Error("Failed to send SMS notification", "error", err)
+			// Don't return error here, as the form was still saved successfully
+		}
+	}
+
+	// Redirect to success page with case code
+	return c.Redirect(fmt.Sprintf("/vhf-cif/success?case_code=%s", patient.CaseCode))
+}
+
+// Helper functions for parsing form values
+func parseDate(dateStr string) time.Time {
+	if dateStr == "" {
+		return time.Time{}
+	}
+	t, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		return time.Time{}
+	}
+	return t
+}
+
+func parseInt32(str string) int32 {
+	if str == "" {
+		return 0
+	}
+	i, err := strconv.ParseInt(str, 10, 32)
+	if err != nil {
+		return 0
+	}
+	return int32(i)
+}
+
+func parseFloat(str string) float64 {
+	if str == "" {
+		return 0
+	}
+	f, err := strconv.ParseFloat(str, 64)
+	if err != nil {
+		return 0
+	}
+	return f
+}
+
+func parseBool(str string) bool {
+	return str == "Yes"
 }
 
 // HandlerVHFClinicalSignsSubmit handles the submission of clinical signs
@@ -131,25 +234,6 @@ func HandlerVHFClinicalSignsSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, st
 	signs.DifficultyBreathing = sql.NullBool{Bool: c.FormValue("difficulty_breathing") == "Yes", Valid: true}
 	signs.DifficultySwallowing = sql.NullBool{Bool: c.FormValue("difficulty_swallowing") == "Yes", Valid: true}
 	signs.SoreThroat = sql.NullBool{Bool: c.FormValue("sore_throat") == "Yes", Valid: true}
-	signs.Jaundice = sql.NullBool{Bool: c.FormValue("jaundice") == "Yes", Valid: true}
-	signs.Conjunctivitis = sql.NullBool{Bool: c.FormValue("conjunctivitis") == "Yes", Valid: true}
-	signs.SkinRash = sql.NullBool{Bool: c.FormValue("skin_rash") == "Yes", Valid: true}
-	signs.Hiccups = sql.NullBool{Bool: c.FormValue("hiccups") == "Yes", Valid: true}
-	signs.PainBehindEyes = sql.NullBool{Bool: c.FormValue("pain_behind_eyes") == "Yes", Valid: true}
-	signs.SensitiveToLight = sql.NullBool{Bool: c.FormValue("sensitive_to_light") == "Yes", Valid: true}
-	signs.ComaUnconscious = sql.NullBool{Bool: c.FormValue("coma_unconscious") == "Yes", Valid: true}
-	signs.ConfusedOrDisoriented = sql.NullBool{Bool: c.FormValue("confused_or_disoriented") == "Yes", Valid: true}
-	signs.Convulsions = sql.NullBool{Bool: c.FormValue("convulsions") == "Yes", Valid: true}
-	signs.UnexplainedBleeding = sql.NullBool{Bool: c.FormValue("unexplained_bleeding") == "Yes", Valid: true}
-	signs.BleedingOfTheGums = sql.NullBool{Bool: c.FormValue("bleeding_of_the_gums") == "Yes", Valid: true}
-	signs.BleedingFromInjectionSite = sql.NullBool{Bool: c.FormValue("bleeding_from_injection_site") == "Yes", Valid: true}
-	signs.NoseBleedEpistaxis = sql.NullBool{Bool: c.FormValue("nose_bleed_epistaxis") == "Yes", Valid: true}
-	signs.BloodyStool = sql.NullBool{Bool: c.FormValue("bloody_stool") == "Yes", Valid: true}
-	signs.BloodInVomit = sql.NullBool{Bool: c.FormValue("blood_in_vomit") == "Yes", Valid: true}
-	signs.CoughingUpBloodHemoptysis = sql.NullBool{Bool: c.FormValue("coughing_up_blood_hemoptysis") == "Yes", Valid: true}
-	signs.BleedingFromVagina = sql.NullBool{Bool: c.FormValue("bleeding_from_vagina") == "Yes", Valid: true}
-	signs.BruisingOfTheSkin = sql.NullBool{Bool: c.FormValue("bruising_of_the_skin") == "Yes", Valid: true}
-	signs.BloodInUrine = sql.NullBool{Bool: c.FormValue("blood_in_urine") == "Yes", Valid: true}
 	signs.OtherHemorrhagicSymptoms = sql.NullBool{Bool: c.FormValue("other_hemorrhagic_symptoms") == "Yes", Valid: true}
 
 	// Parse temperature
@@ -165,8 +249,20 @@ func HandlerVHFClinicalSignsSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, st
 		return c.Status(500).SendString("Failed to save clinical signs")
 	}
 
+	// Store patient ID in session
+	sess, err := store.Get(c)
+	if err != nil {
+		sl.Error("Failed to get session", "error", err)
+		return c.Status(500).SendString("Failed to get session")
+	}
+	sess.Set("patient_id", patientID)
+	if err := sess.Save(); err != nil {
+		sl.Error("Failed to save session", "error", err)
+		return c.Status(500).SendString("Failed to save session")
+	}
+
 	// Redirect to hospitalization form
-	return c.Redirect("/vhf-cif/hospitalization/" + strconv.FormatInt(patientID, 10))
+	return c.Redirect(fmt.Sprintf("/vhf-cif/hospitalization/%d", patientID))
 }
 
 // HandlerVHFHospitalizationSubmit handles the submission of hospitalization information
@@ -196,10 +292,26 @@ func HandlerVHFHospitalizationSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, 
 		}
 	}
 
-	// TODO: Implement SaveVHFHospitalization
+	// Save hospitalization data
+	if err := models.SaveVHFHospitalization(db, hospitalization); err != nil {
+		sl.Error("Failed to save hospitalization data", "error", err)
+		return c.Status(500).SendString("Failed to save hospitalization data")
+	}
+
+	// Store patient ID in session
+	sess, err := store.Get(c)
+	if err != nil {
+		sl.Error("Failed to get session", "error", err)
+		return c.Status(500).SendString("Failed to get session")
+	}
+	sess.Set("patient_id", patientID)
+	if err := sess.Save(); err != nil {
+		sl.Error("Failed to save session", "error", err)
+		return c.Status(500).SendString("Failed to save session")
+	}
 
 	// Redirect to risk factors form
-	return c.Redirect("/vhf-cif/risk-factors/" + strconv.FormatInt(patientID, 10))
+	return c.Redirect(fmt.Sprintf("/vhf-cif/risk-factors/%d", patientID))
 }
 
 // HandlerVHFRiskFactorsSubmit handles the submission of risk factors
@@ -211,6 +323,7 @@ func HandlerVHFRiskFactorsSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, stor
 
 	riskFactors := &models.VHFRiskFactors{
 		PatientID:       patientID,
+		ContactWithCase: sql.NullBool{Bool: parseBool(c.FormValue("contactWithCase")), Valid: true},
 		ContactName:     c.FormValue("contact_name"),
 		ContactRelation: c.FormValue("contact_relation"),
 		ContactDates:    c.FormValue("contact_dates"),
@@ -218,22 +331,36 @@ func HandlerVHFRiskFactorsSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, stor
 		ContactDistrict: c.FormValue("contact_district"),
 		ContactStatus:   c.FormValue("contact_status"),
 		ContactTypes:    c.FormValue("contact_types"),
+		CreatedAt:       time.Now(),
 	}
 
-	// Parse boolean fields
-	riskFactors.ContactWithCase = sql.NullBool{Bool: c.FormValue("contactWithCase") == "Yes", Valid: true}
-
-	// Parse date fields
+	// Parse contact death date if provided
 	if deathDate := c.FormValue("contact_death_date"); deathDate != "" {
 		if t, err := time.Parse("2006-01-02", deathDate); err == nil {
 			riskFactors.ContactDeathDate = sql.NullTime{Time: t, Valid: true}
 		}
 	}
 
-	// TODO: Implement SaveVHFRiskFactors
+	// Save risk factors data
+	if err := models.SaveVHFRiskFactors(db, riskFactors); err != nil {
+		sl.Error("Failed to save risk factors", "error", err)
+		return c.Status(500).SendString("Failed to save risk factors")
+	}
+
+	// Store patient ID in session
+	sess, err := store.Get(c)
+	if err != nil {
+		sl.Error("Failed to get session", "error", err)
+		return c.Status(500).SendString("Failed to get session")
+	}
+	sess.Set("patient_id", patientID)
+	if err := sess.Save(); err != nil {
+		sl.Error("Failed to save session", "error", err)
+		return c.Status(500).SendString("Failed to save session")
+	}
 
 	// Redirect to laboratory form
-	return c.Redirect("/vhf-cif/laboratory/" + strconv.FormatInt(patientID, 10))
+	return c.Redirect(fmt.Sprintf("/vhf-cif/laboratory/%d", patientID))
 }
 
 // HandlerVHFLaboratorySubmit handles the submission of laboratory information
@@ -264,10 +391,26 @@ func HandlerVHFLaboratorySubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 		laboratory.SampleCollectionTime = sql.NullString{String: collectionTime, Valid: true}
 	}
 
-	// TODO: Implement SaveVHFLaboratory
+	// Save laboratory data
+	if err := models.SaveVHFLaboratory(db, laboratory); err != nil {
+		sl.Error("Failed to save laboratory data", "error", err)
+		return c.Status(500).SendString("Failed to save laboratory data")
+	}
+
+	// Store patient ID in session
+	sess, err := store.Get(c)
+	if err != nil {
+		sl.Error("Failed to get session", "error", err)
+		return c.Status(500).SendString("Failed to get session")
+	}
+	sess.Set("patient_id", patientID)
+	if err := sess.Save(); err != nil {
+		sl.Error("Failed to save session", "error", err)
+		return c.Status(500).SendString("Failed to save session")
+	}
 
 	// Redirect to investigator form
-	return c.Redirect("/vhf-cif/investigator/" + strconv.FormatInt(patientID, 10))
+	return c.Redirect(fmt.Sprintf("/vhf-cif/investigator/%d", patientID))
 }
 
 // HandlerVHFInvestigatorSubmit handles the submission of investigator information
@@ -295,8 +438,15 @@ func HandlerVHFInvestigatorSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, sto
 		return c.Status(500).SendString("Failed to save investigator information")
 	}
 
-	// Redirect to success page
-	return c.Redirect("/vhf-cif/success")
+	// Get the case code from the patient record
+	patient, err := models.GetVHFPatient(db, patientID)
+	if err != nil {
+		sl.Error("Failed to get patient", "error", err)
+		return c.Status(500).SendString("Failed to get patient information")
+	}
+
+	// Redirect to success page with case code
+	return c.Redirect(fmt.Sprintf("/vhf-cif/success?case_code=%s", patient.CaseCode))
 }
 
 // HandlerVHFList handles the listing of all VHF cases
@@ -307,7 +457,9 @@ func HandlerVHFList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 		return c.Status(500).SendString("Failed to retrieve patient list")
 	}
 
-	return GenerateHTML(c, db, patients, "vhf_list")
+	return GenerateHTML(c, db, fiber.Map{
+		"Patients": patients,
+	}, "vhf_list")
 }
 
 // HandlerVHFView handles viewing a single VHF case
@@ -330,5 +482,14 @@ func HandlerVHFView(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 
 // HandlerVHFSuccess handles the success page after form submission
 func HandlerVHFSuccess(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
-	return GenerateHTML(c, db, nil, "vhf_success")
+	// Get the case code from the query parameters
+	caseCode := c.Query("case_code")
+	if caseCode == "" {
+		sl.Error("No case code provided in success page")
+		return c.Status(400).SendString("No case code provided")
+	}
+
+	return GenerateHTML(c, db, fiber.Map{
+		"CaseCode": caseCode,
+	}, "vhf_success")
 }

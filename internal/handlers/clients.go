@@ -15,6 +15,18 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/session"
 )
 
+// Define a struct for the encounter form page data
+type EncounterPageData struct {
+	FormRef    models.Client
+	Form       []models.ClientEncounter
+	Date       string
+	FormChild1 []models.Clinical
+	FormChild2 []models.Vital
+	FormChild3 []models.Lab
+	FormChild4 []models.Treatment
+	Optionz    map[string]map[string]string
+}
+
 func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
 	DoZaLogging("INFO", "Starting Client form", nil)
 
@@ -48,6 +60,8 @@ func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 	}
 
 	// Set outbreak ID for new cases
+	data.OutbreakID = outbreakID.(int)
+	data.IsOutbreakID = data.OutbreakID > 0
 	if client.ID == 0 {
 		client.OutbreakID = sql.NullInt64{Int64: int64(outbreakID.(int)), Valid: true}
 	}
@@ -214,66 +228,196 @@ func HandlerCasesList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 }
 
 func HandlerCaseEncounterForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
-	// Get client ID from query parameter
-	clientIDStr := c.Query("client_id")
+	// Get client ID from URL path parameter
+	clientIDStr := c.Params("i")
 	if clientIDStr == "" {
+		sl.Error("Client ID is missing from URL path")
 		return c.Status(400).SendString("Client ID is required")
 	}
 
 	// Convert client ID to int
 	clientID, err := strconv.Atoi(clientIDStr)
 	if err != nil {
+		sl.Error("Invalid client ID", "error", err, "clientID", clientIDStr)
 		return c.Status(400).SendString("Invalid client ID")
 	}
 
 	// Get outbreak ID from session
 	sess, err := store.Get(c)
 	if err != nil {
-		return c.Status(400).SendString("Failed to get session")
+		sl.Error("Failed to get session", "error", err)
+		return c.Status(500).SendString("Failed to get session")
 	}
 	outbreakID := sess.Get("outbreak_id")
 	if outbreakID == nil {
+		sl.Error("No outbreak selected")
 		return c.Status(400).SendString("No outbreak selected")
 	}
 
 	// Get encounter date from query parameter
-	encounterDate := c.Query("encounter_date")
-	if encounterDate == "" {
-		return c.Status(400).SendString("Encounter date is required")
+	encounterDate := c.Query("dte")
+
+	// Validate date format
+	if encounterDate == "" || encounterDate == "0000-00-00" {
+		// If no date provided or invalid date, use current date
+		encounterDate = time.Now().Format("2006-01-02")
+	} else {
+		// Try to parse the date to validate it
+		if _, err := time.Parse("2006-01-02", encounterDate); err != nil {
+			// If date is invalid, use current date
+			encounterDate = time.Now().Format("2006-01-02")
+		}
+	}
+
+	// Get client details first
+	client, err := models.ClientByID(c.Context(), db, clientID)
+	if err != nil {
+		sl.Error("Failed to get client", "error", err, "clientID", clientID)
+		return c.Status(500).SendString("Failed to get client details")
 	}
 
 	// Get encounters for this client and date
 	encounters, err := models.ClientEncounters(c.Context(), db, fmt.Sprintf("client_id = %d AND encounter_date = '%s'", clientID, encounterDate), outbreakID.(int))
 	if err != nil {
-		sl.Error("Failed to get encounters", "error", err)
-		return c.Status(500).SendString("Failed to get encounters")
+		sl.Error("Failed to get encounters", "error", err, "clientID", clientID, "date", encounterDate)
+		encounters = []models.ClientEncounter{}
 	}
 
-	// Get client details
-	client, err := models.ClientByID(c.Context(), db, clientID)
-	if err != nil {
-		sl.Error("Failed to get client", "error", err)
-		return c.Status(500).SendString("Failed to get client")
+	// Ensure we have at least one empty encounter
+	if len(encounters) == 0 {
+		// Create an empty encounter with the current date
+		emptyEncounter := models.ClientEncounter{
+			EncounterID:   0,
+			EncounterType: sql.NullString{String: "", Valid: true},
+			EmployeeFname: sql.NullString{String: "", Valid: true},
+			EmployeeLname: sql.NullString{String: "", Valid: true},
+			EncounterDate: sql.NullString{String: encounterDate, Valid: true},
+			EncounterTime: sql.NullString{String: "", Valid: true},
+			ClinicalTeam:  sql.NullString{String: "", Valid: true},
+			ClientID:      clientID,
+		}
+		encounters = append(encounters, emptyEncounter)
 	}
 
-	data := fiber.Map{
-		"Client":     client,
-		"Encounters": encounters,
-		"Date":       encounterDate,
+	// Get clinical data for the first encounter
+	var clinical []models.Clinical
+	if len(encounters) > 0 && encounters[0].EncounterID > 0 {
+		clinicalData, err := models.ClinicalByEncounterID(c.Context(), db, encounters[0].EncounterID)
+		if err == nil && clinicalData != nil {
+			clinical = append(clinical, *clinicalData)
+		}
+	}
+	if len(clinical) == 0 {
+		// Add empty clinical data
+		clinical = append(clinical, models.Clinical{
+			ClinicalID:            0,
+			PharyngealErythema:    sql.NullInt64{Int64: 0, Valid: true},
+			PharyngealExudate:     sql.NullInt64{Int64: 0, Valid: true},
+			ConjunctivalInjection: sql.NullInt64{Int64: 0, Valid: true},
+			OedemaFace:            sql.NullInt64{Int64: 0, Valid: true},
+			TenderAbdomen:         sql.NullInt64{Int64: 0, Valid: true},
+			SunkenEyes:            sql.NullInt64{Int64: 0, Valid: true},
+			TentingSkin:           sql.NullInt64{Int64: 0, Valid: true},
+			PalpableLiver:         sql.NullInt64{Int64: 0, Valid: true},
+			PalpableSpleen:        sql.NullInt64{Int64: 0, Valid: true},
+			Jaundice:              sql.NullInt64{Int64: 0, Valid: true},
+			EnlargedLymphNodes:    sql.NullInt64{Int64: 0, Valid: true},
+			LowerExtremityOedema:  sql.NullInt64{Int64: 0, Valid: true},
+			Bleeding:              sql.NullInt64{Int64: 0, Valid: true},
+			BleedingNose:          sql.NullInt64{Int64: 0, Valid: true},
+			BleedingMouth:         sql.NullInt64{Int64: 0, Valid: true},
+			BleedingVagina:        sql.NullInt64{Int64: 0, Valid: true},
+			BleedingRectum:        sql.NullInt64{Int64: 0, Valid: true},
+			Shock:                 sql.NullInt64{Int64: 0, Valid: true},
+			Meningitis:            sql.NullInt64{Int64: 0, Valid: true},
+			Confusion:             sql.NullInt64{Int64: 0, Valid: true},
+			Seizure:               sql.NullInt64{Int64: 0, Valid: true},
+			Coma:                  sql.NullInt64{Int64: 0, Valid: true},
+			Bacteraemia:           sql.NullInt64{Int64: 0, Valid: true},
+			Hyperglycemia:         sql.NullInt64{Int64: 0, Valid: true},
+			Hypoglycemia:          sql.NullInt64{Int64: 0, Valid: true},
+		})
 	}
 
-	return GenerateHTML(c, db, data, "form_case_encounter")
+	// Get vitals data for the first encounter
+	var vitals []models.Vital
+	if len(encounters) > 0 && encounters[0].EncounterID > 0 {
+		vitalsData, err := models.VitalByEncounterID(c.Context(), db, encounters[0].EncounterID)
+		if err == nil && vitalsData != nil {
+			vitals = append(vitals, *vitalsData)
+		}
+	}
+	if len(vitals) == 0 {
+		// Add empty vitals data
+		vitals = append(vitals, models.Vital{
+			VitalsID:        0,
+			HeartRate:       sql.NullFloat64{Float64: 0, Valid: true},
+			BpSystolic:      sql.NullFloat64{Float64: 0, Valid: true},
+			BpDiastolic:     sql.NullFloat64{Float64: 0, Valid: true},
+			RespiratoryRate: sql.NullFloat64{Float64: 0, Valid: true},
+			Saturation:      sql.NullFloat64{Float64: 0, Valid: true},
+			Weight:          sql.NullFloat64{Float64: 0, Valid: true},
+			Height:          sql.NullFloat64{Float64: 0, Valid: true},
+			Temperature:     sql.NullFloat64{Float64: 0, Valid: true},
+			MentalStatus:    sql.NullString{String: "", Valid: true},
+			Muac:            sql.NullFloat64{Float64: 0, Valid: true},
+		})
+	}
+
+	// Get lab data for the first encounter
+	var labs []models.Lab
+	if len(encounters) > 0 && encounters[0].EncounterID > 0 {
+		labData, err := models.LabByEncounterID(c.Context(), db, encounters[0].EncounterID)
+		if err == nil && labData != nil {
+			labs = append(labs, *labData)
+		}
+	}
+	if len(labs) == 0 {
+		// Add empty lab data
+		labs = append(labs, models.Lab{
+			LabID: 0,
+		})
+	}
+
+	// Get treatment data for the first encounter
+	var treatments []models.Treatment
+	if len(encounters) > 0 && encounters[0].EncounterID > 0 {
+		treatmentData, err := models.TreatmentByEncounterID(c.Context(), db, encounters[0].EncounterID)
+		if err == nil && treatmentData != nil {
+			treatments = append(treatments, *treatmentData)
+		}
+	}
+	if len(treatments) == 0 {
+		// Add empty treatment data
+		treatments = append(treatments, models.Treatment{
+			TreatmentID: 0,
+		})
+	}
+
+	// Prepare strongly typed data for the template
+	data := EncounterPageData{
+		FormRef:    *client,
+		Form:       encounters,
+		Date:       encounterDate,
+		FormChild1: clinical,
+		FormChild2: vitals,
+		FormChild3: labs,
+		FormChild4: treatments,
+		Optionz:    Get_Client_Optionz(),
+	}
+
+	return GenerateHTML(c, db, data, "form_encounters")
 }
 
 func HandlerCaseEncounterList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
 	// Get client ID from query parameter
-	clientIDStr := c.Query("client_id")
-	if clientIDStr == "" {
+	ClientIDStr := c.Query("client_id")
+	if ClientIDStr == "" {
 		return c.Status(400).SendString("Client ID is required")
 	}
 
 	// Convert client ID to int
-	clientID, err := strconv.Atoi(clientIDStr)
+	ClientID, err := strconv.Atoi(ClientIDStr)
 	if err != nil {
 		return c.Status(400).SendString("Invalid client ID")
 	}
@@ -289,14 +433,14 @@ func HandlerCaseEncounterList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 	}
 
 	// Get encounters for this client
-	encounters, err := models.ClientEncounterz(c.Context(), db, fmt.Sprintf("client_id = %d", clientID), outbreakID.(int))
+	encounters, err := models.ClientEncounterz(c.Context(), db, fmt.Sprintf("client_id = %d", ClientID), outbreakID.(int))
 	if err != nil {
 		sl.Error("Failed to get encounters", "error", err)
 		return c.Status(500).SendString("Failed to get encounters")
 	}
 
 	// Get client details
-	client, err := models.ClientByID(c.Context(), db, clientID)
+	client, err := models.ClientByID(c.Context(), db, ClientID)
 	if err != nil {
 		sl.Error("Failed to get client", "error", err)
 		return c.Status(500).SendString("Failed to get client")
@@ -310,247 +454,256 @@ func HandlerCaseEncounterList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 	return GenerateHTML(c, db, data, "list_case_encounter")
 }
 
-func saveEncounter(c *fiber.Ctx, db *sql.DB, userID int, cid, dte string) (int, int, int) {
-	// Get selected outbreak from session
-	store := session.New()
-	sess, err := store.Get(c)
+func saveEncounter(c *fiber.Ctx, db *sql.DB, userID int, cid, dte string) (int, int, int, error) {
+	// Convert client ID to int
+	clientID, err := strconv.Atoi(cid)
 	if err != nil {
-		return 0, 0, 0
+		return 0, 0, 0, fmt.Errorf("invalid client ID: %v", err)
 	}
-	outbreakID := sess.Get("selected_outbreak")
+
+	// Get outbreak ID from session
+	sess, err := session.New().Get(c)
+	if err != nil {
+		return 0, 0, 0, fmt.Errorf("failed to get session: %v", err)
+	}
+	outbreakID := sess.Get("outbreak_id")
 	if outbreakID == nil {
-		return 0, 0, 0
+		return 0, 0, 0, fmt.Errorf("no outbreak selected")
 	}
 
-	var z int
-	idx := []int{0, 1, 2}
-	for k := 0; k < 3; k++ {
-		z = k + 1
-		id, er := strconv.Atoi(c.FormValue(fmt.Sprintf("id_%d", z)))
-		if er != nil {
-			id = 0
-		}
-
-		//encounter
-		encounter := models.Encounter{
-			EncounterID:   id,
-			EncounterType: ParseNullInt(c.FormValue("encounter_type")),
-			EncounterTime: ParseNullString(c.FormValue(fmt.Sprintf("encounter_time%d", z))),
-			ClientID:      ParseNullInt(cid),
-			EncounterDate: ParseNullString(dte),
-			ManagedBy:     ParseNullInt(c.FormValue("managed_by")),
-			ClinicalTeam:  ParseNullString(c.FormValue("clinical_team")),
-			OutbreakID:    sql.NullInt64{Int64: int64(outbreakID.(int)), Valid: true},
-		}
-
-		if id == 0 {
-			encounter.EnterOn.Valid = true
-			encounter.EnterBy.Valid = true
-
-			encounter.EnterBy.Int64 = int64(userID)
-			encounter.EnterOn.Time = time.Now()
-			err := encounter.Insert(c.Context(), db)
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-		} else {
-			encounter.SetAsExists()
-			err := encounter.Update(c.Context(), db)
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-		}
-		idx[k] = encounter.EncounterID
+	// Create encounter
+	ClinicalTeam := "0"
+	encounter := models.Encounter{
+		EncounterType: sql.NullInt64{Int64: 1, Valid: true}, // Assuming 1 is the default encounter type
+		EncounterTime: sql.NullString{String: time.Now().Format("15:04:05"), Valid: true},
+		ClientID:      sql.NullInt64{Int64: int64(clientID), Valid: true},
+		EncounterDate: sql.NullString{String: dte, Valid: true},
+		ManagedBy:     sql.NullInt64{Int64: int64(userID), Valid: true},
+		EnterOn:       sql.NullTime{Time: time.Now(), Valid: true},
+		EnterBy:       sql.NullInt64{Int64: int64(userID), Valid: true},
+		OutbreakID:    sql.NullInt64{Int64: int64(outbreakID.(int)), Valid: true},
+		ClinicalTeam:  sql.NullString{String: ClinicalTeam, Valid: true},
 	}
 
-	return idx[0], idx[1], idx[2]
+	// Save encounter
+	if err := encounter.Insert(c.Context(), db); err != nil {
+		return 0, 0, 0, fmt.Errorf("failed to save encounter: %v", err)
+	}
+
+	return encounter.EncounterID, clientID, outbreakID.(int), nil
 }
 
-func saveVitals(c *fiber.Ctx, db *sql.DB, id1, id2, id3 int) {
-	var z int
-	z = 0
-
-	idx := []int{0, 1, 2}
-
-	idx[0] = id1
-	idx[1] = id2
-	idx[2] = id3
-
-	for k := 0; k < 3; k++ {
-		z = k + 1
-		vitals_id, er := strconv.Atoi(c.FormValue(fmt.Sprintf("vitals_id_%d", z)))
-		if er != nil {
-			vitals_id = 0
-		}
-
-		vital := models.Vital{
-			VitalsID:            vitals_id,
-			EncounterID:         sql.NullInt64{Int64: int64(idx[k]), Valid: true},
-			HeartRate:           ParseNullFloat(c.FormValue(fmt.Sprintf("heart_rate%d", z))),
-			BpSystolic:          ParseNullFloat(c.FormValue(fmt.Sprintf("bp_systolic%d", z))),
-			BpDiastolic:         ParseNullFloat(c.FormValue(fmt.Sprintf("bp_diastolic%d", z))),
-			CapillaryRefill:     ParseNullInt(c.FormValue(fmt.Sprintf("capillary_refill%d", z))),
-			RespiratoryRate:     ParseNullFloat(c.FormValue(fmt.Sprintf("respiratory_rate%d", z))),
-			Saturation:          ParseNullFloat(c.FormValue(fmt.Sprintf("saturation%d", z))),
-			Weight:              ParseNullFloat(c.FormValue(fmt.Sprintf("weight%d", z))),
-			Height:              ParseNullFloat(c.FormValue(fmt.Sprintf("height%d", z))),
-			Temperature:         ParseNullFloat(c.FormValue(fmt.Sprintf("temperature%d", z))),
-			LowestConsciousness: ParseNullString(c.FormValue(fmt.Sprintf("lowest_consciousness%d", z))),
-			MentalStatus:        ParseNullString(c.FormValue(fmt.Sprintf("mental_status%d", z))),
-			Muac:                ParseNullFloat(c.FormValue(fmt.Sprintf("muac%d", z))),
-			Bleeding:            ParseNullInt(c.FormValue(fmt.Sprintf("bleeding%d", z))),
-			Shock:               ParseNullInt(c.FormValue(fmt.Sprintf("shock%d", z))),
-			Meningitis:          ParseNullInt(c.FormValue(fmt.Sprintf("meningitis%d", z))),
-			Confusion:           ParseNullInt(c.FormValue(fmt.Sprintf("confusion%d", z))),
-			Seizure:             ParseNullInt(c.FormValue(fmt.Sprintf("seizure%d", z))),
-			Coma:                ParseNullInt(c.FormValue(fmt.Sprintf("coma%d", z))),
-			Bacteraemia:         ParseNullInt(c.FormValue(fmt.Sprintf("bacteraemia%d", z))),
-			Hyperglycemia:       ParseNullInt(c.FormValue(fmt.Sprintf("hyperglycemia%d", z))),
-			Hypoglycemia:        ParseNullInt(c.FormValue(fmt.Sprintf("hypoglycemia%d", z))),
-			Other:               ParseNullString(c.FormValue(fmt.Sprintf("other%d", z))),
-		}
-
-		if vitals_id == 0 {
-			err := vital.Insert(c.Context(), db)
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-		} else {
-			vital.SetAsExists()
-			err := vital.Update(c.Context(), db)
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-		}
+func saveVitals(c *fiber.Ctx, db *sql.DB, id1, id2, id3 int) error {
+	vital_id, err := strconv.Atoi(c.FormValue("vital_id"))
+	if err != nil {
+		vital_id = 0
 	}
 
+	vital := models.Vital{
+		VitalsID:            vital_id,
+		EncounterID:         sql.NullInt64{Int64: int64(id1), Valid: true},
+		HeartRate:           ParseNullFloat(c.FormValue("heart_rate")),
+		BpSystolic:          ParseNullFloat(c.FormValue("bp_systolic")),
+		BpDiastolic:         ParseNullFloat(c.FormValue("bp_diastolic")),
+		CapillaryRefill:     ParseNullInt(c.FormValue("capillary_refill")),
+		RespiratoryRate:     ParseNullFloat(c.FormValue("respiratory_rate")),
+		Saturation:          ParseNullFloat(c.FormValue("saturation")),
+		Weight:              ParseNullFloat(c.FormValue("weight")),
+		Height:              ParseNullFloat(c.FormValue("height")),
+		Temperature:         ParseNullFloat(c.FormValue("temperature")),
+		LowestConsciousness: ParseNullString(c.FormValue("lowest_consciousness")),
+		MentalStatus:        ParseNullString(c.FormValue("mental_status")),
+		Muac:                ParseNullFloat(c.FormValue("muac")),
+		Bleeding:            ParseNullInt(c.FormValue("bleeding")),
+		Shock:               ParseNullInt(c.FormValue("shock")),
+		Meningitis:          ParseNullInt(c.FormValue("meningitis")),
+		Confusion:           ParseNullInt(c.FormValue("confusion")),
+		Seizure:             ParseNullInt(c.FormValue("seizure")),
+		Coma:                ParseNullInt(c.FormValue("coma")),
+		Bacteraemia:         ParseNullInt(c.FormValue("bacteraemia")),
+		Hyperglycemia:       ParseNullInt(c.FormValue("hyperglycemia")),
+		Hypoglycemia:        ParseNullInt(c.FormValue("hypoglycemia")),
+		Other:               ParseNullString(c.FormValue("other")),
+	}
+
+	if vital_id == 0 {
+		return vital.Insert(c.Context(), db)
+	} else {
+		vital.SetAsExists()
+		return vital.Update(c.Context(), db)
+	}
 }
 
 func getZaFormValue(c *fiber.Ctx, zname string, i int) string {
 	return c.FormValue(fmt.Sprintf("%s%d", zname, i))
 }
 
-func saveClinical(c *fiber.Ctx, db *sql.DB, id1, id2, id3 int) {
-	var z int
-
-	idx := []int{0, 1, 2}
-
-	idx[0] = id1
-	idx[1] = id2
-	idx[2] = id3
-
-	for k := 0; k < 3; k++ {
-		z = k + 1
-
-		clinical_id, er := strconv.Atoi(c.FormValue(fmt.Sprintf("clinical_id_%d", z)))
-		if er != nil {
-			clinical_id = 0
-		}
-
-		clinical := models.Clinical{
-			ClinicalID:  clinical_id,
-			EncounterID: sql.NullInt64{Int64: int64(idx[k]), Valid: true},
-
-			Fever:                ParseNullInt(getZaFormValue(c, "fever", z)),
-			Fatigue:              ParseNullInt(getZaFormValue(c, "fatigue", z)),
-			Weakness:             ParseNullInt(getZaFormValue(c, "weakness", z)),
-			Malaise:              ParseNullInt(getZaFormValue(c, "malaise", z)),
-			Myalgia:              ParseNullInt(getZaFormValue(c, "myalgia", z)),
-			Anorexia:             ParseNullInt(getZaFormValue(c, "anorexia", z)),
-			SoreThroat:           ParseNullInt(getZaFormValue(c, "sore_throat", z)),
-			Headache:             ParseNullInt(getZaFormValue(c, "headache", z)),
-			Nausea:               ParseNullInt(getZaFormValue(c, "nausea", z)),
-			ChestPain:            ParseNullInt(getZaFormValue(c, "chest_pain", z)),
-			JointPain:            ParseNullInt(getZaFormValue(c, "joint_pain", z)),
-			Hiccups:              ParseNullInt(getZaFormValue(c, "hiccups", z)),
-			Cough:                ParseNullInt(getZaFormValue(c, "cough", z)),
-			DifficultyBreathing:  ParseNullInt(getZaFormValue(c, "difficulty_breathing", z)),
-			DifficultySwallowing: ParseNullInt(getZaFormValue(c, "difficulty_swallowing", z)),
-			AbdominalPain:        ParseNullInt(getZaFormValue(c, "abdominal_pain", z)),
-			Diarrhoea:            ParseNullInt(getZaFormValue(c, "diarrhoea", z)),
-			Vomiting:             ParseNullInt(getZaFormValue(c, "vomiting", z)),
-			Irritability:         ParseNullInt(getZaFormValue(c, "irritability", z)),
-
-			Dysphagia:              ParseNullInt(c.FormValue("dysphagia")),
-			UnusualBleeding:        ParseNullInt(c.FormValue("unusual_bleeding")),
-			Dehydration:            ParseNullInt(c.FormValue("dehydration")),
-			Shock:                  ParseNullInt(c.FormValue("shock")),
-			Anuria:                 ParseNullInt(c.FormValue("anuria")),
-			Disorientation:         ParseNullInt(c.FormValue("disorientation")),
-			Agitation:              ParseNullInt(c.FormValue("agitation")),
-			Seizure:                ParseNullInt(c.FormValue("seizure")),
-			Meningitis:             ParseNullInt(c.FormValue("meningitis")),
-			Confusion:              ParseNullInt(c.FormValue("confusion")),
-			Coma:                   ParseNullInt(c.FormValue("coma")),
-			Bacteraemia:            ParseNullInt(c.FormValue("bacteraemia")),
-			Hyperglycemia:          ParseNullInt(c.FormValue("hyperglycemia")),
-			Hypoglycemia:           ParseNullInt(c.FormValue("hypoglycemia")),
-			OtherComplications:     ParseNullInt(c.FormValue("other_complications")),
-			AzaComplicationsSpecif: ParseNullString(c.FormValue("aza_complications_specif")),
-			PharyngealErythema:     ParseNullInt(c.FormValue("pharyngeal_erythema")),
-			PharyngealExudate:      ParseNullInt(c.FormValue("pharyngeal_exudate")),
-			ConjunctivalInjection:  ParseNullInt(c.FormValue("conjunctival_injection")),
-			OedemaFace:             ParseNullInt(c.FormValue("oedema_face")),
-			TenderAbdomen:          ParseNullInt(c.FormValue("tender_abdomen")),
-			SunkenEyes:             ParseNullInt(c.FormValue("sunken_eyes")),
-			TentingSkin:            ParseNullInt(c.FormValue("tenting_skin")),
-			PalpableLiver:          ParseNullInt(c.FormValue("palpable_liver")),
-			PalpableSpleen:         ParseNullInt(c.FormValue("palpable_spleen")),
-			Jaundice:               ParseNullInt(c.FormValue("jaundice")),
-			EnlargedLymphNodes:     ParseNullInt(c.FormValue("enlarged_lymph_nodes")),
-			LowerExtremityOedema:   ParseNullInt(c.FormValue("lower_extremity_oedema")),
-			Bleeding:               ParseNullInt(c.FormValue("clinical_bleeding")),
-			BleedingNose:           ParseNullInt(c.FormValue("bleeding_nose")),
-			BleedingMouth:          ParseNullInt(c.FormValue("bleeding_mouth")),
-			BleedingVagina:         ParseNullInt(c.FormValue("bleeding_vagina")),
-			BleedingRectum:         ParseNullInt(c.FormValue("bleeding_rectum")),
-			BleedingSputum:         ParseNullInt(c.FormValue("bleeding_sputum")),
-			BleedingUrine:          ParseNullInt(c.FormValue("bleeding_urine")),
-			BleedingIvSite:         ParseNullInt(c.FormValue("bleeding_iv_site")),
-			BleedingOther:          ParseNullInt(c.FormValue("bleeding_other")),
-			BleedingOtherSpecif:    ParseNullString(c.FormValue("bleeding_other_specif")),
-		}
-
-		if clinical_id == 0 {
-			err := clinical.Insert(c.Context(), db)
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-		} else {
-			clinical.SetAsExists()
-			err := clinical.Update(c.Context(), db)
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-		}
-
+func saveClinical(c *fiber.Ctx, db *sql.DB, id1, id2, id3 int) error {
+	clinical_id, err := strconv.Atoi(c.FormValue("clinical_id"))
+	if err != nil {
+		clinical_id = 0
 	}
 
+	clinical := models.Clinical{
+		ClinicalID:              clinical_id,
+		EncounterID:             sql.NullInt64{Int64: int64(id1), Valid: true},
+		Fever:                   ParseNullInt(c.FormValue("fever")),
+		Fatigue:                 ParseNullInt(c.FormValue("fatigue")),
+		Weakness:                ParseNullInt(c.FormValue("weakness")),
+		Malaise:                 ParseNullInt(c.FormValue("malaise")),
+		Myalgia:                 ParseNullInt(c.FormValue("myalgia")),
+		Anorexia:                ParseNullInt(c.FormValue("anorexia")),
+		SoreThroat:              ParseNullInt(c.FormValue("sore_throat")),
+		Headache:                ParseNullInt(c.FormValue("headache")),
+		Nausea:                  ParseNullInt(c.FormValue("nausea")),
+		ChestPain:               ParseNullInt(c.FormValue("chest_pain")),
+		JointPain:               ParseNullInt(c.FormValue("joint_pain")),
+		Hiccups:                 ParseNullInt(c.FormValue("hiccups")),
+		Cough:                   ParseNullInt(c.FormValue("cough")),
+		DifficultyBreathing:     ParseNullInt(c.FormValue("difficulty_breathing")),
+		DifficultySwallowing:    ParseNullInt(c.FormValue("difficulty_swallowing")),
+		AbdominalPain:           ParseNullInt(c.FormValue("abdominal_pain")),
+		Diarrhoea:               ParseNullInt(c.FormValue("diarrhoea")),
+		Vomiting:                ParseNullInt(c.FormValue("vomiting")),
+		Irritability:            ParseNullInt(c.FormValue("irritability")),
+		Dysphagia:               ParseNullInt(c.FormValue("dysphagia")),
+		UnusualBleeding:         ParseNullInt(c.FormValue("unusual_bleeding")),
+		Dehydration:             ParseNullInt(c.FormValue("dehydration")),
+		Shock:                   ParseNullInt(c.FormValue("shock")),
+		Anuria:                  ParseNullInt(c.FormValue("anuria")),
+		Disorientation:          ParseNullInt(c.FormValue("disorientation")),
+		Agitation:               ParseNullInt(c.FormValue("agitation")),
+		Seizure:                 ParseNullInt(c.FormValue("seizure")),
+		Meningitis:              ParseNullInt(c.FormValue("meningitis")),
+		Confusion:               ParseNullInt(c.FormValue("confusion")),
+		Coma:                    ParseNullInt(c.FormValue("coma")),
+		Bacteraemia:             ParseNullInt(c.FormValue("bacteraemia")),
+		Hyperglycemia:           ParseNullInt(c.FormValue("hyperglycemia")),
+		Hypoglycemia:            ParseNullInt(c.FormValue("hypoglycemia")),
+		OtherComplications:      ParseNullInt(c.FormValue("other_complications")),
+		AzaComplicationsSpecif:  ParseNullString(c.FormValue("aza_complications_specif")),
+		PharyngealErythema:      ParseNullInt(c.FormValue("pharyngeal_erythema")),
+		PharyngealExudate:       ParseNullInt(c.FormValue("pharyngeal_exudate")),
+		ConjunctivalInjection:   ParseNullInt(c.FormValue("conjunctival_injection")),
+		OedemaFace:              ParseNullInt(c.FormValue("oedema_face")),
+		TenderAbdomen:           ParseNullInt(c.FormValue("tender_abdomen")),
+		SunkenEyes:              ParseNullInt(c.FormValue("sunken_eyes")),
+		TentingSkin:             ParseNullInt(c.FormValue("tenting_skin")),
+		PalpableLiver:           ParseNullInt(c.FormValue("palpable_liver")),
+		PalpableSpleen:          ParseNullInt(c.FormValue("palpable_spleen")),
+		Jaundice:                ParseNullInt(c.FormValue("jaundice")),
+		EnlargedLymphNodes:      ParseNullInt(c.FormValue("enlarged_lymph_nodes")),
+		LowerExtremityOedema:    ParseNullInt(c.FormValue("lower_extremity_oedema")),
+		Bleeding:                ParseNullInt(c.FormValue("bleeding")),
+		BleedingNose:            ParseNullInt(c.FormValue("bleeding_nose")),
+		BleedingMouth:           ParseNullInt(c.FormValue("bleeding_mouth")),
+		BleedingVagina:          ParseNullInt(c.FormValue("bleeding_vagina")),
+		BleedingRectum:          ParseNullInt(c.FormValue("bleeding_rectum")),
+		BleedingSputum:          ParseNullInt(c.FormValue("bleeding_sputum")),
+		BleedingUrine:           ParseNullInt(c.FormValue("bleeding_urine")),
+		BleedingIvSite:          ParseNullInt(c.FormValue("bleeding_iv_site")),
+		BleedingOther:           ParseNullInt(c.FormValue("bleeding_other")),
+		BleedingOtherSpecif:     ParseNullString(c.FormValue("bleeding_other_specif")),
+		FinalDiagnosis:          ParseNullInt(c.FormValue("final_diagnosis")),
+		FinalDiagnosisAza:       ParseNullString(c.FormValue("final_diagnosis_aza")),
+		OutcomeDischarge:        ParseNullInt(c.FormValue("outcome_discharge")),
+		OutcomeDischargeIfHear:  ParseNullInt(c.FormValue("outcome_discharge_if_hear")),
+		OutcomeDischargeIfArth:  ParseNullInt(c.FormValue("outcome_discharge_if_arth")),
+		OutcomeDischargeIfAbor:  ParseNullInt(c.FormValue("outcome_discharge_if_abor")),
+		OutcomeDischargeIfNeur:  ParseNullInt(c.FormValue("outcome_discharge_if_neur")),
+		OutcomeDischargeIfOcul:  ParseNullInt(c.FormValue("outcome_discharge_if_ocul")),
+		OutcomeDischargeIfExtr:  ParseNullInt(c.FormValue("outcome_discharge_if_extr")),
+		OutcomeDischargeIfOthe:  ParseNullInt(c.FormValue("outcome_discharge_if_othe")),
+		OutcomeDischargeIfAza:   ParseNullString(c.FormValue("outcome_discharge_if_aza")),
+		OutcomeReferredFacility: ParseNullString(c.FormValue("outcome_referred_facility")),
+		DischargeDate:           ParseNullString(c.FormValue("discharge_date")),
+		SurvivorCounselling:     ParseNullInt(c.FormValue("survivor_counselling")),
+	}
+
+	if clinical_id == 0 {
+		return clinical.Insert(c.Context(), db)
+	} else {
+		clinical.SetAsExists()
+		return clinical.Update(c.Context(), db)
+	}
 }
 
 func HandlerCaseEncounterSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
-	userID := GetCurrentUser(c, store)
-	cid := c.FormValue("cid")
+	// Get user ID from session
+	sess, err := store.Get(c)
+	if err != nil {
+		sl.Error("Failed to get session", "error", err)
+		return c.Status(500).SendString("Internal server error")
+	}
+	userID := sess.Get("user_id")
+	if userID == nil {
+		sl.Error("User not authenticated")
+		return c.Status(401).SendString("Not authenticated")
+	}
+
+	// Get client ID and validate
+	cid := c.FormValue("client_id")
+	if cid == "" {
+		sl.Error("Missing client ID")
+		return c.Status(400).SendString("Missing client ID")
+	}
+
+	// Get encounter date and validate format
 	dte := c.FormValue("encounter_date")
+	if dte == "" {
+		sl.Error("Missing encounter date")
+		return c.Status(400).SendString("Missing encounter date")
+	}
+	if _, err := time.Parse("2006-01-02", dte); err != nil {
+		sl.Error("Invalid encounter date format", "error", err)
+		return c.Status(400).SendString("Invalid encounter date format")
+	}
 
-	id1, id2, id3 := saveEncounter(c, db, userID, cid, dte)
+	// Get outbreak ID from session
+	outbreakID := sess.Get("outbreak_id")
+	if outbreakID == nil {
+		sl.Error("No outbreak selected")
+		return c.Status(400).SendString("No outbreak selected")
+	}
 
-	//vital
+	// Save encounter and get IDs
+	id1, id2, id3, err := saveEncounter(c, db, userID.(int), cid, dte)
+	if err != nil {
+		sl.Error("Failed to save encounter", "error", err)
+		return c.Status(500).SendString("Failed to save encounter")
+	}
+
+	// Save vitals
 	saveVitals(c, db, id1, id2, id3)
 
-	//clinical
-
+	// Save clinical data
 	saveClinical(c, db, id1, id2, id3)
 
-	//lab
-	lab_id, er := strconv.Atoi(c.FormValue("lab_id"))
-	if er != nil {
+	// Save lab data
+	if err := saveLab(c, db, id1); err != nil {
+		sl.Error("Failed to save lab data", "error", err)
+		return c.Status(500).SendString("Failed to save lab data")
+	}
+
+	// Save treatment data
+	if err := saveTreatment(c, db, id1); err != nil {
+		sl.Error("Failed to save treatment data", "error", err)
+		return c.Status(500).SendString("Failed to save treatment data")
+	}
+
+	return c.Redirect(fmt.Sprintf("/cases/encounters/%d", id2))
+}
+
+// Helper function to save lab data
+func saveLab(c *fiber.Ctx, db *sql.DB, encounterID int) error {
+	lab_id, err := strconv.Atoi(c.FormValue("lab_id"))
+	if err != nil {
 		lab_id = 0
 	}
 
 	lab := models.Lab{
 		LabID:                 lab_id,
-		EncounterID:           sql.NullInt64{Int64: int64(id1), Valid: true},
+		EncounterID:           sql.NullInt64{Int64: int64(encounterID), Valid: true},
 		Specimen:              ParseNullInt(c.FormValue("specimen")),
 		SampleBlood:           ParseNullInt(c.FormValue("sample_blood")),
 		SampleUrine:           ParseNullInt(c.FormValue("sample_urine")),
@@ -616,73 +769,65 @@ func HandlerCaseEncounterSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 		ApttNd:                ParseNullInt(c.FormValue("aptt_nd")),
 	}
 
-	fmt.Println(lab)
-
 	if lab_id == 0 {
-		err := lab.Insert(c.Context(), db)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
+		return lab.Insert(c.Context(), db)
 	} else {
 		lab.SetAsExists()
-		err := lab.Update(c.Context(), db)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
+		return lab.Update(c.Context(), db)
 	}
+}
 
-	//treat
-
-	treat_id, er := strconv.Atoi(c.FormValue("treat_id"))
-	if er != nil {
+// Helper function to save treatment data
+func saveTreatment(c *fiber.Ctx, db *sql.DB, encounterID int) error {
+	treat_id, err := strconv.Atoi(c.FormValue("treat_id"))
+	if err != nil {
 		treat_id = 0
 	}
 
 	treat := &models.Treatment{
-		TreatmentID:            treat_id,
-		EncounterID:            sql.NullInt64{Int64: int64(id1), Valid: true},
-		Antibacterial:          ParseNullInt2(c.FormValue("antibacterial")),
-		Amoxicillin:            ParseNullInt2(c.FormValue("amoxicillin")),
-		Ceftriaxone:            ParseNullInt2(c.FormValue("ceftriaxone")),
-		Cefixime:               ParseNullInt2(c.FormValue("cefixime")),
-		AntibacterialOther:     ParseNullString2(c.FormValue("antibacterial_other")),
-		AntibacterialDose:      ParseNullString2(c.FormValue("antibacterial_dose")),
-		AntibacterialRoute:     ParseNullString2(c.FormValue("antibacterial_route")),
-		AntibacterialFreq:      ParseNullString2(c.FormValue("antibacterial_freq")),
-		Antimalarial:           ParseNullInt2(c.FormValue("antimalarial")),
-		AntimalarialArtesunate: ParseNullInt2(c.FormValue("antimalarial_artesunate")),
-		AntimalarialArthemeter: ParseNullInt2(c.FormValue("antimalarial_arthemeter")),
-		AntimalarialAl:         ParseNullInt2(c.FormValue("antimalarial_al")),
-		AntimalarialAa:         ParseNullInt2(c.FormValue("antimalarial_aa")),
-		AntimalarialDose:       ParseNullString2(c.FormValue("antimalarial_dose")),
-		AntimalarialRoute:      ParseNullString2(c.FormValue("antimalarial_route")),
-		AntimalarialFreq:       ParseNullString2(c.FormValue("antimalarial_freq")),
-		OtherMedsSpecify:       ParseNullString2(c.FormValue("other_meds_specify")),
-		OtherMedsDose:          ParseNullString2(c.FormValue("other_meds_dose")),
-		OtherMedsRoute:         ParseNullString2(c.FormValue("other_meds_route")),
-		OtherMedsFreq:          ParseNullString2(c.FormValue("other_meds_freq")),
-		EbolaExperimental:      ParseNullInt2(c.FormValue("ebola_experimental")),
-		EbolaExperimentalIf:    ParseNullString2(c.FormValue("ebola_experimental_if")),
-		Oral:                   ParseNullInt2(c.FormValue("oral")),
-		OralOrs:                ParseNullInt2(c.FormValue("oral_ors")),
-		OralOrsQty:             ParseNullFloat(c.FormValue("oral_ors_qty")),
-		OralWater:              ParseNullInt2(c.FormValue("oral_water")),
-		OralWaterQty:           ParseNullFloat(c.FormValue("oral_water_qty")),
-		OralOther:              ParseNullInt2(c.FormValue("oral_other")),
-		OralOtherQty:           ParseNullFloat(c.FormValue("oral_other_qty")),
-		Iv:                     ParseNullInt2(c.FormValue("iv")),
-		IvQty:                  ParseNullString2(c.FormValue("iv_qty")),
-		IvUsing:                ParseNullString2(c.FormValue("iv_using")),
-		IvAza:                  ParseNullString2(c.FormValue("iv_aza")),
-		AccessType:             ParseNullInt2(c.FormValue("access_type")),
-		BloodTrans:             ParseNullInt2(c.FormValue("blood_trans")),
-		OxygenTherapy:          ParseNullInt2(c.FormValue("oxygen_therapy")),
-		OxygenQty:              ParseNullFloat(c.FormValue("oxygen_qty")),
-		OxygenWith:             ParseNullString2(c.FormValue("oxygen_with")),
-		Vasopressors:           ParseNullInt2(c.FormValue("vasopressors")),
-		Renal:                  ParseNullInt2(c.FormValue("renal")),
-		Invasive:               ParseNullInt2(c.FormValue("invasive")),
-
+		TreatmentID:                 treat_id,
+		EncounterID:                 sql.NullInt64{Int64: int64(encounterID), Valid: true},
+		Antibacterial:               ParseNullInt2(c.FormValue("antibacterial")),
+		Amoxicillin:                 ParseNullInt2(c.FormValue("amoxicillin")),
+		Ceftriaxone:                 ParseNullInt2(c.FormValue("ceftriaxone")),
+		Cefixime:                    ParseNullInt2(c.FormValue("cefixime")),
+		AntibacterialOther:          ParseNullString2(c.FormValue("antibacterial_other")),
+		AntibacterialDose:           ParseNullString2(c.FormValue("antibacterial_dose")),
+		AntibacterialRoute:          ParseNullString2(c.FormValue("antibacterial_route")),
+		AntibacterialFreq:           ParseNullString2(c.FormValue("antibacterial_freq")),
+		Antimalarial:                ParseNullInt2(c.FormValue("antimalarial")),
+		AntimalarialArtesunate:      ParseNullInt2(c.FormValue("antimalarial_artesunate")),
+		AntimalarialArthemeter:      ParseNullInt2(c.FormValue("antimalarial_arthemeter")),
+		AntimalarialAl:              ParseNullInt2(c.FormValue("antimalarial_al")),
+		AntimalarialAa:              ParseNullInt2(c.FormValue("antimalarial_aa")),
+		AntimalarialDose:            ParseNullString2(c.FormValue("antimalarial_dose")),
+		AntimalarialRoute:           ParseNullString2(c.FormValue("antimalarial_route")),
+		AntimalarialFreq:            ParseNullString2(c.FormValue("antimalarial_freq")),
+		OtherMedsSpecify:            ParseNullString2(c.FormValue("other_meds_specify")),
+		OtherMedsDose:               ParseNullString2(c.FormValue("other_meds_dose")),
+		OtherMedsRoute:              ParseNullString2(c.FormValue("other_meds_route")),
+		OtherMedsFreq:               ParseNullString2(c.FormValue("other_meds_freq")),
+		EbolaExperimental:           ParseNullInt2(c.FormValue("ebola_experimental")),
+		EbolaExperimentalIf:         ParseNullString2(c.FormValue("ebola_experimental_if")),
+		Oral:                        ParseNullInt2(c.FormValue("oral")),
+		OralOrs:                     ParseNullInt2(c.FormValue("oral_ors")),
+		OralOrsQty:                  ParseNullFloat(c.FormValue("oral_ors_qty")),
+		OralWater:                   ParseNullInt2(c.FormValue("oral_water")),
+		OralWaterQty:                ParseNullFloat(c.FormValue("oral_water_qty")),
+		OralOther:                   ParseNullInt2(c.FormValue("oral_other")),
+		OralOtherQty:                ParseNullFloat(c.FormValue("oral_other_qty")),
+		Iv:                          ParseNullInt2(c.FormValue("iv")),
+		IvQty:                       ParseNullString2(c.FormValue("iv_qty")),
+		IvUsing:                     ParseNullString2(c.FormValue("iv_using")),
+		IvAza:                       ParseNullString2(c.FormValue("iv_aza")),
+		AccessType:                  ParseNullInt2(c.FormValue("access_type")),
+		BloodTrans:                  ParseNullInt2(c.FormValue("blood_trans")),
+		OxygenTherapy:               ParseNullInt2(c.FormValue("oxygen_therapy")),
+		OxygenQty:                   ParseNullFloat(c.FormValue("oxygen_qty")),
+		OxygenWith:                  ParseNullString2(c.FormValue("oxygen_with")),
+		Vasopressors:                ParseNullInt2(c.FormValue("vasopressors")),
+		Renal:                       ParseNullInt2(c.FormValue("renal")),
+		Invasive:                    ParseNullInt2(c.FormValue("invasive")),
 		EbolaExperimentalIfZmap:     ParseNullInt2(c.FormValue("ebola_experimental_if_zmap")),
 		EbolaExperimentalIfRemd:     ParseNullInt2(c.FormValue("ebola_experimental_if_remd")),
 		EbolaExperimentalIfRegn:     ParseNullInt2(c.FormValue("ebola_experimental_if_regn")),
@@ -705,23 +850,11 @@ func HandlerCaseEncounterSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 	}
 
 	if treat_id == 0 {
-		err := treat.Insert(c.Context(), db)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
+		return treat.Insert(c.Context(), db)
 	} else {
 		treat.SetAsExists()
-		err := treat.Update(c.Context(), db)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
+		return treat.Update(c.Context(), db)
 	}
-
-	// re route
-
-	urlx := "/cases/encounters/new/" + cid + "/?dte=" + dte
-
-	return c.Redirect(urlx)
 }
 
 func HandlerAPIGetEncounter(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
@@ -850,12 +983,12 @@ func HandlerAPIGetStatuses(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
-	clientID := c.Query("client_id")
-	if clientID == "" {
-		clientID = "0"
+	ClientID := c.Query("client_id")
+	if ClientID == "" {
+		ClientID = "0"
 	}
 
-	statuses, er := models.Statusez(c.Context(), db, " client_id = "+clientID)
+	statuses, er := models.Statusez(c.Context(), db, " client_id = "+ClientID)
 	if er != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Error fetching statuses",

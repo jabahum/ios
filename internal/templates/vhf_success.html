@@ -1,16 +1,22 @@
+{{define "content"}}
 <div class="container mt-4">
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
                 <div class="card-body text-center">
                     <h2 class="card-title text-success mb-4">Form Submitted Successfully!</h2>
-                    <p class="card-text">The VHF Case Investigation Form has been successfully submitted.</p>
-                    <div class="mt-4">
-                        <!-- <a href="/vhf-cif/list" class="btn btn-primary me-2">View All Cases</a> -->
-                        <a href="/vhf-cif/patient" class="btn btn-secondary">Submit Another Case</a>
+                    <p class="card-text mb-4">The VHF Case Investigation Form has been successfully submitted and saved.</p>
+                    <div class="alert alert-info mb-4">
+                        <h5 class="alert-heading">Case Code</h5>
+                        <p class="mb-0 fs-4 fw-bold">{{.CaseCode}}</p>
+                    </div>
+                    <div class="d-grid gap-3 d-md-flex justify-content-md-center">
+                        <a href="/vhf-list" class="btn btn-primary">View All Cases</a>
+                        <a href="/vhf-cif" class="btn btn-secondary">Submit Another Case</a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{{end}}

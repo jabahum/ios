@@ -128,7 +128,7 @@
                             <div class="row">
                                 <label class="col-sm-5 col-form-label col-form-label-sm" for="encounter_type">Encounter Type</label>
                                 <div class="col-sm-5">
-                                    {{ GetDBOptions "meta" "Encounter Type" "" "encounter_type" "Encounter Type" (index .Form 0).EncounterType.Int64 }}
+                                    {{ GetOptionField "encounter_type" "encounter_type" "Encounter Type" "" (index .Form 0).EncounterType.Int64 1 }}
                                 </div>
                             </div>
                         </div>
@@ -248,7 +248,7 @@
                                             </select>
                                             <script>
                                             document.addEventListener("DOMContentLoaded", function() {
-                                                document.getElementById("capillary_refill1").value = "{{ (index .FormChild2 0).CapillaryRefill.Int64 }}";
+                                                document.getElementById("capillary_refill1").value = "{{ if (index .FormChild2 0).CapillaryRefill.Valid }}{{ (index .FormChild2 0).CapillaryRefill.Int64 }}{{ end }}";
                                             });
                                             </script>
                                         </div>                                        
@@ -1441,7 +1441,7 @@
                                                 <input type="radio" name="iv" id="" value="2" {{ if eq (index .FormChild4 0).Iv.Int64 2 }}checked{{ end }} > No 
                                                 <input type="radio" name="iv" id="" value="3" {{ if eq (index .FormChild4 0).Iv.Int64 3 }}checked{{ end }} > Unknown <br>
                                                 If yes, specify: <input type="text" size="15" name="iv_using" value="{{ (index .FormChild4 0).IvUsing.String }}">	ml using <br>
-                                                <input type="radio" name="iv_qty" id="" value="1" {{ if eq (index .FormChild4 0).IvQty.String "1" }}checked{{ end }} > Ringer’s lactate <br>
+                                                <input type="radio" name="iv_qty" id="" value="1" {{ if eq (index .FormChild4 0).IvQty.String "1" }}checked{{ end }} > Ringer's lactate <br>
                                                 <input type="radio" name="iv_qty" id="" value="2" {{ if eq (index .FormChild4 0).IvQty.String "2" }}checked{{ end }} > Normal Saline <br>
                                                 <input type="radio" name="iv_qty" id="" value="3" {{ if eq (index .FormChild4 0).IvQty.String "3" }}checked{{ end }} > Others, specify 
                                                 <input type="text" size="15" name="iv_aza" value="{{ (index .FormChild4 0).IvAza.String }}">
@@ -1523,7 +1523,7 @@
                     <input type="hidden" name="id_3" id="id_3" value="{{ (index .Form 2).EncounterID}}" >
 
 
-                    <input type="hidden" name="cid" id="cid" value="{{ (index .Form 0).ClientID.Int64}}" >
+                    <input type="hidden" name="cid" id="cid" value="{{ (index .Form 0).ClientID}}" >
                     <input type="hidden" name="from" id="from" value="">
 
                     

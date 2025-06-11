@@ -14,22 +14,30 @@
                     <th>Age</th>
                     <th>Gender</th>
                     <th>District</th>
-                    <th>Health Facility</th>
-                    <th>Date of Onset</th>
+                    <th>Status</th>
+                    <th>Case Code</th>
+                    <th>Data Capturer</th>
                     <th>Created At</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                {{ range . }}
+                {{ range .Patients }}
                 <tr>
                     <td>{{ .ID }}</td>
-                    <td>{{ .PatientName }}</td>
-                    <td>{{ .Age }}</td>
+                    <td>{{ .Surname }} {{ .OtherNames }}</td>
+                    <td>
+                        {{ if .AgeYears.Valid }}
+                            {{ .AgeYears.Int32 }} years
+                        {{ else if .AgeMonths.Valid }}
+                            {{ .AgeMonths.Int32 }} months
+                        {{ end }}
+                    </td>
                     <td>{{ .Gender }}</td>
                     <td>{{ .District }}</td>
-                    <td>{{ .HealthFacility }}</td>
-                    <td>{{ .DateOfOnset.Format "2006-01-02" }}</td>
+                    <td>{{ .Status }}</td>
+                    <td>{{ .CaseCode }}</td>
+                    <td>{{ if .DataCapturerName.Valid }}{{ .DataCapturerName.String }}{{ end }}</td>
                     <td>{{ .CreatedAt.Format "2006-01-02 15:04:05" }}</td>
                     <td>
                         <a href="/vhf-cif/view/{{ .ID }}" class="btn btn-sm btn-info">View</a>

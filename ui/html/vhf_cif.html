@@ -6,6 +6,14 @@
   <title>VHF Case Investigation Form</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+  <style>
+    .hidden {
+      display: none !important;
+    }
+    .clinic-fields {
+      display: none;
+    }
+  </style>
 </head>
 <body>
 <div class="container my-5">
@@ -26,11 +34,11 @@
             <div class="row g-3">
               <div class="col-md-3">
                 <label class="form-label">Patient's Surname*</label>
-                <input type="text" class="form-control" name="surname">
+                <input type="text" class="form-control" name="surname" required>
               </div>
               <div class="col-md-3">
                 <label class="form-label">Other Names</label>
-                <input type="text" class="form-control" name="other_names">
+                <input type="text" class="form-control" name="other_names" required>
               </div>
               <div class="col-md-3">
                 <label class="form-label">Date of Birth</label>
@@ -70,44 +78,65 @@
                 <label class="form-label">Next of Kin Phone</label>
                 <input type="tel" class="form-control" name="next_of_kin_phone">
               </div>
+              <div class="col-md-3">
+                <label class="form-label">Data Capturer Name*</label>
+                <input type="text" class="form-control" name="data_capturer_name" required>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Data Capturer Phone*</label>
+                <input type="tel" class="form-control" name="data_capturer_phone" required>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Reporting Health Facility Name*</label>
+                <input type="tel" class="form-control" name="reporting_health_facility_name" required>
+              </div>
+              <input type="hidden" name="case_code">
             </div>
             <hr>
             <div class="row g-3">
               <div class="col-md-4">
                 <label class="form-label d-block">Status of patient at time of this case report*</label>
                 <div class="form-check form-check-inline">
-                  <input class="form-check-input" type="radio" name="status" value="Alive" id="statusAlive">
+                  <input class="form-check-input" type="radio" name="status" value="Alive" id="statusAlive" required onchange="toggleDateOfDeath()">
                   <label class="form-check-label" for="statusAlive">Alive</label>
                 </div>
                 <div class="form-check form-check-inline">
-                  <input class="form-check-input" type="radio" name="status" value="Dead" id="statusDead">
+                  <input class="form-check-input" type="radio" name="status" value="Dead" id="statusDead" required onchange="toggleDateOfDeath()">
                   <label class="form-check-label" for="statusDead">Dead</label>
                 </div>
               </div>
-              <div class="col-md-3">
-                <label class="form-label">Date of Death</label>
-                <input type="date" class="form-control" name="date_of_death">
+              <div class="col-md-3" id="dateOfDeathContainer" style="display: none;">
+                <label class="form-label">Date of Death*</label>
+                <input type="date" class="form-control" name="date_of_death" id="dateOfDeath">
               </div>
               <div class="col-md-3">
                 <label class="form-label">Head of Household</label>
                 <input type="text" class="form-control" name="head_of_household">
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Village/Town</label>
-                <input type="text" class="form-control" name="village_town">
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Parish</label>
-                <input type="text" class="form-control" name="parish">
+              </div>          
+              <div class="col-md-2">
+                <label class="form-label">District*</label>
+                <select class="form-select" id="district" name="district" required>
+                    <option value="">Select District</option>
+                </select>
               </div>
               <div class="col-md-2">
                 <label class="form-label">Subcounty</label>
-                <input type="text" class="form-control" name="subcounty">
+                <select class="form-select" id="subcounty" name="subcounty" required>
+                    <option value="">Select Subcounty</option>
+                </select>
               </div>
-              <div class="col-md-2">
-                <label class="form-label">District*</label>
-                <input type="text" class="form-control" name="district">
+              <div class="col-md-3">
+                <label class="form-label">Parish</label>
+                <select class="form-select" id="parish" name="parish" required>
+                    <option value="">Select Parish</option>
+                </select>
               </div>
+              <div class="col-md-3">
+                <label class="form-label">Village/Town</label>
+                <select class="form-select" id="village" name="village_town" required>
+                    <option value="">Select Village</option>
+                </select>
+              </div>    
               <div class="col-md-2">
                 <label class="form-label">Country of Residence</label>
                 <input type="text" class="form-control" name="country_of_residence">
@@ -214,7 +243,7 @@
             <div class="row mb-4">
               <div class="col-md-6">
                 <label class="form-label fw-bold">Date of initial symptom onset*</label>
-                <input type="date" class="form-control" name="date_initial_onset">
+                <input type="date" class="form-control" name="date_initial_onset" required>
               </div>
             </div>
 
@@ -555,7 +584,7 @@
                 <label class="form-label fw-bold">Is the patient hospitalized?*</label>
                 <div class="d-flex gap-4">
                   <div class="form-check">
-                    <input class="form-check-input" type="radio" name="hospitalized" value="Yes">
+                    <input class="form-check-input" type="radio" name="hospitalized" value="Yes" required>
                     <label class="form-check-label">Yes</label>
               </div>
                   <div class="form-check">
@@ -564,10 +593,11 @@
             </div>
                 </div>
               </div>
-              <div class="col-md-6">
+              <div class="col-md-6" id="admission_date_container">
                 <label class="form-label">Date of Hospital Admission</label>
-                <input type="date" class="form-control" name="admission_date">
+                <input type="date" class="form-control" name="admission_date" id="admission_date">
               </div>
+              
               <div class="col-md-6">
               <label class="form-label">Health Facility Name</label>
               <input type="text" class="form-control" name="health_facility_name">
@@ -585,10 +615,11 @@
               </div>
             </div>
               </div>
-              <div class="col-md-6">
+              <div class="col-md-6" id="isolation_date_container">
                 <label class="form-label">Date of Isolation</label>
-              <input type="date" class="form-control" name="isolation_date">
-            </div>
+                <input type="date" class="form-control" name="isolation_date" id="isolation_date">
+              </div>
+              
             </div>
 
             <div class="mt-4">
@@ -671,7 +702,7 @@
                       <label class="form-label">Relation to Patient</label>
                       <input type="text" class="form-control" name="contact_relation" placeholder="Enter relation">
             </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6" id="exposure_date_container">
                       <label class="form-label">Dates of Exposure</label>
                       <input type="text" class="form-control" name="contact_dates" placeholder="dd/mm/yyyy">
             </div>
@@ -683,20 +714,20 @@
                       <label class="form-label">District</label>
                       <input type="text" class="form-control" name="contact_district" placeholder="Enter district">
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6" id="person_alive_container">
                       <label class="form-label">Was person alive or dead?</label>
                       <div class="d-flex gap-4">
                         <div class="form-check">
-                          <input class="form-check-input" type="radio" name="contact_status" value="Alive">
+                          <input class="form-check-input" type="radio" name="contact_status" value="Alive" id="statusPersonAlive" onchange="togglePersonAlive()">
                           <label class="form-check-label">Alive</label>
                         </div>
                         <div class="form-check">
-                          <input class="form-check-input" type="radio" name="contact_status" value="Dead">
+                          <input class="form-check-input" type="radio" name="contact_status" value="Dead" id="statusPersonDead" onchange="togglePersonAlive()">
                           <label class="form-check-label">Dead</label>
                         </div>
                       </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6" id="dateOfContactDeathContainer">
                       <label class="form-label">Date of death (if applicable)</label>
               <input type="date" class="form-control" name="contact_death_date">
             </div>
@@ -717,20 +748,20 @@
                       <label class="form-label fw-bold">Did the patient attend a funeral before becoming ill?*</label>
                       <div class="d-flex gap-4">
                         <div class="form-check">
-                          <input class="form-check-input" type="radio" name="attendedFuneral" value="Yes">
+                          <input class="form-check-input" type="radio" name="attendedFuneral" value="Yes" id="attendedFuneral">
                           <label class="form-check-label">Yes</label>
                         </div>
                         <div class="form-check">
-                          <input class="form-check-input" type="radio" name="attendedFuneral" value="No">
+                          <input class="form-check-input" type="radio" name="attendedFuneral" value="No" id="notAttendedFuneral">
                           <label class="form-check-label">No</label>
                         </div>
                         <div class="form-check">
-                          <input class="form-check-input" type="radio" name="attendedFuneral" value="Unknown">
+                          <input class="form-check-input" type="radio" name="attendedFuneral" value="Unknown" id="unknownFuneral">
                           <label class="form-check-label">Unknown</label>
                         </div>
                       </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6" id="nameOfDeceasedContainer">
                       <label class="form-label">Name of Deceased</label>
                       <input type="text" class="form-control" name="funeral_deceased_name" placeholder="Enter name">
                     </div>
@@ -738,7 +769,7 @@
                       <label class="form-label">Relation to Patient</label>
                       <input type="text" class="form-control" name="funeral_relation" placeholder="Enter relation">
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6" id="funeralDateContainer">
                       <label class="form-label">Dates of Funeral Attendance</label>
                       <input type="text" class="form-control" name="funeral_dates" placeholder="dd/mm/yyyy">
                     </div>
@@ -852,32 +883,32 @@
                       <label class="form-label fw-bold">Did the patient visit a clinic or health facility before illness?*</label>
                       <div class="d-flex gap-4">
                         <div class="form-check">
-                          <input class="form-check-input" type="radio" name="clinicVisitBeforeIllness" value="Yes">
+                          <input class="form-check-input" type="radio" name="clinicVisitBeforeIllness" value="Yes" onchange="toggleClinicFields(this)">
                           <label class="form-check-label">Yes</label>
                         </div>
                         <div class="form-check">
-                          <input class="form-check-input" type="radio" name="clinicVisitBeforeIllness" value="No">
+                          <input class="form-check-input" type="radio" name="clinicVisitBeforeIllness" value="No" onchange="toggleClinicFields(this)">
                           <label class="form-check-label">No</label>
                         </div>
                         <div class="form-check">
-                          <input class="form-check-input" type="radio" name="clinicVisitBeforeIllness" value="Unknown">
+                          <input class="form-check-input" type="radio" name="clinicVisitBeforeIllness" value="Unknown" onchange="toggleClinicFields(this)">
                           <label class="form-check-label">Unknown</label>
                         </div>
                       </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 clinic-fields">
                       <label class="form-label">Health Facility Name</label>
                       <input type="text" class="form-control" name="clinic_name" placeholder="Enter facility name">
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 clinic-fields">
                       <label class="form-label">Village</label>
                       <input type="text" class="form-control" name="clinic_village" placeholder="Enter village">
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 clinic-fields">
                       <label class="form-label">District</label>
                       <input type="text" class="form-control" name="clinic_district" placeholder="Enter district">
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 clinic-fields">
                       <label class="form-label">Date(s)</label>
                       <input type="text" class="form-control" name="clinic_dates" placeholder="Enter dates">
                     </div>
@@ -894,32 +925,32 @@
                       <label class="form-label fw-bold">Did the patient consult a traditional/spiritual healer?*</label>
                       <div class="d-flex gap-4">
                         <div class="form-check">
-                          <input class="form-check-input" type="radio" name="traditionalHealer" value="Yes">
+                          <input class="form-check-input" type="radio" name="traditionalHealer" value="Yes" id="traditionalHealerYes" onchange="toggleTraditionalHealer()">
                           <label class="form-check-label">Yes</label>
                         </div>
                         <div class="form-check">
-                          <input class="form-check-input" type="radio" name="traditionalHealer" value="No">
+                          <input class="form-check-input" type="radio" name="traditionalHealer" value="No" id="traditionalHealerNo" onchange="toggleTraditionalHealer()">
                           <label class="form-check-label">No</label>
                         </div>
                         <div class="form-check">
-                          <input class="form-check-input" type="radio" name="traditionalHealer" value="Unknown">
+                          <input class="form-check-input" type="radio" name="traditionalHealer" value="Unknown" id="traditionalHealerUnknown">
                           <label class="form-check-label">Unknown</label>
                         </div>
                       </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6" id="traditionalHealerNameContainer">
                       <label class="form-label">Name of Healer</label>
                       <input type="text" class="form-control" name="healer_name" placeholder="Enter healer name">
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6" id="traditionalHealerVillageContainer">
                       <label class="form-label">Village</label>
                       <input type="text" class="form-control" name="healer_village" placeholder="Enter village">
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6" id="traditionalHealerDistrictContainer">
                       <label class="form-label">District</label>
                       <input type="text" class="form-control" name="healer_district" placeholder="Enter district">
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6" id="traditionalHealerDateContainer">
                       <label class="form-label">Date of Consultation</label>
                       <input type="date" class="form-control" name="healer_date">
                     </div>
@@ -1026,15 +1057,15 @@
               <div class="row g-4">
                 <div class="col-md-6">
                   <label class="form-label fw-bold">Sample Collection Date*</label>
-              <input type="date" class="form-control" name="sample_collection_date">
+              <input type="date" class="form-control" name="sample_collection_date" required>
             </div>
                 <div class="col-md-6">
                   <label class="form-label fw-bold">Sample Collection Time*</label>
-              <input type="time" class="form-control" name="sample_collection_time">
+              <input type="time" class="form-control" name="sample_collection_time" required>
             </div>
                 <div class="col-md-6">
                   <label class="form-label fw-bold">Sample Type*</label>
-              <select class="form-select" name="sample_type">
+              <select class="form-select" name="sample_type" required>
                     <option value="">Select sample type</option>
                     <option value="Whole blood">Whole blood</option>
                     <option value="Oral/Buccal swab">Oral/Buccal swab</option>
@@ -1046,15 +1077,15 @@
             </div>
                 <div class="col-md-6">
                   <label class="form-label">Other Sample Type</label>
-                  <input type="text" class="form-control" name="other_sample_type" placeholder="Specify other specimen type">
+                  <input type="text" class="form-control" name="other_sample_type" placeholder="Specify other specimen type" required>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label fw-bold">Requested Test*</label>
-              <input type="text" class="form-control" name="requested_test" placeholder="e.g. PCR">
+              <input type="text" class="form-control" name="requested_test" placeholder="e.g. PCR" required>
             </div>
                 <div class="col-md-6">
               <label class="form-label">Serology</label>
-              <input type="text" class="form-control" name="serology" placeholder="e.g. IgM, IgG">
+              <input type="text" class="form-control" name="serology" placeholder="e.g. IgM, IgG" required>
             </div>
                 <div class="col-md-6">
                   <label class="form-label fw-bold">Malaria RDT*</label>
@@ -1163,8 +1194,9 @@
     </div>
 
     <div class="mt-4 text-center">
-      <button type="submit" class="btn btn-primary btn-lg">Submit Form</button>
+      <button type="submit" class="btn btn-primary btn-lg">Submit Form</button><a href="/" class="btn btn-secondary btn-lg">Cancel</a>
     </div>
+    
   </form>
 </div>
 
@@ -1215,6 +1247,380 @@ function getLocation() {
     } else {
         alert("Geolocation is not supported by your browser.");
     }
+}
+
+// Function to generate case code in format VHF-YYYYMMDD-XXXX
+function generateCaseCode() {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  const caseCode = `VHF-${year}${month}${day}-${random}`;
+  document.querySelector('input[name="case_code"]').value = caseCode;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  generateCaseCode();
+  const form = document.getElementById('vhfForm');
+  form.addEventListener('submit', function(e) {
+    // Ensure case code is generated before submission
+    generateCaseCode();
+  });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Get references to the select elements
+    const districtSelect = document.getElementById('district');
+    const subcountySelect = document.getElementById('subcounty');
+    const parishSelect = document.getElementById('parish');
+    const villageSelect = document.getElementById('village');
+
+    // Initially disable all dependent dropdowns
+    subcountySelect.disabled = true;
+    parishSelect.disabled = true;
+    villageSelect.disabled = true;
+
+    // Load districts on page load
+    fetch('/api/locations/districts')
+        .then(response => response.json())
+        .then(districts => {
+            districts.forEach(district => {
+                const option = new Option(district.name, district.id);
+                districtSelect.add(option);
+            });
+        })
+        .catch(error => console.error('Error loading districts:', error));
+
+    // Handle district selection
+    districtSelect.addEventListener('change', function() {
+        const districtId = this.value;
+        
+        // Reset and disable dependent dropdowns
+        subcountySelect.innerHTML = '<option value="">Select Subcounty</option>';
+        parishSelect.innerHTML = '<option value="">Select Parish</option>';
+        villageSelect.innerHTML = '<option value="">Select Village</option>';
+        
+        subcountySelect.disabled = !districtId;
+        parishSelect.disabled = true;
+        villageSelect.disabled = true;
+
+        if (districtId) {
+            // Load subcounties for selected district
+            fetch(`/api/locations/subcounties/${districtId}`)
+                .then(response => response.json())
+                .then(subcounties => {
+                    subcounties.forEach(subcounty => {
+                        const option = new Option(subcounty.name, subcounty.id);
+                        subcountySelect.add(option);
+                    });
+                })
+                .catch(error => console.error('Error loading subcounties:', error));
+
+            // Also load parishes for the district
+            fetch(`/api/locations/parishes/district/${districtId}`)
+                .then(response => response.json())
+                .then(parishes => {
+                    parishes.forEach(parish => {
+                        const option = new Option(parish.name, parish.id);
+                        parishSelect.add(option);
+                    });
+                    parishSelect.disabled = false;
+                })
+                .catch(error => console.error('Error loading parishes:', error));
+
+            // Also load villages for the district
+            fetch(`/api/locations/villages/district/${districtId}`)
+                .then(response => response.json())
+                .then(villages => {
+                    villages.forEach(village => {
+                        const option = new Option(village.name, village.id);
+                        villageSelect.add(option);
+                    });
+                    villageSelect.disabled = false;
+                })
+                .catch(error => console.error('Error loading villages:', error));
+        }
+    });
+
+    // Handle subcounty selection
+    subcountySelect.addEventListener('change', function() {
+        const subcountyId = this.value;
+        
+        // Reset and disable dependent dropdowns
+        parishSelect.innerHTML = '<option value="">Select Parish</option>';
+        villageSelect.innerHTML = '<option value="">Select Village</option>';
+        
+        parishSelect.disabled = !subcountyId;
+        villageSelect.disabled = true;
+
+        if (subcountyId) {
+            // Load parishes for selected subcounty
+            fetch(`/api/locations/parishes/${subcountyId}`)
+                .then(response => response.json())
+                .then(parishes => {
+                    parishes.forEach(parish => {
+                        const option = new Option(parish.name, parish.id);
+                        parishSelect.add(option);
+                    });
+                })
+                .catch(error => console.error('Error loading parishes:', error));
+
+            // Also load villages for the subcounty
+            fetch(`/api/locations/villages/subcounty/${subcountyId}`)
+                .then(response => response.json())
+                .then(villages => {
+                    villages.forEach(village => {
+                        const option = new Option(village.name, village.id);
+                        villageSelect.add(option);
+                    });
+                    villageSelect.disabled = false;
+                })
+                .catch(error => console.error('Error loading villages:', error));
+        }
+    });
+
+    // Handle parish selection
+    parishSelect.addEventListener('change', function() {
+        const parishId = this.value;
+        
+        // Reset and disable village dropdown
+        villageSelect.innerHTML = '<option value="">Select Village</option>';
+        villageSelect.disabled = !parishId;
+
+        if (parishId) {
+            // Load villages for selected parish
+            fetch(`/api/locations/villages/${parishId}`)
+                .then(response => response.json())
+                .then(villages => {
+                    villages.forEach(village => {
+                        const option = new Option(village.name, village.id);
+                        villageSelect.add(option);
+                    });
+                })
+                .catch(error => console.error('Error loading villages:', error));
+        }
+    });
+});
+
+// Function to toggle date of death field visibility and validation
+function toggleDateOfDeath() {
+  const statusDead = document.getElementById('statusDead');
+  const statusAlive = document.getElementById('statusAlive');
+  const dateOfDeathContainer = document.getElementById('dateOfDeathContainer');
+  const dateOfDeath = document.getElementById('dateOfDeath');
+  
+  if (!statusDead.checked||statusAlive.checked) {
+    dateOfDeathContainer.style.display = 'none';
+    dateOfDeath.removeAttribute('required');
+    dateOfDeath.value = ''; // Clear the value when hidden
+  } else {
+    dateOfDeathContainer.style.display = 'block';
+    dateOfDeath.setAttribute('required', 'required');
+  }
+}
+
+// Initialize the form state
+document.addEventListener('DOMContentLoaded', function() {
+  toggleDateOfDeath();
+});
+
+function toggleHospitalized() {
+  const selected = document.querySelector('input[name="hospitalized"]:checked');
+  const hospitalized = selected ? selected.value : null;
+
+  const admissionContainer = document.getElementById('admission_date_container');
+  const admissionDateInput = document.getElementById('admission_date');
+
+  if (hospitalized == null|| hospitalized === 'No') {
+    admissionContainer.style.display = 'none';
+    admissionDateInput.value = '';
+    admissionDateInput.removeAttribute('required');
+  } else {
+    admissionContainer.style.display = '';
+    admissionDateInput.setAttribute('required', 'required');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  toggleHospitalized();
+
+  const radios = document.querySelectorAll('input[name="hospitalized"]');
+  radios.forEach(radio => {
+    radio.addEventListener('change', toggleHospitalized);
+  });
+});
+
+function toggleIsolation() {
+  const selected = document.querySelector('input[name="isolation"]:checked');
+  const isolation = selected ? selected.value : null;
+
+  const isolationContainer = document.getElementById('isolation_date_container');
+  const isolationDateInput = document.getElementById('isolation_date');
+
+  if (isolation == null|| isolation === 'No') {
+    isolationContainer.style.display = 'none';
+    isolationDateInput.value = '';
+    isolationDateInput.removeAttribute('required');
+  } else {
+    isolationContainer.style.display = 'block';
+    isolationDateInput.setAttribute('required', 'required');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  toggleIsolation();
+
+  const radios = document.querySelectorAll('input[name="isolation"]');
+  radios.forEach(radio => {
+    radio.addEventListener('change', toggleIsolation);
+  });
+});
+
+function toggleExposure() {
+  const selected = document.querySelector('input[name="contactWithCase"]:checked');
+  const exposure = selected ? selected.value : null;
+
+  const exposureContainer = document.getElementById('exposure_date_container');
+  const personAliveContainer = document.getElementById('person_alive_container');
+  const exposureDateInput = document.querySelector('input[name="contact_dates"]'); 
+  const contactStatusRadios = document.querySelectorAll('input[name="contact_status"]');
+
+  if (exposure == null || exposure === 'No' || exposure === 'Unknown') {
+    // Hide and reset exposure date input
+    exposureContainer.style.display = 'none';
+    if (exposureDateInput) {
+      exposureDateInput.value = '';
+      exposureDateInput.removeAttribute('required');
+    }
+
+    // Hide and deselect contact status radios
+    personAliveContainer.style.display = 'none';
+    contactStatusRadios.forEach(radio => {
+      radio.checked = false;
+      radio.removeAttribute('required');
+    });
+  } else if (exposure === 'Yes') {
+    exposureContainer.style.display = 'block';
+    personAliveContainer.style.display = 'block';
+
+    if (exposureDateInput) {
+      exposureDateInput.setAttribute('required', 'required');
+    }
+
+    contactStatusRadios.forEach(radio => {
+      radio.setAttribute('required', 'required');
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  toggleExposure();
+
+  const radios = document.querySelectorAll('input[name="contactWithCase"]');
+  radios.forEach(radio => {
+    radio.addEventListener('change', toggleExposure);
+  });
+});
+
+function togglePersonAlive() {
+  const contactDead = document.getElementById('statusPersonDead');
+  const contactAlive = document.getElementById('statusPersonAlive');
+  const dateOfContactDeathContainer = document.getElementById('dateOfContactDeathContainer');
+  const dateOfContactDeath = document.querySelector('input[name="contact_death_date"]');
+  
+  if (!contactDead.checked||contactAlive.checked) {
+    dateOfContactDeathContainer.style.display = 'none';
+    if (dateOfContactDeath) {
+      dateOfContactDeath.removeAttribute('required');
+      dateOfContactDeath.value = ''; // Clear the value when hidden
+    }
+  } else {
+    dateOfContactDeathContainer.style.display = 'block';
+    if (dateOfContactDeath) {
+      dateOfContactDeath.setAttribute('required', 'required');
+    }
+  }
+}
+
+// Initialize the form state
+document.addEventListener('DOMContentLoaded', function() {
+  togglePersonAlive();
+});
+
+
+function toggleFuneralAttendance() {
+  const selected = document.querySelector('input[name="attendedFuneral"]:checked');
+  const attended = selected ? selected.value === 'Yes' : false;
+
+  const funeralDateContainer = document.getElementById('funeralDateContainer');
+  const nameOfDeceasedContainer = document.getElementById('nameOfDeceasedContainer');
+  const dateOfContactDeathContainer = document.getElementById('dateOfContactDeathContainer');
+  const dateOfContactDeath = document.getElementById('contact_death_date');
+
+  const show = attended;
+
+  [funeralDateContainer, nameOfDeceasedContainer, dateOfContactDeathContainer].forEach(container => {
+    if (container) {
+      container.style.display = show ? 'block' : 'none';
+    }
+  });
+
+  if (dateOfContactDeath) {
+    if (show) {
+      dateOfContactDeath.setAttribute('required', 'required');
+    } else {
+      dateOfContactDeath.removeAttribute('required');
+      dateOfContactDeath.value = '';
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  toggleFuneralAttendance();
+
+  const radios = document.querySelectorAll('input[name="attendedFuneral"]');
+  radios.forEach(radio => {
+    radio.addEventListener('change', toggleFuneralAttendance);
+  });
+});
+
+
+function toggleTraditionalHealer() {
+  const selected = document.querySelector('input[name="traditionalHealer"]:checked');
+  const traditionalHealer = selected ? selected.value === 'Yes' : false;
+
+  const traditionalHealerNameContainer = document.getElementById('traditionalHealerNameContainer');
+  const traditionalHealerDateContainer = document.getElementById('traditionalHealerDateContainer');
+  const traditionalHealerVillageContainer = document.getElementById('traditionalHealerVillageContainer');
+  const traditionalHealerDistrictContainer = document.getElementById('traditionalHealerDistrictContainer');
+
+  const show = traditionalHealer;
+
+  [traditionalHealerNameContainer, traditionalHealerDateContainer, traditionalHealerVillageContainer, traditionalHealerDistrictContainer]
+    .forEach(container => {
+      if (container) {
+        container.style.display = show ? 'block' : 'none';
+      }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  toggleTraditionalHealer();
+
+  const radios = document.querySelectorAll('input[name="traditionalHealer"]');
+  radios.forEach(radio => {
+    radio.addEventListener('change', toggleTraditionalHealer);
+  });
+});
+
+function toggleClinicFields(radio) {
+  const clinicFields = document.querySelectorAll('.clinic-fields');
+  if (radio.value === 'Yes') {
+    clinicFields.forEach(field => field.style.display = 'block');
+  } else {
+    clinicFields.forEach(field => field.style.display = 'none');
+  }
 }
 </script>
 </body>

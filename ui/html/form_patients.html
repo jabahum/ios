@@ -102,15 +102,28 @@
     <div class="container-fluid">
         <div class="row">
             <!-- Left-Hand Side Menu -->
-            <div class="col-md-3 side-menu">
+            <!-- <div class="col-md-3 side-menu">
                 {{if .IsIDPos }}
                 <a href="/cases/encounters/new/{{.Form.ID}}/?dte=0000-00-00" class="menu-item">New Encounter</a>
                 <a href="/cases/patientreport/{{.Form.ID}}" class="menu-item">Report</a>
                 {{end}}
                 <a href="/patienthelp" class="menu-item">Help</a>
                 <button type="button" id="cancelButton" class="btn btn-sm btn-success mt-3">Close</button>
-            </div>
+            </div> -->
 
+            <!-- Show encounter forms depending on the outbreak ID -->
+            <div class="col-md-3 side-menu">
+            {{if .IsIDPos}}
+                {{if eq .OutbreakID 1}}
+                    <a href="/cases/encounters/ebola/new/{{.Form.ID}}/?dte=0000-00-00" class="menu-item">New Encounter</a>
+                {{else if eq .OutbreakID 6}}
+                    <a href="/cases/encounters/mpox/new/{{.Form.ID}}/?dte=0000-00-00" class="menu-item">New Encounter</a>
+                {{else if eq .OutbreakID 7}}
+                    <a href="/cases/encounters/vhf/new/{{.Form.ID}}/?dte=0000-00-00" class="menu-item">New Encounter</a>
+                {{end}}
+                <a href="/cases/patientreport/{{.Form.ID}}" class="menu-item">Report</a>
+            {{end}}
+            </div>
             <!-- Main Content -->
             <div class="col-md-9">
                 <div class="content">

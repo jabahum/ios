@@ -178,7 +178,7 @@ func Statuses(ctx context.Context, db DB, flt string) ([]Status, error) {
 func ClientEncounters(ctx context.Context, db DB, flt string, outbreakID int) ([]ClientEncounter, error) {
 	// query
 	sqlstr := ` SELECT 
-					encounter_id, meta_name, employee_fname, employee_lname, encounter_date, encounter_time, client_id, clinical_team
+					encounter.encounter_id, meta.meta_name, employee.employee_fname, employee.employee_lname, encounter.encounter_date, encounter.encounter_time, encounter.client_id, encounter.clinical_team
 				FROM encounter 
 				LEFT JOIN meta ON meta.meta_id = encounter.encounter_type
 				LEFT JOIN employee on employee.employee_id = encounter.managed_by 

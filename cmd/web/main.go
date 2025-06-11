@@ -16,6 +16,8 @@ import (
 	_ "github.com/lib/pq"
 
 	"case/internal/handlers"
+	"case/internal/routes"
+	"case/internal/services"
 )
 
 var store = session.New() // Session store
@@ -30,10 +32,10 @@ func trace() string {
 }
 
 func main() {
-
 	config := getConfig()
 
 	mlogger := initLogger(config.LogFile)
+
 	// Initialize Fiber app
 	app := fiber.New()
 
@@ -46,17 +48,64 @@ func main() {
 	db := getDB(config, mlogger)
 	defer db.Close()
 
-	// Add CSRF Middleware
-	/*
-		app.Use(csrf.New(csrf.Config{
-			KeyLookup:      "header:X-CSRF-Token",
-			CookieName:     "csrf_token",
-			CookieSecure:   true,
-			CookieHTTPOnly: true,
-		}))
-	*/
+	// Initialize SMS service
+	smsConfig := services.SMSConfig{
+		BaseURL:  config.SMSBaseURL,
+		Username: config.SMSUsername,
+		Password: config.SMSPassword,
+	}
+
+	// Log SMS configuration
+	mlogger.Info("Initializing SMS service",
+		"base_url", smsConfig.BaseURL,
+		"username", smsConfig.Username)
+
+	smsService := services.NewSMSService(smsConfig)
+
 	// Set up routes
-	SetRoute(app, db, store, mlogger, config) // Pass the appropriate *sql.DB instance here
+	routes.SetRoute(app, db, store, mlogger, config, smsService)
+
+	// VHF CIF routes
+	app.Get("/vhf-cif", func(c *fiber.Ctx) error {
+		return handlers.GenerateHTML(c, db, nil, "vhf_cif")
+	})
+	app.Post("/vhf-cif/save", func(c *fiber.Ctx) error {
+		return handlers.HandlerVHFPatientSubmit(c, db, mlogger, store, config, smsService)
+	})
+	app.Get("/vhf-cif/clinical-signs/:id", func(c *fiber.Ctx) error {
+		return handlers.GenerateHTML(c, db, fiber.Map{"PatientID": c.Params("id")}, "vhf_clinical_signs")
+	})
+	app.Post("/vhf-cif/clinical-signs/:id", func(c *fiber.Ctx) error {
+		return handlers.HandlerVHFClinicalSignsSubmit(c, db, mlogger, store, config)
+	})
+	app.Get("/vhf-cif/hospitalization/:id", func(c *fiber.Ctx) error {
+		return handlers.GenerateHTML(c, db, fiber.Map{"PatientID": c.Params("id")}, "vhf_hospitalization")
+	})
+	app.Post("/vhf-cif/hospitalization/:id", func(c *fiber.Ctx) error {
+		return handlers.HandlerVHFHospitalizationSubmit(c, db, mlogger, store, config)
+	})
+	app.Get("/vhf-cif/risk-factors/:id", func(c *fiber.Ctx) error {
+		return handlers.GenerateHTML(c, db, fiber.Map{"PatientID": c.Params("id")}, "vhf_risk_factors")
+	})
+	app.Post("/vhf-cif/risk-factors/:id", func(c *fiber.Ctx) error {
+		return handlers.HandlerVHFRiskFactorsSubmit(c, db, mlogger, store, config)
+	})
+	app.Get("/vhf-cif/laboratory/:id", func(c *fiber.Ctx) error {
+		return handlers.GenerateHTML(c, db, fiber.Map{"PatientID": c.Params("id")}, "vhf_laboratory")
+	})
+	app.Post("/vhf-cif/laboratory/:id", func(c *fiber.Ctx) error {
+		return handlers.HandlerVHFLaboratorySubmit(c, db, mlogger, store, config)
+	})
+	app.Get("/vhf-cif/investigator/:id", func(c *fiber.Ctx) error {
+		return handlers.GenerateHTML(c, db, fiber.Map{"PatientID": c.Params("id")}, "vhf_investigator")
+	})
+	app.Post("/vhf-cif/investigator/:id", func(c *fiber.Ctx) error {
+		return handlers.HandlerVHFInvestigatorSubmit(c, db, mlogger, store, config)
+	})
+	app.Get("/vhf-cif/success", func(c *fiber.Ctx) error {
+		return handlers.HandlerVHFSuccess(c, db, mlogger, store, config)
+	})
+
 	mlogger.Info("starting server...")
 	// Start the app
 
@@ -76,7 +125,6 @@ func getDB(config handlers.Config, sl *slog.Logger) *sql.DB {
 	if err = db.Ping(); err != nil {
 		fmt.Println("Cannot reach db: ", err.Error())
 		sl.Error("Cannot reach db: " + err.Error())
-
 	}
 
 	return db
@@ -102,7 +150,6 @@ func getConfig() (config handlers.Config) {
 }
 
 func initLogger(logFile string) *slog.Logger {
-
 	file, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatalf("Failed to open log file: %v", err)

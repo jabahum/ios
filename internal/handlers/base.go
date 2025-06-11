@@ -39,6 +39,9 @@ type Config struct {
 	LogFile      string `json:"LogFile"`
 	LogData      string `json:"LogData"`
 	Facility     string `json:"Facility"`
+	SMSUsername  string `json:"SMSUser"`
+	SMSPassword  string `json:"SMSPassword"`
+	SMSBaseURL   string `json:"SMSURL"`
 }
 
 type TemplateData struct {
@@ -46,6 +49,8 @@ type TemplateData struct {
 	User            string
 	Role            int
 	IsIDPos         bool
+	OutbreakID      int
+	IsOutbreakID    bool
 	Form            any
 	FormRef         any
 	FormChild1      any
@@ -113,11 +118,36 @@ func IsNullStringEmpty(nullable sql.NullString) bool {
 
 // GenerateHTML renders an HTML template with given data
 func GenerateHTML(c *fiber.Ctx, db *sql.DB, zdata interface{}, filenames ...string) error {
-	// Use a relative path from cmd/web to the templates directory
-	basePath := filepath.Join("..", "..", "ui", "html")
+	// Get the current working directory
+	wd, err := os.Getwd()
+	if err != nil {
+		return c.Status(500).SendString(fmt.Sprintf("Failed to get working directory: %v", err))
+	}
+
+	// Try multiple possible locations for the templates
+	possiblePaths := []string{
+		filepath.Join(wd, "ui", "html"),                    // Current directory
+		filepath.Join(wd, "..", "ui", "html"),              // One level up
+		filepath.Join(wd, "..", "..", "ui", "html"),        // Two levels up
+		filepath.Join(wd, "cmd", "ui", "html"),             // cmd directory
+		filepath.Join(wd, "..", "cmd", "ui", "html"),       // cmd directory one level up
+		filepath.Join(wd, "..", "..", "cmd", "ui", "html"), // cmd directory two levels up
+	}
+
+	var basePath string
+	for _, path := range possiblePaths {
+		if _, err := os.Stat(path); err == nil {
+			basePath = path
+			break
+		}
+	}
+
+	if basePath == "" {
+		return c.Status(500).SendString(fmt.Sprintf("Template directory not found. Tried paths: %v", possiblePaths))
+	}
 
 	// Log the path for debugging
-	log.Printf("Looking for templates in: %s", basePath)
+	log.Printf("Using template directory: %s", basePath)
 
 	// First, load the layout template
 	layoutFile := filepath.Join(basePath, "layout.html")
@@ -137,11 +167,16 @@ func GenerateHTML(c *fiber.Ctx, db *sql.DB, zdata interface{}, filenames ...stri
 
 	// Add the requested templates
 	for _, file := range filenames {
+		// Ensure we have the full path with .html extension
 		filePath := filepath.Join(basePath, file+".html")
+		log.Printf("Loading template file: %s", filePath)
+
+		// Check if file exists
 		if _, err := os.Stat(filePath); err != nil {
 			return c.Status(500).SendString(fmt.Sprintf("Template file not found: %s (error: %v)", filePath, err))
 		}
 
+		// Read file content
 		content, err := os.ReadFile(filePath)
 		if err != nil {
 			return c.Status(500).SendString(fmt.Sprintf("Failed to read template file %s: %v", filePath, err))
@@ -505,13 +540,15 @@ func GetOptionField(table, field, labs, defaultString string, defaultvalue, whol
 	}
 
 	if table == "Status" {
-		if defaultString == "Suspect" {
+		// Handle both string and sql.NullString types
+		statusValue := defaultString
+		if statusValue == "Suspect" {
 			zaDefa1 = "selected"
 		}
-		if defaultString == "Case" {
+		if statusValue == "Case" {
 			zaDefa2 = "selected"
 		}
-		if defaultString == "Other" {
+		if statusValue == "Other" {
 			zaDefa3 = "selected"
 		}
 
@@ -664,7 +701,7 @@ func GetCurrentFacility(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 		return 0
 	}
 
-	var facilityID int
+	var facilityID sql.NullInt64
 	err := db.QueryRowContext(c.Context(), "SELECT facility FROM public.employee WHERE employee_id = $1", userID).Scan(&facilityID)
 	if err != nil {
 		if err != sql.ErrNoRows {
@@ -672,7 +709,11 @@ func GetCurrentFacility(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 		}
 		return 0
 	}
-	return facilityID
+
+	if !facilityID.Valid {
+		return 0
+	}
+	return int(facilityID.Int64)
 }
 
 // GetDBInt retrieves an integer value from the database based on the given parameters

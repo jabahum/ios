@@ -8,5 +8,8 @@
     "Dx"             : "ios",
     "LogFile"        : "app.log",
     "LogData"        : "data.log",
-    "Facility"       : "1"
-  }
+    "Facility"       : "1",
+    "SMSUser"        : "case_management",
+    "SMSPassword"    : "C@s3mgt@2025",
+    "SMSURL"         : "https://dispatcher2-mtracpro.health.go.ug"
+}

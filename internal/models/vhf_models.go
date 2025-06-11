@@ -7,34 +7,38 @@ import (
 
 // VHFPatient represents the patient information
 type VHFPatient struct {
-	ID                 int64           `json:"id"`
-	Surname            string          `json:"surname"`
-	OtherNames         string          `json:"other_names"`
-	DateOfBirth        sql.NullTime    `json:"date_of_birth"`
-	AgeYears           sql.NullInt32   `json:"age_years"`
-	AgeMonths          sql.NullInt32   `json:"age_months"`
-	Gender             string          `json:"gender"`
-	PatientPhone       string          `json:"patient_phone"`
-	PhoneOwner         string          `json:"phone_owner"`
-	NextOfKin          string          `json:"next_of_kin"`
-	NextOfKinPhone     string          `json:"next_of_kin_phone"`
-	Status             string          `json:"status"`
-	DateOfDeath        sql.NullTime    `json:"date_of_death"`
-	HeadOfHousehold    string          `json:"head_of_household"`
-	VillageTown        string          `json:"village_town"`
-	Parish             string          `json:"parish"`
-	Subcounty          string          `json:"subcounty"`
-	District           string          `json:"district"`
-	CountryOfResidence string          `json:"country_of_residence"`
-	Occupation         string          `json:"occupation"`
-	IllVillageTown     string          `json:"ill_village_town"`
-	IllSubcounty       string          `json:"ill_subcounty"`
-	IllDistrict        string          `json:"ill_district"`
-	Latitude           sql.NullFloat64 `json:"latitude"`
-	Longitude          sql.NullFloat64 `json:"longitude"`
-	DateResidingFrom   sql.NullTime    `json:"date_residing_from"`
-	DateResidingTo     sql.NullTime    `json:"date_residing_to"`
-	CreatedAt          time.Time       `json:"created_at"`
+	ID                          int64           `json:"id"`
+	Surname                     string          `json:"surname"`
+	OtherNames                  string          `json:"other_names"`
+	DateOfBirth                 sql.NullTime    `json:"date_of_birth"`
+	AgeYears                    sql.NullInt32   `json:"age_years"`
+	AgeMonths                   sql.NullInt32   `json:"age_months"`
+	Gender                      string          `json:"gender"`
+	PatientPhone                string          `json:"patient_phone"`
+	PhoneOwner                  string          `json:"phone_owner"`
+	NextOfKin                   string          `json:"next_of_kin"`
+	NextOfKinPhone              string          `json:"next_of_kin_phone"`
+	DataCapturerName            sql.NullString  `json:"data_capturer_name"`
+	DataCapturerPhone           string          `json:"data_capturer_phone"`
+	ReportingHealthFacilityName string          `json:"reporting_health_facility_name"`
+	CaseCode                    string          `json:"case_code"`
+	Status                      string          `json:"status"`
+	DateOfDeath                 sql.NullTime    `json:"date_of_death"`
+	HeadOfHousehold             string          `json:"head_of_household"`
+	VillageTown                 string          `json:"village_town"`
+	Parish                      string          `json:"parish"`
+	Subcounty                   string          `json:"subcounty"`
+	District                    string          `json:"district"`
+	CountryOfResidence          string          `json:"country_of_residence"`
+	Occupation                  string          `json:"occupation"`
+	IllVillageTown              string          `json:"ill_village_town"`
+	IllSubcounty                string          `json:"ill_subcounty"`
+	IllDistrict                 string          `json:"ill_district"`
+	Latitude                    sql.NullFloat64 `json:"latitude"`
+	Longitude                   sql.NullFloat64 `json:"longitude"`
+	DateResidingFrom            sql.NullTime    `json:"date_residing_from"`
+	DateResidingTo              sql.NullTime    `json:"date_residing_to"`
+	CreatedAt                   time.Time       `json:"created_at"`
 }
 
 // VHFClinicalSigns represents the clinical signs and symptoms
@@ -230,20 +234,21 @@ func SaveVHFPatient(db *sql.DB, patient *VHFPatient) error {
 		INSERT INTO vhf_patients (
 			surname, other_names, date_of_birth, age_years, age_months,
 			gender, patient_phone, phone_owner, next_of_kin, next_of_kin_phone,
-			status, date_of_death, head_of_household, village_town, parish,
-			subcounty, district, country_of_residence, occupation,
-			ill_village_town, ill_subcounty, ill_district, latitude, longitude,
-			date_residing_from, date_residing_to
+			data_capturer_name, data_capturer_phone, reporting_health_facility_name, case_code, status, date_of_death,
+			head_of_household, village_town, parish, subcounty, district,
+			country_of_residence, occupation, ill_village_town, ill_subcounty, ill_district,
+			latitude, longitude, date_residing_from, date_residing_to
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
-			$16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26
+			$16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30
 		) RETURNING id, created_at`
 
 	err := db.QueryRow(
 		query,
 		patient.Surname, patient.OtherNames, patient.DateOfBirth, patient.AgeYears,
 		patient.AgeMonths, patient.Gender, patient.PatientPhone, patient.PhoneOwner,
-		patient.NextOfKin, patient.NextOfKinPhone, patient.Status, patient.DateOfDeath,
+		patient.NextOfKin, patient.NextOfKinPhone, patient.DataCapturerName,
+		patient.DataCapturerPhone, patient.ReportingHealthFacilityName, patient.CaseCode, patient.Status, patient.DateOfDeath,
 		patient.HeadOfHousehold, patient.VillageTown, patient.Parish, patient.Subcounty,
 		patient.District, patient.CountryOfResidence, patient.Occupation,
 		patient.IllVillageTown, patient.IllSubcounty, patient.IllDistrict,
@@ -259,10 +264,10 @@ func GetVHFPatient(db *sql.DB, id int64) (*VHFPatient, error) {
 	query := `
 		SELECT id, surname, other_names, date_of_birth, age_years, age_months,
 			gender, patient_phone, phone_owner, next_of_kin, next_of_kin_phone,
-			status, date_of_death, head_of_household, village_town, parish,
-			subcounty, district, country_of_residence, occupation,
-			ill_village_town, ill_subcounty, ill_district, latitude, longitude,
-			date_residing_from, date_residing_to, created_at
+			data_capturer_name, data_capturer_phone, reporting_health_facility_name, case_code, status, date_of_death,
+			head_of_household, village_town, parish, subcounty, district,
+			country_of_residence, occupation, ill_village_town, ill_subcounty, ill_district,
+			latitude, longitude, date_residing_from, date_residing_to, created_at
 		FROM vhf_patients
 		WHERE id = $1`
 
@@ -270,6 +275,7 @@ func GetVHFPatient(db *sql.DB, id int64) (*VHFPatient, error) {
 		&patient.ID, &patient.Surname, &patient.OtherNames, &patient.DateOfBirth,
 		&patient.AgeYears, &patient.AgeMonths, &patient.Gender, &patient.PatientPhone,
 		&patient.PhoneOwner, &patient.NextOfKin, &patient.NextOfKinPhone,
+		&patient.DataCapturerName, &patient.DataCapturerPhone, &patient.ReportingHealthFacilityName, &patient.CaseCode,
 		&patient.Status, &patient.DateOfDeath, &patient.HeadOfHousehold,
 		&patient.VillageTown, &patient.Parish, &patient.Subcounty, &patient.District,
 		&patient.CountryOfResidence, &patient.Occupation, &patient.IllVillageTown,
@@ -290,10 +296,10 @@ func ListVHFPatients(db *sql.DB) ([]*VHFPatient, error) {
 	query := `
 		SELECT id, surname, other_names, date_of_birth, age_years, age_months,
 			gender, patient_phone, phone_owner, next_of_kin, next_of_kin_phone,
-			status, date_of_death, head_of_household, village_town, parish,
-			subcounty, district, country_of_residence, occupation,
-			ill_village_town, ill_subcounty, ill_district, latitude, longitude,
-			date_residing_from, date_residing_to, created_at
+			data_capturer_name, data_capturer_phone, reporting_health_facility_name, case_code, status, date_of_death,
+			head_of_household, village_town, parish, subcounty, district,
+			country_of_residence, occupation, ill_village_town, ill_subcounty, ill_district,
+			latitude, longitude, date_residing_from, date_residing_to, created_at
 		FROM vhf_patients
 		ORDER BY created_at DESC`
 
@@ -310,6 +316,7 @@ func ListVHFPatients(db *sql.DB) ([]*VHFPatient, error) {
 			&patient.ID, &patient.Surname, &patient.OtherNames, &patient.DateOfBirth,
 			&patient.AgeYears, &patient.AgeMonths, &patient.Gender, &patient.PatientPhone,
 			&patient.PhoneOwner, &patient.NextOfKin, &patient.NextOfKinPhone,
+			&patient.DataCapturerName, &patient.DataCapturerPhone, &patient.ReportingHealthFacilityName, &patient.CaseCode,
 			&patient.Status, &patient.DateOfDeath, &patient.HeadOfHousehold,
 			&patient.VillageTown, &patient.Parish, &patient.Subcounty, &patient.District,
 			&patient.CountryOfResidence, &patient.Occupation, &patient.IllVillageTown,
@@ -324,6 +331,39 @@ func ListVHFPatients(db *sql.DB) ([]*VHFPatient, error) {
 	}
 
 	return patients, nil
+}
+
+// Get VHF Patient by Case Code
+func GetVHFPatientByCaseCode(db *sql.DB, caseCode string) (*VHFPatient, error) {
+	patient := &VHFPatient{}
+	query := `
+		SELECT id, surname, other_names, date_of_birth, age_years, age_months,
+			gender, patient_phone, phone_owner, next_of_kin, next_of_kin_phone,
+			data_capturer_name, data_capturer_phone, reporting_health_facility_name, case_code, status, date_of_death,
+			head_of_household, village_town, parish, subcounty, district,
+			country_of_residence, occupation, ill_village_town, ill_subcounty, ill_district,
+			latitude, longitude, date_residing_from, date_residing_to, created_at
+		FROM vhf_patients
+		WHERE case_code = $1`
+
+	err := db.QueryRow(query, caseCode).Scan(
+		&patient.ID, &patient.Surname, &patient.OtherNames, &patient.DateOfBirth,
+		&patient.AgeYears, &patient.AgeMonths, &patient.Gender, &patient.PatientPhone,
+		&patient.PhoneOwner, &patient.NextOfKin, &patient.NextOfKinPhone,
+		&patient.DataCapturerName, &patient.DataCapturerPhone, &patient.ReportingHealthFacilityName, &patient.CaseCode,
+		&patient.Status, &patient.DateOfDeath, &patient.HeadOfHousehold,
+		&patient.VillageTown, &patient.Parish, &patient.Subcounty, &patient.District,
+		&patient.CountryOfResidence, &patient.Occupation, &patient.IllVillageTown,
+		&patient.IllSubcounty, &patient.IllDistrict, &patient.Latitude,
+		&patient.Longitude, &patient.DateResidingFrom, &patient.DateResidingTo,
+		&patient.CreatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return patient, nil
 }
 
 // SaveVHFInvestigator saves a new investigator record
@@ -434,10 +474,11 @@ func SaveVHFRiskFactors(db *sql.DB, riskFactors *VHFRiskFactors) error {
 
 	err := db.QueryRow(
 		query,
-		riskFactors.PatientID, riskFactors.ContactWithCase, riskFactors.ContactName,
-		riskFactors.ContactRelation, riskFactors.ContactDates, riskFactors.ContactVillage,
-		riskFactors.ContactDistrict, riskFactors.ContactStatus, riskFactors.ContactDeathDate,
-		riskFactors.ContactTypes,
+		riskFactors.PatientID, riskFactors.ContactWithCase,
+		riskFactors.ContactName, riskFactors.ContactRelation,
+		riskFactors.ContactDates, riskFactors.ContactVillage,
+		riskFactors.ContactDistrict, riskFactors.ContactStatus,
+		riskFactors.ContactDeathDate, riskFactors.ContactTypes,
 	).Scan(&riskFactors.ID, &riskFactors.CreatedAt)
 
 	return err

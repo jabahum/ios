@@ -11,10 +11,12 @@ import (
 
 	"case/internal/handlers"
 	"case/internal/reports"
+	"case/internal/routes"
+	"case/internal/services"
 )
 
-func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger, config handlers.Config) {
-	RouteHome(app, db, sl, store, config)
+func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger, config handlers.Config, smsService *services.SMSService) {
+	RouteHome(app, db, sl, store, config, smsService)
 	RouteVerify(app, db, sl, store, config)
 
 	// Add outbreak routes
@@ -104,39 +106,8 @@ func RouteDischarge(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.
 	v.Post("/save", func(c *fiber.Ctx) error { return handlers.Discharge(c, db, sl, store, config) })
 }
 
-func RouteHome(app *fiber.App, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
-	// Landing page
-	app.Get("/", func(c *fiber.Ctx) error {
-		return handlers.GenerateHTML(c, db, nil, "landing")
-	})
-
-	// Login routes
-	app.Get("/login", func(c *fiber.Ctx) error {
-		return handlers.GenerateHTML(c, db, nil, "login")
-	})
-	app.Post("/login", func(c *fiber.Ctx) error {
-		return handlers.HandlerLoginSubmit(c, db, sl, store, config)
-	})
-	app.Get("/logout", func(c *fiber.Ctx) error {
-		return handlers.HandlerLoginOut(c, sl, store, config)
-	})
-
-	// VHF CIF routes
-	app.Get("/vhf-cif", func(c *fiber.Ctx) error {
-		return handlers.GenerateHTML(c, db, nil, "vhf_cif")
-	})
-	app.Post("/vhf-cif/save", func(c *fiber.Ctx) error {
-		return handlers.HandlerVHFCIFSubmit(c, db, sl, store, config)
-	})
-	app.Get("/vhf-cif/success", func(c *fiber.Ctx) error {
-		return handlers.HandlerVHFSuccess(c, db, sl, store, config)
-	})
-	app.Get("/vhf-cif/list", func(c *fiber.Ctx) error {
-		return handlers.HandlerVHFList(c, db, sl, store, config)
-	})
-	app.Get("/vhf-cif/view/:id", func(c *fiber.Ctx) error {
-		return handlers.HandlerVHFView(c, db, sl, store, config)
-	})
+func RouteHome(app *fiber.App, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config, smsService *services.SMSService) {
+	routes.RouteHome(app, db, sl, store, config, smsService)
 }
 
 func RouteVerify(app *fiber.App, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {

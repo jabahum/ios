@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mpox Admission Form</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    label { 
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+      font-size: 0.9rem;
+    }
+    .form-control {
+      min-height: 32px;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.9rem;
+    }
+    .form-control:focus {
+      box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    .nav-tabs .nav-link {
+      font-size: 0.85rem;
+      padding: 0.4rem 0.6rem;
+    }
+    .tab-content {
+      padding: 1rem;
+      background: #fff;
+      border: 1px solid #dee2e6;
+      border-top: none;
+      border-radius: 0 0 0.375rem 0.375rem;
+    }
+    .form-check {
+      margin-bottom: 0.25rem;
+      font-size: 0.9rem;
+    }
+    .form-check-input:checked {
+      background-color: #0d6efd;
+      border-color: #0d6efd;
+    }
+    .row {
+      margin-bottom: 0.75rem;
+    }
+    .mb-3 {
+      margin-bottom: 1rem !important;
+    }
+    textarea.form-control {
+      min-height: 80px;
+    }
+    .form-check-input {
+      margin-top: 0.2rem;
+    }
+    @media (max-width: 768px) {
+      .nav-tabs .nav-link {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.4rem;
+      }
+      .tab-content {
+        padding: 0.75rem;
+      }
+    }
+  </style>
+</head>
+<body class="bg-light">
+<div class="container mt-4 mb-5">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h2 class="mb-4 text-center">Mpox Admission Form</h2>
+      <ul class="nav nav-tabs flex-nowrap overflow-auto" id="formTabs" role="tablist">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#patient">1. Patient & Encounter</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#demographics">1a. Demographics</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#exposure">1b. Exposure</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#vitals">1c. Onset & Vitals</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#comorbidities">1d. Co-morbidities</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#rash">1e. Rash</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#symptoms">1f. Symptoms</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#labs">1g. Lab Investigations</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#lymphadenopathy">Lymphadenopathy</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#lesion_types">Lesion Types</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#sti_types">STI Details</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#lab_not_done_flags">Lab 'Not Done' Flags</button></li>
+      </ul>
+
+      <form class="tab-content mt-4" id="mpoxForm" novalidate>
+        <div class="tab-pane fade show active" id="patient">
+          <div class="mb-3"><label>Facility/Clinic Name</label><input type="text" class="form-control"></div>
+          <label>Type of Encounter</label>
+          <div class="form-check"><input type="checkbox" class="form-check-input"> Outpatient</div>
+          <div class="form-check"><input type="checkbox" class="form-check-input"> Emergency Department</div>
+          <div class="form-check"><input type="checkbox" class="form-check-input"> Inpatient Wards</div>
+          <div class="form-check"><input type="checkbox" class="form-check-input"> Other <input type="text" class="form-control mt-1"></div>
+          <div class="mb-3"><label>Date of Admission</label><input type="date" class="form-control"></div>
+          <label>Suspect or Confirmed Case</label>
+          <div class="form-check"><input type="radio" class="form-check-input" name="case"> Suspect</div>
+          <div class="form-check"><input type="radio" class="form-check-input" name="case"> Confirmed</div>
+        </div>
+
+        <div class="tab-pane fade" id="demographics">
+          <label>Sex</label>
+          <div class="form-check"><input type="radio" class="form-check-input" name="sex"> Male</div>
+          <div class="form-check"><input type="radio" class="form-check-input" name="sex"> Female</div>
+          <div class="mb-3"><label>Date of Birth</label><input type="date" class="form-control"></div>
+          <div class="mb-3"><label>Age</label><input type="number" class="form-control" placeholder="Years"></div>
+          <div class="mb-3"><label>OR</label><input type="number" class="form-control" placeholder="Months"></div>
+          <div class="mb-3"><label>OR</label><input type="number" class="form-control" placeholder="Days"></div>
+          <label>Healthcare Worker</label>
+          <div class="form-check"><input type="radio" class="form-check-input" name="hcw"> Yes</div>
+          <div class="form-check"><input type="radio" class="form-check-input" name="hcw"> No</div>
+          <div class="form-check"><input type="radio" class="form-check-input" name="hcw"> Unknown</div>
+          <label>Laboratory Worker</label>
+          <div class="form-check"><input type="radio" class="form-check-input" name="lab"> Yes</div>
+          <div class="form-check"><input type="radio" class="form-check-input" name="lab"> No</div>
+          <div class="form-check"><input type="radio" class="form-check-input" name="lab"> Unknown</div>
+          <div class="mb-3"><label>PPE Status</label><input type="text" class="form-control"></div>
+          <div class="mb-3"><label>Tribe</label><input type="text" class="form-control"></div>
+          <div class="mb-3"><label>Pregnant?</label><input type="text" class="form-control"></div>
+          <div class="mb-3"><label>Gestational Weeks</label><input type="number" class="form-control"></div>
+          <div class="mb-3"><label>LMNP</label><input type="date" class="form-control"></div>
+          <div class="mb-3"><label>Recently Pregnant &le;21 days</label><input type="text" class="form-control"></div>
+          <div class="mb-3"><label>Pregnant 22–42 days</label><input type="text" class="form-control"></div>
+          <div class="mb-3"><label>Tetanus Vaccination</label><input type="text" class="form-control"></div>
+        </div>
+
+        <div class="tab-pane fade" id="exposure">
+          <div class="mb-3"><label>Known contact with MPX case</label><input type="text" class="form-control"></div>
+          <div class="mb-3"><label>Nature of contact</label><input type="text" class="form-control"></div>
+          <div class="mb-3"><label>Sexually active within 21 days</label><input type="text" class="form-control"></div>
+          <div class="mb-3"><label>Sex of sexual partner(s)</label><input type="text" class="form-control"></div>
+          <div class="mb-3"><label>Travelled internationally in past 21 days?</label><input type="text" class="form-control"></div>
+          <div class="mb-3"><label>Countries visited</label><input type="text" class="form-control"></div>
+          <div class="mb-3"><label>Animal contact?</label><input type="text" class="form-control"></div>
+          <div class="mb-3"><label>Animal contact description</label><input type="text" class="form-control"></div>
+        </div>
+
+        <div class="tab-pane fade" id="vitals">
+          <div class="mb-3"><label>Symptom Onset Date</label><input type="date" class="form-control"></div>
+          <div class="mb-3"><label>First Described Symptoms</label><textarea class="form-control"></textarea></div>
+          <div class="row g-2">
+            <div class="col"><label>Temperature</label><input type="text" class="form-control"></div>
+            <div class="col"><label>°C/°F</label><input type="text" class="form-control"></div>
+          </div>
+          <div class="row g-2 mt-1">
+            <div class="col"><label>Heart Rate</label><input type="number" class="form-control"></div>
+            <div class="col"><label>Respiratory Rate</label><input type="number" class="form-control"></div>
+          </div>
+          <div class="row g-2 mt-1">
+            <div class="col"><label>BP Systolic</label><input type="number" class="form-control"></div>
+            <div class="col"><label>BP Diastolic</label><input type="number" class="form-control"></div>
+          </div>
+          <div class="mb-3 mt-2"><label>Severe Dehydration</label><input type="text" class="form-control"></div>
+          <div class="mb-3"><label>AVPU Scale</label><input type="text" class="form-control" placeholder="Alert/Voice/Pain/Unresponsive"></div>
+          <div class="row g-2">
+            <div class="col"><label>Height (cm)</label><input type="number" class="form-control"></div>
+            <div class="col"><label>Weight (kg)</label><input type="number" class="form-control"></div>
+          </div>
+        </div>
+        <!-- 1d Co-morbidities -->
+        <div class="tab-pane fade" id="comorbidities">
+          <div class="mb-3"><label>Co-morbidities (Yes/No/Unknown)</label></div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Chronic cardiac disease</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Hypertension</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Chronic pulmonary disease</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Asthma</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Chronic kidney disease</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Chronic liver disease</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Chronic neurological disorder</div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Diabetes</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Tuberculosis (active)</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Tuberculosis (previous)</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Asplenia</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Malignant neoplasm</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Alcohol use disorder</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Immunosuppressants</div>
+            </div>
+          </div>
+          <div class="mb-3"><label>Currently on therapy for neoplasm?</label><input type="text" class="form-control"></div>
+          <div class="mb-3"><label>STI present?</label><input type="text" class="form-control"></div>
+          <div class="mb-3"><label>If yes, specify:</label><input type="text" class="form-control"></div>
+          <div class="mb-3"><label>HIV Status</label><input type="text" class="form-control"></div>
+          <div class="mb-3"><label>ART regimen</label><input type="text" class="form-control"></div>
+          <div class="mb-3"><label>Most recent CD4</label><input type="text" class="form-control"></div>
+          <div class="mb-3"><label>Viral load</label><input type="text" class="form-control"></div>
+        </div>
+
+        <!-- 1e Rash Evaluation -->
+        <div class="tab-pane fade" id="rash">
+          <div class="mb-3"><label>Number of unresolved lesions on entire body</label><input type="text" class="form-control"></div>
+          <div class="row g-2">
+            <div class="col"><label>Right Leg</label><input type="number" class="form-control"></div>
+            <div class="col"><label>Right Arm</label><input type="number" class="form-control"></div>
+            <div class="col"><label>Left Leg</label><input type="number" class="form-control"></div>
+            <div class="col"><label>Left Arm</label><input type="number" class="form-control"></div>
+          </div>
+          <div class="row g-2 mt-2">
+            <div class="col"><label>Genitals</label><input type="number" class="form-control"></div>
+            <div class="col"><label>Oral Mucosa</label><input type="number" class="form-control"></div>
+            <div class="col"><label>Perianal Area</label><input type="number" class="form-control"></div>
+          </div>
+          <div class="mb-3 mt-2"><label>Active lesion areas (Yes/No/Unknown)</label></div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Face</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Nares</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Mouth</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Chest</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Abdomen</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Back</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Perianal</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Genitals</div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Palms</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Arms</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Forearms</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Thighs</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Legs</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Soles of feet</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Other (Specify)</div>
+            </div>
+          </div>
+          <div class="mb-3"><label>Specify other location</label><input type="text" class="form-control"></div>
+          <div class="mb-3"><label>Lesion types</label></div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Macule</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Papule</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Early vesicle</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Small pustule</div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Umbilicated pustule</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Ulcerated lesion</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Crusting of mature lesion</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Partially removed scab</div>
+            </div>
+          </div>
+          <div class="mb-3 mt-3"><label>Pain at lesion site?</label><input type="text" class="form-control"></div>
+          <div class="mb-3"><label>Pain score (0-10)</label><input type="number" class="form-control" min="0" max="10"></div>
+        </div>
+
+        <!-- 1f Signs and Symptoms -->
+        <div class="tab-pane fade" id="symptoms">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Fever</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Pruritis</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Sore throat</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Muscle aches</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Headache</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Ocular symptoms</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Fatigue/malaise</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Oral pain</div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Nausea</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Vomiting</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Diarrhoea</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Rectal pain</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Proctitis</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Pain with swallowing</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Chest pain</div>
+              <div class="form-check"><input class="form-check-input" type="checkbox"> Psychologic disturbance</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 1g Lab Investigations -->
+        <div class="tab-pane fade" id="labs">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-2"><label>ALT (U/L)</label><input class="form-control"></div>
+              <div class="mb-2"><label>AST (U/L)</label><input class="form-control"></div>
+              <div class="mb-2"><label>Creatinine (µmol/L)</label><input class="form-control"></div>
+              <div class="mb-2"><label>Potassium (mEq/L)</label><input class="form-control"></div>
+              <div class="mb-2"><label>Urea (mmol/L)</label><input class="form-control"></div>
+              <div class="mb-2"><label>Creatinine kinase (U/L)</label><input class="form-control"></div>
+              <div class="mb-2"><label>Calcium (mg/dL)</label><input class="form-control"></div>
+              <div class="mb-2"><label>Sodium (mEq/L)</label><input class="form-control"></div>
+              <div class="mb-2"><label>CRP (mg/dL)</label><input class="form-control"></div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-2"><label>Glucose (mg/dL)</label><input class="form-control"></div>
+              <div class="mb-2"><label>Lactate (mmol/L)</label><input class="form-control"></div>
+              <div class="mb-2"><label>Haemoglobin (g/L)</label><input class="form-control"></div>
+              <div class="mb-2"><label>Total bilirubin (mg/dL)</label><input class="form-control"></div>
+              <div class="mb-2"><label>WBC count (x10^9/L)</label><input class="form-control"></div>
+              <div class="mb-2"><label>Platelets (x10^9/L)</label><input class="form-control"></div>
+              <div class="mb-2"><label>Prothrombin time (sec)</label><input class="form-control"></div>
+              <div class="mb-2"><label>Activated PTT (sec)</label><input class="form-control"></div>
+              <div class="mb-2"><label>Other Test</label><input class="form-control"></div>
+            </div>
+          </div>
+          <div class="mt-3">
+            <div class="mb-2"><label>Malaria</label><input class="form-control"></div>
+            <div class="mb-2"><label>Syphilis</label><input class="form-control"></div>
+          </div>
+        </div>
+
+        <!-- Lymphadenopathy Details -->
+        <div class="tab-pane fade" id="lymphadenopathy">
+          <h5 class="mb-3">Lymphadenopathy</h5>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> Axillary - Present</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> Axillary - Tender</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> Cervical - Present</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> Cervical - Tender</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> Inguinal - Present</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> Inguinal - Tender</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> Other - Present</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> Other - Tender</div>
+          <div class="mb-3"><label>Specify other lymph node location</label><input type="text" class="form-control"></div>
+        </div>
+
+        <!-- Lesion Types -->
+        <div class="tab-pane fade" id="lesion_types">
+          <h5 class="mb-3">Lesion Types</h5>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> Macule</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> Papule</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> Early vesicle</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> Small pustule</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> Umbilicated pustule</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> Ulcerated lesion</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> Crusting of mature lesion</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> Partially removed scab</div>
+        </div>
+
+        <!-- STI Breakdown -->
+        <div class="tab-pane fade" id="sti_types">
+          <h5 class="mb-3">STI Details</h5>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> N. gonorrhoeae</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> Syphilis</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> HSV</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> Chlamydia trachomatis</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> Other (specify below)</div>
+          <div class="mb-3"><label>Other STI</label><input type="text" class="form-control"></div>
+        </div>
+
+        <!-- Lab 'Not Done' Options -->
+        <div class="tab-pane fade" id="lab_not_done_flags">
+          <h5 class="mb-3">Mark Labs Not Done</h5>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> ALT not done</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> AST not done</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> Creatinine not done</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> Glucose not done</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> Haemoglobin not done</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> WBC count not done</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> Platelets not done</div>
+          <div class="form-check"><input class="form-check-input" type="checkbox"> CRP not done</div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Form validation
+  (function () {
+    'use strict'
+    const forms = document.querySelectorAll('.needs-validation')
+    Array.from(forms).forEach(form => {
+      form.addEventListener('submit', event => {
+        if (!form.checkValidity()) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+        form.classList.add('was-validated')
+      }, false)
+    })
+  })()
+
+  // Make tabs scrollable on mobile
+  document.addEventListener('DOMContentLoaded', function() {
+    const navTabs = document.querySelector('.nav-tabs');
+    if (navTabs) {
+      navTabs.addEventListener('wheel', function(e) {
+        if (e.deltaY !== 0) {
+          e.preventDefault();
+          navTabs.scrollLeft += e.deltaY;
+        }
+      });
+    }
+  });
+</script>
+</body>
+</html>
