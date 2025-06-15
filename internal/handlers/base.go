@@ -51,6 +51,8 @@ type TemplateData struct {
 	IsIDPos         bool
 	OutbreakID      int
 	IsOutbreakID    bool
+	AdmissionID     int
+	IsAdmissionID   bool
 	Form            any
 	FormRef         any
 	FormChild1      any
@@ -65,6 +67,10 @@ type TemplateData struct {
 	Menuz           string
 	IsAuthenticated bool
 	CSRFToken       string // Add a CSRFToken field.
+
+	// Custom fields for Mpox admission logic
+	HasMpoxAdmission bool
+	MpoxAdmissionID  int
 }
 
 func NewTemplateData(c *fiber.Ctx, store *session.Store) *TemplateData {

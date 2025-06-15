@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MPOX Case Investigation Form</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container my-4">
+    <h2 class="mb-4 text-center">CASE INVESTIGATION FORM FOR MPOX</h2>
+    <form action="/mpox-cif/save" method="POST">
+        <div class="accordion" id="mpoxAccordion">
+            <!-- 1.0 CASE DETAILS -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingOne">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                        1.0 CASE DETAILS
+                    </button>
+                </h2>
+                <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#mpoxAccordion">
+                    <div class="accordion-body">
+                        <div class="row mb-2">
+                            <div class="col-md-4">
+                                <label for="case_id" class="form-label">Case ID</label>
+                                <input type="text" class="form-control" id="case_id" name="case_id" value="{{.case_id}}" readonly>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="date" class="form-label">Date</label>
+                                <input type="date" class="form-control" id="date" name="date">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="health_facility_case_id" class="form-label">Health facility case ID</label>
+                                <input type="text" class="form-control" id="health_facility_case_id" name="health_facility_case_id">
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-4">
+                                <label for="surname" class="form-label">Surname</label>
+                                <input type="text" class="form-control" id="surname" name="surname">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="other_names" class="form-label">Other Names</label>
+                                <input type="text" class="form-control" id="other_names" name="other_names">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="sex" class="form-label">Sex</label>
+                                <select class="form-select" id="sex" name="sex">
+                                    <option value="">Select</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-4">
+                                <label for="date_of_birth" class="form-label">Date of birth</label>
+                                <input type="date" class="form-control" id="date_of_birth" name="date_of_birth">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="age" class="form-label">Age</label>
+                                <input type="number" class="form-control" id="age" name="age">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="parish" class="form-label">Parish</label>
+                                <input type="text" class="form-control" id="parish" name="parish">
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-4">
+                                <label for="sub_county" class="form-label">Sub-County</label>
+                                <input type="text" class="form-control" id="sub_county" name="sub_county">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="physical_address" class="form-label">Physical home address: Village</label>
+                                <input type="text" class="form-control" id="physical_address" name="physical_address">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="contact_telephone" class="form-label">Contact telephone number(s)</label>
+                                <input type="text" class="form-control" id="contact_telephone" name="contact_telephone">
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-4">
+                                <label for="occupation" class="form-label">Occupation</label>
+                                <input type="text" class="form-control" id="occupation" name="occupation">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="nationality" class="form-label">Nationality</label>
+                                <input type="text" class="form-control" id="nationality" name="nationality">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="vaccination_status" class="form-label">Vaccination status; Smallpox vaccinated</label>
+                                <select class="form-select" id="vaccination_status" name="vaccination_status">
+                                    <option value="">Select</option>
+                                    <option value="yes">Yes</option>
+                                    <option value="no">No</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-4">
+                                <label for="date_of_vaccination" class="form-label">Date</label>
+                                <input type="date" class="form-control" id="date_of_vaccination" name="date_of_vaccination">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="next_of_kin" class="form-label">Next of Kin</label>
+                                <input type="text" class="form-control" id="next_of_kin" name="next_of_kin">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="next_of_kin_contact" class="form-label">Next of kin contact telephone number(s)</label>
+                                <input type="text" class="form-control" id="next_of_kin_contact" name="next_of_kin_contact">
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-4">
+                                <label for="marital_status" class="form-label">Marital Status</label>
+                                <input type="text" class="form-control" id="marital_status" name="marital_status">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="case_status" class="form-label">Case status</label>
+                                <select class="form-select" id="case_status" name="case_status">
+                                    <option value="">Select</option>
+                                    <option value="alive">Alive</option>
+                                    <option value="dead">Dead</option>
+                                    <option value="unknown">Unknown</option>
+                                    <option value="lost_to_follow_up">Unknown (lost-to-follow-up)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="if_dead_date_of_death" class="form-label">If dead, date of death</label>
+                                <input type="date" class="form-control" id="if_dead_date_of_death" name="if_dead_date_of_death">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 2.0 ATTENDING HEALTHCARE WORKER AND HEALTHCARE FACILITY DETAILS -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingTwo">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                        2.0 ATTENDING HEALTHCARE WORKER AND HEALTHCARE FACILITY DETAILS
+                    </button>
+                </h2>
+                <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#mpoxAccordion">
+                    <div class="accordion-body">
+                        <div class="row mb-2">
+                            <div class="col-md-3">
+                                <label for="clinician_name" class="form-label">Name of clinician</label>
+                                <input type="text" class="form-control" id="clinician_name" name="clinician_name">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="clinician_contact" class="form-label">Contact number of clinician</label>
+                                <input type="text" class="form-control" id="clinician_contact" name="clinician_contact">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="clinician_email" class="form-label">Email address of clinician</label>
+                                <input type="email" class="form-control" id="clinician_email" name="clinician_email">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="facility_district" class="form-label">District of Healthcare Facility</label>
+                                <input type="text" class="form-control" id="facility_district" name="facility_district">
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3">
+                                <label for="facility_name" class="form-label">Healthcare facility name</label>
+                                <input type="text" class="form-control" id="facility_name" name="facility_name">
+                            </div>                            
+                            <div class="col-md-3">
+                                <label for="pdpid_number" class="form-label">PDP/ID Number</label>
+                                <input type="text" class="form-control" id="pdpid_number" name="pdpid_number">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="admission_date" class="form-label">Date of admission</label>
+                                <input type="date" class="form-control" id="admission_date" name="admission_date">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="ward" class="form-label">Ward</label>
+                                <input type="text" class="form-control" id="ward" name="ward">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 3.0 RISK FACTORS/EXPOSURE HISTORY -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingThree">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                        3.0 RISK FACTORS/EXPOSURE HISTORY
+                    </button>
+                </h2>
+                <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#mpoxAccordion">
+                    <div class="accordion-body">
+                        <div class="mb-2">
+                            <label class="form-label">Traveled to a country with reported Mpox*</label>
+                            <div>
+                                <input type="radio" id="traveled_yes" name="traveled_country_reported_mpox" value="yes"> <label for="traveled_yes">Yes</label>
+                                <input type="radio" id="traveled_no" name="traveled_country_reported_mpox" value="no"> <label for="traveled_no">No</label>
+                                <input type="radio" id="traveled_unknown" name="traveled_country_reported_mpox" value="unknown"> <label for="traveled_unknown">Unknown</label>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Close contact with suspected, probable, or confirmed case of Mpox*</label>
+                            <div>
+                                <input type="radio" id="close_contact_yes" name="close_contact_mpox" value="yes"> <label for="close_contact_yes">Yes</label>
+                                <input type="radio" id="close_contact_no" name="close_contact_mpox" value="no"> <label for="close_contact_no">No</label>
+                                <input type="radio" id="close_contact_unknown" name="close_contact_mpox" value="unknown"> <label for="close_contact_unknown">Unknown</label>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">History of International Travel</label>
+                            <div>
+                                <input type="radio" id="intl_travel_yes" name="intl_travel" value="yes"> <label for="intl_travel_yes">Yes</label>
+                                <input type="radio" id="intl_travel_no" name="intl_travel" value="no"> <label for="intl_travel_no">No</label>
+                                <input type="radio" id="intl_travel_unknown" name="intl_travel" value="unknown"> <label for="intl_travel_unknown">Unknown</label>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Contact with animals (especially wild)</label>
+                            <div>
+                                <input type="radio" id="contact_animals_yes" name="contact_animals" value="yes"> <label for="contact_animals_yes">Yes</label>
+                                <input type="radio" id="contact_animals_no" name="contact_animals" value="no"> <label for="contact_animals_no">No</label>
+                                <input type="radio" id="contact_animals_unknown" name="contact_animals" value="unknown"> <label for="contact_animals_unknown">Unknown</label>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">If yes, Domestic animals, Pets, and Wild animals including primates</label>
+                            <input type="text" class="form-control" name="domestic_wild_animals">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Sexual exposure with suspected or confirmed in the last 21 days</label>
+                            <div>
+                                <input type="radio" id="sexual_exposure_yes" name="sexual_exposure" value="yes"> <label for="sexual_exposure_yes">Yes</label>
+                                <input type="radio" id="sexual_exposure_no" name="sexual_exposure" value="no"> <label for="sexual_exposure_no">No</label>
+                                <input type="radio" id="sexual_exposure_unknown" name="sexual_exposure" value="unknown"> <label for="sexual_exposure_unknown">Unknown</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 4.0 CLINICAL INFORMATION -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingFour">
+                    <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                        <span class="fs-6">4.0 CLINICAL INFORMATION</span>
+                    </button>
+                </h2>
+                <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#mpoxAccordion">
+                    <div class="accordion-body p-2">
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-3">
+                                <label for="onset_date" class="form-label mb-1 small">Date of onset of illness</label>
+                                <input type="date" class="form-control form-control-sm" id="onset_date" name="onset_date">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label mb-1 small">Fever</label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="radio" id="fever_yes" name="fever" value="yes">
+                                        <label class="form-check-label small" for="fever_yes">Yes</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="radio" id="fever_no" name="fever" value="no">
+                                        <label class="form-check-label small" for="fever_no">No</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="radio" id="fever_unknown" name="fever" value="unknown">
+                                        <label class="form-check-label small" for="fever_unknown">Unknown</label>
+                                    </div>
+                                </div>
+                                <input type="text" class="form-control form-control-sm mt-1" placeholder="If yes, temperature (°C)" name="fever_temperature">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label mb-1 small">Lymphadenopathy</label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="radio" id="lymphadenopathy_yes" name="lymphadenopathy" value="yes">
+                                        <label class="form-check-label small" for="lymphadenopathy_yes">Yes</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="radio" id="lymphadenopathy_no" name="lymphadenopathy" value="no">
+                                        <label class="form-check-label small" for="lymphadenopathy_no">No</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="radio" id="lymphadenopathy_unknown" name="lymphadenopathy" value="unknown">
+                                        <label class="form-check-label small" for="lymphadenopathy_unknown">Unknown</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label mb-1 small">Nausea/vomiting</label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="radio" id="nausea_yes" name="nausea_vomiting" value="yes">
+                                        <label class="form-check-label small" for="nausea_yes">Yes</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="radio" id="nausea_no" name="nausea_vomiting" value="no">
+                                        <label class="form-check-label small" for="nausea_no">No</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="radio" id="nausea_unknown" name="nausea_vomiting" value="unknown">
+                                        <label class="form-check-label small" for="nausea_unknown">Unknown</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label mb-1 small">Other symptoms</label>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="checkbox" name="symptoms" value="headache" id="symptom_headache">
+                                        <label class="form-check-label small" for="symptom_headache">Headache</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="checkbox" name="symptoms" value="muscle_pain" id="symptom_muscle_pain">
+                                        <label class="form-check-label small" for="symptom_muscle_pain">Muscle pain</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="checkbox" name="symptoms" value="fatigue" id="symptom_fatigue">
+                                        <label class="form-check-label small" for="symptom_fatigue">Fatigue</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="checkbox" name="symptoms" value="sore_throat" id="symptom_sore_throat">
+                                        <label class="form-check-label small" for="symptom_sore_throat">Sore throat</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="checkbox" name="symptoms" value="cough" id="symptom_cough">
+                                        <label class="form-check-label small" for="symptom_cough">Cough</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="checkbox" name="symptoms" value="chills_sweats" id="symptom_chills_sweats">
+                                        <label class="form-check-label small" for="symptom_chills_sweats">Chills/sweats</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="checkbox" name="symptoms" value="oral_ulcers" id="symptom_oral_ulcers">
+                                        <label class="form-check-label small" for="symptom_oral_ulcers">Oral ulcers</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="checkbox" name="symptoms" value="light_sensitivity" id="symptom_light_sensitivity">
+                                        <label class="form-check-label small" for="symptom_light_sensitivity">Light sensitivity</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="checkbox" name="symptoms" value="other" id="symptom_other">
+                                        <label class="form-check-label small" for="symptom_other">Other</label>
+                                    </div>
+                                    <input type="text" class="form-control form-control-sm w-auto" name="symptom_other_specify" placeholder="Specify">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label mb-1 small">If female, pregnant</label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="radio" id="pregnant_yes" name="pregnant" value="yes">
+                                        <label class="form-check-label small" for="pregnant_yes">Yes</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="radio" id="pregnant_no" name="pregnant" value="no">
+                                        <label class="form-check-label small" for="pregnant_no">No</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="radio" id="pregnant_unknown" name="pregnant" value="unknown">
+                                        <label class="form-check-label small" for="pregnant_unknown">Unknown</label>
+                                    </div>
+                                </div>
+                                <input type="text" class="form-control form-control-sm mt-1 w-auto d-inline-block" placeholder="If yes, Trimester" name="pregnant_trimester">
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label mb-1 small">Vaccinated</label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="radio" id="vaccinated_yes" name="vaccinated" value="yes">
+                                        <label class="form-check-label small" for="vaccinated_yes">Yes</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="radio" id="vaccinated_no" name="vaccinated" value="no">
+                                        <label class="form-check-label small" for="vaccinated_no">No</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="radio" id="vaccinated_unknown" name="vaccinated" value="unknown">
+                                        <label class="form-check-label small" for="vaccinated_unknown">Unknown</label>
+                                    </div>
+                                </div>
+                                <input type="text" class="form-control form-control-sm mt-1 w-auto d-inline-block" placeholder="If yes, vaccination date" name="vaccination_date">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label mb-1 small">Rash</label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="radio" id="rash_yes" name="rash" value="yes">
+                                        <label class="form-check-label small" for="rash_yes">Yes</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="radio" id="rash_no" name="rash" value="no">
+                                        <label class="form-check-label small" for="rash_no">No</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="radio" id="rash_unknown" name="rash" value="unknown">
+                                        <label class="form-check-label small" for="rash_unknown">Unknown</label>
+                                    </div>
+                                </div>
+                                <input type="date" class="form-control form-control-sm mt-1 w-auto d-inline-block" placeholder="Date of onset of rash" name="rash_onset_date">
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label mb-1 small">Distribution of rash</label>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="checkbox" name="rash_distribution" value="face" id="rash_face">
+                                        <label class="form-check-label small" for="rash_face">Face</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="checkbox" name="rash_distribution" value="trunk" id="rash_trunk">
+                                        <label class="form-check-label small" for="rash_trunk">Trunk</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="checkbox" name="rash_distribution" value="genitals" id="rash_genitals">
+                                        <label class="form-check-label small" for="rash_genitals">Genitals</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="checkbox" name="rash_distribution" value="all_over_body" id="rash_all_over_body">
+                                        <label class="form-check-label small" for="rash_all_over_body">All over body</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="checkbox" name="rash_distribution" value="legs" id="rash_legs">
+                                        <label class="form-check-label small" for="rash_legs">Legs</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="checkbox" name="rash_distribution" value="arms" id="rash_arms">
+                                        <label class="form-check-label small" for="rash_arms">Arms</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="checkbox" name="rash_distribution" value="soles_feet" id="rash_soles_feet">
+                                        <label class="form-check-label small" for="rash_soles_feet">Soles of the feet</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="checkbox" name="rash_distribution" value="palms_hands" id="rash_palms_hands">
+                                        <label class="form-check-label small" for="rash_palms_hands">Palms of hands</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label mb-1 small">Type of rash</label>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="checkbox" name="rash_type" value="macular" id="rash_type_macular">
+                                        <label class="form-check-label small" for="rash_type_macular">Macular</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="checkbox" name="rash_type" value="maculopapular" id="rash_type_maculopapular">
+                                        <label class="form-check-label small" for="rash_type_maculopapular">Maculopapular</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="checkbox" name="rash_type" value="vesicular" id="rash_type_vesicular">
+                                        <label class="form-check-label small" for="rash_type_vesicular">Vesicular</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="checkbox" name="rash_type" value="petechial" id="rash_type_petechial">
+                                        <label class="form-check-label small" for="rash_type_petechial">Petechial</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="checkbox" name="rash_type" value="vasculitic" id="rash_type_vasculitic">
+                                        <label class="form-check-label small" for="rash_type_vasculitic">Vasculitic</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 5.0 PAST MEDICAL AND TRAVEL HISTORY -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingFive">
+                    <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
+                        <span class="fs-6">5.0 PAST MEDICAL AND TRAVEL HISTORY</span>
+                    </button>
+                </h2>
+                <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive" data-bs-parent="#mpoxAccordion">
+                    <div class="accordion-body p-2">
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label mb-1 small">Underlying illness</label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="radio" id="underlying_illness_yes" name="underlying_illness" value="yes">
+                                        <label class="form-check-label small" for="underlying_illness_yes">Yes</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="radio" id="underlying_illness_no" name="underlying_illness" value="no">
+                                        <label class="form-check-label small" for="underlying_illness_no">No</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="radio" id="underlying_illness_unknown" name="underlying_illness" value="unknown">
+                                        <label class="form-check-label small" for="underlying_illness_unknown">Unknown</label>
+                                    </div>
+                                </div>
+                                <input type="text" class="form-control form-control-sm mt-1 w-auto d-inline-block" placeholder="If yes, give details" name="underlying_illness_details">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label mb-1 small">Travel outside of Uganda in the 21 days before the onset of illness?</label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="radio" id="travel_outside_uganda_yes" name="travel_outside_uganda" value="yes">
+                                        <label class="form-check-label small" for="travel_outside_uganda_yes">Yes</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="radio" id="travel_outside_uganda_no" name="travel_outside_uganda" value="no">
+                                        <label class="form-check-label small" for="travel_outside_uganda_no">No</label>
+                                    </div>
+                                    <div class="form-check form-check-inline mb-0">
+                                        <input class="form-check-input" type="radio" id="travel_outside_uganda_unknown" name="travel_outside_uganda" value="unknown">
+                                        <label class="form-check-label small" for="travel_outside_uganda_unknown">Unknown</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-12">
+                                <label class="form-label mb-1 small">If yes, details:</label>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered mb-0" id="travelHistoryTable">
+                                        <thead class="table-light">
+                                            <tr class="small">
+                                                <th>Country visited</th>
+                                                <th>Location/s visited</th>
+                                                <th>Date of arrival</th>
+                                                <th>Date of departure</th>
+                                                <th>Activities</th>
+                                                <th style="width: 40px;"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><input type="text" class="form-control form-control-sm" name="country_visited[]"></td>
+                                                <td><input type="text" class="form-control form-control-sm" name="location_visited[]"></td>
+                                                <td><input type="date" class="form-control form-control-sm" name="date_arrival[]"></td>
+                                                <td><input type="date" class="form-control form-control-sm" name="date_departure[]"></td>
+                                                <td><input type="text" class="form-control form-control-sm" name="activities_location[]"></td>
+                                                <td class="text-center align-middle">
+                                                    <button type="button" class="btn btn-sm btn-success add-row" title="Add row"><b>+</b></button>
+                                                    <button type="button" class="btn btn-sm btn-danger remove-row ms-1" title="Remove row"><b>-</b></button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 6.0 LABORATORY -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingSix">
+                    <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSix" aria-expanded="false" aria-controls="collapseSix">
+                        <span class="fs-6">6.0 LABORATORY</span>
+                    </button>
+                </h2>
+                <div id="collapseSix" class="accordion-collapse collapse" aria-labelledby="headingSix" data-bs-parent="#mpoxAccordion">
+                    <div class="accordion-body p-2">
+                        <div class="row g-2 mb-2 align-items-center">
+                            <div class="col-12 col-md-6">
+                                <label for="lab_id" class="form-label mb-1 small">Laboratory identification number</label>
+                                <input type="text" class="form-control form-control-sm" id="lab_id" name="lab_id">
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2 align-items-center">
+                            <div class="col-12 col-md-8">
+                                <label class="form-label mb-1 small">Type of sample collected</label>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="sample_collected" value="lesion_crust" id="sample_lesion_crust">
+                                        <label class="form-check-label small" for="sample_lesion_crust">Lesion crust</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="sample_collected" value="genital_swab" id="sample_genital_swab">
+                                        <label class="form-check-label small" for="sample_genital_swab">Genital swab</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="sample_collected" value="blood" id="sample_blood">
+                                        <label class="form-check-label small" for="sample_blood">Blood</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="sample_collected" value="oropharyngeal_swab" id="sample_oropharyngeal_swab">
+                                        <label class="form-check-label small" for="sample_oropharyngeal_swab">Oropharyngeal swab</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="sample_collected" value="urine" id="sample_urine">
+                                        <label class="form-check-label small" for="sample_urine">Urine</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="sample_collected" value="semen" id="sample_semen">
+                                        <label class="form-check-label small" for="sample_semen">Semen</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="sample_collected" value="vaginal_swab" id="sample_vaginal_swab">
+                                        <label class="form-check-label small" for="sample_vaginal_swab">Vaginal swab</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="sample_collected" value="rectal_swab" id="sample_rectal_swab">
+                                        <label class="form-check-label small" for="sample_rectal_swab">Rectal swab</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="sample_collected" value="other" id="sample_other">
+                                        <label class="form-check-label small" for="sample_other">Other</label>
+                                    </div>
+                                    <input type="text" class="form-control form-control-sm w-auto" name="sample_other_specify" placeholder="Specify">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="sample_collected" value="not_collected" id="sample_not_collected">
+                                        <label class="form-check-label small" for="sample_not_collected">Sample not collected</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2 align-items-center">
+                            <div class="col-12 col-md-8">
+                                <label class="form-label mb-1 small">Test Requested</label>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="test_requested" value="mpox_pcr" id="test_mpox_pcr">
+                                        <label class="form-check-label small" for="test_mpox_pcr">Mpox PCR</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="test_requested" value="orthopoxvirus_pcr" id="test_orthopoxvirus_pcr">
+                                        <label class="form-check-label small" for="test_orthopoxvirus_pcr">Orthopoxvirus PCR</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="test_requested" value="sequencing" id="test_sequencing">
+                                        <label class="form-check-label small" for="test_sequencing">Sequencing</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="test_requested" value="serology" id="test_serology">
+                                        <label class="form-check-label small" for="test_serology">Serology</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="test_requested" value="other" id="test_other">
+                                        <label class="form-check-label small" for="test_other">Other</label>
+                                    </div>
+                                    <input type="text" class="form-control form-control-sm w-auto" name="test_other_specify" placeholder="Specify">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2 align-items-center">
+                            <div class="col-6 col-md-3">
+                                <label for="date_sample_collection" class="form-label mb-1 small">Date of sample collection</label>
+                                <input type="date" class="form-control form-control-sm" id="date_sample_collection" name="date_sample_collection">
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label for="time_sample_collection" class="form-label mb-1 small">Time of sample collection</label>
+                                <input type="time" class="form-control form-control-sm" id="time_sample_collection" name="time_sample_collection">
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label for="date_sample_dispatch" class="form-label mb-1 small">Date of sample dispatch</label>
+                                <input type="date" class="form-control form-control-sm" id="date_sample_dispatch" name="date_sample_dispatch">
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2 align-items-center">
+                            <div class="col-6 col-md-3">
+                                <label for="sample_collector_name" class="form-label mb-1 small">Name of the sample collector</label>
+                                <input type="text" class="form-control form-control-sm" id="sample_collector_name" name="sample_collector_name">
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label for="sample_collector_phone" class="form-label mb-1 small">Phone number</label>
+                                <input type="text" class="form-control form-control-sm" id="sample_collector_phone" name="sample_collector_phone">
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label for="date_sample_reception" class="form-label mb-1 small">Date of sample reception</label>
+                                <input type="date" class="form-control form-control-sm" id="date_sample_reception" name="date_sample_reception">
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label for="time_sample_reception" class="form-label mb-1 small">Time of sample reception</label>
+                                <input type="time" class="form-control form-control-sm" id="time_sample_reception" name="time_sample_reception">
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2 align-items-center">
+                            <div class="col-6 col-md-3">
+                                <label for="sample_recipient_name" class="form-label mb-1 small">Name of sample recipient</label>
+                                <input type="text" class="form-control form-control-sm" id="sample_recipient_name" name="sample_recipient_name">
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label for="sample_recipient_phone" class="form-label mb-1 small">Phone number</label>
+                                <input type="text" class="form-control form-control-sm" id="sample_recipient_phone" name="sample_recipient_phone">
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2 align-items-center">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label mb-1 small">Genomic characterization undertaken?</label>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" id="genomic_yes" name="genomic_characterization" value="yes">
+                                    <label class="form-check-label small" for="genomic_yes">Yes</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" id="genomic_no" name="genomic_characterization" value="no">
+                                    <label class="form-check-label small" for="genomic_no">No</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" id="genomic_unknown" name="genomic_characterization" value="unknown">
+                                    <label class="form-check-label small" for="genomic_unknown">Unknown</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2 align-items-center">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label mb-1 small">If yes, clade</label>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="clade" value="west_african" id="clade_west_african">
+                                    <label class="form-check-label small" for="clade_west_african">West African clade</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="clade" value="congo_basin" id="clade_congo_basin">
+                                    <label class="form-check-label small" for="clade_congo_basin">Congo Basin Clade</label>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="accession_number" class="form-label mb-1 small">Accession number (if uploaded)</label>
+                                <input type="text" class="form-control form-control-sm" id="accession_number" name="accession_number">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 7.0 CASE CLASSIFICATION -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingSeven">
+                    <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSeven" aria-expanded="false" aria-controls="collapseSeven">
+                        <span class="fs-6">7.0 CASE CLASSIFICATION</span>
+                    </button>
+                </h2>
+                <div id="collapseSeven" class="accordion-collapse collapse" aria-labelledby="headingSeven" data-bs-parent="#mpoxAccordion">
+                    <div class="accordion-body p-2">
+                        <div class="d-flex gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="case_classification" value="confirmed" id="case_confirmed">
+                                <label class="form-check-label small" for="case_confirmed">Confirmed</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="case_classification" value="probable" id="case_probable">
+                                <label class="form-check-label small" for="case_probable">Probable</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="case_classification" value="suspected" id="case_suspected">
+                                <label class="form-check-label small" for="case_suspected">Suspected</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="mt-4 text-center">
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+    </form>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Add row functionality for travel history table
+    document.addEventListener('DOMContentLoaded', function() {
+        const table = document.getElementById('travelHistoryTable');
+        table.addEventListener('click', function(e) {
+            if (e.target && (e.target.classList.contains('add-row') || e.target.closest('.add-row'))) {
+                const row = e.target.closest('tr');
+                const newRow = row.cloneNode(true);
+                // Clear input values in the new row
+                newRow.querySelectorAll('input').forEach(input => input.value = '');
+                table.querySelector('tbody').appendChild(newRow);
+            }
+            if (e.target && (e.target.classList.contains('remove-row') || e.target.closest('.remove-row'))) {
+                const row = e.target.closest('tr');
+                if (table.querySelectorAll('tbody tr').length > 1) {
+                    row.remove();
+                }
+            }
+        });
+    });
+</script>
+</body>
+</html> 

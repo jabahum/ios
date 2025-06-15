@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mpox Daily Follow-Up</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div class="container mt-4 mb-5">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h2 class="mb-4 text-center">Mpox Daily Review Form</h2>
+      <form method="post" action="/cases/encounters/mpox-daily-follow-up/save">
+        <input type="hidden" name="client_id" value="{{.ClientID}}">
+        <input type="hidden" name="encounter_date" value="{{.EncounterDate}}">
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <label>Date of follow-up</label>
+            <input type="date" name="followup_date" class="form-control" required>
+          </div>
+          <div class="col-md-8">
+            <label>Type of encounter</label>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="checkbox" name="encounter_type" value="Outpatient" id="outpatient">
+              <label class="form-check-label" for="outpatient">Outpatient</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="checkbox" name="encounter_type" value="Emergency" id="emergency">
+              <label class="form-check-label" for="emergency">Emergency department</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="checkbox" name="encounter_type" value="Inpatient" id="inpatient">
+              <label class="form-check-label" for="inpatient">Inpatient ward</label>
+            </div>
+            <input type="text" name="other_site" class="form-control mt-2" placeholder="Other site (specify)">
+          </div>
+        </div>
+        <div class="row mb-3">
+          <div class="col-md-2">
+            <label>SpO₂ (%)</label>
+            <input type="number" name="spo2" class="form-control" min="0" max="100">
+          </div>
+        </div>
+        <hr>
+        <h5>2a. Lesion & Assessment</h5>
+        <div class="mb-3">
+          <label>New lesions since last review?</label>
+          <select name="new_lesions" class="form-select">
+            <option value="">Select</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label>Disease progression since admission</label>
+          <select name="disease_progression" class="form-select">
+            <option value="">Select</option>
+            <option value="mild">Mild</option>
+            <option value="moderate">Moderate</option>
+            <option value="severe">Severe</option>
+            <option value="critical">Critical</option>
+          </select>
+          <input type="text" name="progression_other" class="form-control mt-2" placeholder="Other (specify)">
+        </div>
+        <div class="mb-3">
+          <label>Lesion locations (Yes/No/Unknown)</label>
+          <div class="row">
+            <div class="col-md-2">Face <select name="lesion_face" class="form-select"><option>Unknown</option><option>Yes</option><option>No</option></select></div>
+            <div class="col-md-2">Mouth <select name="lesion_mouth" class="form-select"><option>Unknown</option><option>Yes</option><option>No</option></select></div>
+            <div class="col-md-2">Chest <select name="lesion_chest" class="form-select"><option>Unknown</option><option>Yes</option><option>No</option></select></div>
+            <div class="col-md-2">Abdomen <select name="lesion_abdomen" class="form-select"><option>Unknown</option><option>Yes</option><option>No</option></select></div>
+            <div class="col-md-2">Back <select name="lesion_back" class="form-select"><option>Unknown</option><option>Yes</option><option>No</option></select></div>
+            <div class="col-md-2">Arms <select name="lesion_arms" class="form-select"><option>Unknown</option><option>Yes</option><option>No</option></select></div>
+            <div class="col-md-2">Palms of hands <select name="lesion_palms" class="form-select"><option>Unknown</option><option>Yes</option><option>No</option></select></div>
+            <div class="col-md-2">Forearms <select name="lesion_forearms" class="form-select"><option>Unknown</option><option>Yes</option><option>No</option></select></div>
+            <div class="col-md-2">Thighs <select name="lesion_thighs" class="form-select"><option>Unknown</option><option>Yes</option><option>No</option></select></div>
+            <div class="col-md-2">Legs <select name="lesion_legs" class="form-select"><option>Unknown</option><option>Yes</option><option>No</option></select></div>
+            <div class="col-md-2">Soles of feet <select name="lesion_soles" class="form-select"><option>Unknown</option><option>Yes</option><option>No</option></select></div>
+            <div class="col-md-2">Genitalia <select name="lesion_genitalia" class="form-select"><option>Unknown</option><option>Yes</option><option>No</option></select></div>
+            <div class="col-md-2">Perianal <select name="lesion_perianal" class="form-select"><option>Unknown</option><option>Yes</option><option>No</option></select></div>
+            <div class="col-md-2">Other <input type="text" name="lesion_other" class="form-control" placeholder="Other"></div>
+            <div class="col-md-4">Specify where: <input type="text" name="lesion_specify_where" class="form-control" placeholder="Specify where"></div>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label>Lesion types (Yes/No/Unknown)</label>
+          <div class="row">
+            <div class="col-md-2">Macule <select name="type_macule" class="form-select"><option>Unknown</option><option>Yes</option><option>No</option></select></div>
+            <div class="col-md-2">Papule <select name="type_papule" class="form-select"><option>Unknown</option><option>Yes</option><option>No</option></select></div>
+            <div class="col-md-2">Vesicle <select name="type_vesicle" class="form-select"><option>Unknown</option><option>Yes</option><option>No</option></select></div>
+            <div class="col-md-2">Pustule <select name="type_pustule" class="form-select"><option>Unknown</option><option>Yes</option><option>No</option></select></div>
+            <div class="col-md-2">Umbilicated pustule <select name="type_umbilicated" class="form-select"><option>Unknown</option><option>Yes</option><option>No</option></select></div>
+            <div class="col-md-2">Ulcerated lesion <select name="type_ulcerated" class="form-select"><option>Unknown</option><option>Yes</option><option>No</option></select></div>
+            <div class="col-md-2">Crusting of mature lesion <select name="type_crusting" class="form-select"><option>Unknown</option><option>Yes</option><option>No</option></select></div>
+            <div class="col-md-2">Partially removed scab <select name="type_partialscab" class="form-select"><option>Unknown</option><option>Yes</option><option>No</option></select></div>
+            <div class="col-md-2">Other <input type="text" name="type_other" class="form-control" placeholder="Specify"></div>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label>Pain at any lesion site?</label>
+          <select name="pain_present" class="form-select">
+            <option value="">Select</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+        <div class="mb-3 row">
+          <div class="col-md-3">
+            <label>Pain score (0-10)</label>
+            <input type="number" name="pain_score" min="0" max="10" class="form-control">
+          </div>
+          <div class="col-md-9">
+            <label>Pain description</label>
+            <input type="text" name="pain_description" class="form-control">
+          </div>
+        </div>
+        <hr>
+        <h5>2b. Vital Signs</h5>
+        <div class="row mb-3">
+          <div class="col-md-2"><label>Temperature (°C)</label><input type="number" step="0.1" name="temperature" class="form-control"></div>
+          <div class="col-md-2"><label>Heart Rate (bpm)</label><input type="number" name="heart_rate" class="form-control"></div>
+          <div class="col-md-2"><label>Respiratory Rate</label><input type="number" name="respiratory_rate" class="form-control"></div>
+          <div class="col-md-2"><label>BP Systolic</label><input type="number" name="bp_systolic" class="form-control"></div>
+          <div class="col-md-2"><label>BP Diastolic</label><input type="number" name="bp_diastolic" class="form-control"></div>
+        </div>
+        <div class="mb-3">
+          <label>Level of consciousness</label>
+          <select name="consciousness" class="form-select">
+            <option value="">Select</option>
+            <option value="alert">Alert</option>
+            <option value="voice">Voice</option>
+            <option value="pain">Pain</option>
+            <option value="unresponsive">Unresponsive</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label>Name of data entrant</label>
+          <input type="text" name="data_entrant" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-success">Save Follow-Up</button>
+      </form>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

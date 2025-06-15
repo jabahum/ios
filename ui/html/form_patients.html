@@ -117,7 +117,10 @@
                 {{if eq .OutbreakID 1}}
                     <a href="/cases/encounters/ebola/new/{{.Form.ID}}/?dte=0000-00-00" class="menu-item">New Encounter</a>
                 {{else if eq .OutbreakID 6}}
-                    <a href="/cases/encounters/mpox/new/{{.Form.ID}}/?dte=0000-00-00" class="menu-item">New Encounter</a>
+                    <a href="/cases/encounters/mpox-admission/new/{{.Form.ID}}/?dte=0000-00-00" class="menu-item">Admission Form</a>
+                    <!-- {{if .HasMpoxAdmission}} -->
+                    <a href="/cases/encounters/mpox-daily-follow-up/new/{{.MpoxAdmissionID}}/?dte=0000-00-00" class="menu-item">Add Follow Up</a>
+                    <!-- {{end}} -->
                 {{else if eq .OutbreakID 7}}
                     <a href="/cases/encounters/vhf/new/{{.Form.ID}}/?dte=0000-00-00" class="menu-item">New Encounter</a>
                 {{end}}
@@ -405,7 +408,9 @@
                                             </div>
                                         </div>
                                     </div>    
+                                    
                                     <hr style="width: 100%;"/>
+                                    {{if not (eq .OutbreakID 6)}}
                                     <div class="row registration-input-row">
                                         <div class="col-lg-6">
                                             <div class="row">
@@ -593,7 +598,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    
+                                    {{end}}
                                     <input type="hidden" name="csrf_token" id="csrf_token" value="">
                                     <input type="hidden" name="id" id="id" value="{{.Form.ID}}">
                                     <input type="hidden" name="from" id="from" value="">

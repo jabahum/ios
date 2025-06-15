@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"log/slog"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
@@ -157,13 +159,36 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 
 		RouteAPIEncounter(enk, db, sl, store, config)
 		RouteAPIStatus(sta, db, sl, store, config)
+
+		// New routes for mpox daily follow-up
+		cse.Get("/encounters/mpox-admission/new/:i", func(c *fiber.Ctx) error { return handlers.HandlerMpoxAdmissionForm(c, db, sl, store, config) })
+		cse.Post("/encounters/mpox-admission/save", func(c *fiber.Ctx) error { return handlers.HandlerMpoxAdmissionSubmit(c, db, sl, store, config) })
 	}
+
+	// MPOX CIF routes (public)
+	app.Get("/mpox-cif", func(c *fiber.Ctx) error {
+		// Generate a unique case_id (e.g., using timestamp or UUID)
+		caseID := "MPOX-" + strconv.FormatInt(time.Now().UnixNano(), 10)
+		return handlers.GenerateHTML(c, db, fiber.Map{"case_id": caseID}, "mpox_cif")
+	})
+	app.Post("/mpox-cif/save", func(c *fiber.Ctx) error {
+		return handlers.HandlerMpoxCIFSubmit(c, db, sl)
+	})
+	app.Get("/mpox-cif/success", func(c *fiber.Ctx) error {
+		return handlers.HandlerMpoxCIFSuccess(c, db, sl)
+	})
 }
 
 func AuthRequired(store *session.Store) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// Skip authentication for these routes
-		if c.Path() == "/discharges/verify/:i" || c.Path() == "/vhf-list" || c.Path() == "/vhf-cif" {
+		if c.Path() == "/discharges/verify/:i" ||
+			c.Path() == "/vhf-list" ||
+			c.Path() == "/vhf-cif" ||
+			c.Path() == "/mpox-cif" ||
+			c.Path() == "/mpox-cif/save" ||
+			c.Path() == "/mpox-cif/success" ||
+			strings.HasPrefix(c.Path(), "/mpox-cif/") {
 			return c.Next()
 		}
 
@@ -299,6 +324,9 @@ func RouteCases(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Stor
 	v.Get("/encounters/new/:i", func(c *fiber.Ctx) error { return handlers.HandlerCaseEncounterForm(c, db, sl, store, config) })
 	v.Get("/encounters/new/:i/:j", func(c *fiber.Ctx) error { return handlers.HandlerCaseEncounterForm(c, db, sl, store, config) })
 	v.Post("/encounters/save", func(c *fiber.Ctx) error { return handlers.HandlerCaseEncounterSubmit(c, db, sl, store, config) })
+
+	v.Get("/encounters/mpox-admission/new/:i", func(c *fiber.Ctx) error { return handlers.HandlerMpoxAdmissionForm(c, db, sl, store, config) })
+	v.Post("/encounters//save", func(c *fiber.Ctx) error { return handlers.HandlerMpoxAdmissionSubmit(c, db, sl, store, config) })
 }
 
 func RouteCaseDischarge(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {

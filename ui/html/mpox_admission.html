@@ -5,7 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mpox Admission Form</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/static/app/cdn/css/flatpickr.min.css" type="text/css">
   <style>
+    body {
+      background-color: #ffffff;
+      color: #333;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    .form-container {
+      margin: 20px auto;
+      padding: 20px;
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      background-color: #f8f9fa;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .section-title {
+      background-color: #e9ecef;
+      padding: 10px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
     label { 
       font-weight: 500;
       margin-bottom: 0.25rem;
@@ -61,329 +82,656 @@
     }
   </style>
 </head>
-<body class="bg-light">
+<body>
 <div class="container mt-4 mb-5">
   <div class="card shadow-sm">
     <div class="card-body">
       <h2 class="mb-4 text-center">Mpox Admission Form</h2>
-      <ul class="nav nav-tabs flex-nowrap overflow-auto" id="formTabs" role="tablist">
-        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#patient">1. Patient & Encounter</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#demographics">1a. Demographics</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#exposure">1b. Exposure</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#vitals">1c. Onset & Vitals</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#comorbidities">1d. Co-morbidities</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#rash">1e. Rash</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#symptoms">1f. Symptoms</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#labs">1g. Lab Investigations</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#lymphadenopathy">Lymphadenopathy</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#lesion_types">Lesion Types</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#sti_types">STI Details</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#lab_not_done_flags">Lab 'Not Done' Flags</button></li>
-      </ul>
+        <form method="post" action="/cases/encounters/mpox-admission/save">
+          <input type="hidden" name="client_id" value="{{.ClientID}}">
+          <input type="hidden" name="encounter_date" value="{{.EncounterDate}}">
 
-      <form class="tab-content mt-4" id="mpoxForm" novalidate>
-        <div class="tab-pane fade show active" id="patient">
-          <div class="mb-3"><label>Facility/Clinic Name</label><input type="text" class="form-control"></div>
-          <label>Type of Encounter</label>
-          <div class="form-check"><input type="checkbox" class="form-check-input"> Outpatient</div>
-          <div class="form-check"><input type="checkbox" class="form-check-input"> Emergency Department</div>
-          <div class="form-check"><input type="checkbox" class="form-check-input"> Inpatient Wards</div>
-          <div class="form-check"><input type="checkbox" class="form-check-input"> Other <input type="text" class="form-control mt-1"></div>
-          <div class="mb-3"><label>Date of Admission</label><input type="date" class="form-control"></div>
-          <label>Suspect or Confirmed Case</label>
-          <div class="form-check"><input type="radio" class="form-check-input" name="case"> Suspect</div>
-          <div class="form-check"><input type="radio" class="form-check-input" name="case"> Confirmed</div>
-        </div>
-
-        <div class="tab-pane fade" id="demographics">
-          <label>Sex</label>
-          <div class="form-check"><input type="radio" class="form-check-input" name="sex"> Male</div>
-          <div class="form-check"><input type="radio" class="form-check-input" name="sex"> Female</div>
-          <div class="mb-3"><label>Date of Birth</label><input type="date" class="form-control"></div>
-          <div class="mb-3"><label>Age</label><input type="number" class="form-control" placeholder="Years"></div>
-          <div class="mb-3"><label>OR</label><input type="number" class="form-control" placeholder="Months"></div>
-          <div class="mb-3"><label>OR</label><input type="number" class="form-control" placeholder="Days"></div>
-          <label>Healthcare Worker</label>
-          <div class="form-check"><input type="radio" class="form-check-input" name="hcw"> Yes</div>
-          <div class="form-check"><input type="radio" class="form-check-input" name="hcw"> No</div>
-          <div class="form-check"><input type="radio" class="form-check-input" name="hcw"> Unknown</div>
-          <label>Laboratory Worker</label>
-          <div class="form-check"><input type="radio" class="form-check-input" name="lab"> Yes</div>
-          <div class="form-check"><input type="radio" class="form-check-input" name="lab"> No</div>
-          <div class="form-check"><input type="radio" class="form-check-input" name="lab"> Unknown</div>
-          <div class="mb-3"><label>PPE Status</label><input type="text" class="form-control"></div>
-          <div class="mb-3"><label>Tribe</label><input type="text" class="form-control"></div>
-          <div class="mb-3"><label>Pregnant?</label><input type="text" class="form-control"></div>
-          <div class="mb-3"><label>Gestational Weeks</label><input type="number" class="form-control"></div>
-          <div class="mb-3"><label>LMNP</label><input type="date" class="form-control"></div>
-          <div class="mb-3"><label>Recently Pregnant &le;21 days</label><input type="text" class="form-control"></div>
-          <div class="mb-3"><label>Pregnant 22–42 days</label><input type="text" class="form-control"></div>
-          <div class="mb-3"><label>Tetanus Vaccination</label><input type="text" class="form-control"></div>
-        </div>
-
-        <div class="tab-pane fade" id="exposure">
-          <div class="mb-3"><label>Known contact with MPX case</label><input type="text" class="form-control"></div>
-          <div class="mb-3"><label>Nature of contact</label><input type="text" class="form-control"></div>
-          <div class="mb-3"><label>Sexually active within 21 days</label><input type="text" class="form-control"></div>
-          <div class="mb-3"><label>Sex of sexual partner(s)</label><input type="text" class="form-control"></div>
-          <div class="mb-3"><label>Travelled internationally in past 21 days?</label><input type="text" class="form-control"></div>
-          <div class="mb-3"><label>Countries visited</label><input type="text" class="form-control"></div>
-          <div class="mb-3"><label>Animal contact?</label><input type="text" class="form-control"></div>
-          <div class="mb-3"><label>Animal contact description</label><input type="text" class="form-control"></div>
-        </div>
-
-        <div class="tab-pane fade" id="vitals">
-          <div class="mb-3"><label>Symptom Onset Date</label><input type="date" class="form-control"></div>
-          <div class="mb-3"><label>First Described Symptoms</label><textarea class="form-control"></textarea></div>
-          <div class="row g-2">
-            <div class="col"><label>Temperature</label><input type="text" class="form-control"></div>
-            <div class="col"><label>°C/°F</label><input type="text" class="form-control"></div>
-          </div>
-          <div class="row g-2 mt-1">
-            <div class="col"><label>Heart Rate</label><input type="number" class="form-control"></div>
-            <div class="col"><label>Respiratory Rate</label><input type="number" class="form-control"></div>
-          </div>
-          <div class="row g-2 mt-1">
-            <div class="col"><label>BP Systolic</label><input type="number" class="form-control"></div>
-            <div class="col"><label>BP Diastolic</label><input type="number" class="form-control"></div>
-          </div>
-          <div class="mb-3 mt-2"><label>Severe Dehydration</label><input type="text" class="form-control"></div>
-          <div class="mb-3"><label>AVPU Scale</label><input type="text" class="form-control" placeholder="Alert/Voice/Pain/Unresponsive"></div>
-          <div class="row g-2">
-            <div class="col"><label>Height (cm)</label><input type="number" class="form-control"></div>
-            <div class="col"><label>Weight (kg)</label><input type="number" class="form-control"></div>
-          </div>
-        </div>
-        <!-- 1d Co-morbidities -->
-        <div class="tab-pane fade" id="comorbidities">
-          <div class="mb-3"><label>Co-morbidities (Yes/No/Unknown)</label></div>
+          <!--
+            Add at the top of the form:
+            - Site of first encounter (checkboxes + text)
+            - Date of Admission (date picker)
+            - Suspect or Confirmed Case (text or select)
+          -->
           <div class="row">
-            <div class="col-md-6">
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Chronic cardiac disease</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Hypertension</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Chronic pulmonary disease</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Asthma</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Chronic kidney disease</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Chronic liver disease</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Chronic neurological disorder</div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Diabetes</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Tuberculosis (active)</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Tuberculosis (previous)</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Asplenia</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Malignant neoplasm</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Alcohol use disorder</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Immunosuppressants</div>
-            </div>
-          </div>
-          <div class="mb-3"><label>Currently on therapy for neoplasm?</label><input type="text" class="form-control"></div>
-          <div class="mb-3"><label>STI present?</label><input type="text" class="form-control"></div>
-          <div class="mb-3"><label>If yes, specify:</label><input type="text" class="form-control"></div>
-          <div class="mb-3"><label>HIV Status</label><input type="text" class="form-control"></div>
-          <div class="mb-3"><label>ART regimen</label><input type="text" class="form-control"></div>
-          <div class="mb-3"><label>Most recent CD4</label><input type="text" class="form-control"></div>
-          <div class="mb-3"><label>Viral load</label><input type="text" class="form-control"></div>
+            <div class="col-md-12 mb-3">
+              <label class="form-label">Site of first encounter:</label><br>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" name="site_of_first_encounter" value="Outpatient">
+                <label class="form-check-label">Outpatient</label>
         </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" name="site_of_first_encounter" value="Emergency department">
+                <label class="form-check-label">Emergency department</label>
+        </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" name="site_of_first_encounter" value="Inpatient wards">
+                <label class="form-check-label">Inpatient wards</label>
+        </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" name="site_of_first_encounter" value="Other">
+                <label class="form-check-label">Other site</label>
+                <input type="text" class="form-control d-inline-block w-auto ms-2" name="site_of_first_encounter_other" placeholder="specify">
+          </div>
+        </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Date of Admission</label>
+              <input type="text" class="form-control datetimepicker" name="date_of_admission" data-options='{"disableMobile":true,"dateFormat":"Y-m-d"}'>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Suspect or Confirmed Case</label>
+              <input type="text" class="form-control" name="suspect_confirmed_case">
+            </div>
+          </div>
 
-        <!-- 1e Rash Evaluation -->
-        <div class="tab-pane fade" id="rash">
-          <div class="mb-3"><label>Number of unresolved lesions on entire body</label><input type="text" class="form-control"></div>
-          <div class="row g-2">
-            <div class="col"><label>Right Leg</label><input type="number" class="form-control"></div>
-            <div class="col"><label>Right Arm</label><input type="number" class="form-control"></div>
-            <div class="col"><label>Left Leg</label><input type="number" class="form-control"></div>
-            <div class="col"><label>Left Arm</label><input type="number" class="form-control"></div>
+          <!-- Bootstrap Accordions for all sections -->
+          <div class="accordion" id="mpoxAdmissionAccordion">
+            <!-- Demographics Accordion -->
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingDemographics">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDemographics" aria-expanded="true" aria-controls="collapseDemographics">
+                  1a. Demographics
+                </button>
+              </h2>
+              <div id="collapseDemographics" class="accordion-collapse collapse show" aria-labelledby="headingDemographics" data-bs-parent="#mpoxAdmissionAccordion">
+                <div class="accordion-body">
+                  <div class="row">
+                    <div class="col-md-3 mb-3">
+                      <label class="form-label">Sex</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="sex" value="Male"> <label class="form-check-label">Male</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="sex" value="Female"> <label class="form-check-label">Female</label></div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                      <label class="form-label">Date of birth</label>
+                      <input type="text" class="form-control datetimepicker" name="date_of_birth">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                      <label class="form-label">Age (years)</label>
+                      <input type="number" class="form-control" name="age_years">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                      <label class="form-label">Age (months)</label>
+                      <input type="number" class="form-control" name="age_months">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                      <label class="form-label">Age (days)</label>
+                      <input type="number" class="form-control" name="age_days">
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-3 mb-3">
+                      <label class="form-label">Health care worker?</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="health_care_worker" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="health_care_worker" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="health_care_worker" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                      <label class="form-label">Tribe</label>
+                      <input type="text" class="form-control" name="tribe">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                      <label class="form-label">Pregnant?</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="pregnant" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="pregnant" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="pregnant" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="pregnant" value="N/A"> <label class="form-check-label">N/A</label></div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                      <label class="form-label">Gestational weeks (if pregnant)</label>
+                      <input type="number" class="form-control" name="gestational_weeks">
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-3 mb-3">
+                      <label class="form-label">LMNP (Last Menstrual Period)</label>
+                      <input type="text" class="form-control datetimepicker" name="lmnp">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                      <label class="form-label">Recently pregnant (≤21 days of symptom onset)?</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="recently_pregnant" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="recently_pregnant" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="recently_pregnant" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                      <label class="form-label">Pregnant 22-42 days from admission?</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="pregnant_22_42" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="pregnant_22_42" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="pregnant_22_42" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+        </div>
+                    <div class="col-md-3 mb-3">
+                      <label class="form-label">History of tetanus (smallpox) vaccination</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="tetanus_vaccination" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="tetanus_vaccination" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="tetanus_vaccination" value="Unknown"> <label class="form-check-label">Unknown</label></div>
           </div>
-          <div class="row g-2 mt-2">
-            <div class="col"><label>Genitals</label><input type="number" class="form-control"></div>
-            <div class="col"><label>Oral Mucosa</label><input type="number" class="form-control"></div>
-            <div class="col"><label>Perianal Area</label><input type="number" class="form-control"></div>
           </div>
-          <div class="mb-3 mt-2"><label>Active lesion areas (Yes/No/Unknown)</label></div>
           <div class="row">
-            <div class="col-md-6">
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Face</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Nares</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Mouth</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Chest</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Abdomen</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Back</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Perianal</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Genitals</div>
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">Occupation</label>
+                      <input type="text" class="form-control" name="occupation">
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="col-md-6">
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Palms</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Arms</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Forearms</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Thighs</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Legs</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Soles of feet</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Other (Specify)</div>
+            <!-- Exposure & Social History Accordion -->
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingExposure">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExposure" aria-expanded="false" aria-controls="collapseExposure">
+                  1b. Exposure and Social History
+                </button>
+              </h2>
+              <div id="collapseExposure" class="accordion-collapse collapse" aria-labelledby="headingExposure" data-bs-parent="#mpoxAdmissionAccordion">
+                <div class="accordion-body">
+                  <!-- Exposure & Social History fields here (all checkboxes, radios, text fields as per screenshots) -->
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">Any known link to probable or confirmed case of MPX with ≤ 21 days prior to symptom onset?</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="known_link" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="known_link" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="known_link" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">Sexually active within ≤ 21 days prior to symptom onset:</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="sexually_active" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="sexually_active" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="sexually_active" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-12 mb-3">
+                      <label class="form-label">If yes: select sex of sexual partner(s):</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="sex_of_partners_female" value="Female"> <label class="form-check-label">Female</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="sex_of_partners_male" value="Male"> <label class="form-check-label">Male</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="sex_of_partners_intersex" value="Intersex"> <label class="form-check-label">Intersex</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="sex_of_partners_unknown" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-8 mb-3">
+                      <label class="form-label">Recent travel to a high risk district for Mpox within ≤ 21 days prior to symptom onset?</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="recent_travel" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="recent_travel" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="recent_travel" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                      <input type="text" class="form-control mt-2" name="recent_travel_details" placeholder="If yes, specify district">
             </div>
           </div>
-          <div class="mb-3"><label>Specify other location</label><input type="text" class="form-control"></div>
-          <div class="mb-3"><label>Lesion types</label></div>
           <div class="row">
-            <div class="col-md-6">
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Macule</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Papule</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Early vesicle</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Small pustule</div>
+                    <div class="col-md-12 mb-3">
+                      <label class="form-label">Additional notes</label>
+                      <textarea class="form-control" name="exposure_notes" rows="2"></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="col-md-6">
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Umbilicated pustule</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Ulcerated lesion</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Crusting of mature lesion</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Partially removed scab</div>
+            <!-- Onset & Vital Signs Accordion -->
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingOnsetVitals">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOnsetVitals" aria-expanded="false" aria-controls="collapseOnsetVitals">
+                  1c. Date of Onset and Vital Signs
+                </button>
+              </h2>
+              <div id="collapseOnsetVitals" class="accordion-collapse collapse" aria-labelledby="headingOnsetVitals" data-bs-parent="#mpoxAdmissionAccordion">
+                <div class="accordion-body">
+                  <div class="row">
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">Symptom onset (date of first/earliest symptom)</label>
+                      <input type="text" class="form-control datetimepicker" name="symptom_onset">
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-12 mb-3">
+                      <label class="form-label">Described symptoms:</label>
+                      <div class="table-responsive">
+                        <table class="table table-bordered table-sm align-middle">
+                          <thead><tr><th>Symptom</th><th>Yes</th><th>No</th><th>Unknown</th></tr></thead>
+                          <tbody>
+                            <tr><td>Fever</td><td><input type="radio" name="symptom_fever" value="Yes"></td><td><input type="radio" name="symptom_fever" value="No"></td><td><input type="radio" name="symptom_fever" value="Unknown"></td></tr>
+                            <tr><td>Sore throat</td><td><input type="radio" name="symptom_sore_throat" value="Yes"></td><td><input type="radio" name="symptom_sore_throat" value="No"></td><td><input type="radio" name="symptom_sore_throat" value="Unknown"></td></tr>
+                            <tr><td>Muscle aches (myalgia)</td><td><input type="radio" name="symptom_myalgia" value="Yes"></td><td><input type="radio" name="symptom_myalgia" value="No"></td><td><input type="radio" name="symptom_myalgia" value="Unknown"></td></tr>
+                            <tr><td>Headache</td><td><input type="radio" name="symptom_headache" value="Yes"></td><td><input type="radio" name="symptom_headache" value="No"></td><td><input type="radio" name="symptom_headache" value="Unknown"></td></tr>
+                            <tr><td>Oral symptoms (pain, redness, visual loss)</td><td><input type="radio" name="symptom_oral" value="Yes"></td><td><input type="radio" name="symptom_oral" value="No"></td><td><input type="radio" name="symptom_oral" value="Unknown"></td></tr>
+                            <tr><td>Fatigue/malaise</td><td><input type="radio" name="symptom_fatigue" value="Yes"></td><td><input type="radio" name="symptom_fatigue" value="No"></td><td><input type="radio" name="symptom_fatigue" value="Unknown"></td></tr>
+                            <tr><td>Nausea</td><td><input type="radio" name="symptom_nausea" value="Yes"></td><td><input type="radio" name="symptom_nausea" value="No"></td><td><input type="radio" name="symptom_nausea" value="Unknown"></td></tr>
+                            <tr><td>Vomiting</td><td><input type="radio" name="symptom_vomiting" value="Yes"></td><td><input type="radio" name="symptom_vomiting" value="No"></td><td><input type="radio" name="symptom_vomiting" value="Unknown"></td></tr>
+                            <tr><td>Diarrhoea</td><td><input type="radio" name="symptom_diarrhoea" value="Yes"></td><td><input type="radio" name="symptom_diarrhoea" value="No"></td><td><input type="radio" name="symptom_diarrhoea" value="Unknown"></td></tr>
+                            <tr><td>Rectal pain</td><td><input type="radio" name="symptom_rectal_pain" value="Yes"></td><td><input type="radio" name="symptom_rectal_pain" value="No"></td><td><input type="radio" name="symptom_rectal_pain" value="Unknown"></td></tr>
+                            <tr><td>Lesions</td><td><input type="radio" name="symptom_lesions" value="Yes"></td><td><input type="radio" name="symptom_lesions" value="No"></td><td><input type="radio" name="symptom_lesions" value="Unknown"></td></tr>
+                            <tr><td>Pruritis</td><td><input type="radio" name="symptom_pruritis" value="Yes"></td><td><input type="radio" name="symptom_pruritis" value="No"></td><td><input type="radio" name="symptom_pruritis" value="Unknown"></td></tr>
+                            <tr><td>Pain with swallowing</td><td><input type="radio" name="symptom_pain_swallowing" value="Yes"></td><td><input type="radio" name="symptom_pain_swallowing" value="No"></td><td><input type="radio" name="symptom_pain_swallowing" value="Unknown"></td></tr>
+                            <tr><td>Difficulty swallowing</td><td><input type="radio" name="symptom_difficulty_swallowing" value="Yes"></td><td><input type="radio" name="symptom_difficulty_swallowing" value="No"></td><td><input type="radio" name="symptom_difficulty_swallowing" value="Unknown"></td></tr>
+                            <tr><td>Urethritis</td><td><input type="radio" name="symptom_urethritis" value="Yes"></td><td><input type="radio" name="symptom_urethritis" value="No"></td><td><input type="radio" name="symptom_urethritis" value="Unknown"></td></tr>
+                            <tr><td>Chest pain</td><td><input type="radio" name="symptom_chest_pain" value="Yes"></td><td><input type="radio" name="symptom_chest_pain" value="No"></td><td><input type="radio" name="symptom_chest_pain" value="Unknown"></td></tr>
+                            <tr><td>Decreased urine output</td><td><input type="radio" name="symptom_decreased_urine" value="Yes"></td><td><input type="radio" name="symptom_decreased_urine" value="No"></td><td><input type="radio" name="symptom_decreased_urine" value="Unknown"></td></tr>
+                            <tr><td>Dizziness</td><td><input type="radio" name="symptom_dizziness" value="Yes"></td><td><input type="radio" name="symptom_dizziness" value="No"></td><td><input type="radio" name="symptom_dizziness" value="Unknown"></td></tr>
+                            <tr><td>Joint pain (arthralgia)</td><td><input type="radio" name="symptom_joint_pain" value="Yes"></td><td><input type="radio" name="symptom_joint_pain" value="No"></td><td><input type="radio" name="symptom_joint_pain" value="Unknown"></td></tr>
+                            <tr><td>Psychological disturbance</td><td><input type="radio" name="symptom_psychological" value="Yes"></td><td><input type="radio" name="symptom_psychological" value="No"></td><td><input type="radio" name="symptom_psychological" value="Unknown"></td></tr>
+                            <tr><td>Other</td><td colspan="3"><input type="text" class="form-control" name="symptom_other"></td></tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-12 mb-3">
+                      <label class="form-label">Lymphadenopathy?</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="lymphadenopathy" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="lymphadenopathy" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="lymphadenopathy" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-12 mb-3">
+                      <label class="form-label">If yes, location (check all that apply):</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="lymph_axillary" value="Axillary"> <label class="form-check-label">Axillary</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="lymph_cervical" value="Cervical"> <label class="form-check-label">Cervical</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="lymph_inguinal" value="Inguinal"> <label class="form-check-label">Inguinal</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="lymph_other" value="Other"> <label class="form-check-label">Other</label> <input type="text" class="form-control d-inline-block w-auto ms-2" name="lymph_other_detail" placeholder="specify"></div>
+                    </div>
+                    <div class="col-md-12 mb-3">
+                      <label class="form-label">If present and painful, check all that apply:</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="lymph_pain_axillary" value="Axillary"> <label class="form-check-label">Axillary</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="lymph_pain_cervical" value="Cervical"> <label class="form-check-label">Cervical</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="lymph_pain_inguinal" value="Inguinal"> <label class="form-check-label">Inguinal</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="lymph_pain_other" value="Other"> <label class="form-check-label">Other</label> <input type="text" class="form-control d-inline-block w-auto ms-2" name="lymph_pain_other_detail" placeholder="specify"></div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-12 mb-3">
+                      <label class="form-label">Admission date and signs at admission:</label>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                      <label class="form-label">Date</label>
+                      <input type="text" class="form-control datetimepicker" name="admission_date">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                      <label class="form-label">Temperature (°C)</label>
+                      <input type="number" step="0.1" class="form-control" name="temperature">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                      <label class="form-label">Heart rate (beats/min)</label>
+                      <input type="number" class="form-control" name="heart_rate">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                      <label class="form-label">Respiratory rate (breaths/min)</label>
+                      <input type="number" class="form-control" name="respiratory_rate">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                      <label class="form-label">BP (systolic)</label>
+                      <input type="number" class="form-control" name="bp_systolic">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                      <label class="form-label">BP (diastolic)</label>
+                      <input type="number" class="form-control" name="bp_diastolic">
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-3 mb-3">
+                      <label class="form-label">Severe dehydration</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="severe_dehydration" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="severe_dehydration" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="severe_dehydration" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                      <label class="form-label">Consciousness</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="consciousness" value="Alert"> <label class="form-check-label">Alert</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="consciousness" value="Voice"> <label class="form-check-label">Voice</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="consciousness" value="Pain"> <label class="form-check-label">Pain</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="consciousness" value="Unresponsive"> <label class="form-check-label">Unresponsive</label></div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                      <label class="form-label">Height (cm)</label>
+                      <input type="number" class="form-control" name="height_cm">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                      <label class="form-label">Weight (kg)</label>
+                      <input type="number" class="form-control" name="weight_kg">
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
+            <!-- Co-morbidities Accordion -->
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingComorbidities">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseComorbidities" aria-expanded="false" aria-controls="collapseComorbidities">
+                  1d. Co-morbidities
+                </button>
+              </h2>
+              <div id="collapseComorbidities" class="accordion-collapse collapse" aria-labelledby="headingComorbidities" data-bs-parent="#mpoxAdmissionAccordion">
+                <div class="accordion-body">
+                  <!-- Co-morbidities fields here (all checkboxes, STIs, immunosuppression, etc.) -->
+                  <div class="row">
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">Chronic cardiac disease</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_cardiac" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_cardiac" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_cardiac" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">Hypertension</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_hypertension" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_hypertension" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_hypertension" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">Chronic pulmonary disease</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_pulmonary" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_pulmonary" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_pulmonary" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">Asthma</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_asthma" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_asthma" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_asthma" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">Chronic kidney disease</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_kidney" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_kidney" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_kidney" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">Chronic liver disease</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_liver" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_liver" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_liver" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">Chronic neurological disorder</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_neuro" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_neuro" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_neuro" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">Diabetes</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_diabetes" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_diabetes" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_diabetes" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">Current smoking</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_smoking" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_smoking" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_smoking" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">Tuberculosis (active)</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_tb_active" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_tb_active" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_tb_active" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">Tuberculosis (previous)</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_tb_prev" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_tb_prev" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_tb_prev" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">Malignant neoplasm</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_neoplasm" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_neoplasm" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_neoplasm" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                      <input type="text" class="form-control mt-2" name="comorb_neoplasm_specify" placeholder="If yes, specify">
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">Current alcohol use disorder</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_alcohol" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_alcohol" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_alcohol" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">On immunosuppressants</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_immunosuppressants" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_immunosuppressants" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_immunosuppressants" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                      <input type="text" class="form-control mt-2" name="comorb_immunosuppressants_specify" placeholder="If yes, specify">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">Immunosuppressive condition</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_immunosuppressive_condition" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_immunosuppressive_condition" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="comorb_immunosuppressive_condition" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                      <input type="text" class="form-control mt-2" name="comorb_immunosuppressive_condition_specify" placeholder="If yes, specify">
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">Known current sexually transmitted infection?</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="sti_current" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="sti_current" value="No"> <label class="form-check-label">No</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="sti_current" value="Unknown"> <label class="form-check-label">Unknown</label></div>
+                    </div>
+                    <div class="col-md-8 mb-3">
+                      <label class="form-label">If yes, specify:</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="sti_gonorrhoea" value="Gonorrhoea"> <label class="form-check-label">Gonorrhoea</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="sti_syphilis" value="Syphilis"> <label class="form-check-label">Syphilis</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="sti_hsv" value="HSV"> <label class="form-check-label">HSV</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="sti_chlamydia" value="Chlamydia trachomatis"> <label class="form-check-label">Chlamydia trachomatis</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="sti_other" value="Other"> <label class="form-check-label">Other</label> <input type="text" class="form-control d-inline-block w-auto ms-2" name="sti_other_detail" placeholder="specify"></div>
           </div>
-          <div class="mb-3 mt-3"><label>Pain at lesion site?</label><input type="text" class="form-control"></div>
-          <div class="mb-3"><label>Pain score (0-10)</label><input type="number" class="form-control" min="0" max="10"></div>
         </div>
-
-        <!-- 1f Signs and Symptoms -->
-        <div class="tab-pane fade" id="symptoms">
           <div class="row">
-            <div class="col-md-6">
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Fever</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Pruritis</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Sore throat</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Muscle aches</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Headache</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Ocular symptoms</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Fatigue/malaise</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Oral pain</div>
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">HIV</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="hiv_status" value="On ART"> <label class="form-check-label">Yes (on ART)</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="hiv_status" value="Not on ART"> <label class="form-check-label">Yes (not on ART)</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="hiv_status" value="Unknown"> <label class="form-check-label">ART status unknown</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="hiv_status" value="No"> <label class="form-check-label">No</label></div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">ART regimen</label>
+                      <input type="text" class="form-control" name="art_regimen">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                      <label class="form-label">Most recent CD4</label>
+                      <input type="number" class="form-control" name="cd4">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                      <label class="form-label">Viral load</label>
+                      <input type="text" class="form-control" name="viral_load">
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="col-md-6">
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Nausea</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Vomiting</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Diarrhoea</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Rectal pain</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Proctitis</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Pain with swallowing</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Chest pain</div>
-              <div class="form-check"><input class="form-check-input" type="checkbox"> Psychologic disturbance</div>
+            <!-- Rash Evaluation Accordion -->
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingRash">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRash" aria-expanded="false" aria-controls="collapseRash">
+                  1e. Rash Evaluation
+                </button>
+              </h2>
+              <div id="collapseRash" class="accordion-collapse collapse" aria-labelledby="headingRash" data-bs-parent="#mpoxAdmissionAccordion">
+                <div class="accordion-body">
+                  <div class="row">
+                    <div class="col-md-12 mb-3">
+                      <label class="form-label">Disease severity at Baseline visit:</label><br>
+                      <div class="form-check"><input class="form-check-input" type="radio" name="rash_severity" value="Mild"> <label class="form-check-label">Mild (Less than 10% TBSA and/or No mucosal or genital lesions, complication and underlying comorbidities)</label></div>
+                      <div class="form-check"><input class="form-check-input" type="radio" name="rash_severity" value="Moderate"> <label class="form-check-label">Moderate (Either 10 to &lt;50% TBSA with no complications and well controlled comorbidities if any or; Presence of superficial genital and mucosal lesions (even when TBSA&gt;10%) in absence of complications or BOTH)</label></div>
+                      <div class="form-check"><input class="form-check-input" type="radio" name="rash_severity" value="Severe"> <label class="form-check-label">Severe (Either: 50 to 75% TBSA or extensive mucosal involvement, or presence of severe complications. OR: Any of above (with poor control on underlying comorbidities)</label></div>
+                      <div class="form-check"><input class="form-check-input" type="radio" name="rash_severity" value="Critical"> <label class="form-check-label">Critical (Either: &gt;75% TBSA involvement OR Extensive mucosal involvement with critical complications or BOTH or Any of above with poorly controlled comorbidities)</label></div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-12 mb-3">
+                      <label class="form-label">Does the patient have active lesions in the following areas:</label>
+                      <div class="table-responsive">
+                        <table class="table table-bordered table-sm align-middle">
+                          <thead><tr><th>Location</th><th>Yes</th><th>No</th></tr></thead>
+                          <tbody>
+                            <tr><td>Face</td><td><input type="radio" name="lesion_face" value="Yes"></td><td><input type="radio" name="lesion_face" value="No"></td></tr>
+                            <tr><td>Mouth</td><td><input type="radio" name="lesion_mouth" value="Yes"></td><td><input type="radio" name="lesion_mouth" value="No"></td></tr>
+                            <tr><td>Chest</td><td><input type="radio" name="lesion_chest" value="Yes"></td><td><input type="radio" name="lesion_chest" value="No"></td></tr>
+                            <tr><td>Abdomen</td><td><input type="radio" name="lesion_abdomen" value="Yes"></td><td><input type="radio" name="lesion_abdomen" value="No"></td></tr>
+                            <tr><td>Back</td><td><input type="radio" name="lesion_back" value="Yes"></td><td><input type="radio" name="lesion_back" value="No"></td></tr>
+                            <tr><td>Perianal</td><td><input type="radio" name="lesion_perianal" value="Yes"></td><td><input type="radio" name="lesion_perianal" value="No"></td></tr>
+                            <tr><td>Genitals</td><td><input type="radio" name="lesion_genitals" value="Yes"></td><td><input type="radio" name="lesion_genitals" value="No"></td></tr>
+                            <tr><td>Palms of hands</td><td><input type="radio" name="lesion_palms" value="Yes"></td><td><input type="radio" name="lesion_palms" value="No"></td></tr>
+                            <tr><td>Arms</td><td><input type="radio" name="lesion_arms" value="Yes"></td><td><input type="radio" name="lesion_arms" value="No"></td></tr>
+                            <tr><td>Forearms</td><td><input type="radio" name="lesion_forearms" value="Yes"></td><td><input type="radio" name="lesion_forearms" value="No"></td></tr>
+                            <tr><td>Thighs</td><td><input type="radio" name="lesion_thighs" value="Yes"></td><td><input type="radio" name="lesion_thighs" value="No"></td></tr>
+                            <tr><td>Legs</td><td><input type="radio" name="lesion_legs" value="Yes"></td><td><input type="radio" name="lesion_legs" value="No"></td></tr>
+                            <tr><td>Soles of feet</td><td><input type="radio" name="lesion_soles" value="Yes"></td><td><input type="radio" name="lesion_soles" value="No"></td></tr>
+                            <tr><td>Other</td><td colspan="2"><input type="text" class="form-control" name="lesion_other" placeholder="specify"></td></tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-12 mb-3">
+                      <label class="form-label">Types of lesions on the body:</label>
+                      <div class="table-responsive">
+                        <table class="table table-bordered table-sm align-middle">
+                          <thead><tr><th>Type</th><th>Yes</th><th>No</th><th>Type</th><th>Yes</th><th>No</th></tr></thead>
+                          <tbody>
+                            <tr><td>Macule</td><td><input type="radio" name="lesion_type_macule" value="Yes"></td><td><input type="radio" name="lesion_type_macule" value="No"></td><td>Umbilicated pustule</td><td><input type="radio" name="lesion_type_umbilicated" value="Yes"></td><td><input type="radio" name="lesion_type_umbilicated" value="No"></td></tr>
+                            <tr><td>Papule</td><td><input type="radio" name="lesion_type_papule" value="Yes"></td><td><input type="radio" name="lesion_type_papule" value="No"></td><td>Ulcerated lesion</td><td><input type="radio" name="lesion_type_ulcerated" value="Yes"></td><td><input type="radio" name="lesion_type_ulcerated" value="No"></td></tr>
+                            <tr><td>Early vesicle</td><td><input type="radio" name="lesion_type_vesicle" value="Yes"></td><td><input type="radio" name="lesion_type_vesicle" value="No"></td><td>Crusting of a mature lesion</td><td><input type="radio" name="lesion_type_crusting" value="Yes"></td><td><input type="radio" name="lesion_type_crusting" value="No"></td></tr>
+                            <tr><td>Small pustule</td><td><input type="radio" name="lesion_type_pustule" value="Yes"></td><td><input type="radio" name="lesion_type_pustule" value="No"></td><td>Partially removed scab</td><td><input type="radio" name="lesion_type_scab" value="Yes"></td><td><input type="radio" name="lesion_type_scab" value="No"></td></tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">Pain at any lesion site:</label><br>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="lesion_pain" value="Yes"> <label class="form-check-label">Yes</label></div>
+                      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="lesion_pain" value="No"> <label class="form-check-label">No</label></div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">If yes, pain score (0–10):</label>
+                      <input type="number" min="0" max="10" class="form-control" name="lesion_pain_score">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Laboratory Investigations Accordion -->
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingLabs">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLabs" aria-expanded="false" aria-controls="collapseLabs">
+                  1g. Laboratory Investigations
+                </button>
+              </h2>
+              <div id="collapseLabs" class="accordion-collapse collapse" aria-labelledby="headingLabs" data-bs-parent="#mpoxAdmissionAccordion">
+                <div class="accordion-body">
+                  <!-- Laboratory Investigations fields here (all tests, not done/positive/negative, etc.) -->
+                  <div class="row">
+                    <div class="col-md-12 mb-3">
+                      <label class="form-label">LABORATORY INVESTIGATIONS on admission for hospitalized patients or baseline visit (or outpatient laboratory investigations performed at clinical discretion)</label>
+                      <div class="table-responsive">
+                        <table class="table table-bordered table-sm align-middle">
+                          <thead><tr><th>Investigation</th><th>Value</th><th>Not Done</th><th>Investigation</th><th>Value</th><th>Not Done</th></tr></thead>
+                          <tbody>
+                            <tr><td>ALT (U/L)</td><td><input type="number" step="0.1" class="form-control" name="lab_alt"></td><td><input type="checkbox" name="lab_alt_notdone"></td><td>Glucose (mg/dL)</td><td><input type="number" step="0.1" class="form-control" name="lab_glucose"></td><td><input type="checkbox" name="lab_glucose_notdone"></td></tr>
+                            <tr><td>AST (U/L)</td><td><input type="number" step="0.1" class="form-control" name="lab_ast"></td><td><input type="checkbox" name="lab_ast_notdone"></td><td>Lactate (mmol/L)</td><td><input type="number" step="0.1" class="form-control" name="lab_lactate"></td><td><input type="checkbox" name="lab_lactate_notdone"></td></tr>
+                            <tr><td>Creatinine (µmol/L)</td><td><input type="number" step="0.1" class="form-control" name="lab_creatinine"></td><td><input type="checkbox" name="lab_creatinine_notdone"></td><td>Haemoglobin (g/dL)</td><td><input type="number" step="0.1" class="form-control" name="lab_haemoglobin"></td><td><input type="checkbox" name="lab_haemoglobin_notdone"></td></tr>
+                            <tr><td>Potassium (mmol/L)</td><td><input type="number" step="0.1" class="form-control" name="lab_potassium"></td><td><input type="checkbox" name="lab_potassium_notdone"></td><td>Total bilirubin (mg/dL)</td><td><input type="number" step="0.1" class="form-control" name="lab_bilirubin"></td><td><input type="checkbox" name="lab_bilirubin_notdone"></td></tr>
+                            <tr><td>Urea (mmol/L)</td><td><input type="number" step="0.1" class="form-control" name="lab_urea"></td><td><input type="checkbox" name="lab_urea_notdone"></td><td>WBC count (cells × 10^9/L)</td><td><input type="number" step="0.1" class="form-control" name="lab_wbc"></td><td><input type="checkbox" name="lab_wbc_notdone"></td></tr>
+                            <tr><td>Creatine kinase (U/L)</td><td><input type="number" step="0.1" class="form-control" name="lab_ck"></td><td><input type="checkbox" name="lab_ck_notdone"></td><td>Platelets (×10^9/L)</td><td><input type="number" step="0.1" class="form-control" name="lab_platelets"></td><td><input type="checkbox" name="lab_platelets_notdone"></td></tr>
+                            <tr><td>Calcium (mg/dL)</td><td><input type="number" step="0.1" class="form-control" name="lab_calcium"></td><td><input type="checkbox" name="lab_calcium_notdone"></td><td>Prothrombin time (secs)</td><td><input type="number" step="0.1" class="form-control" name="lab_prothrombin"></td><td><input type="checkbox" name="lab_prothrombin_notdone"></td></tr>
+                            <tr><td>Sodium (mmol/L)</td><td><input type="number" step="0.1" class="form-control" name="lab_sodium"></td><td><input type="checkbox" name="lab_sodium_notdone"></td><td>Activated partial thromboplastin time (APTT)</td><td><input type="number" step="0.1" class="form-control" name="lab_aptt"></td><td><input type="checkbox" name="lab_aptt_notdone"></td></tr>
+                            <tr><td>CRP (mg/dL)</td><td><input type="number" step="0.1" class="form-control" name="lab_crp"></td><td><input type="checkbox" name="lab_crp_notdone"></td><td>Other specify</td><td><input type="text" class="form-control" name="lab_other"></td><td><input type="checkbox" name="lab_other_notdone"></td></tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-12 mb-3">
+                      <label class="form-label">OTHER TESTS</label>
+                      <div class="row">
+                        <div class="col-md-4">
+                          <label>Malaria:</label><br>
+                          <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="other_malaria" value="Positive"> <label class="form-check-label">Positive</label></div>
+                          <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="other_malaria" value="Negative"> <label class="form-check-label">Negative</label></div>
+                          <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="other_malaria" value="Not done"> <label class="form-check-label">Not done</label></div>
+                        </div>
+                        <div class="col-md-4">
+                          <label>Syphilis:</label><br>
+                          <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="other_syphilis" value="Positive"> <label class="form-check-label">Positive</label></div>
+                          <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="other_syphilis" value="Negative"> <label class="form-check-label">Negative</label></div>
+                          <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="other_syphilis" value="Not done"> <label class="form-check-label">Not done</label></div>
+                        </div>
+                        <div class="col-md-4">
+                          <label>Mpox:</label><br>
+                          <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="other_mpox" value="Positive"> <label class="form-check-label">Positive</label></div>
+                          <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="other_mpox" value="Negative"> <label class="form-check-label">Negative</label></div>
+                          <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="other_mpox" value="Not done"> <label class="form-check-label">Not done</label></div>
+                        </div>
             </div>
           </div>
         </div>
-
-        <!-- 1g Lab Investigations -->
-        <div class="tab-pane fade" id="labs">
           <div class="row">
-            <div class="col-md-6">
-              <div class="mb-2"><label>ALT (U/L)</label><input class="form-control"></div>
-              <div class="mb-2"><label>AST (U/L)</label><input class="form-control"></div>
-              <div class="mb-2"><label>Creatinine (µmol/L)</label><input class="form-control"></div>
-              <div class="mb-2"><label>Potassium (mEq/L)</label><input class="form-control"></div>
-              <div class="mb-2"><label>Urea (mmol/L)</label><input class="form-control"></div>
-              <div class="mb-2"><label>Creatinine kinase (U/L)</label><input class="form-control"></div>
-              <div class="mb-2"><label>Calcium (mg/dL)</label><input class="form-control"></div>
-              <div class="mb-2"><label>Sodium (mEq/L)</label><input class="form-control"></div>
-              <div class="mb-2"><label>CRP (mg/dL)</label><input class="form-control"></div>
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">Name of data entrant</label>
+                      <input type="text" class="form-control" name="data_entrant_name">
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="col-md-6">
-              <div class="mb-2"><label>Glucose (mg/dL)</label><input class="form-control"></div>
-              <div class="mb-2"><label>Lactate (mmol/L)</label><input class="form-control"></div>
-              <div class="mb-2"><label>Haemoglobin (g/L)</label><input class="form-control"></div>
-              <div class="mb-2"><label>Total bilirubin (mg/dL)</label><input class="form-control"></div>
-              <div class="mb-2"><label>WBC count (x10^9/L)</label><input class="form-control"></div>
-              <div class="mb-2"><label>Platelets (x10^9/L)</label><input class="form-control"></div>
-              <div class="mb-2"><label>Prothrombin time (sec)</label><input class="form-control"></div>
-              <div class="mb-2"><label>Activated PTT (sec)</label><input class="form-control"></div>
-              <div class="mb-2"><label>Other Test</label><input class="form-control"></div>
+            <!-- Data Entrant/Other Accordion -->
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingDataEntrant">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDataEntrant" aria-expanded="false" aria-controls="collapseDataEntrant">
+                  Data Entrant & Other
+                </button>
+              </h2>
+              <div id="collapseDataEntrant" class="accordion-collapse collapse" aria-labelledby="headingDataEntrant" data-bs-parent="#mpoxAdmissionAccordion">
+                <div class="accordion-body">
+                  <!-- Data Entrant and Other fields here -->
+                  <div class="row">
+                    <div class="col-md-4">
+                      <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" name="data_entrant_name">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="mt-3">
-            <div class="mb-2"><label>Malaria</label><input class="form-control"></div>
-            <div class="mb-2"><label>Syphilis</label><input class="form-control"></div>
+
+          <div class="text-center mt-4">
+            <button type="submit" class="btn btn-primary">Save Admission</button>
+            <a href="/cases/new/{{.ClientID}}" class="btn btn-secondary">Cancel</a>
+            {{ if .HasAdmission }}
+              <a href="/cases/encounters/mpox-daily-follow-up/new/{{.AdmissionID}}/?dte=0000-00-00" class="menu-item">Add Follow Up</a>
+            {{ end }}
           </div>
-        </div>
-
-        <!-- Lymphadenopathy Details -->
-        <div class="tab-pane fade" id="lymphadenopathy">
-          <h5 class="mb-3">Lymphadenopathy</h5>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> Axillary - Present</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> Axillary - Tender</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> Cervical - Present</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> Cervical - Tender</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> Inguinal - Present</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> Inguinal - Tender</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> Other - Present</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> Other - Tender</div>
-          <div class="mb-3"><label>Specify other lymph node location</label><input type="text" class="form-control"></div>
-        </div>
-
-        <!-- Lesion Types -->
-        <div class="tab-pane fade" id="lesion_types">
-          <h5 class="mb-3">Lesion Types</h5>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> Macule</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> Papule</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> Early vesicle</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> Small pustule</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> Umbilicated pustule</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> Ulcerated lesion</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> Crusting of mature lesion</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> Partially removed scab</div>
-        </div>
-
-        <!-- STI Breakdown -->
-        <div class="tab-pane fade" id="sti_types">
-          <h5 class="mb-3">STI Details</h5>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> N. gonorrhoeae</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> Syphilis</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> HSV</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> Chlamydia trachomatis</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> Other (specify below)</div>
-          <div class="mb-3"><label>Other STI</label><input type="text" class="form-control"></div>
-        </div>
-
-        <!-- Lab 'Not Done' Options -->
-        <div class="tab-pane fade" id="lab_not_done_flags">
-          <h5 class="mb-3">Mark Labs Not Done</h5>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> ALT not done</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> AST not done</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> Creatinine not done</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> Glucose not done</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> Haemoglobin not done</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> WBC count not done</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> Platelets not done</div>
-          <div class="form-check"><input class="form-check-input" type="checkbox"> CRP not done</div>
-        </div>
-
       </form>
     </div>
   </div>
 </div>
 
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/static/app/cdn/js/flatpickr.min.js"></script>
 <script>
-  // Form validation
-  (function () {
-    'use strict'
-    const forms = document.querySelectorAll('.needs-validation')
-    Array.from(forms).forEach(form => {
-      form.addEventListener('submit', event => {
-        if (!form.checkValidity()) {
-          event.preventDefault()
-          event.stopPropagation()
-        }
-        form.classList.add('was-validated')
-      }, false)
-    })
-  })()
-
-  // Make tabs scrollable on mobile
   document.addEventListener('DOMContentLoaded', function() {
-    const navTabs = document.querySelector('.nav-tabs');
-    if (navTabs) {
-      navTabs.addEventListener('wheel', function(e) {
-        if (e.deltaY !== 0) {
-          e.preventDefault();
-          navTabs.scrollLeft += e.deltaY;
-        }
+      flatpickr(".datetimepicker", {
+        dateFormat: "Y-m-d",
+        disableMobile: true
       });
-    }
   });
 </script>
 </body>

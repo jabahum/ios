@@ -76,6 +76,16 @@ func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 		DoZaLogging("ERROR", "Failed to get statuses", err)
 	}
 
+	// Check if there is an Mpox admission for this client
+	hasAdmission := false
+	var admissionID int
+	err = db.QueryRow("SELECT id FROM mpox_demographics WHERE client_id = $1 LIMIT 1", client.ID).Scan(&admissionID)
+	if err == nil {
+		hasAdmission = true
+	}
+	data.HasMpoxAdmission = hasAdmission
+	data.MpoxAdmissionID = admissionID
+
 	data.User = userName
 	data.Role = role
 	data.Optionz = Get_Client_Optionz()

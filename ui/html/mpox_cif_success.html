@@ -1,0 +1,30 @@
+{{template "header" .}}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h2 class="card-title text-success mb-4">
+                        <i class="fas fa-check-circle"></i> Form Submitted Successfully
+                    </h2>
+                    <p class="lead">Thank you for submitting the MPOX Case Investigation Form.</p>
+                    <p>Your case ID is: <strong>{{.case_id}}</strong></p>
+                    <p class="text-muted">Please keep this case ID for future reference.</p>
+                    <hr>
+                    <p>What would you like to do next?</p>
+                    <div class="mt-4">
+                        <a href="/mpox-cif" class="btn btn-primary me-2">
+                            <i class="fas fa-plus"></i> Submit Another Form
+                        </a>
+                        <a href="/" class="btn btn-secondary">
+                            <i class="fas fa-home"></i> Return to Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{template "footer" .}} 
