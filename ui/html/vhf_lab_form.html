@@ -1,0 +1,185 @@
+{{define "content"}}
+<div class="container my-5">
+  <h2 class="mb-4 text-center">VHF Lab Form</h2>
+
+  <!-- Case Information Display -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0">Case Information</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-4">
+          <p><strong>Case Code:</strong> {{.Patient.CaseCode}}</p>
+        </div>
+        <div class="col-md-4">
+          <p><strong>Patient Name:</strong> {{.Patient.Surname}} {{.Patient.OtherNames}}</p>
+        </div>
+        <div class="col-md-4">
+          <p><strong>Phone Number:</strong> {{.Patient.PatientPhone}}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <form id="labForm" method="POST" action="/vhf-lab/save">
+    <input type="hidden" name="case_id" id="caseId" value="{{.Patient.ID}}">
+    
+    <div class="card p-4">
+      <h5 class="mb-4">Sample Information</h5>
+      <div class="row g-4">
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Sample Collection Date*</label>
+          <input type="date" class="form-control" name="sample_collection_date" value="{{if .Lab.SampleCollectionDate.Valid}}{{.Lab.SampleCollectionDate.Time.Format "2006-01-02"}}{{end}}" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Sample Collection Time*</label>
+          <input type="time" class="form-control" name="sample_collection_time" value="{{if .Lab.SampleCollectionTime.Valid}}{{.Lab.SampleCollectionTime.String}}{{end}}" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Sample Type*</label>
+          <select class="form-select" name="sample_type" required>
+            <option value="">Select sample type</option>
+            <option value="Whole blood" {{if and .Lab.SampleType.Valid (eq .Lab.SampleType.String "Whole blood")}}selected{{end}}>Whole blood</option>
+            <option value="Oral/Buccal swab" {{if and .Lab.SampleType.Valid (eq .Lab.SampleType.String "Oral/Buccal swab")}}selected{{end}}>Oral/Buccal swab</option>
+            <option value="Skin biopsy" {{if and .Lab.SampleType.Valid (eq .Lab.SampleType.String "Skin biopsy")}}selected{{end}}>Skin biopsy</option>
+            <option value="Post mortem heart blood" {{if and .Lab.SampleType.Valid (eq .Lab.SampleType.String "Post mortem heart blood")}}selected{{end}}>Post mortem heart blood</option>
+            <option value="Post mortem jugular blood draw" {{if and .Lab.SampleType.Valid (eq .Lab.SampleType.String "Post mortem jugular blood draw")}}selected{{end}}>Post mortem jugular blood draw</option>
+            <option value="Other" {{if and .Lab.SampleType.Valid (eq .Lab.SampleType.String "Other")}}selected{{end}}>Other (specify below)</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Other Sample Type</label>
+          <input type="text" class="form-control" name="other_sample_type" value="{{if .Lab.OtherSampleType.Valid}}{{.Lab.OtherSampleType.String}}{{end}}" placeholder="Specify other specimen type">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Requested Test*</label>
+          <input type="text" class="form-control" name="requested_test" value="{{if .Lab.RequestedTest.Valid}}{{.Lab.RequestedTest.String}}{{end}}" placeholder="e.g. PCR" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Serology</label>
+          <input type="text" class="form-control" name="serology" value="{{if .Lab.Serology.Valid}}{{.Lab.Serology.String}}{{end}}" placeholder="e.g. IgM, IgG">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Malaria RDT*</label>
+          <div class="d-flex gap-4">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="malaria_rdt" value="Pos" {{if and .Lab.MalariaRDT.Valid (eq .Lab.MalariaRDT.String "Pos")}}checked{{end}} required>
+              <label class="form-check-label">Pos</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="malaria_rdt" value="Neg" {{if and .Lab.MalariaRDT.Valid (eq .Lab.MalariaRDT.String "Neg")}}checked{{end}}>
+              <label class="form-check-label">Neg</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="malaria_rdt" value="ND" {{if and .Lab.MalariaRDT.Valid (eq .Lab.MalariaRDT.String "ND")}}checked{{end}}>
+              <label class="form-check-label">Not Done</label>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold">HIV RDT*</label>
+          <div class="d-flex gap-4">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="hiv_rdt" value="Pos" {{if and .Lab.HIVRDT.Valid (eq .Lab.HIVRDT.String "Pos")}}checked{{end}} required>
+              <label class="form-check-label">Pos</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="hiv_rdt" value="Neg" {{if and .Lab.HIVRDT.Valid (eq .Lab.HIVRDT.String "Neg")}}checked{{end}}>
+              <label class="form-check-label">Neg</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="hiv_rdt" value="ND" {{if and .Lab.HIVRDT.Valid (eq .Lab.HIVRDT.String "ND")}}checked{{end}}>
+              <label class="form-check-label">Not Done</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card p-4 mt-4">
+      <h5 class="mb-4">Test Results</h5>
+      <div class="row g-4">
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Test Result</label>
+          <input type="text" class="form-control" name="test_result" value="{{if .Lab.TestResult.Valid}}{{.Lab.TestResult.String}}{{end}}" placeholder="Enter test result">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Date Tested</label>
+          <input type="date" class="form-control" name="date_tested" value="{{if .Lab.DateTested.Valid}}{{.Lab.DateTested.Time.Format "2006-01-02"}}{{end}}">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Laboratory Name</label>
+          <input type="text" class="form-control" name="lab_name" value="{{if .Lab.LabName.Valid}}{{.Lab.LabName.String}}{{end}}" placeholder="Enter laboratory name">
+        </div>
+      </div>
+    </div>
+
+    {{if or .Lab.TestResult.Valid .Lab.DateTested.Valid .Lab.LabName.Valid}}
+    <div class="card p-4 mt-4 bg-light border-info">
+      <h5 class="mb-3 text-info">Saved Lab Results</h5>
+      <div class="row g-4">
+        <div class="col-md-4">
+          <label class="form-label">Test Result</label>
+          <input type="text" class="form-control" value="{{.Lab.TestResult.String}}" readonly>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Date Tested</label>
+          <input type="text" class="form-control" value="{{if .Lab.DateTested.Valid}}{{.Lab.DateTested.Time.Format "2006-01-02"}}{{end}}" readonly>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Laboratory Name</label>
+          <input type="text" class="form-control" value="{{.Lab.LabName.String}}" readonly>
+        </div>
+      </div>
+    </div>
+    {{end}}
+
+    <div class="alert alert-info mt-4">
+      <h6 class="alert-heading fw-bold mb-3">Specimen/Shipping Instructions:</h6>
+      <ul class="mb-0">
+        <li>Label sample with patient name, date of collection, and case ID</li>
+        <li>Send sample in cold chain between 2–8°C aided by ice packs</li>
+        <li>Collect whole blood in a purple top (EDTA) tube – green or red top tubes acceptable if purple not available</li>
+        <li>Preferred sample volume: 4 ml (minimum: 2 ml)</li>
+      </ul>
+    </div>
+
+    <div class="mt-4 text-center">
+      <button type="submit" class="btn btn-primary btn-lg">Save Lab Data</button>
+      <a href="/vhf-list" class="btn btn-secondary btn-lg">Back to List</a>
+    </div>
+  </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Form submission
+  const form = document.getElementById('labForm');
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(form);
+    const caseId = document.getElementById('caseId').value;
+    
+    fetch(`/vhf-lab/${caseId}`, {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        alert('Lab data saved successfully');
+        window.location.href = '/vhf-list';
+      } else {
+        alert('Error saving lab data: ' + (data.error || 'Unknown error'));
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Error saving lab data');
+    });
+  });
+});
+</script>
+{{end}} 

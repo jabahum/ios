@@ -5,6 +5,7 @@ import (
 	"case/internal/models"
 	"database/sql"
 	"fmt"
+	"html/template"
 	"log"
 	"log/slog"
 	"net/http"
@@ -13,7 +14,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"strconv"
-	"text/template"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -98,6 +98,53 @@ func CreateTemplateFunctions(c *fiber.Ctx, db *sql.DB) template.FuncMap {
 		},
 		"GetDBLabel": func(table, namesFld, indexFld string, indexID int64) string {
 			return GetDBLabel(c, db, table, namesFld, indexFld, indexID)
+		},
+		"renderSymptomRow": func(name, label string, value sql.NullBool, date sql.NullTime, duration sql.NullInt32) template.HTML {
+			var buf bytes.Buffer
+			tmpl := `
+			<tr>
+				<td>{{.Label}}</td>
+				<td>
+					<div class="d-flex gap-3">
+						<div class="form-check">
+							<input class="form-check-input" type="radio" name="{{.Name}}" value="true" {{if and .Value.Valid .Value.Bool}}checked{{end}}>
+							<label class="form-check-label">Yes</label>
+						</div>
+						<div class="form-check">
+							<input class="form-check-input" type="radio" name="{{.Name}}" value="false" {{if and .Value.Valid (not .Value.Bool)}}checked{{end}}>
+							<label class="form-check-label">No</label>
+						</div>
+						<div class="form-check">
+							<input class="form-check-input" type="radio" name="{{.Name}}" value="unknown" {{if not .Value.Valid}}checked{{end}}>
+							<label class="form-check-label">Unknown</label>
+						</div>
+					</div>
+				</td>
+				<td>
+					<input type="date" class="form-control" name="{{.Name}}_date" value="{{if .Date.Valid}}{{.Date.Time.Format "2006-01-02"}}{{end}}">
+				</td>
+				<td>
+					<input type="number" class="form-control" name="{{.Name}}_duration" min="0" value="{{if .Duration.Valid}}{{.Duration.Int32}}{{end}}">
+				</td>
+			</tr>`
+			t := template.Must(template.New("symptomRow").Parse(tmpl))
+			data := struct {
+				Name     string
+				Label    string
+				Value    sql.NullBool
+				Date     sql.NullTime
+				Duration sql.NullInt32
+			}{
+				Name:     name,
+				Label:    label,
+				Value:    value,
+				Date:     date,
+				Duration: duration,
+			}
+			if err := t.Execute(&buf, data); err != nil {
+				return template.HTML(fmt.Sprintf("Error rendering symptom row: %v", err))
+			}
+			return template.HTML(buf.String())
 		},
 	}
 }

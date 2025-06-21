@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Update VHF Case Investigation Form</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+  <style>
+    .hidden {
+      display: none !important;
+    }
+    .clinic-fields {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+<div class="container my-5">
+  <h2 class="mb-4 text-center">Update VHF Case Investigation Form</h2>
+  <form id="updateVhfForm" method="POST" action="/vhf-cif/update">
+    <input type="hidden" name="case_code" value="{{.Case.CaseCode}}">
+    <div class="accordion" id="vhfFormAccordion">
+      <!-- Section 1: Patient Information -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingOne">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+            Section 1: Patient Information
+          </button>
+        </h2>
+        <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#vhfFormAccordion">
+          <div class="accordion-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Surname*</label>
+                <input type="text" class="form-control" name="surname" value="{{.Case.Surname}}" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Other Names*</label>
+                <input type="text" class="form-control" name="other_names" value="{{.Case.OtherNames}}" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Date of Birth</label>
+                <input type="date" class="form-control" name="date_of_birth" value="{{if .Case.DateOfBirth.Valid}}{{.Case.DateOfBirth.Time.Format "2006-01-02"}}{{end}}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Age (years)</label>
+                <input type="number" class="form-control" name="age_years" min="0" value="{{if .Case.AgeYears.Valid}}{{.Case.AgeYears.Int32}}{{end}}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Gender*</label>
+                <div class="d-flex gap-4">
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="gender" value="Male" {{if eq .Case.Gender "Male"}}checked{{end}} required>
+                    <label class="form-check-label">Male</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="gender" value="Female" {{if eq .Case.Gender "Female"}}checked{{end}}>
+                    <label class="form-check-label">Female</label>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Contact Number</label>
+                <input type="tel" class="form-control" name="patient_phone" value="{{.Case.PatientPhone}}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Phone Owner</label>
+                <input type="text" class="form-control" name="phone_owner" value="{{.Case.PhoneOwner}}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Next of Kin</label>
+                <input type="text" class="form-control" name="next_of_kin" value="{{.Case.NextOfKin}}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Next of Kin Phone</label>
+                <input type="tel" class="form-control" name="next_of_kin_phone" value="{{.Case.NextOfKinPhone}}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Head of Household</label>
+                <input type="text" class="form-control" name="head_of_household" value="{{.Case.HeadOfHousehold}}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">District*</label>
+                <select class="form-select" name="district" required>
+                  <option value="">Select District</option>
+                  {{range .Districts}}
+                  <option value="{{.}}" {{if eq $.Case.District .}}selected{{end}}>{{.}}</option>
+                  {{end}}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Subcounty*</label>
+                <select class="form-select" name="subcounty" required>
+                  <option value="">Select Subcounty</option>
+                  {{range .Subcounties}}
+                  <option value="{{.}}" {{if eq $.Case.Subcounty .}}selected{{end}}>{{.}}</option>
+                  {{end}}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Parish*</label>
+                <select class="form-select" name="parish" required>
+                  <option value="">Select Parish</option>
+                  {{range .Parishes}}
+                  <option value="{{.}}" {{if eq $.Case.Parish .}}selected{{end}}>{{.}}</option>
+                  {{end}}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Village*</label>
+                <select class="form-select" name="village" required>
+                  <option value="">Select Village</option>
+                  {{range .Villages}}
+                  <option value="{{.}}" {{if eq $.Case.VillageTown .}}selected{{end}}>{{.}}</option>
+                  {{end}}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Country of Residence</label>
+                <input type="text" class="form-control" name="country_of_residence" value="{{.Case.CountryOfResidence}}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Occupation</label>
+                <input type="text" class="form-control" name="occupation" value="{{.Case.Occupation}}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">GPS Coordinates at House</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" name="gps_coordinates" id="gps_coordinates" value="{{if and .Case.Latitude.Valid .Case.Longitude.Valid}}{{.Case.Latitude.Float64}}, {{.Case.Longitude.Float64}}{{end}}" readonly>
+                  <button class="btn btn-outline-secondary" type="button" id="get_location">Get Location</button>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Date Residing From</label>
+                <input type="date" class="form-control" name="date_residing_from" value="{{if .Case.DateResidingFrom.Valid}}{{.Case.DateResidingFrom.Time.Format "2006-01-02"}}{{end}}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Date Residing To</label>
+                <input type="date" class="form-control" name="date_residing_to" value="{{if .Case.DateResidingTo.Valid}}{{.Case.DateResidingTo.Time.Format "2006-01-02"}}{{end}}">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Section 2: Clinical Signs and Symptoms -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#clinicalSigns">
+            Clinical Signs and Symptoms
+          </button>
+        </h2>
+        <div id="clinicalSigns" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label">Date of Initial Onset</label>
+                <input type="date" class="form-control" name="date_initial_onset" value="{{if .ClinicalSigns.DateInitialOnset.Valid}}{{.ClinicalSigns.DateInitialOnset.Time.Format "2006-01-02"}}{{end}}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Temperature Source</label>
+                <input type="text" class="form-control" name="temp_source" value="{{if .ClinicalSigns.TempSource.Valid}}{{.ClinicalSigns.TempSource.String}}{{end}}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Temperature (°C)</label>
+                <input type="number" step="0.1" class="form-control" name="temperature" value="{{if .ClinicalSigns.Temperature.Valid}}{{.ClinicalSigns.Temperature.Float64}}{{end}}">
+              </div>
+            </div>
+
+            <table class="table table-bordered">
+              <thead>
+                <tr>
+                  <th>Symptom</th>
+                  <th>Yes/No/Unknown</th>
+                  <th>Date of Onset</th>
+                  <th>Duration (days)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{renderSymptomRow "fever" "Fever" .ClinicalSigns.Fever .ClinicalSigns.DateFever .ClinicalSigns.DurationFever}}
+                {{renderSymptomRow "vomiting" "Vomiting" .ClinicalSigns.Vomiting .ClinicalSigns.DateVomiting .ClinicalSigns.DurationVomiting}}
+                {{renderSymptomRow "nausea" "Nausea" .ClinicalSigns.Nausea .ClinicalSigns.DateNausea .ClinicalSigns.DurationNausea}}
+                {{renderSymptomRow "diarrhea" "Diarrhea" .ClinicalSigns.Diarrhea .ClinicalSigns.DateDiarrhea .ClinicalSigns.DurationDiarrhea}}
+                {{renderSymptomRow "intense_fatigue" "Intense Fatigue/General Weakness" .ClinicalSigns.IntenseFatigueGeneralWeakness .ClinicalSigns.DateIntenseFatigueGeneralWeakness .ClinicalSigns.DurationIntenseFatigueGeneralWeakness}}
+                {{renderSymptomRow "epigastric_pain" "Epigastric Pain" .ClinicalSigns.EpigastricPain .ClinicalSigns.DateEpigastricPain .ClinicalSigns.DurationEpigastricPain}}
+                {{renderSymptomRow "lower_abdominal_pain" "Lower Abdominal Pain" .ClinicalSigns.LowerAbdominalPain .ClinicalSigns.DateLowerAbdominalPain .ClinicalSigns.DurationLowerAbdominalPain}}
+                {{renderSymptomRow "chest_pain" "Chest Pain" .ClinicalSigns.ChestPain .ClinicalSigns.DateChestPain .ClinicalSigns.DurationChestPain}}
+                {{renderSymptomRow "muscle_pain" "Muscle Pain" .ClinicalSigns.MusclePain .ClinicalSigns.DateMusclePain .ClinicalSigns.DurationMusclePain}}
+                {{renderSymptomRow "joint_pain" "Joint Pain" .ClinicalSigns.JointPain .ClinicalSigns.DateJointPain .ClinicalSigns.DurationJointPain}}
+                {{renderSymptomRow "headache" "Headache" .ClinicalSigns.Headache .ClinicalSigns.DateHeadache .ClinicalSigns.DurationHeadache}}
+                {{renderSymptomRow "cough" "Cough" .ClinicalSigns.Cough .ClinicalSigns.DateCough .ClinicalSigns.DurationCough}}
+                {{renderSymptomRow "difficulty_breathing" "Difficulty Breathing" .ClinicalSigns.DifficultyBreathing .ClinicalSigns.DateDifficultyBreathing .ClinicalSigns.DurationDifficultyBreathing}}
+                {{renderSymptomRow "difficulty_swallowing" "Difficulty Swallowing" .ClinicalSigns.DifficultySwallowing .ClinicalSigns.DateDifficultySwallowing .ClinicalSigns.DurationDifficultySwallowing}}
+                {{renderSymptomRow "sore_throat" "Sore Throat" .ClinicalSigns.SoreThroat .ClinicalSigns.DateSoreThroat .ClinicalSigns.DurationSoreThroat}}
+                {{renderSymptomRow "jaundice" "Jaundice" .ClinicalSigns.Jaundice .ClinicalSigns.DateJaundice .ClinicalSigns.DurationJaundice}}
+                {{renderSymptomRow "conjunctivitis" "Conjunctivitis" .ClinicalSigns.Conjunctivitis .ClinicalSigns.DateConjunctivitis .ClinicalSigns.DurationConjunctivitis}}
+                {{renderSymptomRow "skin_rash" "Skin Rash" .ClinicalSigns.SkinRash .ClinicalSigns.DateSkinRash .ClinicalSigns.DurationSkinRash}}
+                {{renderSymptomRow "hiccups" "Hiccups" .ClinicalSigns.Hiccups .ClinicalSigns.DateHiccups .ClinicalSigns.DurationHiccups}}
+                {{renderSymptomRow "pain_behind_eyes" "Pain Behind Eyes" .ClinicalSigns.PainBehindEyes .ClinicalSigns.DatePainBehindEyes .ClinicalSigns.DurationPainBehindEyes}}
+                {{renderSymptomRow "sensitive_to_light" "Sensitive to Light" .ClinicalSigns.SensitiveToLight .ClinicalSigns.DateSensitiveToLight .ClinicalSigns.DurationSensitiveToLight}}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- Section 3: Clinic and Hospitalization -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingThree">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+            Section 3: Clinic and Hospitalization
+          </button>
+        </h2>
+        <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#vhfFormAccordion">
+          <div class="accordion-body">
+            <div class="row g-4">
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Is the patient hospitalized?*</label>
+                <div class="d-flex gap-4">
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="hospitalized" value="true" {{if .Hospitalization.Hospitalized}}checked{{end}} required>
+                    <label class="form-check-label">Yes</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="hospitalized" value="false" {{if not .Hospitalization.Hospitalized}}checked{{end}}>
+                    <label class="form-check-label">No</label>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6" id="admission_date_container">
+                <label class="form-label">Date of Hospital Admission</label>
+                <input type="date" class="form-control" name="admission_date" id="admission_date" value="{{if .Hospitalization.AdmissionDate.Valid}}{{.Hospitalization.AdmissionDate.Time.Format "2006-01-02"}}{{end}}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Health Facility Name</label>
+                <input type="text" class="form-control" name="health_facility_name" value="{{.Hospitalization.HealthFacilityName}}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">In Isolation?</label>
+                <div class="d-flex gap-4">
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="in_isolation" value="true" {{if .Hospitalization.InIsolation}}checked{{end}}>
+                    <label class="form-check-label">Yes</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="in_isolation" value="false" {{if not .Hospitalization.InIsolation}}checked{{end}}>
+                    <label class="form-check-label">No</label>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6" id="isolation_date_container">
+                <label class="form-label">Date of Isolation</label>
+                <input type="date" class="form-control" name="isolation_date" id="isolation_date" value="{{if .Hospitalization.IsolationDate.Valid}}{{.Hospitalization.IsolationDate.Time.Format "2006-01-02"}}{{end}}">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Section 4: Exposure History -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingFour">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+            Section 4: Exposure History
+          </button>
+        </h2>
+        <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#vhfFormAccordion">
+          <div class="accordion-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Contact with a known/suspected VHF case?*</label>
+                <div class="d-flex gap-4">
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="contactWithCase" value="true" {{if and .RiskFactors.ContactWithCase.Valid .RiskFactors.ContactWithCase.Bool}}checked{{end}} required>
+                    <label class="form-check-label">Yes</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="contactWithCase" value="false" {{if and .RiskFactors.ContactWithCase.Valid (not .RiskFactors.ContactWithCase.Bool)}}checked{{end}}>
+                    <label class="form-check-label">No</label>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6" id="contact_name_container">
+                <label class="form-label">Name of Contact</label>
+                <input type="text" class="form-control" name="contact_name" value="{{if .RiskFactors.ContactName}}{{.RiskFactors.ContactName}}{{end}}">
+              </div>
+              <div class="col-md-6" id="contact_relation_container">
+                <label class="form-label">Relationship to Contact</label>
+                <input type="text" class="form-control" name="contact_relation" value="{{if .RiskFactors.ContactRelation}}{{.RiskFactors.ContactRelation}}{{end}}">
+              </div>
+              <div class="col-md-6" id="contact_dates_container">
+                <label class="form-label">Date(s) of Contact</label>
+                <input type="text" class="form-control" name="contact_dates" value="{{if .RiskFactors.ContactDates}}{{.RiskFactors.ContactDates}}{{end}}">
+              </div>
+              <div class="col-md-6" id="contact_village_container">
+                <label class="form-label">Village of Contact</label>
+                <input type="text" class="form-control" name="contact_village" value="{{if .RiskFactors.ContactVillage}}{{.RiskFactors.ContactVillage}}{{end}}">
+              </div>
+              <div class="col-md-6" id="contact_district_container">
+                <label class="form-label">District of Contact</label>
+                <input type="text" class="form-control" name="contact_district" value="{{if .RiskFactors.ContactDistrict}}{{.RiskFactors.ContactDistrict}}{{end}}">
+              </div>
+              <div class="col-md-6" id="contact_status_container">
+                <label class="form-label">Status of Contact</label>
+                <select class="form-select" name="contact_status">
+                  <option value="">Select Status</option>
+                  <option value="Alive" {{if and .RiskFactors.ContactStatus (eq .RiskFactors.ContactStatus "Alive")}}selected{{end}}>Alive</option>
+                  <option value="Dead" {{if and .RiskFactors.ContactStatus (eq .RiskFactors.ContactStatus "Dead")}}selected{{end}}>Dead</option>
+                </select>
+              </div>
+              <div class="col-md-6" id="contact_death_date_container">
+                <label class="form-label">Date of Contact's Death</label>
+                <input type="date" class="form-control" name="contact_death_date" value="{{if .RiskFactors.ContactDeathDate}}{{.RiskFactors.ContactDeathDate}}{{end}}">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Section 5: Investigator -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingFive">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
+            Section 5: Investigator
+          </button>
+        </h2>
+        <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive" data-bs-parent="#vhfFormAccordion">
+          <div class="accordion-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Name of Investigator</label>
+                <input type="text" class="form-control" name="investigator_name" value="{{if .Investigator.InvestigatorName}}{{.Investigator.InvestigatorName}}{{end}}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Phone Number</label>
+                <input type="text" class="form-control" name="investigator_phone" value="{{if .Investigator.Phone}}{{.Investigator.Phone}}{{end}}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" name="investigator_email" value="{{if .Investigator.Email}}{{.Investigator.Email}}{{end}}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Position</label>
+                <input type="text" class="form-control" name="investigator_position" value="{{if .Investigator.Position}}{{.Investigator.Position}}{{end}}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">District</label>
+                <input type="text" class="form-control" name="investigator_district" value="{{if .Investigator.District}}{{.Investigator.District}}{{end}}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Health Facility</label>
+                <input type="text" class="form-control" name="investigator_health_facility" value="{{if .Investigator.HealthFacility}}{{.Investigator.HealthFacility}}{{end}}">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mt-4 text-center">
+      <button type="submit" class="btn btn-primary">Update Form</button>
+      <a href="/vhf-list" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Function to get location
+function getLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            // Success callback
+            function(position) {
+                const lat = position.coords.latitude.toFixed(6);
+                const lng = position.coords.longitude.toFixed(6);
+                document.getElementById('gps_coordinates').value = `${lat}, ${lng}`;
+            },
+            // Error callback
+            function(error) {
+                let errorMessage = '';
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMessage = "Location access was denied. Please enable location services.";
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMessage = "Location information is unavailable.";
+                        break;
+                    case error.TIMEOUT:
+                        errorMessage = "Location request timed out.";
+                        break;
+                    case error.UNKNOWN_ERROR:
+                        errorMessage = "An unknown error occurred.";
+                        break;
+                }
+                alert(errorMessage);
+            },
+            // Options
+            {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 0
+            }
+        );
+    } else {
+        alert("Geolocation is not supported by your browser.");
+    }
+}
+
+// Add event listeners for dynamic form behavior
+document.addEventListener('DOMContentLoaded', function() {
+    // Get location button
+    document.getElementById('get_location').addEventListener('click', getLocation);
+
+    // Hospitalization fields
+    const hospitalizedRadios = document.querySelectorAll('input[name="hospitalized"]');
+    const admissionDateContainer = document.getElementById('admission_date_container');
+    const isolationDateContainer = document.getElementById('isolation_date_container');
+    
+    hospitalizedRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            admissionDateContainer.style.display = this.value === 'true' ? 'block' : 'none';
+        });
+    });
+
+    // Isolation fields
+    const inIsolationRadios = document.querySelectorAll('input[name="in_isolation"]');
+    inIsolationRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            isolationDateContainer.style.display = this.value === 'true' ? 'block' : 'none';
+        });
+    });
+
+    // Contact with case fields
+    const contactWithCaseRadios = document.querySelectorAll('input[name="contactWithCase"]');
+    const contactFields = [
+        'contact_name_container',
+        'contact_relation_container',
+        'contact_dates_container',
+        'contact_village_container',
+        'contact_district_container',
+        'contact_status_container'
+    ];
+    
+    contactWithCaseRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            const display = this.value === 'true' ? 'block' : 'none';
+            contactFields.forEach(field => {
+                document.getElementById(field).style.display = display;
+            });
+        });
+    });
+
+    // Contact status fields
+    const contactStatusSelect = document.querySelector('select[name="contact_status"]');
+    const contactDeathDateContainer = document.getElementById('contact_death_date_container');
+    
+    contactStatusSelect.addEventListener('change', function() {
+        contactDeathDateContainer.style.display = this.value === 'Dead' ? 'block' : 'none';
+    });
+
+    // Initialize visibility based on current values
+    const hospitalizedYes = document.querySelector('input[name="hospitalized"][value="true"]');
+    if (hospitalizedYes && hospitalizedYes.checked) {
+        admissionDateContainer.style.display = 'block';
+    }
+
+    const inIsolationYes = document.querySelector('input[name="in_isolation"][value="true"]');
+    if (inIsolationYes && inIsolationYes.checked) {
+        isolationDateContainer.style.display = 'block';
+    }
+
+    const contactWithCaseYes = document.querySelector('input[name="contactWithCase"][value="true"]');
+    if (contactWithCaseYes && contactWithCaseYes.checked) {
+        contactFields.forEach(field => {
+            document.getElementById(field).style.display = 'block';
+        });
+    }
+
+    const contactStatusDead = document.querySelector('select[name="contact_status"] option[value="Dead"]');
+    if (contactStatusDead && contactStatusDead.selected) {
+        contactDeathDateContainer.style.display = 'block';
+    }
+});
+</script>
+</body>
+</html> 

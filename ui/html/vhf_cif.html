@@ -1043,100 +1043,6 @@
         </div>
       </div>
 
-      <!-- Section 5: Laboratory -->
-      <div class="accordion-item">
-        <h2 class="accordion-header" id="headingFive">
-          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
-            Section 5: Clinical Specimens and Laboratory Testing
-          </button>
-        </h2>
-        <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive" data-bs-parent="#vhfFormAccordion">
-          <div class="accordion-body">
-            <div class="card p-4">
-              <h5 class="mb-4">Sample 1</h5>
-              <div class="row g-4">
-                <div class="col-md-6">
-                  <label class="form-label fw-bold">Sample Collection Date*</label>
-              <input type="date" class="form-control" name="sample_collection_date" required>
-            </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-bold">Sample Collection Time*</label>
-              <input type="time" class="form-control" name="sample_collection_time" required>
-            </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-bold">Sample Type*</label>
-              <select class="form-select" name="sample_type" required>
-                    <option value="">Select sample type</option>
-                    <option value="Whole blood">Whole blood</option>
-                    <option value="Oral/Buccal swab">Oral/Buccal swab</option>
-                    <option value="Skin biopsy">Skin biopsy</option>
-                    <option value="Post mortem heart blood">Post mortem heart blood</option>
-                    <option value="Post mortem jugular blood draw">Post mortem jugular blood draw</option>
-                    <option value="Other">Other (specify below)</option>
-              </select>
-            </div>
-                <div class="col-md-6">
-                  <label class="form-label">Other Sample Type</label>
-                  <input type="text" class="form-control" name="other_sample_type" placeholder="Specify other specimen type" required>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-bold">Requested Test*</label>
-              <input type="text" class="form-control" name="requested_test" placeholder="e.g. PCR" required>
-            </div>
-                <div class="col-md-6">
-              <label class="form-label">Serology</label>
-              <input type="text" class="form-control" name="serology" placeholder="e.g. IgM, IgG" required>
-            </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-bold">Malaria RDT*</label>
-                  <div class="d-flex gap-4">
-                    <div class="form-check">
-                      <input class="form-check-input" type="radio" name="malariaRdt" value="Pos">
-                      <label class="form-check-label">Pos</label>
-            </div>
-                    <div class="form-check">
-                      <input class="form-check-input" type="radio" name="malariaRdt" value="Neg">
-                      <label class="form-check-label">Neg</label>
-                    </div>
-                    <div class="form-check">
-                      <input class="form-check-input" type="radio" name="malariaRdt" value="ND">
-                      <label class="form-check-label">Not Done</label>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-bold">HIV RDT*</label>
-                  <div class="d-flex gap-4">
-                    <div class="form-check">
-                      <input class="form-check-input" type="radio" name="hivRdt" value="Pos">
-                      <label class="form-check-label">Pos</label>
-                    </div>
-                    <div class="form-check">
-                      <input class="form-check-input" type="radio" name="hivRdt" value="Neg">
-                      <label class="form-check-label">Neg</label>
-                    </div>
-                    <div class="form-check">
-                      <input class="form-check-input" type="radio" name="hivRdt" value="ND">
-                      <label class="form-check-label">Not Done</label>
-                    </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-            <div class="alert alert-info mt-4">
-              <h6 class="alert-heading fw-bold mb-3">Specimen/Shipping Instructions:</h6>
-              <ul class="mb-0">
-                <li>Label sample with patient name, date of collection, and case ID</li>
-                <li>Send sample in cold chain between 2–8°C aided by ice packs</li>
-                <li>Collect whole blood in a purple top (EDTA) tube – green or red top tubes acceptable if purple not available</li>
-                <li>Preferred sample volume: 4 ml (minimum: 2 ml)</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- Section 6: Investigator -->
       <div class="accordion-item">
         <h2 class="accordion-header" id="headingSix">
@@ -1194,7 +1100,8 @@
     </div>
 
     <div class="mt-4 text-center">
-      <button type="submit" class="btn btn-primary btn-lg">Submit Form</button><a href="/" class="btn btn-secondary btn-lg">Cancel</a>
+      <button type="submit" class="btn btn-primary btn-lg">Submit Form</button>
+      <a href="/" class="btn btn-secondary btn-lg">Cancel</a>
     </div>
     
   </form>
@@ -1202,14 +1109,14 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  const form = document.getElementById('vhfForm');
-  form.addEventListener('submit', function(e) {
-    // Form validation can be added here if needed
-    // The form will submit normally to /vhf-cif/save
-  });
-});
+// Remove any JavaScript related to lab section (lab fields, lab form submission, lab-specific logic)
+// Retain only the following scripts:
+// - Location (getLocation)
+// - Case code generation (generateCaseCode)
+// - Dropdowns for district/subcounty/parish/village
+// - Any other non-lab logic
 
+// Function to get location
 function getLocation() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -1286,7 +1193,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(districts => {
             districts.forEach(district => {
-                const option = new Option(district.name, district.id);
+                const option = new Option(district.name, district.code);
                 districtSelect.add(option);
             });
         })
@@ -1294,112 +1201,63 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Handle district selection
     districtSelect.addEventListener('change', function() {
-        const districtId = this.value;
-        
+        const districtCode = this.value;
         // Reset and disable dependent dropdowns
         subcountySelect.innerHTML = '<option value="">Select Subcounty</option>';
         parishSelect.innerHTML = '<option value="">Select Parish</option>';
         villageSelect.innerHTML = '<option value="">Select Village</option>';
-        
-        subcountySelect.disabled = !districtId;
+        subcountySelect.disabled = true;
         parishSelect.disabled = true;
         villageSelect.disabled = true;
-
-        if (districtId) {
-            // Load subcounties for selected district
-            fetch(`/api/locations/subcounties/${districtId}`)
-                .then(response => response.json())
-                .then(subcounties => {
-                    subcounties.forEach(subcounty => {
-                        const option = new Option(subcounty.name, subcounty.id);
-                        subcountySelect.add(option);
-                    });
-                })
-                .catch(error => console.error('Error loading subcounties:', error));
-
-            // Also load parishes for the district
-            fetch(`/api/locations/parishes/district/${districtId}`)
-                .then(response => response.json())
-                .then(parishes => {
-                    parishes.forEach(parish => {
-                        const option = new Option(parish.name, parish.id);
-                        parishSelect.add(option);
-                    });
-                    parishSelect.disabled = false;
-                })
-                .catch(error => console.error('Error loading parishes:', error));
-
-            // Also load villages for the district
-            fetch(`/api/locations/villages/district/${districtId}`)
-                .then(response => response.json())
-                .then(villages => {
-                    villages.forEach(village => {
-                        const option = new Option(village.name, village.id);
-                        villageSelect.add(option);
-                    });
-                    villageSelect.disabled = false;
-                })
-                .catch(error => console.error('Error loading villages:', error));
-        }
+        if (!districtCode) return;
+        fetch(`/api/locations/subcounties/${districtCode}`)
+            .then(response => response.json())
+            .then(subcounties => {
+                subcounties.forEach(subcounty => {
+                    const option = new Option(subcounty.name, subcounty.code);
+                    subcountySelect.add(option);
+                });
+                subcountySelect.disabled = false;
+            })
+            .catch(error => console.error('Error loading subcounties:', error));
     });
 
     // Handle subcounty selection
     subcountySelect.addEventListener('change', function() {
-        const subcountyId = this.value;
-        
-        // Reset and disable dependent dropdowns
+        const subcountyCode = this.value;
         parishSelect.innerHTML = '<option value="">Select Parish</option>';
         villageSelect.innerHTML = '<option value="">Select Village</option>';
-        
-        parishSelect.disabled = !subcountyId;
+        parishSelect.disabled = true;
         villageSelect.disabled = true;
-
-        if (subcountyId) {
-            // Load parishes for selected subcounty
-            fetch(`/api/locations/parishes/${subcountyId}`)
-                .then(response => response.json())
-                .then(parishes => {
-                    parishes.forEach(parish => {
-                        const option = new Option(parish.name, parish.id);
-                        parishSelect.add(option);
-                    });
-                })
-                .catch(error => console.error('Error loading parishes:', error));
-
-            // Also load villages for the subcounty
-            fetch(`/api/locations/villages/subcounty/${subcountyId}`)
-                .then(response => response.json())
-                .then(villages => {
-                    villages.forEach(village => {
-                        const option = new Option(village.name, village.id);
-                        villageSelect.add(option);
-                    });
-                    villageSelect.disabled = false;
-                })
-                .catch(error => console.error('Error loading villages:', error));
-        }
+        if (!subcountyCode) return;
+        fetch(`/api/locations/parishes/${subcountyCode}`)
+            .then(response => response.json())
+            .then(parishes => {
+                parishes.forEach(parish => {
+                    const option = new Option(parish.name, parish.code);
+                    parishSelect.add(option);
+                });
+                parishSelect.disabled = false;
+            })
+            .catch(error => console.error('Error loading parishes:', error));
     });
 
     // Handle parish selection
     parishSelect.addEventListener('change', function() {
-        const parishId = this.value;
-        
-        // Reset and disable village dropdown
+        const parishCode = this.value;
         villageSelect.innerHTML = '<option value="">Select Village</option>';
-        villageSelect.disabled = !parishId;
-
-        if (parishId) {
-            // Load villages for selected parish
-            fetch(`/api/locations/villages/${parishId}`)
-                .then(response => response.json())
-                .then(villages => {
-                    villages.forEach(village => {
-                        const option = new Option(village.name, village.id);
-                        villageSelect.add(option);
-                    });
-                })
-                .catch(error => console.error('Error loading villages:', error));
-        }
+        villageSelect.disabled = true;
+        if (!parishCode) return;
+        fetch(`/api/locations/villages/${parishCode}`)
+            .then(response => response.json())
+            .then(villages => {
+                villages.forEach(village => {
+                    const option = new Option(village.name, village.code);
+                    villageSelect.add(option);
+                });
+                villageSelect.disabled = false;
+            })
+            .catch(error => console.error('Error loading villages:', error));
     });
 });
 

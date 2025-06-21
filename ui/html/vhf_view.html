@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VHF Case Details</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+        }
+        .section-title {
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #0d6efd;
+        }
+        .form-label {
+            font-weight: 500;
+        }
+        .readonly-field {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>VHF Case Details</h2>
+            <div>
+                <a href="/vhf-list" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to List
+                </a>
+            </div>
+        </div>
+
+        <!-- Patient Information -->
+        <div class="section">
+            <h3 class="section-title">Patient Information</h3>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Case Code</label>
+                    <input type="text" class="form-control readonly-field" value="{{.Case.CaseCode}}" readonly>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Patient Name</label>
+                    <input type="text" class="form-control readonly-field" value="{{.Case.Name}}" readonly>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Age</label>
+                    <input type="text" class="form-control readonly-field" value="{{.Case.Age}}" readonly>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Gender</label>
+                    <input type="text" class="form-control readonly-field" value="{{.Case.Gender}}" readonly>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">District</label>
+                    <input type="text" class="form-control readonly-field" value="{{.Case.District}}" readonly>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Status</label>
+                    <input type="text" class="form-control readonly-field" value="{{.Case.Status}}" readonly>
+                </div>
+            </div>
+        </div>
+
+        <!-- Laboratory Information -->
+        <div class="section">
+            <h3 class="section-title">Laboratory Information</h3>
+            {{if .Lab}}
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Sample Collection Date</label>
+                    <input type="text" class="form-control readonly-field" value="{{.Lab.SampleCollectionDate}}" readonly>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Sample Collection Time</label>
+                    <input type="text" class="form-control readonly-field" value="{{.Lab.SampleCollectionTime}}" readonly>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Sample Type</label>
+                    <input type="text" class="form-control readonly-field" value="{{.Lab.SampleType}}" readonly>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Test Result</label>
+                    <input type="text" class="form-control readonly-field" value="{{.Lab.TestResult}}" readonly>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Date Tested</label>
+                    <input type="text" class="form-control readonly-field" value="{{.Lab.DateTested}}" readonly>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Lab Name</label>
+                    <input type="text" class="form-control readonly-field" value="{{.Lab.LabName}}" readonly>
+                </div>
+            </div>
+            {{else}}
+            <div class="alert alert-info">
+                No laboratory information available. 
+                <a href="/vhf-lab/{{.Case.ID}}" class="btn btn-primary ms-3">
+                    <i class="bi bi-vial"></i> Add Lab Information
+                </a>
+            </div>
+            {{end}}
+        </div>
+
+        <!-- Clinical Information -->
+        <div class="section">
+            <h3 class="section-title">Clinical Information</h3>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Date of Onset</label>
+                    <input type="text" class="form-control readonly-field" value="{{.Case.DateOfOnset}}" readonly>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Date of Admission</label>
+                    <input type="text" class="form-control readonly-field" value="{{.Case.DateOfAdmission}}" readonly>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Date of Discharge</label>
+                    <input type="text" class="form-control readonly-field" value="{{.Case.DateOfDischarge}}" readonly>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Clinical Notes</label>
+                    <textarea class="form-control readonly-field" rows="3" readonly>{{.Case.ClinicalNotes}}</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

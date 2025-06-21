@@ -19,8 +19,8 @@ type VHFPatient struct {
 	NextOfKin                   string          `json:"next_of_kin"`
 	NextOfKinPhone              string          `json:"next_of_kin_phone"`
 	DataCapturerName            sql.NullString  `json:"data_capturer_name"`
-	DataCapturerPhone           string          `json:"data_capturer_phone"`
-	ReportingHealthFacilityName string          `json:"reporting_health_facility_name"`
+	DataCapturerPhone           sql.NullString  `json:"data_capturer_phone"`
+	ReportingHealthFacilityName sql.NullString  `json:"reporting_health_facility_name"`
 	CaseCode                    string          `json:"case_code"`
 	Status                      string          `json:"status"`
 	DateOfDeath                 sql.NullTime    `json:"date_of_death"`
@@ -46,7 +46,7 @@ type VHFClinicalSigns struct {
 	ID                                    int64           `json:"id"`
 	PatientID                             int64           `json:"patient_id"`
 	DateInitialOnset                      sql.NullTime    `json:"date_initial_onset"`
-	TempSource                            string          `json:"temp_source"`
+	TempSource                            sql.NullString  `json:"temp_source"`
 	Temperature                           sql.NullFloat64 `json:"temperature"`
 	Fever                                 sql.NullBool    `json:"fever"`
 	DateFever                             sql.NullTime    `json:"date_fever"`
@@ -203,12 +203,15 @@ type VHFLaboratory struct {
 	PatientID            int64          `json:"patient_id"`
 	SampleCollectionDate sql.NullTime   `json:"sample_collection_date"`
 	SampleCollectionTime sql.NullString `json:"sample_collection_time"`
-	SampleType           string         `json:"sample_type"`
-	OtherSampleType      string         `json:"other_sample_type"`
-	RequestedTest        string         `json:"requested_test"`
-	Serology             string         `json:"serology"`
-	MalariaRDT           string         `json:"malaria_rdt"`
-	HIVRDT               string         `json:"hiv_rdt"`
+	SampleType           sql.NullString `json:"sample_type"`
+	OtherSampleType      sql.NullString `json:"other_sample_type"`
+	RequestedTest        sql.NullString `json:"requested_test"`
+	Serology             sql.NullString `json:"serology"`
+	MalariaRDT           sql.NullString `json:"malaria_rdt"`
+	HIVRDT               sql.NullString `json:"hiv_rdt"`
+	TestResult           sql.NullString `json:"test_result"`
+	DateTested           sql.NullTime   `json:"date_tested"`
+	LabName              sql.NullString `json:"lab_name"`
 	CreatedAt            time.Time      `json:"created_at"`
 }
 
@@ -402,43 +405,163 @@ func SaveVHFInvestigator(db *sql.DB, investigator *VHFInvestigator) error {
 func SaveVHFClinicalSigns(db *sql.DB, signs *VHFClinicalSigns) error {
 	query := `
 		INSERT INTO vhf_clinical_signs (
-			patient_id, date_initial_onset, temp_source, temperature, fever, vomiting, nausea, diarrhea,
-			intense_fatigue_general_weakness, epigastric_pain, lower_abdominal_pain,
-			chest_pain, muscle_pain, joint_pain, headache, cough, difficulty_breathing,
-			difficulty_swallowing, sore_throat, jaundice, conjunctivitis, skin_rash,
-			hiccups, pain_behind_eyes, sensitive_to_light, coma_unconscious,
-			confused_or_disoriented, convulsions, unexplained_bleeding,
-			bleeding_of_the_gums, bleeding_from_injection_site, nose_bleed_epistaxis,
-			bloody_stool, blood_in_vomit, coughing_up_blood_hemoptysis,
-			bleeding_from_vagina, bruising_of_the_skin, blood_in_urine,
-			other_hemorrhagic_symptoms, created_at
-		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
-			$16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28,
-			$29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40
-		) RETURNING id, created_at`
+    patient_id, date_initial_onset, fever, vomiting, nausea, diarrhea,
+    intense_fatigue_general_weakness, epigastric_pain, lower_abdominal_pain,
+    chest_pain, muscle_pain, joint_pain, headache, cough, difficulty_breathing,
+    difficulty_swallowing, sore_throat, jaundice, conjunctivitis, skin_rash, hiccups,
+    pain_behind_eyes, sensitive_to_light, coma_unconscious, confused_or_disoriented,
+    convulsions, unexplained_bleeding, bleeding_of_the_gums, bleeding_from_injection_site,
+    nose_bleed_epistaxis, bloody_stool, blood_in_vomit, coughing_up_blood_hemoptysis,
+    bleeding_from_vagina, bruising_of_the_skin, blood_in_urine, other_hemorrhagic_symptoms,
+    created_at, temp_source, temperature, date_fever, duration_fever, date_vomiting,
+    duration_vomiting, date_nausea, duration_nausea, date_diarrhea, duration_diarrhea,
+    date_intense_fatigue_general_weakness, duration_intense_fatigue_general_weakness,
+    date_epigastric_pain, duration_epigastric_pain, date_lower_abdominal_pain,
+    duration_lower_abdominal_pain, date_chest_pain, duration_chest_pain, date_muscle_pain,
+    duration_muscle_pain, date_joint_pain, duration_joint_pain, date_headache,
+    duration_headache, date_cough, duration_cough, date_difficulty_breathing,
+    duration_difficulty_breathing, date_difficulty_swallowing, duration_difficulty_swallowing,
+    date_sore_throat, duration_sore_throat, date_jaundice, duration_jaundice,
+    date_conjunctivitis, duration_conjunctivitis, date_skin_rash, duration_skin_rash,
+    date_hiccups, duration_hiccups, date_pain_behind_eyes, duration_pain_behind_eyes,
+    date_sensitive_to_light, duration_sensitive_to_light, date_coma_unconscious,
+    duration_coma_unconscious, date_confused_or_disoriented, duration_confused_or_disoriented,
+    date_convulsions, duration_convulsions, date_unexplained_bleeding, duration_unexplained_bleeding,
+    date_bleeding_of_the_gums, duration_bleeding_of_the_gums, date_bleeding_from_injection_site,
+    duration_bleeding_from_injection_site, date_nose_bleed_epistaxis, duration_nose_bleed_epistaxis,
+    date_bloody_stool, duration_bloody_stool, date_blood_in_vomit, duration_blood_in_vomit,
+    date_coughing_up_blood_hemoptysis, duration_coughing_up_blood_hemoptysis,
+    date_bleeding_from_vagina, duration_bleeding_from_vagina, date_bruising_of_the_skin,
+    duration_bruising_of_the_skin, date_blood_in_urine, duration_blood_in_urine,
+    date_other_hemorrhagic_symptoms, duration_other_hemorrhagic_symptoms
+) VALUES (
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+    $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+    $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
+    $31, $32, $33, $34, $35, $36, $37, $38, $39, $40,
+    $41, $42, $43, $44, $45, $46, $47, $48, $49, $50,
+    $51, $52, $53, $54, $55, $56, $57, $58, $59, $60,
+    $61, $62, $63, $64, $65, $66, $67, $68, $69, $70,
+    $71, $72, $73, $74, $75, $76, $77, $78, $79, $80,
+    $81, $82, $83, $84, $85, $86, $87, $88, $89, $90,
+    $91, $92, $93, $94, $95, $96, $97, $98, $99, $100,
+    $101, $102, $103, $104, $105, $106, $107, $108, $109, $110
+) RETURNING id, created_at;
+`
 
-	now := time.Now()
-	signs.CreatedAt = now
-
-	err := db.QueryRow(
+	return db.QueryRow(
 		query,
-		signs.PatientID, signs.DateInitialOnset, signs.TempSource, signs.Temperature,
-		signs.Fever, signs.Vomiting, signs.Nausea, signs.Diarrhea,
-		signs.IntenseFatigueGeneralWeakness, signs.EpigastricPain, signs.LowerAbdominalPain,
-		signs.ChestPain, signs.MusclePain, signs.JointPain, signs.Headache, signs.Cough,
-		signs.DifficultyBreathing, signs.DifficultySwallowing, signs.SoreThroat,
-		signs.Jaundice, signs.Conjunctivitis, signs.SkinRash, signs.Hiccups,
-		signs.PainBehindEyes, signs.SensitiveToLight, signs.ComaUnconscious,
-		signs.ConfusedOrDisoriented, signs.Convulsions, signs.UnexplainedBleeding,
-		signs.BleedingOfTheGums, signs.BleedingFromInjectionSite,
-		signs.NoseBleedEpistaxis, signs.BloodyStool, signs.BloodInVomit,
-		signs.CoughingUpBloodHemoptysis, signs.BleedingFromVagina,
-		signs.BruisingOfTheSkin, signs.BloodInUrine, signs.OtherHemorrhagicSymptoms,
+		signs.PatientID,
+		signs.DateInitialOnset,
+		signs.Fever,
+		signs.Vomiting,
+		signs.Nausea,
+		signs.Diarrhea,
+		signs.IntenseFatigueGeneralWeakness,
+		signs.EpigastricPain,
+		signs.LowerAbdominalPain,
+		signs.ChestPain,
+		signs.MusclePain,
+		signs.JointPain,
+		signs.Headache,
+		signs.Cough,
+		signs.DifficultyBreathing,
+		signs.DifficultySwallowing,
+		signs.SoreThroat,
+		signs.Jaundice,
+		signs.Conjunctivitis,
+		signs.SkinRash,
+		signs.Hiccups,
+		signs.PainBehindEyes,
+		signs.SensitiveToLight,
+		signs.ComaUnconscious,
+		signs.ConfusedOrDisoriented,
+		signs.Convulsions,
+		signs.UnexplainedBleeding,
+		signs.BleedingOfTheGums,
+		signs.BleedingFromInjectionSite,
+		signs.NoseBleedEpistaxis,
+		signs.BloodyStool,
+		signs.BloodInVomit,
+		signs.CoughingUpBloodHemoptysis,
+		signs.BleedingFromVagina,
+		signs.BruisingOfTheSkin,
+		signs.BloodInUrine,
+		signs.OtherHemorrhagicSymptoms,
 		signs.CreatedAt,
+		signs.TempSource,
+		signs.Temperature,
+		signs.DateFever,
+		signs.DurationFever,
+		signs.DateVomiting,
+		signs.DurationVomiting,
+		signs.DateNausea,
+		signs.DurationNausea,
+		signs.DateDiarrhea,
+		signs.DurationDiarrhea,
+		signs.DateIntenseFatigueGeneralWeakness,
+		signs.DurationIntenseFatigueGeneralWeakness,
+		signs.DateEpigastricPain,
+		signs.DurationEpigastricPain,
+		signs.DateLowerAbdominalPain,
+		signs.DurationLowerAbdominalPain,
+		signs.DateChestPain,
+		signs.DurationChestPain,
+		signs.DateMusclePain,
+		signs.DurationMusclePain,
+		signs.DateJointPain,
+		signs.DurationJointPain,
+		signs.DateHeadache,
+		signs.DurationHeadache,
+		signs.DateCough,
+		signs.DurationCough,
+		signs.DateDifficultyBreathing,
+		signs.DurationDifficultyBreathing,
+		signs.DateDifficultySwallowing,
+		signs.DurationDifficultySwallowing,
+		signs.DateSoreThroat,
+		signs.DurationSoreThroat,
+		signs.DateJaundice,
+		signs.DurationJaundice,
+		signs.DateConjunctivitis,
+		signs.DurationConjunctivitis,
+		signs.DateSkinRash,
+		signs.DurationSkinRash,
+		signs.DateHiccups,
+		signs.DurationHiccups,
+		signs.DatePainBehindEyes,
+		signs.DurationPainBehindEyes,
+		signs.DateSensitiveToLight,
+		signs.DurationSensitiveToLight,
+		signs.DateComaUnconscious,
+		signs.DurationComaUnconscious,
+		signs.DateConfusedOrDisoriented,
+		signs.DurationConfusedOrDisoriented,
+		signs.DateConvulsions,
+		signs.DurationConvulsions,
+		signs.DateUnexplainedBleeding,
+		signs.DurationUnexplainedBleeding,
+		signs.DateBleedingOfTheGums,
+		signs.DurationBleedingOfTheGums,
+		signs.DateBleedingFromInjectionSite,
+		signs.DurationBleedingFromInjectionSite,
+		signs.DateNoseBleedEpistaxis,
+		signs.DurationNoseBleedEpistaxis,
+		signs.DateBloodyStool,
+		signs.DurationBloodyStool,
+		signs.DateBloodInVomit,
+		signs.DurationBloodInVomit,
+		signs.DateCoughingUpBloodHemoptysis,
+		signs.DurationCoughingUpBloodHemoptysis,
+		signs.DateBleedingFromVagina,
+		signs.DurationBleedingFromVagina,
+		signs.DateBruisingOfTheSkin,
+		signs.DurationBruisingOfTheSkin,
+		signs.DateBloodInUrine,
+		signs.DurationBloodInUrine,
+		signs.DateOtherHemorrhagicSymptoms,
+		signs.DurationOtherHemorrhagicSymptoms,
 	).Scan(&signs.ID, &signs.CreatedAt)
-
-	return err
 }
 
 // SaveVHFHospitalization saves a new hospitalization record
@@ -486,24 +609,250 @@ func SaveVHFRiskFactors(db *sql.DB, riskFactors *VHFRiskFactors) error {
 
 // SaveVHFLaboratory saves a new laboratory record
 func SaveVHFLaboratory(db *sql.DB, laboratory *VHFLaboratory) error {
+	// Check if a lab record exists for this patient_id
+	var exists bool
+	err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM vhf_laboratory WHERE patient_id = $1)", laboratory.PatientID).Scan(&exists)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		// Update existing record
+		_, err = db.Exec(`
+			UPDATE vhf_laboratory SET
+				sample_collection_date = $1,
+				sample_collection_time = $2,
+				sample_type = $3,
+				other_sample_type = $4,
+				requested_test = $5,
+				serology = $6,
+				malaria_rdt = $7,
+				hiv_rdt = $8,
+				test_result = $9,
+				date_tested = $10,
+				lab_name = $11
+			WHERE patient_id = $12
+		`,
+			laboratory.SampleCollectionDate,
+			laboratory.SampleCollectionTime,
+			laboratory.SampleType,
+			laboratory.OtherSampleType,
+			laboratory.RequestedTest,
+			laboratory.Serology,
+			laboratory.MalariaRDT,
+			laboratory.HIVRDT,
+			laboratory.TestResult,
+			laboratory.DateTested,
+			laboratory.LabName,
+			laboratory.PatientID,
+		)
+		return err
+	} else {
+		// Insert new record
+		return db.QueryRow(
+			`INSERT INTO vhf_laboratory (
+				patient_id, sample_collection_date, sample_collection_time,
+				sample_type, other_sample_type, requested_test, serology,
+				malaria_rdt, hiv_rdt, test_result, date_tested, lab_name
+			) VALUES (
+				$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+			) RETURNING id, created_at`,
+			laboratory.PatientID, laboratory.SampleCollectionDate,
+			laboratory.SampleCollectionTime, laboratory.SampleType,
+			laboratory.OtherSampleType, laboratory.RequestedTest,
+			laboratory.Serology, laboratory.MalariaRDT, laboratory.HIVRDT,
+			laboratory.TestResult, laboratory.DateTested, laboratory.LabName,
+		).Scan(&laboratory.ID, &laboratory.CreatedAt)
+	}
+}
+
+// GetVHFLaboratory retrieves laboratory data for a patient
+func GetVHFLaboratory(db *sql.DB, patientID int64) (*VHFLaboratory, error) {
 	query := `
-		INSERT INTO vhf_laboratory (
-			patient_id, sample_collection_date, sample_collection_time,
-			sample_type, other_sample_type, requested_test, serology,
-			malaria_rdt, hiv_rdt
-		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9
-		) RETURNING id, created_at`
+		SELECT id, patient_id, sample_collection_date, sample_collection_time,
+			   sample_type, other_sample_type, requested_test, serology,
+			   malaria_rdt, hiv_rdt, test_result, date_tested, lab_name, created_at
+		FROM vhf_laboratory
+		WHERE patient_id = $1`
 
-	err := db.QueryRow(
-		query,
-		laboratory.PatientID, laboratory.SampleCollectionDate,
-		laboratory.SampleCollectionTime, laboratory.SampleType,
-		laboratory.OtherSampleType, laboratory.RequestedTest,
-		laboratory.Serology, laboratory.MalariaRDT, laboratory.HIVRDT,
-	).Scan(&laboratory.ID, &laboratory.CreatedAt)
+	lab := &VHFLaboratory{}
+	err := db.QueryRow(query, patientID).Scan(
+		&lab.ID, &lab.PatientID, &lab.SampleCollectionDate, &lab.SampleCollectionTime,
+		&lab.SampleType, &lab.OtherSampleType, &lab.RequestedTest, &lab.Serology,
+		&lab.MalariaRDT, &lab.HIVRDT, &lab.TestResult, &lab.DateTested,
+		&lab.LabName, &lab.CreatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return lab, nil
+}
 
-	return err
+// GetVHFClinicalSigns retrieves clinical signs for a patient
+func GetVHFClinicalSigns(db *sql.DB, patientID int64) (*VHFClinicalSigns, error) {
+	query := `
+		SELECT id, patient_id, date_initial_onset, temp_source, temperature,
+			   fever, date_fever, duration_fever, vomiting, date_vomiting,
+			   duration_vomiting, nausea, date_nausea, duration_nausea,
+			   diarrhea, date_diarrhea, duration_diarrhea,
+			   intense_fatigue_general_weakness, date_intense_fatigue_general_weakness,
+			   duration_intense_fatigue_general_weakness, epigastric_pain,
+			   date_epigastric_pain, duration_epigastric_pain, lower_abdominal_pain,
+			   date_lower_abdominal_pain, duration_lower_abdominal_pain,
+			   chest_pain, date_chest_pain, duration_chest_pain,
+			   muscle_pain, date_muscle_pain, duration_muscle_pain,
+			   joint_pain, date_joint_pain, duration_joint_pain,
+			   headache, date_headache, duration_headache,
+			   cough, date_cough, duration_cough,
+			   difficulty_breathing, date_difficulty_breathing, duration_difficulty_breathing,
+			   difficulty_swallowing, date_difficulty_swallowing, duration_difficulty_swallowing,
+			   sore_throat, date_sore_throat, duration_sore_throat,
+			   jaundice, date_jaundice, duration_jaundice,
+			   conjunctivitis, date_conjunctivitis, duration_conjunctivitis,
+			   skin_rash, date_skin_rash, duration_skin_rash,
+			   hiccups, date_hiccups, duration_hiccups,
+			   pain_behind_eyes, date_pain_behind_eyes, duration_pain_behind_eyes,
+			   sensitive_to_light, date_sensitive_to_light, duration_sensitive_to_light,
+			   coma_unconscious, date_coma_unconscious, duration_coma_unconscious,
+			   confused_or_disoriented, date_confused_or_disoriented, duration_confused_or_disoriented,
+			   convulsions, date_convulsions, duration_convulsions,
+			   unexplained_bleeding, date_unexplained_bleeding, duration_unexplained_bleeding,
+			   bleeding_of_the_gums, date_bleeding_of_the_gums, duration_bleeding_of_the_gums,
+			   bleeding_from_injection_site, date_bleeding_from_injection_site, duration_bleeding_from_injection_site,
+			   nose_bleed_epistaxis, date_nose_bleed_epistaxis, duration_nose_bleed_epistaxis,
+			   bloody_stool, date_bloody_stool, duration_bloody_stool,
+			   blood_in_vomit, date_blood_in_vomit, duration_blood_in_vomit,
+			   coughing_up_blood_hemoptysis, date_coughing_up_blood_hemoptysis, duration_coughing_up_blood_hemoptysis,
+			   bleeding_from_vagina, date_bleeding_from_vagina, duration_bleeding_from_vagina,
+			   bruising_of_the_skin, date_bruising_of_the_skin, duration_bruising_of_the_skin,
+			   blood_in_urine, date_blood_in_urine, duration_blood_in_urine,
+			   other_hemorrhagic_symptoms, date_other_hemorrhagic_symptoms, duration_other_hemorrhagic_symptoms,
+			   created_at
+		FROM vhf_clinical_signs
+		WHERE patient_id = $1`
+
+	signs := &VHFClinicalSigns{}
+	err := db.QueryRow(query, patientID).Scan(
+		&signs.ID, &signs.PatientID, &signs.DateInitialOnset, &signs.TempSource, &signs.Temperature,
+		&signs.Fever, &signs.DateFever, &signs.DurationFever, &signs.Vomiting, &signs.DateVomiting,
+		&signs.DurationVomiting, &signs.Nausea, &signs.DateNausea, &signs.DurationNausea,
+		&signs.Diarrhea, &signs.DateDiarrhea, &signs.DurationDiarrhea,
+		&signs.IntenseFatigueGeneralWeakness, &signs.DateIntenseFatigueGeneralWeakness,
+		&signs.DurationIntenseFatigueGeneralWeakness, &signs.EpigastricPain,
+		&signs.DateEpigastricPain, &signs.DurationEpigastricPain, &signs.LowerAbdominalPain,
+		&signs.DateLowerAbdominalPain, &signs.DurationLowerAbdominalPain,
+		&signs.ChestPain, &signs.DateChestPain, &signs.DurationChestPain,
+		&signs.MusclePain, &signs.DateMusclePain, &signs.DurationMusclePain,
+		&signs.JointPain, &signs.DateJointPain, &signs.DurationJointPain,
+		&signs.Headache, &signs.DateHeadache, &signs.DurationHeadache,
+		&signs.Cough, &signs.DateCough, &signs.DurationCough,
+		&signs.DifficultyBreathing, &signs.DateDifficultyBreathing, &signs.DurationDifficultyBreathing,
+		&signs.DifficultySwallowing, &signs.DateDifficultySwallowing, &signs.DurationDifficultySwallowing,
+		&signs.SoreThroat, &signs.DateSoreThroat, &signs.DurationSoreThroat,
+		&signs.Jaundice, &signs.DateJaundice, &signs.DurationJaundice,
+		&signs.Conjunctivitis, &signs.DateConjunctivitis, &signs.DurationConjunctivitis,
+		&signs.SkinRash, &signs.DateSkinRash, &signs.DurationSkinRash,
+		&signs.Hiccups, &signs.DateHiccups, &signs.DurationHiccups,
+		&signs.PainBehindEyes, &signs.DatePainBehindEyes, &signs.DurationPainBehindEyes,
+		&signs.SensitiveToLight, &signs.DateSensitiveToLight, &signs.DurationSensitiveToLight,
+		&signs.ComaUnconscious, &signs.DateComaUnconscious, &signs.DurationComaUnconscious,
+		&signs.ConfusedOrDisoriented, &signs.DateConfusedOrDisoriented, &signs.DurationConfusedOrDisoriented,
+		&signs.Convulsions, &signs.DateConvulsions, &signs.DurationConvulsions,
+		&signs.UnexplainedBleeding, &signs.DateUnexplainedBleeding, &signs.DurationUnexplainedBleeding,
+		&signs.BleedingOfTheGums, &signs.DateBleedingOfTheGums, &signs.DurationBleedingOfTheGums,
+		&signs.BleedingFromInjectionSite, &signs.DateBleedingFromInjectionSite, &signs.DurationBleedingFromInjectionSite,
+		&signs.NoseBleedEpistaxis, &signs.DateNoseBleedEpistaxis, &signs.DurationNoseBleedEpistaxis,
+		&signs.BloodyStool, &signs.DateBloodyStool, &signs.DurationBloodyStool,
+		&signs.BloodInVomit, &signs.DateBloodInVomit, &signs.DurationBloodInVomit,
+		&signs.CoughingUpBloodHemoptysis, &signs.DateCoughingUpBloodHemoptysis, &signs.DurationCoughingUpBloodHemoptysis,
+		&signs.BleedingFromVagina, &signs.DateBleedingFromVagina, &signs.DurationBleedingFromVagina,
+		&signs.BruisingOfTheSkin, &signs.DateBruisingOfTheSkin, &signs.DurationBruisingOfTheSkin,
+		&signs.BloodInUrine, &signs.DateBloodInUrine, &signs.DurationBloodInUrine,
+		&signs.OtherHemorrhagicSymptoms, &signs.DateOtherHemorrhagicSymptoms, &signs.DurationOtherHemorrhagicSymptoms,
+		&signs.CreatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return signs, nil
+}
+
+// GetVHFHospitalization retrieves hospitalization data for a patient
+func GetVHFHospitalization(db *sql.DB, patientID int64) (*VHFHospitalization, error) {
+	query := `
+		SELECT id, patient_id, hospitalized, admission_date,
+			   health_facility_name, in_isolation, isolation_date, created_at
+		FROM vhf_hospitalization
+		WHERE patient_id = $1`
+
+	hosp := &VHFHospitalization{}
+	err := db.QueryRow(query, patientID).Scan(
+		&hosp.ID, &hosp.PatientID, &hosp.Hospitalized, &hosp.AdmissionDate,
+		&hosp.HealthFacilityName, &hosp.InIsolation, &hosp.IsolationDate, &hosp.CreatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return hosp, nil
+}
+
+// GetVHFRiskFactors retrieves risk factors for a patient
+func GetVHFRiskFactors(db *sql.DB, patientID int64) (*VHFRiskFactors, error) {
+	query := `
+		SELECT id, patient_id, contact_with_case, contact_name,
+			   contact_relation, contact_dates, contact_village,
+			   contact_district, contact_status, contact_death_date,
+			   contact_types, created_at
+		FROM vhf_risk_factors
+		WHERE patient_id = $1`
+
+	risk := &VHFRiskFactors{}
+	err := db.QueryRow(query, patientID).Scan(
+		&risk.ID, &risk.PatientID, &risk.ContactWithCase, &risk.ContactName,
+		&risk.ContactRelation, &risk.ContactDates, &risk.ContactVillage,
+		&risk.ContactDistrict, &risk.ContactStatus, &risk.ContactDeathDate,
+		&risk.ContactTypes, &risk.CreatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return risk, nil
+}
+
+// GetVHFInvestigator retrieves investigator data for a patient
+func GetVHFInvestigator(db *sql.DB, patientID int64) (*VHFInvestigator, error) {
+	query := `
+		SELECT id, patient_id, investigator_name, phone,
+			   email, position, district, health_facility,
+			   information_source, proxy_name, proxy_relation, created_at
+		FROM vhf_investigator
+		WHERE patient_id = $1`
+
+	inv := &VHFInvestigator{}
+	err := db.QueryRow(query, patientID).Scan(
+		&inv.ID, &inv.PatientID, &inv.InvestigatorName, &inv.Phone,
+		&inv.Email, &inv.Position, &inv.District, &inv.HealthFacility,
+		&inv.InformationSource, &inv.ProxyName, &inv.ProxyRelation, &inv.CreatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return inv, nil
 }
 
 // Similar Save, Get, and List functions for other models...

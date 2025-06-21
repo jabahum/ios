@@ -9,7 +9,7 @@ type SurveillanceFocalPerson struct {
 	ID         int       `json:"id"`
 	Name       string    `json:"name"`
 	Phone      string    `json:"phone"`
-	DistrictID int       `json:"district_id"`
+	DistrictID string    `json:"district_id"`
 	Email      string    `json:"email"`
 	Position   string    `json:"position"`
 	IsActive   bool      `json:"is_active"`
@@ -43,4 +43,28 @@ func GetFocalPersonByDistrict(db *sql.DB, districtID int) (*SurveillanceFocalPer
 	}
 
 	return focalPerson, nil
+}
+
+// Get active surveillance focal persons by district code
+func GetActiveSurveillanceFocalPersonsByDistrict(db *sql.DB, districtCode string) ([]SurveillanceFocalPerson, error) {
+	rows, err := db.Query(`
+		SELECT id, name, phone, district_id, email, position, is_active, created_at, updated_at
+		FROM surveillance_focal_persons
+		WHERE district_id = $1 AND is_active = true
+		ORDER BY name
+	`, districtCode)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var persons []SurveillanceFocalPerson
+	for rows.Next() {
+		var p SurveillanceFocalPerson
+		if err := rows.Scan(&p.ID, &p.Name, &p.Phone, &p.DistrictID, &p.Email, &p.Position, &p.IsActive, &p.CreatedAt, &p.UpdatedAt); err != nil {
+			return nil, err
+		}
+		persons = append(persons, p)
+	}
+	return persons, nil
 }
