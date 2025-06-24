@@ -1183,15 +1183,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const parishSelect = document.getElementById('parish');
     const villageSelect = document.getElementById('village');
 
-    // Initially disable all dependent dropdowns
-    subcountySelect.disabled = true;
-    parishSelect.disabled = true;
-    villageSelect.disabled = true;
+    // Store all location data for mapping
+    let allDistricts = [];
+    let allSubcounties = [];
+    let allParishes = [];
+    let allVillages = [];
 
     // Load districts on page load
     fetch('/api/locations/districts')
         .then(response => response.json())
         .then(districts => {
+            allDistricts = districts;
             districts.forEach(district => {
                 const option = new Option(district.name, district.name);
                 districtSelect.add(option);
@@ -1211,11 +1213,17 @@ document.addEventListener('DOMContentLoaded', function() {
         villageSelect.disabled = true;
         if (!districtName) return;
         
-        // For now, let's populate with some sample data or make a simple API call
-        // You can enhance this later with proper API endpoints
-        fetch('/api/locations/subcounties/1') // Use a default district ID
+        // Find the district ID by name
+        const selectedDistrict = allDistricts.find(d => d.name === districtName);
+        if (!selectedDistrict) {
+            console.error('District not found:', districtName);
+            return;
+        }
+        
+        fetch(`/api/locations/subcounties/${selectedDistrict.id}`)
             .then(response => response.json())
             .then(subcounties => {
+                allSubcounties = subcounties;
                 subcounties.forEach(subcounty => {
                     const option = new Option(subcounty.name, subcounty.name);
                     subcountySelect.add(option);
@@ -1234,9 +1242,17 @@ document.addEventListener('DOMContentLoaded', function() {
         villageSelect.disabled = true;
         if (!subcountyName) return;
         
-        fetch('/api/locations/parishes/1') // Use a default subcounty ID
+        // Find the subcounty ID by name
+        const selectedSubcounty = allSubcounties.find(s => s.name === subcountyName);
+        if (!selectedSubcounty) {
+            console.error('Subcounty not found:', subcountyName);
+            return;
+        }
+        
+        fetch(`/api/locations/parishes/${selectedSubcounty.id}`)
             .then(response => response.json())
             .then(parishes => {
+                allParishes = parishes;
                 parishes.forEach(parish => {
                     const option = new Option(parish.name, parish.name);
                     parishSelect.add(option);
@@ -1253,9 +1269,17 @@ document.addEventListener('DOMContentLoaded', function() {
         villageSelect.disabled = true;
         if (!parishName) return;
         
-        fetch('/api/locations/villages/1') // Use a default parish ID
+        // Find the parish ID by name
+        const selectedParish = allParishes.find(p => p.name === parishName);
+        if (!selectedParish) {
+            console.error('Parish not found:', parishName);
+            return;
+        }
+        
+        fetch(`/api/locations/villages/${selectedParish.id}`)
             .then(response => response.json())
             .then(villages => {
+                allVillages = villages;
                 villages.forEach(village => {
                     const option = new Option(village.name, village.name);
                     villageSelect.add(option);
