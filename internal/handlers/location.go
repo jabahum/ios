@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"log/slog"
+	"strconv"
 
 	"case/internal/models"
 
@@ -23,14 +24,21 @@ func HandlerGetDistricts(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 
 // HandlerGetSubcountiesByDistrict returns subcounties for a given district
 func HandlerGetSubcountiesByDistrict(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
-	districtCode := c.Params("district_code")
-	if districtCode == "" {
+	districtIDStr := c.Params("district_id")
+	if districtIDStr == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "District code is required",
+			"error": "District ID is required",
 		})
 	}
 
-	subcounties, err := models.GetSubcountiesByDistrict(db, districtCode)
+	districtID, err := strconv.Atoi(districtIDStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid district ID",
+		})
+	}
+
+	subcounties, err := models.GetSubcountiesByDistrict(db, districtID)
 	if err != nil {
 		sl.Error("Error getting subcounties", "error", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -43,14 +51,21 @@ func HandlerGetSubcountiesByDistrict(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) 
 
 // HandlerGetParishesBySubcounty returns parishes for a given subcounty
 func HandlerGetParishesBySubcounty(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
-	subcountyCode := c.Params("subcounty_code")
-	if subcountyCode == "" {
+	subcountyIDStr := c.Params("subcounty_id")
+	if subcountyIDStr == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Subcounty code is required",
+			"error": "Subcounty ID is required",
 		})
 	}
 
-	parishes, err := models.GetParishesBySubcounty(db, subcountyCode)
+	subcountyID, err := strconv.Atoi(subcountyIDStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid subcounty ID",
+		})
+	}
+
+	parishes, err := models.GetParishesBySubcounty(db, subcountyID)
 	if err != nil {
 		sl.Error("Error getting parishes", "error", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -63,14 +78,21 @@ func HandlerGetParishesBySubcounty(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) er
 
 // HandlerGetParishesByDistrict returns parishes for a given district
 func HandlerGetParishesByDistrict(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
-	districtCode := c.Params("district_code")
-	if districtCode == "" {
+	districtIDStr := c.Params("district_id")
+	if districtIDStr == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "District code is required",
+			"error": "District ID is required",
 		})
 	}
 
-	parishes, err := models.GetParishesByDistrict(db, districtCode)
+	districtID, err := strconv.Atoi(districtIDStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid district ID",
+		})
+	}
+
+	parishes, err := models.GetParishesByDistrict(db, districtID)
 	if err != nil {
 		sl.Error("Error getting parishes", "error", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -83,14 +105,21 @@ func HandlerGetParishesByDistrict(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) err
 
 // HandlerGetVillagesByParish returns villages for a given parish
 func HandlerGetVillagesByParish(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
-	parishCode := c.Params("parish_code")
-	if parishCode == "" {
+	parishIDStr := c.Params("parish_id")
+	if parishIDStr == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Parish code is required",
+			"error": "Parish ID is required",
 		})
 	}
 
-	villages, err := models.GetVillagesByParish(db, parishCode)
+	parishID, err := strconv.Atoi(parishIDStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid parish ID",
+		})
+	}
+
+	villages, err := models.GetVillagesByParish(db, parishID)
 	if err != nil {
 		sl.Error("Error getting villages", "error", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -103,14 +132,21 @@ func HandlerGetVillagesByParish(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error
 
 // HandlerGetVillagesByDistrict returns villages for a given district
 func HandlerGetVillagesByDistrict(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
-	districtCode := c.Params("district_code")
-	if districtCode == "" {
+	districtIDStr := c.Params("district_id")
+	if districtIDStr == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "District code is required",
+			"error": "District ID is required",
 		})
 	}
 
-	villages, err := models.GetVillagesByDistrict(db, districtCode)
+	districtID, err := strconv.Atoi(districtIDStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid district ID",
+		})
+	}
+
+	villages, err := models.GetVillagesByDistrict(db, districtID)
 	if err != nil {
 		sl.Error("Error getting villages", "error", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -123,14 +159,21 @@ func HandlerGetVillagesByDistrict(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) err
 
 // HandlerGetVillagesBySubcounty returns villages for a given subcounty
 func HandlerGetVillagesBySubcounty(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
-	subcountyCode := c.Params("subcounty_code")
-	if subcountyCode == "" {
+	subcountyIDStr := c.Params("subcounty_id")
+	if subcountyIDStr == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Subcounty code is required",
+			"error": "Subcounty ID is required",
 		})
 	}
 
-	villages, err := models.GetVillagesBySubcounty(db, subcountyCode)
+	subcountyID, err := strconv.Atoi(subcountyIDStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid subcounty ID",
+		})
+	}
+
+	villages, err := models.GetVillagesBySubcounty(db, subcountyID)
 	if err != nil {
 		sl.Error("Error getting villages", "error", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

@@ -96,22 +96,22 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 	app.Get("/api/locations/districts", func(c *fiber.Ctx) error {
 		return handlers.HandlerGetDistricts(c, db, sl)
 	})
-	app.Get("/api/locations/subcounties/:district_code", func(c *fiber.Ctx) error {
+	app.Get("/api/locations/subcounties/:district_id", func(c *fiber.Ctx) error {
 		return handlers.HandlerGetSubcountiesByDistrict(c, db, sl)
 	})
-	app.Get("/api/locations/parishes/:subcounty_code", func(c *fiber.Ctx) error {
+	app.Get("/api/locations/parishes/:subcounty_id", func(c *fiber.Ctx) error {
 		return handlers.HandlerGetParishesBySubcounty(c, db, sl)
 	})
-	app.Get("/api/locations/parishes/district/:district_code", func(c *fiber.Ctx) error {
+	app.Get("/api/locations/parishes/district/:district_id", func(c *fiber.Ctx) error {
 		return handlers.HandlerGetParishesByDistrict(c, db, sl)
 	})
-	app.Get("/api/locations/villages/:parish_code", func(c *fiber.Ctx) error {
+	app.Get("/api/locations/villages/:parish_id", func(c *fiber.Ctx) error {
 		return handlers.HandlerGetVillagesByParish(c, db, sl)
 	})
-	app.Get("/api/locations/villages/district/:district_code", func(c *fiber.Ctx) error {
+	app.Get("/api/locations/villages/district/:district_id", func(c *fiber.Ctx) error {
 		return handlers.HandlerGetVillagesByDistrict(c, db, sl)
 	})
-	app.Get("/api/locations/villages/subcounty/:subcounty_code", func(c *fiber.Ctx) error {
+	app.Get("/api/locations/villages/subcounty/:subcounty_id", func(c *fiber.Ctx) error {
 		return handlers.HandlerGetVillagesBySubcounty(c, db, sl)
 	})
 
@@ -220,12 +220,12 @@ func AuthRequired(store *session.Store) fiber.Handler {
 			"/mpox-cif/save",
 			"/mpox-cif/success",
 			"/api/locations/districts",
-			"/api/locations/subcounties/:district_code",
-			"/api/locations/parishes/:subcounty_code",
-			"/api/locations/parishes/district/:district_code",
-			"/api/locations/villages/:parish_code",
-			"/api/locations/villages/district/:district_code",
-			"/api/locations/villages/subcounty/:subcounty_code",
+			"/api/locations/subcounties/:district_id",
+			"/api/locations/parishes/:subcounty_id",
+			"/api/locations/parishes/district/:district_id",
+			"/api/locations/villages/:parish_id",
+			"/api/locations/villages/district/:district_id",
+			"/api/locations/villages/subcounty/:subcounty_id",
 		}
 
 		path := c.Path()
@@ -486,27 +486,27 @@ func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logg
 		return handlers.HandlerGetDistricts(c, db, sl)
 	})
 
-	app.Get("/api/subcounties/:district_code", func(c *fiber.Ctx) error {
+	app.Get("/api/subcounties/:district_id", func(c *fiber.Ctx) error {
 		return handlers.HandlerGetSubcountiesByDistrict(c, db, sl)
 	})
 
-	app.Get("/api/parishes/:subcounty_code", func(c *fiber.Ctx) error {
+	app.Get("/api/parishes/:subcounty_id", func(c *fiber.Ctx) error {
 		return handlers.HandlerGetParishesBySubcounty(c, db, sl)
 	})
 
-	app.Get("/api/parishes/district/:district_code", func(c *fiber.Ctx) error {
+	app.Get("/api/parishes/district/:district_id", func(c *fiber.Ctx) error {
 		return handlers.HandlerGetParishesByDistrict(c, db, sl)
 	})
 
-	app.Get("/api/villages/:parish_code", func(c *fiber.Ctx) error {
+	app.Get("/api/villages/:parish_id", func(c *fiber.Ctx) error {
 		return handlers.HandlerGetVillagesByParish(c, db, sl)
 	})
 
-	app.Get("/api/villages/district/:district_code", func(c *fiber.Ctx) error {
+	app.Get("/api/villages/district/:district_id", func(c *fiber.Ctx) error {
 		return handlers.HandlerGetVillagesByDistrict(c, db, sl)
 	})
 
-	app.Get("/api/villages/subcounty/:subcounty_code", func(c *fiber.Ctx) error {
+	app.Get("/api/villages/subcounty/:subcounty_id", func(c *fiber.Ctx) error {
 		return handlers.HandlerGetVillagesBySubcounty(c, db, sl)
 	})
 

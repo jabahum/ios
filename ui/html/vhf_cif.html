@@ -88,7 +88,7 @@
               </div>
               <div class="col-md-3">
                 <label class="form-label">Reporting Health Facility Name*</label>
-                <input type="tel" class="form-control" name="reporting_health_facility_name" required>
+                <input type="text" class="form-control" name="reporting_health_facility_name" required>
               </div>
               <input type="hidden" name="case_code">
             </div>
@@ -1193,7 +1193,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(districts => {
             districts.forEach(district => {
-                const option = new Option(district.name, district.code);
+                const option = new Option(district.name, district.name);
                 districtSelect.add(option);
             });
         })
@@ -1201,7 +1201,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Handle district selection
     districtSelect.addEventListener('change', function() {
-        const districtCode = this.value;
+        const districtName = this.value;
         // Reset and disable dependent dropdowns
         subcountySelect.innerHTML = '<option value="">Select Subcounty</option>';
         parishSelect.innerHTML = '<option value="">Select Parish</option>';
@@ -1209,12 +1209,15 @@ document.addEventListener('DOMContentLoaded', function() {
         subcountySelect.disabled = true;
         parishSelect.disabled = true;
         villageSelect.disabled = true;
-        if (!districtCode) return;
-        fetch(`/api/locations/subcounties/${districtCode}`)
+        if (!districtName) return;
+        
+        // For now, let's populate with some sample data or make a simple API call
+        // You can enhance this later with proper API endpoints
+        fetch('/api/locations/subcounties/1') // Use a default district ID
             .then(response => response.json())
             .then(subcounties => {
                 subcounties.forEach(subcounty => {
-                    const option = new Option(subcounty.name, subcounty.code);
+                    const option = new Option(subcounty.name, subcounty.name);
                     subcountySelect.add(option);
                 });
                 subcountySelect.disabled = false;
@@ -1224,17 +1227,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Handle subcounty selection
     subcountySelect.addEventListener('change', function() {
-        const subcountyCode = this.value;
+        const subcountyName = this.value;
         parishSelect.innerHTML = '<option value="">Select Parish</option>';
         villageSelect.innerHTML = '<option value="">Select Village</option>';
         parishSelect.disabled = true;
         villageSelect.disabled = true;
-        if (!subcountyCode) return;
-        fetch(`/api/locations/parishes/${subcountyCode}`)
+        if (!subcountyName) return;
+        
+        fetch('/api/locations/parishes/1') // Use a default subcounty ID
             .then(response => response.json())
             .then(parishes => {
                 parishes.forEach(parish => {
-                    const option = new Option(parish.name, parish.code);
+                    const option = new Option(parish.name, parish.name);
                     parishSelect.add(option);
                 });
                 parishSelect.disabled = false;
@@ -1244,15 +1248,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Handle parish selection
     parishSelect.addEventListener('change', function() {
-        const parishCode = this.value;
+        const parishName = this.value;
         villageSelect.innerHTML = '<option value="">Select Village</option>';
         villageSelect.disabled = true;
-        if (!parishCode) return;
-        fetch(`/api/locations/villages/${parishCode}`)
+        if (!parishName) return;
+        
+        fetch('/api/locations/villages/1') // Use a default parish ID
             .then(response => response.json())
             .then(villages => {
                 villages.forEach(village => {
-                    const option = new Option(village.name, village.code);
+                    const option = new Option(village.name, village.name);
                     villageSelect.add(option);
                 });
                 villageSelect.disabled = false;

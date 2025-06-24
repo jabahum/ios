@@ -501,25 +501,6 @@ func HandlerVHFPatientSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *s
 		return c.Status(500).SendString("Failed to save risk factors")
 	}
 
-	// Parse and save laboratory data
-	laboratory := &models.VHFLaboratory{
-		PatientID:            patient.ID,
-		SampleCollectionDate: sql.NullTime{Time: parseDate(c.FormValue("sample_collection_date")), Valid: true},
-		SampleCollectionTime: sql.NullString{String: c.FormValue("sample_collection_time"), Valid: c.FormValue("sample_collection_time") != ""},
-		SampleType:           sql.NullString{String: c.FormValue("sample_type"), Valid: c.FormValue("sample_type") != ""},
-		OtherSampleType:      sql.NullString{String: c.FormValue("other_sample_type"), Valid: c.FormValue("other_sample_type") != ""},
-		RequestedTest:        sql.NullString{String: c.FormValue("requested_test"), Valid: c.FormValue("requested_test") != ""},
-		Serology:             sql.NullString{String: c.FormValue("serology"), Valid: c.FormValue("serology") != ""},
-		MalariaRDT:           sql.NullString{String: c.FormValue("malaria_rdt"), Valid: c.FormValue("malaria_rdt") != ""},
-		HIVRDT:               sql.NullString{String: c.FormValue("hiv_rdt"), Valid: c.FormValue("hiv_rdt") != ""},
-		CreatedAt:            time.Now(),
-	}
-
-	if err := models.SaveVHFLaboratory(db, laboratory); err != nil {
-		sl.Error("Failed to save laboratory data", "error", err)
-		return c.Status(500).SendString("Failed to save laboratory data")
-	}
-
 	// Parse and save investigator data
 	investigator := &models.VHFInvestigator{
 		PatientID:         patient.ID,
