@@ -5770,3 +5770,7 @@ time=2025-06-24T15:38:37.688+03:00 level=INFO msg="Using template directory: C:\
 time=2025-06-24T15:38:37.689+03:00 level=INFO msg="Loading template file: C:\\Users\\pwaiswa\\go\\pkg\\mod\\github.com\\ios\\ui\\html\\vhf_cif.html"
 time=2025-06-24T15:40:59.163+03:00 level=INFO msg="Using template directory: C:\\Users\\pwaiswa\\go\\pkg\\mod\\github.com\\ios\\ui\\html"
 time=2025-06-24T15:40:59.164+03:00 level=INFO msg="Loading template file: C:\\Users\\pwaiswa\\go\\pkg\\mod\\github.com\\ios\\ui\\html\\vhf_cif.html"
+time=2025-06-25T14:41:31.807+03:00 level=INFO msg="Initializing SMS service" base_url=https://dispatcher2-mtracpro.health.go.ug username=case_management
+time=2025-06-25T14:41:31.809+03:00 level=INFO msg="starting server..."
+time=2025-06-26T14:29:33.265+03:00 level=INFO msg="Using template directory: C:\\Users\\pwaiswa\\go\\pkg\\mod\\github.com\\ios\\ui\\html"
+time=2025-06-26T14:29:33.275+03:00 level=INFO msg="Loading template file: C:\\Users\\pwaiswa\\go\\pkg\\mod\\github.com\\ios\\ui\\html\\login.html"

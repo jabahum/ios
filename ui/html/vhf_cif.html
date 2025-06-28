@@ -121,19 +121,19 @@
               </div>
               <div class="col-md-2">
                 <label class="form-label">Subcounty</label>
-                <select class="form-select" id="subcounty" name="subcounty" required>
+                <select class="form-select" id="subcounty" name="subcounty">
                     <option value="">Select Subcounty</option>
                 </select>
               </div>
               <div class="col-md-3">
                 <label class="form-label">Parish</label>
-                <select class="form-select" id="parish" name="parish" required>
+                <select class="form-select" id="parish" name="parish">
                     <option value="">Select Parish</option>
                 </select>
               </div>
               <div class="col-md-3">
                 <label class="form-label">Village/Town</label>
-                <select class="form-select" id="village" name="village_town" required>
+                <select class="form-select" id="village" name="village_town">
                     <option value="">Select Village</option>
                 </select>
               </div>    
@@ -1193,17 +1193,20 @@ document.addEventListener('DOMContentLoaded', function() {
     fetch('/api/locations/districts')
         .then(response => response.json())
         .then(districts => {
+            console.log('Districts loaded:', districts);
             allDistricts = districts;
             districts.forEach(district => {
                 const option = new Option(district.name, district.name);
                 districtSelect.add(option);
             });
+            console.log('District dropdown populated with', districts.length, 'options');
         })
         .catch(error => console.error('Error loading districts:', error));
 
     // Handle district selection
     districtSelect.addEventListener('change', function() {
         const districtName = this.value;
+        console.log('District selected:', districtName);
         // Reset and disable dependent dropdowns
         subcountySelect.innerHTML = '<option value="">Select Subcounty</option>';
         parishSelect.innerHTML = '<option value="">Select Parish</option>';
@@ -1220,15 +1223,18 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        console.log('Loading subcounties for district ID:', selectedDistrict.id);
         fetch(`/api/locations/subcounties/${selectedDistrict.id}`)
             .then(response => response.json())
             .then(subcounties => {
+                console.log('Subcounties loaded:', subcounties);
                 allSubcounties = subcounties;
                 subcounties.forEach(subcounty => {
                     const option = new Option(subcounty.name, subcounty.name);
                     subcountySelect.add(option);
                 });
                 subcountySelect.disabled = false;
+                console.log('Subcounty dropdown populated with', subcounties.length, 'options');
             })
             .catch(error => console.error('Error loading subcounties:', error));
     });
@@ -1310,6 +1316,16 @@ function toggleDateOfDeath() {
 // Initialize the form state
 document.addEventListener('DOMContentLoaded', function() {
   toggleDateOfDeath();
+  
+  // Add form submission debugging
+  const form = document.getElementById('vhfForm');
+  form.addEventListener('submit', function(e) {
+    console.log('Form submitted');
+    console.log('District value:', document.getElementById('district').value);
+    console.log('Subcounty value:', document.getElementById('subcounty').value);
+    console.log('Parish value:', document.getElementById('parish').value);
+    console.log('Village value:', document.getElementById('village').value);
+  });
 });
 
 function toggleHospitalized() {

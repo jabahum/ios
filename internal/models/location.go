@@ -62,6 +62,17 @@ func GetDistricts(db *sql.DB) ([]District, error) {
 	return districts, nil
 }
 
+// Get district by name
+func GetDistrictByName(db *sql.DB, name string) (*District, error) {
+	var district District
+	query := "SELECT id, name, code, created_at, updated_at FROM districts WHERE name = $1"
+	err := db.QueryRow(query, name).Scan(&district.ID, &district.Name, &district.Code, &district.CreatedAt, &district.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &district, nil
+}
+
 // Get subcounties by district ID
 func GetSubcountiesByDistrict(db *sql.DB, districtID int) ([]Subcounty, error) {
 	rows, err := db.Query("SELECT id, district_id, name, code, created_at, updated_at FROM subcounties WHERE district_id = $1 ORDER BY name", districtID)

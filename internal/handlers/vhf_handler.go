@@ -46,6 +46,13 @@ func HandlerVHFPatientSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *s
 		CreatedAt:                   time.Now(),
 	}
 
+	// Debug logging for location fields
+	sl.Info("Location fields received",
+		"district", patient.District,
+		"subcounty", patient.Subcounty,
+		"parish", patient.Parish,
+		"village_town", patient.VillageTown)
+
 	// Save patient data
 	if err := models.SaveVHFPatient(db, patient); err != nil {
 		sl.Error("Failed to save patient data", "error", err)
@@ -528,6 +535,30 @@ func HandlerVHFPatientSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *s
 		if err := smsService.SendSMS(patient.DataCapturerPhone.String, message); err != nil {
 			sl.Error("Failed to send SMS notification", "error", err)
 			// Don't return error here, as the form was still saved successfully
+		}
+	}
+
+	// Send SMS notification to DSFP if district is provided
+	if patient.District != "" {
+		// Get district ID from district name
+		district, err := models.GetDistrictByName(db, patient.District)
+		if err != nil {
+			sl.Error("Failed to get district by name", "district", patient.District, "error", err)
+		} else {
+			// Get DSFP for the district
+			focalPerson, err := models.GetFocalPersonByDistrict(db, district.ID)
+			if err != nil {
+				sl.Error("Failed to get focal person for district", "district_id", district.ID, "error", err)
+			} else if focalPerson != nil && focalPerson.Phone != "" {
+				dsfpMessage := fmt.Sprintf("VHF Case %s has been registered in %s district. Patient: %s %s. Please take necessary action.",
+					patient.CaseCode, patient.District, patient.Surname, patient.OtherNames)
+				if err := smsService.SendSMS(focalPerson.Phone, dsfpMessage); err != nil {
+					sl.Error("Failed to send SMS notification to DSFP", "error", err)
+					// Don't return error here, as the form was still saved successfully
+				} else {
+					sl.Info("SMS sent to DSFP", "district", patient.District, "dsfp_phone", focalPerson.Phone)
+				}
+			}
 		}
 	}
 
