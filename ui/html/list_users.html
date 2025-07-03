@@ -1,170 +1,580 @@
 {{ define "layout" }}
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patient Listing</title>
+    <title>User Management</title>
     <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
     <style>
         body {
-        background-color: #ffffff;
-        color: #333;
-        font-family: Arial, sans-serif;
-        padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
+        
+        .main-container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            margin: 20px auto;
+            max-width: 1400px;
+        }
+        
+        .header-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px 10px 0 0;
+        }
+        
+        .content-section {
+            padding: 30px;
+        }
+        
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-card h3 {
+            font-size: 2rem;
+            margin: 0;
+            font-weight: 700;
+        }
+        
+        .stat-card p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+        
+        .filters-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
         .table-container {
-            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
         }
+        
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_paginate {
+            padding: 15px 20px;
+        }
+        
+        .dataTables_wrapper .dataTables_filter input {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 8px 12px;
+        }
+        
+        .dataTables_wrapper .dataTables_filter input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
         .table {
-            font-size: 0.85rem; /* Smaller font size */
+            margin: 0;
         }
-        .table th, .table td {
-            padding: 6px 8px; /* Reduce padding */
+        
+        .table th {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            color: #495057;
+            padding: 15px 10px;
         }
-        .btn-sm {
-            font-size: 0.75rem; /* Smaller buttons */
-            padding: 4px 6px;
-        }        
-        .action-btn {
+        
+        .table td {
+            padding: 12px 10px;
+            vertical-align: middle;
+        }
+        
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-active {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-inactive {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-locked {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .role-badge {
+            background-color: #e9ecef;
+            color: #495057;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            margin: 2px;
             display: inline-block;
         }
-        .top-ribbon {
-            background-color: #f8f9fa;
-            border-bottom: 1px solid #e9ecef;
-            padding: 10px;
+        
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
         }
-        .side-menu {
-            background-color: #f8f9fa;
-            border-right: 1px solid #e9ecef;
-            height: 100vh;
-            padding-top: 20px;
+        
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 0.8rem;
         }
-        .menu-item {
-            padding: 10px 20px;
-            display: block;
-            color: #333;
-            text-decoration: none;
+        
+        .modal-content {
+            border-radius: 10px;
+            border: none;
         }
-        .menu-item:hover {
-            background-color: #e9ecef;
+        
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px 10px 0 0;
         }
-        .content {
-            padding: 20px;
+        
+        .alert {
+            border-radius: 8px;
+            border: none;
         }
-        .col-md-3 {
-            max-width: 200px;
+        
+        .select2-container--default .select2-selection--single {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            height: 38px;
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 34px;
+            padding-left: 12px;
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px;
         }
     </style>
 </head>
 <body>
-     <!-- Top Ribbon -->
-     <div class="top-ribbon d-flex justify-content-between">
-        <div class="ms-3">
-            <a href="/" class="me-3">Home</a>
-            <a href="/about" class="me-3">About</a>
-            <a href="#">Contact</a>
+    <div class="main-container">
+        <!-- Header Section -->
+        <div class="header-section">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-0">
+                        <i class="fas fa-users me-2"></i>User Management
+                    </h1>
+                    <p class="mb-0 mt-2 opacity-75">Manage system users, roles, and permissions</p>
+                </div>
+                <div>
+                    <a href="/users/new/0" class="btn btn-outline-light me-2">
+                        <i class="fas fa-plus me-1"></i>Add New User
+                    </a>
+                    <a href="/roles" class="btn btn-outline-light me-2">
+                        <i class="fas fa-user-tag me-1"></i>Manage Roles
+                    </a>
+                    <a href="/permissions" class="btn btn-outline-light">
+                        <i class="fas fa-key me-1"></i>Permissions
+                    </a>
+                </div>
+            </div>
         </div>
-        <div class="me-3">
-            <a href="/logout" class="me-3">Logout</a>
-            <a href="#">My Account</a>
-        </div>
-    </div>
-    <div class="container">
-        <h1>User Listing</h1>
-        <div class="d-flex justify-content-between align-items-center my-3">
-            <button class="btn btn-sm btn-primary" onclick="location.href='/users/new/0'">Add New User</button>
-        </div>
-        <div class="table-container">
-            <table class="table table-striped">
-                <thead>
-                    <tr>  
-                        <th></th>                        
-                        <th>Username</th>                      
-                        <th>Employee</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{ if .Form }}
-                            {{ range $key, $value := .Form }}
-                                <tr  class="t-row-detailed"
-                                     onclick="highlightTableRow(this)"
-                                     ondblclick='window.location="/users/new/{{ $value.UserID }}"'
-                                     style="cursor: pointer;"
-                                >   <td></td>
-                                
-                                <td>
-                                    <div class="row p-0 td-detail-row col-1-margin">
-                                            {{ $value.UserName }}
+
+        <!-- Content Section -->
+        <div class="content-section">
+            {{ if .Message }}
+            <div class="alert alert-{{ if eq .MessageType "error" }}danger{{ else }}success{{ end }} alert-dismissible fade show" role="alert">
+                {{ .Message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {{ end }}
+
+            <!-- Statistics Cards -->
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <h3>{{ .Stats.TotalUsers }}</h3>
+                    <p>Total Users</p>
+                </div>
+                <div class="stat-card">
+                    <h3>{{ .Stats.ActiveUsers }}</h3>
+                    <p>Active Users</p>
+                </div>
+                <div class="stat-card">
+                    <h3>{{ .Stats.LockedUsers }}</h3>
+                    <p>Locked Users</p>
+                </div>
+                <div class="stat-card">
+                    <h3>{{ .Stats.TotalRoles }}</h3>
+                    <p>Total Roles</p>
+                </div>
+            </div>
+
+            <!-- Filters Section -->
+            <div class="filters-section">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label class="form-label">Department</label>
+                        <select class="form-select" id="departmentFilter">
+                            <option value="">All Departments</option>
+                            {{ range .Departments }}
+                            <option value="{{ .Name }}">{{ .Name }}</option>
+                            {{ end }}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" id="statusFilter">
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="locked">Locked</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Role</label>
+                        <select class="form-select" id="roleFilter">
+                            <option value="">All Roles</option>
+                            {{ range .Roles }}
+                            <option value="{{ .Name }}">{{ .Name }}</option>
+                            {{ end }}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div>
+                            <button type="button" class="btn btn-primary" onclick="applyFilters()">
+                                <i class="fas fa-filter me-1"></i>Apply Filters
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="clearFilters()">
+                                <i class="fas fa-times me-1"></i>Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Table -->
+            <div class="table-container">
+                <table id="usersTable" class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Department</th>
+                            <th>Roles</th>
+                            <th>Status</th>
+                            <th>Last Login</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{ range .Form }}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-placeholder me-3">
+                                        <i class="fas fa-user-circle fa-2x text-muted"></i>
                                     </div>
-                                </td>
-                                    <td>
-                                        <div class="row p-0 td-detail-row col-1-margin">                                            
-                                            {{ $value.Lab }}
-                                        </div>
-                                    </td>                                    
-                                    <td>
-                                        <button class="btn btn-warning btn-sm" onclick="window.location.href='/users/new/{{$value.UserID}}'" >Edit</button>
-                                        <div class="btn-group action-btn">
-                                            <button type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                                                Actions
-                                            </button>
-                                            <ul class="dropdown-menu">
-                                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#actionModal" data-action="delete">Delete</a></li>
-                                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#actionModal" data-action="archive">Archive</a></li>
-                                            </ul>
-                                        </div>
-                                    </td>
-                                </tr>
-                            {{ end}}
-                    {{ end}}
-                    
-                    <!-- Add more rows as needed -->
-                </tbody>
-            </table>
+                                    <div>
+                                        <div class="fw-bold">{{ .FirstName.String }} {{ .LastName.String }}</div>
+                                        <div class="text-muted small">{{ .UserName.String }}</div>
+                                        <div class="text-muted small">{{ .Email.String }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {{ if .DepartmentName.String }}
+                                    <span class="badge bg-light text-dark">{{ .DepartmentName.String }}</span>
+                                {{ else }}
+                                    <span class="text-muted">-</span>
+                                {{ end }}
+                            </td>
+                            <td>
+                                {{ range .Roles }}
+                                <span class="role-badge">{{ .Name }}</span>
+                                {{ end }}
+                            </td>
+                            <td>
+                                {{ if .IsLocked.Bool }}
+                                    <span class="status-badge status-locked">Locked</span>
+                                {{ else if .IsActive.Bool }}
+                                    <span class="status-badge status-active">Active</span>
+                                {{ else }}
+                                    <span class="status-badge status-inactive">Inactive</span>
+                                {{ end }}
+                            </td>
+                            <td>
+                                {{ if .LastLoginAt.Valid }}
+                                    <span class="text-muted">{{ .LastLoginAt.Time.Format "Jan 02, 2006 15:04" }}</span>
+                                {{ else }}
+                                    <span class="text-muted">Never</span>
+                                {{ end }}
+                            </td>
+                            <td>
+                                <span class="text-muted">{{ .CreatedAt.Time.Format "Jan 02, 2006" }}</span>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editUser({{ .UserID }})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-info" onclick="viewUser({{ .UserID }})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item" href="#" onclick="resetPassword({{ .UserID }})">
+                                                <i class="fas fa-key me-2"></i>Reset Password
+                                            </a></li>
+                                            <li><a class="dropdown-item" href="#" onclick="toggleUserStatus({{ .UserID }})">
+                                                <i class="fas fa-toggle-on me-2"></i>Toggle Status
+                                            </a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item text-danger" href="#" onclick="deleteUser({{ .UserID }})">
+                                                <i class="fas fa-trash me-2"></i>Delete User
+                                            </a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {{ end }}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <!-- Action Modal -->
-    <div class="modal fade" id="actionModal" tabindex="-1" aria-labelledby="actionModalLabel" aria-hidden="true">
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="actionModalLabel">Action Confirmation</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title">Confirm Delete</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Please provide a reason for this action:</p>
-                    <textarea class="form-control" rows="4" placeholder="Enter your reason..."></textarea>
+                    <p>Are you sure you want to delete this user? This action cannot be undone.</p>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Warning:</strong> Deleting a user will remove all their data and access permissions.
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary">Submit</button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete">Delete User</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+    <!-- User Details Modal -->
+    <div class="modal fade" id="userDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">User Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="userDetailsContent">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="editUserBtn">Edit User</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app/cdn/js/jquery-3.6.0.min.js"></script>
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js"></script>
+
     <script>
+        let usersTable;
+        let currentUserId;
 
-    function highlightTableRow(row) {
-      // Remove highlight from previously selected row, if any
-      const previouslySelectedRow = document.querySelector('tr.custom-selected');
-      if (previouslySelectedRow) {
-      previouslySelectedRow.classList.remove('custom-selected');
-      }
-      // Highlight the clicked row
-      row.classList.add('custom-selected');
-    }
+        $(document).ready(function() {
+            // Initialize DataTable
+            usersTable = $('#usersTable').DataTable({
+                pageLength: 25,
+                order: [[0, 'asc']],
+                responsive: true,
+                language: {
+                    search: "Search users:",
+                    lengthMenu: "Show _MENU_ users per page",
+                    info: "Showing _START_ to _END_ of _TOTAL_ users",
+                    paginate: {
+                        first: "First",
+                        last: "Last",
+                        next: "Next",
+                        previous: "Previous"
+                    }
+                }
+            });
 
+            // Initialize Select2 for filters
+            $('#departmentFilter, #statusFilter, #roleFilter').select2({
+                placeholder: 'Select...',
+                allowClear: true,
+                width: '100%'
+            });
+        });
 
-    
+        function applyFilters() {
+            const department = $('#departmentFilter').val();
+            const status = $('#statusFilter').val();
+            const role = $('#roleFilter').val();
 
+            // Custom filtering function
+            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+                const rowDepartment = data[1]; // Department column
+                const rowStatus = data[3]; // Status column
+                const rowRoles = data[2]; // Roles column
+
+                const departmentMatch = !department || rowDepartment.includes(department);
+                const statusMatch = !status || rowStatus.toLowerCase().includes(status);
+                const roleMatch = !role || rowRoles.includes(role);
+
+                return departmentMatch && statusMatch && roleMatch;
+            });
+
+            usersTable.draw();
+        }
+
+        function clearFilters() {
+            $('#departmentFilter, #statusFilter, #roleFilter').val('').trigger('change');
+            $.fn.dataTable.ext.search.pop();
+            usersTable.draw();
+        }
+
+        function editUser(userId) {
+            window.location.href = `/users/new/${userId}`;
+        }
+
+        function viewUser(userId) {
+            currentUserId = userId;
+            
+            // Load user details via AJAX
+            $.get(`/users/details/${userId}`, function(data) {
+                $('#userDetailsContent').html(data);
+                $('#userDetailsModal').modal('show');
+            }).fail(function() {
+                alert('Error loading user details');
+            });
+        }
+
+        function resetPassword(userId) {
+            if (confirm('Are you sure you want to reset this user\'s password?')) {
+                $.post(`/users/reset-password/${userId}`, {
+                    csrf_token: '{{ .CSRFToken }}'
+                }, function(response) {
+                    if (response.success) {
+                        alert('Password reset successfully. New password: ' + response.newPassword);
+                    } else {
+                        alert('Error resetting password: ' + response.message);
+                    }
+                }).fail(function() {
+                    alert('Error resetting password');
+                });
+            }
+        }
+
+        function toggleUserStatus(userId) {
+            $.post(`/users/toggle-status/${userId}`, {
+                csrf_token: '{{ .CSRFToken }}'
+            }, function(response) {
+                if (response.success) {
+                    location.reload();
+                } else {
+                    alert('Error toggling user status: ' + response.message);
+                }
+            }).fail(function() {
+                alert('Error toggling user status');
+            });
+        }
+
+        function deleteUser(userId) {
+            currentUserId = userId;
+            $('#deleteModal').modal('show');
+        }
+
+        $('#confirmDelete').click(function() {
+            $.post(`/users/delete/${currentUserId}`, {
+                csrf_token: '{{ .CSRFToken }}'
+            }, function(response) {
+                if (response.success) {
+                    $('#deleteModal').modal('hide');
+                    location.reload();
+                } else {
+                    alert('Error deleting user: ' + response.message);
+                }
+            }).fail(function() {
+                alert('Error deleting user');
+            });
+        });
+
+        $('#editUserBtn').click(function() {
+            $('#userDetailsModal').modal('hide');
+            editUser(currentUserId);
+        });
     </script>
 </body>
 </html>

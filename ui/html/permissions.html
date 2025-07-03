@@ -1,0 +1,450 @@
+{{ define "layout" }}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Permission Management</title>
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
+    <style>
+        body {
+            background-color: #f8f9fa;
+            color: #333;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .main-container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            margin: 20px auto;
+            max-width: 1400px;
+        }
+        
+        .header-section {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px 10px 0 0;
+        }
+        
+        .content-section {
+            padding: 30px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .table th {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            color: #495057;
+            padding: 15px 10px;
+        }
+        
+        .table td {
+            padding: 12px 10px;
+            vertical-align: middle;
+        }
+        
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .resource-badge {
+            background-color: #e9ecef;
+            color: #495057;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .action-badge {
+            background-color: #dc3545;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            margin: 2px;
+            display: inline-block;
+        }
+        
+        .modal-content {
+            border-radius: 10px;
+            border: none;
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+            color: white;
+            border-radius: 10px 10px 0 0;
+        }
+        
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-card h3 {
+            font-size: 2rem;
+            margin: 0;
+            font-weight: 700;
+        }
+        
+        .stat-card p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header Section -->
+        <div class="header-section">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-0">
+                        <i class="fas fa-key me-2"></i>Permission Management
+                    </h1>
+                    <p class="mb-0 mt-2 opacity-75">Manage system permissions and access controls</p>
+                </div>
+                <div>
+                    <a href="/users" class="btn btn-outline-light me-2">
+                        <i class="fas fa-users me-1"></i>Users
+                    </a>
+                    <a href="/roles" class="btn btn-outline-light me-2">
+                        <i class="fas fa-user-tag me-1"></i>Roles
+                    </a>
+                    <button class="btn btn-outline-light" onclick="showCreatePermissionModal()">
+                        <i class="fas fa-plus me-1"></i>Create Permission
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Section -->
+        <div class="content-section">
+            {{ if .Message }}
+            <div class="alert alert-{{ if eq .MessageType "error" }}danger{{ else }}success{{ end }} alert-dismissible fade show" role="alert">
+                {{ .Message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {{ end }}
+
+            <!-- Statistics Cards -->
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <h3>{{ .Stats.TotalPermissions }}</h3>
+                    <p>Total Permissions</p>
+                </div>
+                <div class="stat-card">
+                    <h3>{{ .Stats.Resources }}</h3>
+                    <p>Resources</p>
+                </div>
+                <div class="stat-card">
+                    <h3>{{ .Stats.Actions }}</h3>
+                    <p>Actions</p>
+                </div>
+                <div class="stat-card">
+                    <h3>{{ .Stats.ActivePermissions }}</h3>
+                    <p>Active Permissions</p>
+                </div>
+            </div>
+
+            <!-- Permissions Table -->
+            <div class="table-container">
+                <table id="permissionsTable" class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Permission Name</th>
+                            <th>Resource</th>
+                            <th>Action</th>
+                            <th>Description</th>
+                            <th>Roles</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{ range .Permissions }}
+                        <tr>
+                            <td>
+                                <div class="fw-bold">{{ .Name }}</div>
+                                <div class="text-muted small">ID: {{ .ID }}</div>
+                            </td>
+                            <td>
+                                <span class="resource-badge">{{ .Resource }}</span>
+                            </td>
+                            <td>
+                                <span class="action-badge">{{ .Action }}</span>
+                            </td>
+                            <td>{{ .Description }}</td>
+                            <td>
+                                {{ range .Roles }}
+                                <span class="badge bg-info">{{ .Name }}</span>
+                                {{ end }}
+                            </td>
+                            <td>
+                                {{ if .IsActive }}
+                                    <span class="badge bg-success">Active</span>
+                                {{ else }}
+                                    <span class="badge bg-secondary">Inactive</span>
+                                {{ end }}
+                            </td>
+                            <td>
+                                <span class="text-muted">{{ .CreatedAt.Format "Jan 02, 2006" }}</span>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editPermission({{ .ID }})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-info" onclick="viewPermission({{ .ID }})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deletePermission({{ .ID }})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {{ end }}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Permission Modal -->
+    <div class="modal fade" id="permissionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="permissionModalTitle">Create New Permission</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="permissionForm">
+                        <div class="mb-3">
+                            <label class="form-label">Permission Name *</label>
+                            <input type="text" class="form-control" id="permissionName" name="name" required>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Resource *</label>
+                                    <select class="form-select" id="permissionResource" name="resource" required>
+                                        <option value="">Select Resource</option>
+                                        <option value="users">Users</option>
+                                        <option value="roles">Roles</option>
+                                        <option value="permissions">Permissions</option>
+                                        <option value="vhf_patients">VHF Patients</option>
+                                        <option value="outbreaks">Outbreaks</option>
+                                        <option value="employees">Employees</option>
+                                        <option value="facilities">Facilities</option>
+                                        <option value="laboratory">Laboratory</option>
+                                        <option value="surveillance">Surveillance</option>
+                                        <option value="reports">Reports</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Action *</label>
+                                    <select class="form-select" id="permissionAction" name="action" required>
+                                        <option value="">Select Action</option>
+                                        <option value="create">Create</option>
+                                        <option value="read">Read</option>
+                                        <option value="update">Update</option>
+                                        <option value="delete">Delete</option>
+                                        <option value="export">Export</option>
+                                        <option value="import">Import</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" id="permissionDescription" name="description" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="permissionActive" name="is_active" value="true" checked>
+                                <label class="form-check-label" for="permissionActive">Active</label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="savePermission()">Save Permission</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this permission?</p>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Warning:</strong> This will remove the permission from all roles that have it assigned.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete">Delete Permission</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app/cdn/js/jquery-3.6.0.min.js"></script>
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js"></script>
+
+    <script>
+        let permissionsTable;
+        let currentPermissionId;
+
+        $(document).ready(function() {
+            // Initialize DataTable
+            permissionsTable = $('#permissionsTable').DataTable({
+                pageLength: 25,
+                order: [[0, 'asc']],
+                responsive: true
+            });
+        });
+
+        function showCreatePermissionModal() {
+            $('#permissionModalTitle').text('Create New Permission');
+            $('#permissionForm')[0].reset();
+            currentPermissionId = null;
+            $('#permissionModal').modal('show');
+        }
+
+        function editPermission(permissionId) {
+            currentPermissionId = permissionId;
+            
+            // Load permission data via AJAX
+            $.get(`/permissions/${permissionId}`, function(data) {
+                $('#permissionModalTitle').text('Edit Permission');
+                $('#permissionName').val(data.name);
+                $('#permissionResource').val(data.resource);
+                $('#permissionAction').val(data.action);
+                $('#permissionDescription').val(data.description);
+                $('#permissionActive').prop('checked', data.is_active);
+                
+                $('#permissionModal').modal('show');
+            }).fail(function() {
+                alert('Error loading permission data');
+            });
+        }
+
+        function viewPermission(permissionId) {
+            // Load permission details via AJAX
+            $.get(`/permissions/${permissionId}/details`, function(data) {
+                // Show permission details in a modal or redirect to details page
+                alert('Permission details: ' + JSON.stringify(data));
+            }).fail(function() {
+                alert('Error loading permission details');
+            });
+        }
+
+        function deletePermission(permissionId) {
+            currentPermissionId = permissionId;
+            $('#deleteModal').modal('show');
+        }
+
+        function savePermission() {
+            const formData = new FormData($('#permissionForm')[0]);
+            const url = currentPermissionId ? `/permissions/${currentPermissionId}` : '/permissions';
+            const method = currentPermissionId ? 'PUT' : 'POST';
+            
+            $.ajax({
+                url: url,
+                method: method,
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.success) {
+                        $('#permissionModal').modal('hide');
+                        location.reload();
+                    } else {
+                        alert('Error saving permission: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('Error saving permission');
+                }
+            });
+        }
+
+        $('#confirmDelete').click(function() {
+            $.ajax({
+                url: `/permissions/${currentPermissionId}`,
+                method: 'DELETE',
+                success: function(response) {
+                    if (response.success) {
+                        $('#deleteModal').modal('hide');
+                        location.reload();
+                    } else {
+                        alert('Error deleting permission: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('Error deleting permission');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+
+{{ end }} 

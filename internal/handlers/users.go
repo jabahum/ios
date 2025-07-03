@@ -4,7 +4,6 @@ import (
 	"case/internal/models"
 	"case/internal/security"
 	"database/sql"
-	"errors"
 	"fmt"
 	"log"
 	"log/slog"
@@ -211,41 +210,157 @@ func HandlerUserList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.S
 	data.User = userName
 	data.Role = role
 
-	type userlist struct {
-		UserID   int
-		UserName string
-		Lab      string
+	// Initialize stats with default values
+	data.Stats = &Stats{
+		TotalUsers:      0,
+		ActiveUsers:     0,
+		LockedUsers:     0,
+		TotalRoles:      0,
+		TotalOutbreaks:  0,
+		TotalCases:      0,
+		TotalFacilities: 0,
 	}
 
-	mysql := `SELECT u.user_id, u.user_name, CONCAT(e.employee_fname, ' ', e.employee_lname) as lab FROM public.user u LEFT JOIN employee e ON u.user_employee=e.employee_id`
+	// Initialize empty arrays for departments and roles
+	data.Departments = []Department{}
+	data.Roles = []Role{}
+
+	// Get user statistics - using actual table structure
+	statsQuery := `SELECT COUNT(*) as total_users FROM public.users`
+
+	var totalUsers int
+	err := db.QueryRowContext(c.Context(), statsQuery).Scan(&totalUsers)
+	if err != nil {
+		sl.Error("Failed to get user statistics", "error", err)
+	} else {
+		data.Stats.TotalUsers = totalUsers
+		// Since we don't have is_active/is_locked columns, assume all users are active
+		data.Stats.ActiveUsers = totalUsers
+		data.Stats.LockedUsers = 0
+	}
+
+	// Get total roles count - check if roles table exists
+	rolesQuery := `SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'roles'`
+	var rolesTableExists int
+	err = db.QueryRowContext(c.Context(), rolesQuery).Scan(&rolesTableExists)
+	if err != nil || rolesTableExists == 0 {
+		sl.Error("Roles table does not exist", "error", err)
+	} else {
+		// If roles table exists, count roles and get role data
+		rolesCountQuery := `SELECT COUNT(*) FROM roles`
+		var totalRoles int
+		err = db.QueryRowContext(c.Context(), rolesCountQuery).Scan(&totalRoles)
+		if err != nil {
+			sl.Error("Failed to get roles count", "error", err)
+		} else {
+			data.Stats.TotalRoles = totalRoles
+		}
+
+		// Get roles data for dropdown
+		rolesDataQuery := `SELECT id, name FROM roles ORDER BY name`
+		roleRows, err := db.QueryContext(c.Context(), rolesDataQuery)
+		if err != nil {
+			sl.Error("Failed to get roles data", "error", err)
+		} else {
+			defer roleRows.Close()
+			for roleRows.Next() {
+				var role Role
+				if err := roleRows.Scan(&role.ID, &role.Name); err != nil {
+					sl.Error("Failed to scan role data", "error", err)
+					continue
+				}
+				data.Roles = append(data.Roles, role)
+			}
+		}
+	}
+
+	// Get departments data - check if departments table exists
+	deptQuery := `SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'departments'`
+	var deptTableExists int
+	err = db.QueryRowContext(c.Context(), deptQuery).Scan(&deptTableExists)
+	if err == nil && deptTableExists > 0 {
+		// If departments table exists, get department data
+		deptDataQuery := `SELECT id, name FROM departments ORDER BY name`
+		deptRows, err := db.QueryContext(c.Context(), deptDataQuery)
+		if err != nil {
+			sl.Error("Failed to get departments data", "error", err)
+		} else {
+			defer deptRows.Close()
+			for deptRows.Next() {
+				var dept Department
+				if err := deptRows.Scan(&dept.ID, &dept.Name); err != nil {
+					sl.Error("Failed to scan department data", "error", err)
+					continue
+				}
+				data.Departments = append(data.Departments, dept)
+			}
+		}
+	}
+
+	// Custom user structure for the template
+	type UserWithDetails struct {
+		UserID         int
+		UserName       sql.NullString
+		Email          sql.NullString
+		FirstName      sql.NullString
+		LastName       sql.NullString
+		IsActive       sql.NullBool
+		IsLocked       sql.NullBool
+		LastLoginAt    sql.NullTime
+		CreatedAt      sql.NullTime
+		DepartmentName sql.NullString
+		Roles          []Role
+	}
+
+	// Enhanced query to include RBAC fields
+	mysql := `
+		SELECT DISTINCT u.user_id, u.user_name, u.email, u.first_name, u.last_name, 
+		       u.is_active, u.is_locked, u.last_login_at, u.created_at, d.name as department_name,
+		       array_agg(r.name) as role_names
+		FROM public.users u
+		LEFT JOIN departments d ON u.department_id = d.id
+		LEFT JOIN user_roles ur ON u.user_id = ur.user_id
+		LEFT JOIN roles r ON ur.role_id = r.id
+		GROUP BY u.user_id, d.name, u.last_login_at, u.created_at
+		ORDER BY u.user_name
+	`
 
 	// Execute query
 	rows, err := db.QueryContext(c.Context(), mysql)
 	if err != nil {
-		fmt.Println(err.Error())
+		sl.Error("Database error in user list", "error", err.Error())
+		// Return empty list instead of failing
+		data.Form = []UserWithDetails{}
+		return GenerateHTML(c, db, data, "list_users")
 	}
 	defer rows.Close()
 
 	// Slice to hold users
-	var users []userlist
+	var users []UserWithDetails
 
 	// Iterate through rows
 	for rows.Next() {
-		var u userlist
-		if err := rows.Scan(&u.UserID, &u.UserName, &u.Lab); err != nil {
-			fmt.Println(err.Error())
+		var u UserWithDetails
+		var roleNames []string
+		if err := rows.Scan(&u.UserID, &u.UserName, &u.Email, &u.FirstName, &u.LastName,
+			&u.IsActive, &u.IsLocked, &u.LastLoginAt, &u.CreatedAt, &u.DepartmentName, &roleNames); err != nil {
+			sl.Error("Row scan error in user list", "error", err.Error())
+			continue
 		}
+
+		// Convert role names to Role structs
+		for _, roleName := range roleNames {
+			u.Roles = append(u.Roles, Role{Name: roleName})
+		}
+
 		users = append(users, u)
 	}
 
-	if err != nil {
-		if errors.Is(err, models.ErrNoRecord) {
-			fmt.Println("error loading user list: ", err.Error())
-		} else {
-			fmt.Println("error loading user list: ", err.Error())
-		}
+	// Check for iteration errors
+	if err = rows.Err(); err != nil {
+		sl.Error("Rows iteration error in user list", "error", err.Error())
 	}
 
 	data.Form = users
-	return GenerateHTML(c, db, data, "list_user")
+	return GenerateHTML(c, db, data, "list_users")
 }

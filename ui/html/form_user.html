@@ -1,267 +1,532 @@
 {{ define "layout" }}
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Form</title>
+    <title>User Management - {{ if .Form.UserID }}Edit User{{ else }}New User{{ end }}</title>
     <link href="/static/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/app/cdn/css/flatpickr.min.css" type="text/css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
     <style>
         body {
-            background-color: #ffffff;
+            background-color: #f8f9fa;
             color: #333;
-            font-family: Arial, sans-serif;
-            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
-        .table-container {
+        .main-container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            margin: 20px auto;
+            max-width: 1200px;
+        }
+        
+        .header-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px 10px 0 0;
+        }
+        
+        .form-section {
+            padding: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+        
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-weight: 600;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 1px solid #dee2e6;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .permission-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
             margin-top: 20px;
         }
-        .table {
-            font-size: 0.85rem; /* Smaller font size */
-        }
-        .table th, .table td {
-            padding: 6px 8px; /* Reduce padding */
-        }
-        .btn-sm {
-            font-size: 0.75rem; /* Smaller buttons */
-            padding: 4px 6px;
-        }        
-        .action-btn {
-            display: inline-block;
-        }
-        .form-container {
-            margin: 20px auto;
-            padding: 20px;
-            border: 1px solid #e9ecef;
+        
+        .permission-item {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
             border-radius: 8px;
-            background-color: #f8f9fa;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            transition: all 0.3s ease;
         }
-        .top-ribbon {
-            background-color: #f8f9fa;
-            border-bottom: 1px solid #e9ecef;
-            padding: 10px;
+        
+        .permission-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
         }
-        .side-menu {
-            background-color: #f8f9fa;
-            border-right: 1px solid #e9ecef;
-            height: 100vh;
-            padding-top: 20px;
+        
+        .permission-header {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-        .menu-item {
-            padding: 10px 20px;
-            display: block;
-            color: #333;
-            text-decoration: none;
+        
+        .permission-checkboxes {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
         }
-        .menu-item:hover {
-            background-color: #e9ecef;
+        
+        .form-check {
+            margin: 0;
         }
-        .content {
-            padding: 20px;
+        
+        .form-check-input:checked {
+            background-color: #667eea;
+            border-color: #667eea;
         }
-        .col-md-3 {
-            max-width: 200px;
+        
+        .alert {
+            border-radius: 8px;
+            border: none;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .status-active {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-inactive {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-locked {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .select2-container--default .select2-selection--single {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            height: 45px;
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 41px;
+            padding-left: 15px;
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 43px;
         }
     </style>
 </head>
 <body>
-    <!-- Top Ribbon -->
-    <div class="top-ribbon d-flex justify-content-between">
-        <div class="ms-3">
-            <a href="/" class="me-3">Home</a>
-            <a href="/about" class="me-3">About</a>
-            <a href="#">Contact</a>
-        </div>
-        <div class="me-3">
-            <a href="/logout" class="me-3">Logout</a>
-            <a href="#">My Account</a>
-        </div>
-    </div>
-
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Left-Hand Side Menu -->
-            <div class="col-md-3 side-menu">
-                              
-                    <a class="btn btn-sm btn-primary" href="/users/">BACK</a>
-                
+    <div class="main-container">
+        <!-- Header Section -->
+        <div class="header-section">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-0">
+                        <i class="fas fa-user-edit me-2"></i>
+                        {{ if .Form.UserID }}Edit User{{ else }}Create New User{{ end }}
+                    </h1>
+                    <p class="mb-0 mt-2 opacity-75">Manage user accounts and permissions</p>
+                </div>
+                <div>
+                    <a href="/users" class="btn btn-outline-light me-2">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Users
+                    </a>
+                </div>
             </div>
+        </div>
 
-            <!-- Main Content -->
-            <div class="col-md-9">
-                <div class="container-fluid">
-                    
-                    <h1>User Form</h1>
-                    <form method="post" action="/users/save" id="userForm">
-                        <div class="row registration-input-row">    
-                            <div class="col-lg-6">
-                                <div class="row">
-                                    <label class="col-sm-5 col-form-label col-form-label-sm" for="user_employee" required >Employee</label>
-                                    <div class="col-sm-5">
-                                        {{ GetDBOptions "Employee" "" "" "user_employee" "Employee" .Form.UserEmployee.Int64}}
-                                    </div>
+        <!-- Form Section -->
+        <div class="form-section">
+            {{ if .Message }}
+            <div class="alert alert-{{ if eq .MessageType "error" }}danger{{ else }}success{{ end }} alert-dismissible fade show" role="alert">
+                {{ .Message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {{ end }}
+
+            <form method="post" action="/users/save" id="userForm">
+                <!-- Basic Information Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-user me-2"></i>Basic Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label" for="first_name">First Name *</label>
+                                    <input type="text" class="form-control" id="first_name" name="first_name" 
+                                           value="{{ .Form.FirstName.String }}" required>
                                 </div>
                             </div>
-                            <div class="col-lg-6">
-                                <div class="row">
-                                    <label class="col-sm-4 col-form-label col-form-label-sm" for="user_name">Username</label>
-                                    <div class="col-sm-6">
-                                        <input class="form-control form-control-sm patient-input" value="{{.Form.UserName.String}}" id="user_name" name="user_name" type="text" required/>
-                                    </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label" for="last_name">Last Name *</label>
+                                    <input type="text" class="form-control" id="last_name" name="last_name" 
+                                           value="{{ .Form.LastName.String }}" required>
                                 </div>
-                            </div>                        
-                        </div>
-                        <div class="row registration-input-row"> 
-                            <div class="col-lg-12">
-                                <div class="row">
-                                    <label class="col-sm-4 col-form-label col-form-label-sm" for=""></label>
-                                    <div class="col-sm-6">
-                                    </div>
-                                </div> 
-
                             </div>
                         </div>
                         
-                        <div class="row registration-input-row">
-                            <br>
-                            <table class="table table-bordered" border="1" cellspacing="0">
-                                <thead>
-                                    <tr>
-                                        <th>Function</th>
-                                        <th>Scope</th>
-                                        <th>View</th>
-                                        <th>Add</th>
-                                        <th>Edit</th>
-                                        <th>Execute</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {{ if .FormChild1 }}
-                                        {{ range $key, $value := .FormChild1 }}
-                                    
-                                        <tr>
-                                            <td>
-                                                {{ $value.MetaName }} 
-                                                <input type="hidden" name="input_fid_id_{{ $value.MetaName }}" value="{{ $value.FID.Int64 }}">
-                                                <input type="hidden" name="input_meta_id_{{ $value.MetaName }}" value="{{ $value.MetaID.Int64 }}">
-                                            </td>
-                                            {{ $inputName := printf "input_scope_%s" $value.MetaName }}
-                                            <td>{{ GetDBOptions "meta" "Function Scope" "" $inputName "Function Scope" $value.FScope.Int64 }}</td>
-                                            <td><input type="checkbox" {{ if eq $value.FView.Int64 1 }}checked{{ end }} name="input_view_{{ $value.MetaName }}" value="1"></td>
-                                            <td><input type="checkbox" {{ if eq $value.FCreate.Int64 1 }}checked{{ end }} name="input_add_{{ $value.MetaName }}" value="1"></td>
-                                            <td><input type="checkbox" {{ if eq $value.FEdit.Int64 1 }}checked{{ end }} name="input_edit_{{ $value.MetaName }}" value="1"></td>
-                                            <td><input type="checkbox" {{ if eq $value.FRemove.Int64 1 }}checked{{ end }} name="input_execute_{{ $value.MetaName }}" value="1"></td>
-                                        </tr>
-
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label" for="user_name">Username *</label>
+                                    <input type="text" class="form-control" id="user_name" name="user_name" 
+                                           value="{{ .Form.UserName.String }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label" for="email">Email Address *</label>
+                                    <input type="email" class="form-control" id="email" name="email" 
+                                           value="{{ .Form.Email.String }}" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label" for="department_id">Department</label>
+                                    <select class="form-select" id="department_id" name="department_id">
+                                        <option value="">Select Department</option>
+                                        {{ range .Departments }}
+                                        <option value="{{ .ID }}" {{ if eq .ID $.Form.DepartmentID.Int64 }}selected{{ end }}>
+                                            {{ .Name }}
+                                        </option>
                                         {{ end }}
-                                    {{ end }}
-                                    
-                                    
-                                </tbody>
-                            </table>
-                        </div>  
-                        
-                        <input type="hidden" name="csrf_token" id="csrf_token" value="">
-                        <input type="hidden" name="id" id="id" value="{{.Form.UserID}}">
-                        <input type="hidden" name="from" id="from" value="">
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label" for="user_employee">Employee</label>
+                                    {{ GetDBOptions "Employee" "" "" "user_employee" "Employee" .Form.UserEmployee.Int64}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                        <button type="submit" id="submitButton" class="btn btn-sm btn-success mt-3">Save</button>
-                        <button type="button" id="save_cButton" class="btn btn-sm btn-success mt-3">Save & Close</button>
-                        <button type="button" id="cancelButton" class="btn btn-sm btn-success mt-3">Cancel</button>
-                        <button type="button" id="helpButton"   class="btn btn-sm btn-success mt-3">Help</button>
-                    </form>                    
-                </div>                
-            </div>
+                <!-- Security Settings Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Security Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label" for="user_pass">{{ if .Form.UserID }}New Password{{ else }}Password *{{ end }}</label>
+                                    <input type="password" class="form-control" id="user_pass" name="user_pass" 
+                                           {{ if not .Form.UserID }}required{{ end }}>
+                                    <small class="form-text text-muted">
+                                        {{ if .Form.UserID }}Leave blank to keep current password{{ else }}Minimum 8 characters{{ end }}
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label" for="confirm_password">Confirm Password</label>
+                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="1"
+                                               {{ if .Form.IsActive.Bool }}checked{{ end }}>
+                                        <label class="form-check-label" for="is_active">Active Account</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="is_locked" name="is_locked" value="1"
+                                               {{ if .Form.IsLocked.Bool }}checked{{ end }}>
+                                        <label class="form-check-label" for="is_locked">Lock Account</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label" for="password_expires_at">Password Expires</label>
+                                    <input type="date" class="form-control" id="password_expires_at" name="password_expires_at"
+                                           value="{{ .Form.PasswordExpiresAt.Time.Format "2006-01-02" }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Roles and Permissions Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-users-cog me-2"></i>Roles and Permissions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label" for="roles">User Roles</label>
+                            <select class="form-select" id="roles" name="roles" multiple>
+                                {{ range .Roles }}
+                                <option value="{{ .ID }}" {{ if .Selected }}selected{{ end }}>
+                                    {{ .Name }} - {{ .Description }}
+                                </option>
+                                {{ end }}
+                            </select>
+                            <small class="form-text text-muted">Hold Ctrl/Cmd to select multiple roles</small>
+                        </div>
+                        
+                        <div class="permission-grid">
+                            {{ range .Permissions }}
+                            <div class="permission-item">
+                                <div class="permission-header">
+                                    <span>{{ .Resource | title }}</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input select-all-permissions" type="checkbox" 
+                                               data-resource="{{ .Resource }}" id="select_all_{{ .Resource }}">
+                                        <label class="form-check-label" for="select_all_{{ .Resource }}">Select All</label>
+                                    </div>
+                                </div>
+                                <div class="permission-checkboxes">
+                                    {{ range .Actions }}
+                                    <div class="form-check">
+                                        <input class="form-check-input permission-checkbox" type="checkbox" 
+                                               name="permissions[{{ $.Resource }}][{{ .Action }}]" 
+                                               value="1" id="perm_{{ $.Resource }}_{{ .Action }}"
+                                               data-resource="{{ $.Resource }}" data-action="{{ .Action }}"
+                                               {{ if .Granted }}checked{{ end }}>
+                                        <label class="form-check-label" for="perm_{{ $.Resource }}_{{ .Action }}">
+                                            {{ .Action | title }}
+                                        </label>
+                                    </div>
+                                    {{ end }}
+                                </div>
+                            </div>
+                            {{ end }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hidden Fields -->
+                <input type="hidden" name="csrf_token" id="csrf_token" value="{{ .CSRFToken }}">
+                <input type="hidden" name="id" id="id" value="{{ .Form.UserID }}">
+                <input type="hidden" name="from" id="from" value="{{ .From }}">
+
+                <!-- Action Buttons -->
+                <div class="d-flex justify-content-between mt-4">
+                    <div>
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="fas fa-save me-1"></i>Save User
+                        </button>
+                        <button type="button" class="btn btn-secondary me-2" onclick="saveAndClose()">
+                            <i class="fas fa-save me-1"></i>Save & Close
+                        </button>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-outline-secondary me-2" onclick="window.location.href='/users'">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </button>
+                        <button type="button" class="btn btn-outline-info" onclick="showHelp()">
+                            <i class="fas fa-question-circle me-1"></i>Help
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
+
     <script src="/static/app/cdn/js/jquery-3.6.0.min.js"></script>
     <script src="/static/js/bootstrap.bundle.min.js"></script>
     <script src="/static/app/cdn/js/flatpickr.min.js"></script>
-    <script src="/static/app/cdn/js/select2.min.js"></script>
-
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js"></script>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        $(document).ready(function() {
+            // Initialize Select2 for roles
+            $('#roles').select2({
+                placeholder: 'Select roles...',
+                allowClear: true,
+                width: '100%'
+            });
 
-            const today = new Date();
-            const formattedDate = today.toISOString().split('T')[0];
-
-            flatpickr(".datetimepicker", {
-                enableTime: false, 
+            // Initialize date picker
+            flatpickr("#password_expires_at", {
                 dateFormat: "Y-m-d",
-                defaultDate: formattedDate,
-                disableMobile: true
+                allowInput: true
+            });
+
+            // Handle "Select All" checkboxes for permissions
+            $('.select-all-permissions').on('change', function() {
+                const resource = $(this).data('resource');
+                const isChecked = $(this).is(':checked');
+                
+                $(`.permission-checkbox[data-resource="${resource}"]`).prop('checked', isChecked);
+            });
+
+            // Update "Select All" state when individual permissions change
+            $('.permission-checkbox').on('change', function() {
+                const resource = $(this).data('resource');
+                const totalCheckboxes = $(`.permission-checkbox[data-resource="${resource}"]`).length;
+                const checkedCheckboxes = $(`.permission-checkbox[data-resource="${resource}"]:checked`).length;
+                
+                const selectAllCheckbox = $(`#select_all_${resource}`);
+                if (checkedCheckboxes === 0) {
+                    selectAllCheckbox.prop('indeterminate', false).prop('checked', false);
+                } else if (checkedCheckboxes === totalCheckboxes) {
+                    selectAllCheckbox.prop('indeterminate', false).prop('checked', true);
+                } else {
+                    selectAllCheckbox.prop('indeterminate', true);
+                }
+            });
+
+            // Form validation
+            $('#userForm').on('submit', function(e) {
+                if (!validateForm()) {
+                    e.preventDefault();
+                    alert('Please fill out all required fields correctly.');
+                }
+            });
+
+            // Password confirmation validation
+            $('#confirm_password').on('input', function() {
+                const password = $('#user_pass').val();
+                const confirmPassword = $(this).val();
+                
+                if (confirmPassword && password !== confirmPassword) {
+                    $(this).addClass('is-invalid');
+                    $(this).next('.invalid-feedback').remove();
+                    $(this).after('<div class="invalid-feedback">Passwords do not match</div>');
+                } else {
+                    $(this).removeClass('is-invalid');
+                    $(this).next('.invalid-feedback').remove();
+                }
             });
         });
 
-        document.addEventListener("DOMContentLoaded", function () {
-    const form = document.getElementById("userForm"); // Replace with your form ID
-    const submitButton = document.getElementById("submitButton"); // Replace with your submit button ID
-    const save_cButton = document.getElementById("save_cButton");
-    const helpButton   = document.getElementById("helpButton");
-    const cancelButton = document.getElementById("cancelButton"); // Replace with your cancel button ID
-
-    
-    
-    //console.log("Form Data as JSON:", formDataJSON);
-
-    if (submitButton) {
-        submitButton.addEventListener("click", function (event) {
-            event.preventDefault(); // Prevent default form submission
+        function validateForm() {
+            let isValid = true;
             
-            if (validateForm()) {
-                form.submit(); // Submit the form only if validation passes
-            } else {
-                alert("Please fill out all required fields correctly.");
-            }
-        });
-    }
+            // Check required fields
+            $('input[required], select[required]').each(function() {
+                if (!$(this).val().trim()) {
+                    $(this).addClass('is-invalid');
+                    isValid = false;
+                } else {
+                    $(this).removeClass('is-invalid');
+                }
+            });
 
-    if (cancelButton) {
-        cancelButton.addEventListener("click", function () {
-            window.location.href = "/users"; // Replace with the correct URL
-        });
-    }
-
-    function validateForm() {
-        let isValid = true;
-        const requiredFields = document.querySelectorAll("input[required], select[required], textarea[required]");
-
-        requiredFields.forEach(function (field) {
-            if (!field.value.trim()) {
+            // Check password confirmation
+            const password = $('#user_pass').val();
+            const confirmPassword = $('#confirm_password').val();
+            if (password && confirmPassword && password !== confirmPassword) {
+                $('#confirm_password').addClass('is-invalid');
                 isValid = false;
-                field.classList.add("is-invalid"); // Bootstrap validation styling
-            } else {
-                field.classList.remove("is-invalid");
             }
-        });
 
-        return isValid;
-    }
+            return isValid;
+        }
 
-    function getFormDataAsJSON(formElement) {
-        const formData = new FormData(formElement);
-        const jsonObject = {};
+        function saveAndClose() {
+            if (validateForm()) {
+                $('#from').val('close');
+                $('#userForm').submit();
+            } else {
+                alert('Please fill out all required fields correctly.');
+            }
+        }
 
-        formData.forEach((value, key) => {
-            jsonObject[key] = value;
-        });
-
-        return jsonObject;
-    }
-});
-
+        function showHelp() {
+            alert('Help information will be displayed here.\n\n' +
+                  '• Username must be unique\n' +
+                  '• Password must be at least 8 characters\n' +
+                  '• Select appropriate roles for the user\n' +
+                  '• Customize permissions as needed');
+        }
     </script>
 </body>
 </html>
-
 
 {{ end }}

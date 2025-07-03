@@ -17,61 +17,180 @@
                         </p>
                     </div>
 
-                    <div class="row mt-4">
-                        <div class="col-md-4">
-                            <div class="card">
+                    <!-- Patient Management Section -->
+                    <h4 class="mt-4 mb-3 text-primary">Patient Management</h4>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
                                 <div class="card-body">
-                                    <h5 class="card-title">Cases</h5>
+                                    <h5 class="card-title">
+                                        <i class="fas fa-user-injured text-primary"></i> Cases
+                                    </h5>
                                     <p class="card-text">Manage patient cases and records</p>
                                     <a href="/cases" class="btn btn-primary">View Cases</a>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="card">
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
                                 <div class="card-body">
-                                    <h5 class="card-title">Laboratory</h5>
-                                    <p class="card-text">Manage laboratory results and tests</p>
-                                    <a href="/lab" class="btn btn-primary">View Lab Results</a>
+                                    <h5 class="card-title">
+                                        <i class="fas fa-virus text-danger"></i> VHF Cases
+                                    </h5>
+                                    <p class="card-text">Manage Viral Hemorrhagic Fever cases</p>
+                                    <a href="/vhf-list" class="btn btn-danger">View VHF Cases</a>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="card">
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
                                 <div class="card-body">
-                                    <h5 class="card-title">Reports</h5>
-                                    <p class="card-text">Generate and view reports</p>
-                                    <a href="/reports" class="btn btn-primary">View Reports</a>
+                                    <h5 class="card-title">
+                                        <i class="fas fa-flask text-info"></i> Laboratory
+                                    </h5>
+                                    <p class="card-text">Manage laboratory results and tests</p>
+                                    <a href="/lab" class="btn btn-info">View Lab Results</a>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- Second row -->
-                     <div class="row mt-4">
-                        <div class="col-md-4">
-                            <div class="card">
+
+                    <!-- User & Employee Management Section -->
+                    <h4 class="mt-4 mb-3 text-success">User & Employee Management</h4>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
                                 <div class="card-body">
-                                    <h5 class="card-title">VHF Cases</h5>
-                                    <p class="card-text">Manage patient cases and records</p>
-                                    <a href="/vhf-list" class="btn btn-primary">View VHF Cases</a>
+                                    <h5 class="card-title">
+                                        <i class="fas fa-users text-success"></i> Users
+                                    </h5>
+                                    <p class="card-text">Manage system users and permissions</p>
+                                    <a href="/users" class="btn btn-success">Manage Users</a>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="card">
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
                                 <div class="card-body">
-                                    <h5 class="card-title">Users</h5>
-                                    <p class="card-text">Manage laboratory results and tests</p>
-                                    <a href="/users/list" class="btn btn-primary">View Lab Results</a>
+                                    <h5 class="card-title">
+                                        <i class="fas fa-user-tie text-warning"></i> Employees
+                                    </h5>
+                                    <p class="card-text">Manage employee records and assignments</p>
+                                    <a href="/employees" class="btn btn-warning">Manage Employees</a>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="card">
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
                                 <div class="card-body">
-                                    <h5 class="card-title">Reports</h5>
+                                    <h5 class="card-title">
+                                        <i class="fas fa-key text-secondary"></i> Password Change
+                                    </h5>
+                                    <p class="card-text">Change your password</p>
+                                    <a href="/change-password" class="btn btn-secondary">Change Password</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Outbreak & Role Management Section -->
+                    <h4 class="mt-4 mb-3 text-info">Outbreak & Role Management</h4>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-shield-alt text-info"></i> Outbreak Assignments
+                                    </h5>
+                                    <p class="card-text">Assign users to outbreaks</p>
+                                    <a href="/outbreaks/assignments" class="btn btn-info">Manage Assignments</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-user-md text-primary"></i> Patient Roles
+                                    </h5>
+                                    <p class="card-text">Manage patient care roles</p>
+                                    <a href="/patient-roles" class="btn btn-primary">Manage Roles</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-user-shield text-dark"></i> System Roles
+                                    </h5>
+                                    <p class="card-text">Manage system roles and permissions</p>
+                                    <a href="/roles" class="btn btn-dark">Manage Roles</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reports & Analytics Section -->
+                    <h4 class="mt-4 mb-3 text-purple">Reports & Analytics</h4>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-chart-bar text-purple"></i> Reports
+                                    </h5>
                                     <p class="card-text">Generate and view reports</p>
-                                    <a href="/reports" class="btn btn-primary">View Reports</a>
+                                    <a href="/reports" class="btn btn-purple">View Reports</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-chart-line text-success"></i> Statistics
+                                    </h5>
+                                    <p class="card-text">View system statistics</p>
+                                    <a href="/employees/statistics" class="btn btn-success">View Stats</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-download text-info"></i> Export Data
+                                    </h5>
+                                    <p class="card-text">Export employee and case data</p>
+                                    <a href="/employees/export" class="btn btn-info">Export Data</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions Section -->
+                    <h4 class="mt-4 mb-3 text-warning">Quick Actions</h4>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-plus-circle text-success"></i> Add New Case
+                                    </h5>
+                                    <p class="card-text">Register a new patient case</p>
+                                    <a href="/cases/new/0" class="btn btn-success">Add Case</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-plus-circle text-danger"></i> Add VHF Case
+                                    </h5>
+                                    <p class="card-text">Register a new VHF case</p>
+                                    <a href="/vhf-cif" class="btn btn-danger">Add VHF Case</a>
                                 </div>
                             </div>
                         </div>
@@ -81,4 +200,27 @@
         </div>
     </div>
 </div>
+
+<style>
+.text-purple {
+    color: #6f42c1 !important;
+}
+.btn-purple {
+    background-color: #6f42c1;
+    border-color: #6f42c1;
+    color: white;
+}
+.btn-purple:hover {
+    background-color: #5a32a3;
+    border-color: #5a32a3;
+    color: white;
+}
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+</style>
 {{end}}

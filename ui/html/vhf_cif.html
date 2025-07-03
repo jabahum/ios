@@ -88,7 +88,9 @@
               </div>
               <div class="col-md-3">
                 <label class="form-label">Reporting Health Facility Name*</label>
-                <input type="text" class="form-control" name="reporting_health_facility_name" required>
+                <select class="form-select" name="reporting_health_facility_name" required>
+                  <option value="">Select Facility</option>
+                </select>
               </div>
               <input type="hidden" name="case_code">
             </div>
@@ -1169,12 +1171,27 @@ function generateCaseCode() {
 
 document.addEventListener('DOMContentLoaded', function() {
   generateCaseCode();
+  loadFacilities();
   const form = document.getElementById('vhfForm');
   form.addEventListener('submit', function(e) {
     // Ensure case code is generated before submission
     generateCaseCode();
   });
 });
+
+// Function to load facilities
+function loadFacilities() {
+  fetch('/api/facilities')
+    .then(response => response.json())
+    .then(facilities => {
+      const facilitySelect = document.querySelector('select[name="reporting_health_facility_name"]');
+      facilities.forEach(facility => {
+        const option = new Option(facility.facility_name, facility.facility_name);
+        facilitySelect.add(option);
+      });
+    })
+    .catch(error => console.error('Error loading facilities:', error));
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     // Get references to the select elements

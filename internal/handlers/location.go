@@ -183,3 +183,16 @@ func HandlerGetVillagesBySubcounty(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) er
 
 	return c.JSON(villages)
 }
+
+// HandlerGetFacilities returns all facilities
+func HandlerGetFacilities(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
+	facilities, err := models.GetAllFacilities(db)
+	if err != nil {
+		sl.Error("Error getting facilities", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to get facilities",
+		})
+	}
+
+	return c.JSON(facilities)
+}

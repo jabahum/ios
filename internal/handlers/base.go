@@ -66,11 +66,42 @@ type TemplateData struct {
 	Flash           string
 	Menuz           string
 	IsAuthenticated bool
-	CSRFToken       string // Add a CSRFToken field.
+	CSRFToken       string             // Add a CSRFToken field.
+	IsNew           bool               // Add IsNew field for form templates
+	Message         string             // Add Message field for alerts
+	MessageType     string             // Add MessageType field for alert styling
+	Stats           *Stats             // Add Stats field for dashboard statistics
+	Departments     []Department       // Add Departments field for RBAC
+	Roles           []Role             // Add Roles field for RBAC
+	Outbreaks       []*models.Outbreak // Correct type for outbreaks
+	Users           []*models.User     // Correct type for users
 
 	// Custom fields for Mpox admission logic
 	HasMpoxAdmission bool
 	MpoxAdmissionID  int
+}
+
+// Department represents a department in the RBAC system
+type Department struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+// Role represents a role in the RBAC system
+type Role struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+// Stats contains dashboard statistics
+type Stats struct {
+	TotalUsers      int
+	ActiveUsers     int
+	LockedUsers     int
+	TotalRoles      int
+	TotalOutbreaks  int
+	TotalCases      int
+	TotalFacilities int
 }
 
 func NewTemplateData(c *fiber.Ctx, store *session.Store) *TemplateData {

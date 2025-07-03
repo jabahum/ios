@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS surveillance_focal_persons (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     phone VARCHAR(20) NOT NULL,
-    district_id VARCHAR(100) REFERENCES districts(code) ON DELETE CASCADE,
+    district_id INTEGER REFERENCES districts(id) ON DELETE CASCADE,
     email VARCHAR(255),
     position VARCHAR(255),
     is_active BOOLEAN DEFAULT true,

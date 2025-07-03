@@ -1,0 +1,83 @@
+{{define "content"}}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Assign Users to Outbreak</h5>
+                    <a href="/outbreaks/assignments" class="btn btn-outline-primary">Back to Assignments</a>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6>Assign Users to Outbreak</h6>
+                        <p class="mb-0">Select users to assign to specific outbreaks for case management.</p>
+                    </div>
+
+                    <form method="POST" action="/outbreaks/assign">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="outbreak_id" class="form-label">Select Outbreak</label>
+                                    <select class="form-select" id="outbreak_id" name="outbreak_id" required>
+                                        <option value="">Choose an outbreak...</option>
+                                        {{range .Outbreaks}}
+                                        <option value="{{.ID}}">{{.Name}}</option>
+                                        {{end}}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="user_id" class="form-label">Select User</label>
+                                    <select class="form-select" id="user_id" name="user_id" required>
+                                        <option value="">Choose a user...</option>
+                                        {{range .Users}}
+                                        <option value="{{.UserID}}">{{.UserName}}</option>
+                                        {{end}}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary">Assign User</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load outbreaks and users if not provided in template data
+document.addEventListener('DOMContentLoaded', function() {
+    // Load outbreaks
+    fetch('/api/outbreaks')
+        .then(response => response.json())
+        .then(data => {
+            const outbreakSelect = document.getElementById('outbreak_id');
+            data.forEach(outbreak => {
+                const option = document.createElement('option');
+                option.value = outbreak.id;
+                option.textContent = outbreak.name;
+                outbreakSelect.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Error loading outbreaks:', error));
+
+    // Load users
+    fetch('/api/users')
+        .then(response => response.json())
+        .then(data => {
+            const userSelect = document.getElementById('user_id');
+            data.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.user_id;
+                option.textContent = user.user_name;
+                userSelect.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Error loading users:', error));
+});
+</script>
+{{end}} 

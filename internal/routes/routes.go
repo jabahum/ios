@@ -16,6 +16,9 @@ import (
 )
 
 func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger, config handlers.Config, smsService *services.SMSService) {
+	// Create handlers instance
+	handlersInstance := handlers.NewHandlers(db)
+
 	// Public routes
 	app.Get("/", func(c *fiber.Ctx) error {
 		return handlers.GenerateHTML(c, db, nil, "landing")
@@ -115,6 +118,11 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		return handlers.HandlerGetVillagesBySubcounty(c, db, sl)
 	})
 
+	// Facilities API route
+	app.Get("/api/facilities", func(c *fiber.Ctx) error {
+		return handlers.HandlerGetFacilities(c, db, sl)
+	})
+
 	// Protected routes
 	appGroup := app.Group("/")
 	appGroup.Use(AuthRequired(store))
@@ -177,6 +185,22 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		RouteAPIEncounter(enk, db, sl, store, config)
 		RouteAPIStatus(sta, db, sl, store, config)
 
+		// Add missing routes for home.html navigation
+		appGroup.Get("/vhf", func(c *fiber.Ctx) error { return handlers.HandlerVHFList(c, db, sl, store, config) })
+		appGroup.Get("/vhf/new", func(c *fiber.Ctx) error { return handlers.GenerateHTML(c, db, nil, "vhf_cif") })
+		appGroup.Get("/cases/new", func(c *fiber.Ctx) error { return handlers.HandlerCasesForm(c, db, sl, store, config) })
+		appGroup.Get("/lab", func(c *fiber.Ctx) error { return handlers.HandlerLabList(c, db, sl, store, config) })
+		appGroup.Get("/change-password", func(c *fiber.Ctx) error { return handlers.GenerateHTML(c, db, nil, "change_password") })
+		appGroup.Get("/outbreaks/assignments", func(c *fiber.Ctx) error { return handlers.GenerateHTML(c, db, nil, "outbreak_assignments") })
+		appGroup.Get("/outbreaks/assign", func(c *fiber.Ctx) error {
+			return handlersInstance.OutbreakAssignmentHandler.ShowAssignFormFiber(c)
+		})
+		appGroup.Get("/patient-roles", func(c *fiber.Ctx) error { return handlers.GenerateHTML(c, db, nil, "patient_roles") })
+		appGroup.Get("/roles", func(c *fiber.Ctx) error { return handlers.GenerateHTML(c, db, nil, "list_roles") })
+		appGroup.Get("/roles/new", func(c *fiber.Ctx) error { return handlers.GenerateHTML(c, db, nil, "form_role") })
+		appGroup.Get("/employees/statistics", func(c *fiber.Ctx) error { return handlers.GenerateHTML(c, db, nil, "employee_statistics") })
+		appGroup.Get("/employees/export", func(c *fiber.Ctx) error { return handlers.GenerateHTML(c, db, nil, "employee_export") })
+
 		// New routes for mpox daily follow-up
 		cse.Get("/encounters/mpox-admission/new/:i", func(c *fiber.Ctx) error { return handlers.HandlerMpoxAdmissionForm(c, db, sl, store, config) })
 		cse.Post("/encounters/mpox-admission/save", func(c *fiber.Ctx) error { return handlers.HandlerMpoxAdmissionSubmit(c, db, sl, store, config) })
@@ -203,6 +227,26 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 	app.Get("/mpox-cif/success", func(c *fiber.Ctx) error {
 		return handlers.HandlerMpoxCIFSuccess(c, db, sl)
 	})
+
+	// API endpoints for dropdown data
+	api := app.Group("/api")
+	{
+		api.Get("/outbreaks", func(c *fiber.Ctx) error {
+			outbreaks, err := handlersInstance.OutbreakAssignmentHandler.GetOutbreakService().GetAllOutbreaks()
+			if err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+			}
+			return c.JSON(outbreaks)
+		})
+
+		api.Get("/users", func(c *fiber.Ctx) error {
+			users, err := handlersInstance.OutbreakAssignmentHandler.GetUserService().GetAllUsers()
+			if err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+			}
+			return c.JSON(users)
+		})
+	}
 }
 
 // AuthRequired middleware checks if user is authenticated and has required role

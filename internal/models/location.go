@@ -43,6 +43,13 @@ type Village struct {
 	UpdatedAt   time.Time      `json:"updated_at"`
 }
 
+// FacilityResponse is used for API responses to properly handle sql.NullString
+type FacilityResponse struct {
+	FacilityID   int    `json:"facility_id"`
+	FacilityName string `json:"facility_name"`
+	Level        string `json:"level"`
+}
+
 // Get all districts
 func GetDistricts(db *sql.DB) ([]District, error) {
 	rows, err := db.Query("SELECT id, name, code, created_at, updated_at FROM districts ORDER BY name")
@@ -185,4 +192,34 @@ func GetVillagesBySubcounty(db *sql.DB, subcountyID int) ([]Village, error) {
 		villages = append(villages, v)
 	}
 	return villages, nil
+}
+
+// Get all facilities
+func GetAllFacilities(db *sql.DB) ([]FacilityResponse, error) {
+	rows, err := db.Query("SELECT id, facility_name, level FROM afi_facilities ORDER BY facility_name")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var facilities []FacilityResponse
+	for rows.Next() {
+		var id int
+		var facilityName sql.NullString
+		var level sql.NullString
+
+		if err := rows.Scan(&id, &facilityName, &level); err != nil {
+			return nil, err
+		}
+
+		// Convert to FacilityResponse
+		facilityResp := FacilityResponse{
+			FacilityID:   id,
+			FacilityName: facilityName.String, // Convert sql.NullString to string
+			Level:        level.String,        // Convert sql.NullString to string
+		}
+
+		facilities = append(facilities, facilityResp)
+	}
+	return facilities, nil
 }

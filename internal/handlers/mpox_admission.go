@@ -296,3 +296,5 @@ func HandlerMpoxAdmissionSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 	// Redirect to client page
 	return c.Redirect("/cases/new/" + strconv.Itoa(clientID))
 }
+
+//Get all admission data by

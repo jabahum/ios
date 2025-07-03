@@ -5,110 +5,375 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Employee Form</title>
+    <title>Employee Management - {{ if .IsNew }}New Employee{{ else }}Edit Employee{{ end }}</title>
     <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/app/cdn/css/flatpickr.min.css" type="text/css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
     <style>
         body {
-            background-color: #ffffff;
-            color: #333;
-            font-family: Arial, sans-serif;
-            padding: 20px;
-        }
-        .form-container {
-            margin: 20px auto;
-            padding: 20px;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
             background-color: #f8f9fa;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            color: #333;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .main-container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            margin: 20px auto;
+            max-width: 1200px;
+        }
+        
+        .header-section {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px 10px 0 0;
+        }
+        
+        .form-section {
+            padding: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+        
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #17a2b8;
+            box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.25);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(23, 162, 184, 0.4);
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 1px solid #dee2e6;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .alert {
+            border-radius: 8px;
+            border: none;
+        }
+        
+        .select2-container--default .select2-selection--single {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            height: 45px;
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 41px;
+            padding-left: 15px;
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 43px;
+        }
+        
+        .employee-photo-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #17a2b8;
+        }
+        
+        .photo-upload-area {
+            border: 2px dashed #17a2b8;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            background-color: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+        
+        .photo-upload-area:hover {
+            background-color: #e9ecef;
+            border-color: #138496;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Employee Form</h1>
-        <div class="form-container">
-            <form method="post" action="/employees/save/" id="form_employee">
-                <div class="row registration-input-row">  
-                    <div class="col-lg-4">
-                        <div class="row">
-                            <label class="col-sm-3 col-form-label col-form-label-sm" for="employee_fname">First Name</label>
-                            <div class="col-sm-7">
-                                <input type="text" class="form-control" id="employee_fname" name="employee_fname" value="{{ .Form.EmployeeFname.String }}" placeholder="Enter firstname">
-                            </div>
-                        </div>    
+    <div class="main-container">
+        <!-- Header Section -->
+        <div class="header-section">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-0">
+                        <i class="fas fa-user-plus me-2"></i>
+                        {{ if .IsNew }}Create New Employee{{ else }}Edit Employee{{ end }}
+                    </h1>
+                    <p class="mb-0 mt-2 opacity-75">Manage employee information and details</p>
+                </div>
+                <div>
+                    <a href="/employees" class="btn btn-outline-light me-2">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Employees
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Section -->
+        <div class="form-section">
+            {{ if .Message }}
+            <div class="alert alert-{{ if eq .MessageType "error" }}danger{{ else }}success{{ end }} alert-dismissible fade show" role="alert">
+                {{ .Message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {{ end }}
+
+            <form method="post" action="/employees/save" id="employeeForm" enctype="multipart/form-data">
+                <!-- Basic Information Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-user me-2"></i>Basic Information</h5>
                     </div>
-                    <div class="col-lg-4">
+                    <div class="card-body">
                         <div class="row">
-                            <label class="col-sm-3 col-form-label col-form-label-sm" for="employee_lname">Last Name</label>
-                            <div class="col-sm-7">
-                                <input type="text" class="form-control" id="employee_lname" name="employee_lname" value="{{ .Form.EmployeeLname.String }}" placeholder="Enter lastname">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label" for="employee_fname">First Name *</label>
+                                    <input type="text" class="form-control" id="employee_fname" name="employee_fname" 
+                                           value="{{ .Employee.EmployeeFname.String }}" required>
+                                </div>
                             </div>
-                        </div>    
-                    </div>
-                    <div class="col-lg-4">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label" for="employee_lname">Last Name *</label>
+                                    <input type="text" class="form-control" id="employee_lname" name="employee_lname" 
+                                           value="{{ .Employee.EmployeeLname.String }}" required>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="row">
-                            <label class="col-sm-3 col-form-label col-form-label-sm" for="employee_sex">Sex</label>
-                            <div class="col-sm-7">
-                                <select class="form-control-sm patient-input form-select"  name="employee_sex" id="employee_sex" aria-label="Employee Sex" >
-                                    {{ range $key, $value := index .Optionz "sex2" }}  
-                                        <option value="{{ $key }}">{{ $value }}</option>
-                                    {{ end }}
-                                </select>
-                                <script>
-                                document.addEventListener("DOMContentLoaded", function() {
-                                    document.getElementById("employee_sex").value = "{{.Form.EmployeeSex.String}}";
-                                });
-                                </script>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label" for="employee_sex">Sex</label>
+                                    <select class="form-select" id="employee_sex" name="employee_sex">
+                                        <option value="">Select Sex</option>
+                                        <option value="Male" {{ if eq .Employee.EmployeeSex.String "Male" }}selected{{ end }}>Male</option>
+                                        <option value="Female" {{ if eq .Employee.EmployeeSex.String "Female" }}selected{{ end }}>Female</option>
+                                        <option value="Other" {{ if eq .Employee.EmployeeSex.String "Other" }}selected{{ end }}>Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label" for="employee_cadre">Cadre</label>
+                                    <input type="text" class="form-control" id="employee_cadre" name="employee_cadre" 
+                                           value="{{ .Employee.EmployeeCadre.String }}">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label" for="employee_status">Status</label>
+                                    <select class="form-select" id="employee_status" name="employee_status">
+                                        <option value="active" {{ if eq .Employee.EmployeeStatus.String "active" }}selected{{ end }}>Active</option>
+                                        <option value="inactive" {{ if eq .Employee.EmployeeStatus.String "inactive" }}selected{{ end }}>Inactive</option>
+                                        <option value="terminated" {{ if eq .Employee.EmployeeStatus.String "terminated" }}selected{{ end }}>Terminated</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="row registration-input-row">  
-                    <div class="col-lg-4">
-                        <div class="row">
-                            <label class="col-sm-3 col-form-label col-form-label-sm" for="employee_phone">Phone</label>
-                            <div class="col-sm-7">
-                                <input type="text" class="form-control" id="employee_phone" name="employee_phone" value="{{ .Form.EmployeePhone.String }}" placeholder="Enter Phone">
-                            </div>                           
-                        </div>
+
+                <!-- Contact Information Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-address-book me-2"></i>Contact Information</h5>
                     </div>
-                    <div class="col-lg-4">
+                    <div class="card-body">
                         <div class="row">
-                            <label class="col-sm-3 col-form-label col-form-label-sm" for="employee_email">Email</label>
-                            <div class="col-sm-7">
-                                <input type="email" class="form-control" id="employee_email" name="employee_email" value="{{ .Form.EmployeeEmail.String }}" placeholder="Enter email">
-                            </div>                            
-                        </div>
-                    </div>
-                    <div class="col-lg-4">
-                        <div class="row">
-                            <label class="col-sm-3 col-form-label col-form-label-sm" for="employee_cadre">Cadre</label>
-                            <div class="col-sm-7">
-                                <input type="text" class="form-control" id="employee_cadre" name="employee_cadre" placeholder="Enter Cadre" value="{{ .Form.EmployeeCadre.String }}"  >
-                            </div>                            
-                        </div>
-                    </div>
-                    <div class="col-lg-4">
-                        <div class="row">
-                            <label class="col-sm-3 col-form-label col-form-label-sm" for="facility">Facility</label>
-                            <div class="col-sm-7">
-                                {{ GetOptionField "facility" "facility" "Facility" "" .Form.Facility.Int64 1 }}
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label" for="employee_email">Email Address</label>
+                                    <input type="email" class="form-control" id="employee_email" name="employee_email" 
+                                           value="{{ .Employee.EmployeeEmail.String }}">
+                                </div>
                             </div>
-                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label" for="employee_phone">Phone Number</label>
+                                    <input type="tel" class="form-control" id="employee_phone" name="employee_phone" 
+                                           value="{{ .Employee.EmployeePhone.String }}">
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-lg-4"> </div>
-                    <div class="col-lg-4"> </div>
                 </div>
-                
-                <input type="hidden" name="id" id="id" value="{{.Form.EmployeeID}}">
+
+                <!-- Employment Details Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-briefcase me-2"></i>Employment Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label" for="employee_title">Job Title</label>
+                                    <select class="form-select" id="employee_title" name="employee_title">
+                                        <option value="">Select Title</option>
+                                        {{ range .Titles }}
+                                        <option value="{{ .Name }}" {{ if eq .Name $.Employee.EmployeeTitle.String }}selected{{ end }}>
+                                            {{ .Name }}
+                                        </option>
+                                        {{ end }}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label" for="employee_department">Department</label>
+                                    <select class="form-select" id="employee_department" name="employee_department">
+                                        <option value="">Select Department</option>
+                                        {{ range .Departments }}
+                                        <option value="{{ .Name }}" {{ if eq .Name $.Employee.EmployeeDepartment.String }}selected{{ end }}>
+                                            {{ .Name }}
+                                        </option>
+                                        {{ end }}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label" for="facility">Facility</label>
+                                    <select class="form-select" id="facility" name="facility">
+                                        <option value="">Select Facility</option>
+                                        {{ range .Facilities }}
+                                        <option value="{{ .ID }}" {{ if eq .ID $.Employee.Facility.Int64 }}selected{{ end }}>
+                                            {{ .Name }}
+                                        </option>
+                                        {{ end }}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label" for="employee_supervisor">Supervisor</label>
+                                    <select class="form-select" id="employee_supervisor" name="employee_supervisor">
+                                        <option value="">Select Supervisor</option>
+                                        {{ range .Employees }}
+                                        <option value="{{ .EmployeeID }}" {{ if eq .EmployeeID $.Employee.EmployeeSupervisor.Int64 }}selected{{ end }}>
+                                            {{ .EmployeeFname.String }} {{ .EmployeeLname.String }}
+                                        </option>
+                                        {{ end }}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label" for="employee_start_date">Start Date</label>
+                                    <input type="date" class="form-control" id="employee_start_date" name="employee_start_date"
+                                           value="{{ .Employee.EmployeeStartDate.Time.Format "2006-01-02" }}">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label" for="employee_end_date">End Date</label>
+                                    <input type="date" class="form-control" id="employee_end_date" name="employee_end_date"
+                                           value="{{ .Employee.EmployeeEndDate.Time.Format "2006-01-02" }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Photo and Notes Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-image me-2"></i>Photo and Notes</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label">Employee Photo</label>
+                                    <div class="photo-upload-area" onclick="document.getElementById('employee_photo').click()">
+                                        {{ if .Employee.EmployeePhotoURL.String }}
+                                        <img src="{{ .Employee.EmployeePhotoURL.String }}" alt="Employee Photo" class="employee-photo-preview mb-2">
+                                        {{ else }}
+                                        <i class="fas fa-camera fa-3x text-muted mb-2"></i>
+                                        {{ end }}
+                                        <p class="mb-0 text-muted">Click to upload photo</p>
+                                    </div>
+                                    <input type="file" id="employee_photo" name="employee_photo" accept="image/*" style="display: none;">
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label class="form-label" for="employee_notes">Notes</label>
+                                    <textarea class="form-control" id="employee_notes" name="employee_notes" rows="6"
+                                              placeholder="Additional notes about the employee...">{{ .Employee.EmployeeNotes.String }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hidden Fields -->
+                <input type="hidden" name="employee_id" value="{{ .Employee.EmployeeID }}">
                 <input type="hidden" name="from" id="from" value="">
 
-                <button type="submit" id="submitButton" class="btn btn-sm btn-success mt-3">Save</button>
-                <button type="button" id="save_cButton" class="btn btn-sm btn-success mt-3">Save & Close</button>
-                <button type="button" id="cancelButton" class="btn btn-sm btn-success mt-3">Cancel</button>
-                <button type="button" id="helpButton"   class="btn btn-sm btn-success mt-3">Help</button>
+                <!-- Action Buttons -->
+                <div class="d-flex justify-content-between mt-4">
+                    <div>
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="fas fa-save me-1"></i>Save Employee
+                        </button>
+                        <button type="button" class="btn btn-secondary me-2" onclick="saveAndClose()">
+                            <i class="fas fa-save me-1"></i>Save & Close
+                        </button>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-outline-secondary me-2" onclick="window.location.href='/employees'">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </button>
+                        <button type="button" class="btn btn-outline-info" onclick="showHelp()">
+                            <i class="fas fa-question-circle me-1"></i>Help
+                        </button>
+                    </div>
+                </div>
             </form>
         </div>
     </div>
@@ -116,83 +381,92 @@
     <script src="/static/app/cdn/js/jquery-3.6.0.min.js"></script>
     <script src="/static/js/bootstrap.bundle.min.js"></script>
     <script src="/static/app/cdn/js/flatpickr.min.js"></script>
-    <script src="/static/app/cdn/js/select2.min.js"></script>
-
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js"></script>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        $(document).ready(function() {
+            // Initialize Select2 for dropdowns
+            $('#employee_title, #employee_department, #facility, #employee_supervisor, #employee_sex, #employee_status').select2({
+                placeholder: 'Select...',
+                allowClear: true,
+                width: '100%'
+            });
 
-            const today = new Date();
-            const formattedDate = today.toISOString().split('T')[0];
-
-            flatpickr(".datetimepicker", {
-                enableTime: false, 
+            // Initialize date pickers
+            flatpickr("#employee_start_date, #employee_end_date", {
                 dateFormat: "Y-m-d",
-                defaultDate: formattedDate,
-                disableMobile: true
+                allowInput: true
+            });
+
+            // Handle photo upload
+            $('#employee_photo').on('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        $('.photo-upload-area').html(`
+                            <img src="${e.target.result}" alt="Employee Photo" class="employee-photo-preview mb-2">
+                            <p class="mb-0 text-muted">Photo uploaded</p>
+                        `);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Form validation
+            $('#employeeForm').on('submit', function(e) {
+                if (!validateForm()) {
+                    e.preventDefault();
+                    alert('Please fill out all required fields correctly.');
+                }
             });
         });
 
-        document.addEventListener("DOMContentLoaded", function () {
-    const form = document.getElementById("form_employee"); // Replace with your form ID
-    const submitButton = document.getElementById("submitButton"); // Replace with your submit button ID
-    const save_cButton = document.getElementById("save_cButton");
-    const helpButton   = document.getElementById("helpButton");
-    const cancelButton = document.getElementById("cancelButton"); // Replace with your cancel button ID
-
-    
-    
-    //console.log("Form Data as JSON:", formDataJSON);
-
-    if (submitButton) {
-        submitButton.addEventListener("click", function (event) {
-            event.preventDefault(); // Prevent default form submission
+        function validateForm() {
+            let isValid = true;
             
-            if (validateForm()) {
-                form.submit(); // Submit the form only if validation passes
-            } else {
-                alert("Please fill out all required fields correctly.");
-            }
-        });
-    }
+            // Check required fields
+            $('input[required], select[required]').each(function() {
+                if (!$(this).val().trim()) {
+                    $(this).addClass('is-invalid');
+                    isValid = false;
+                } else {
+                    $(this).removeClass('is-invalid');
+                }
+            });
 
-    if (cancelButton) {
-        cancelButton.addEventListener("click", function () {
-            window.location.href = "/employees"; // Replace with the correct URL
-        });
-    }
-
-    function validateForm() {
-        let isValid = true;
-        const requiredFields = document.querySelectorAll("input[required], select[required], textarea[required]");
-
-        requiredFields.forEach(function (field) {
-            if (!field.value.trim()) {
+            // Check email format if provided
+            const email = $('#employee_email').val();
+            if (email && !isValidEmail(email)) {
+                $('#employee_email').addClass('is-invalid');
                 isValid = false;
-                field.classList.add("is-invalid"); // Bootstrap validation styling
-            } else {
-                field.classList.remove("is-invalid");
             }
-        });
 
-        return isValid;
-    }
+            return isValid;
+        }
 
-    function getFormDataAsJSON(formElement) {
-        const formData = new FormData(formElement);
-        const jsonObject = {};
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
 
-        formData.forEach((value, key) => {
-            jsonObject[key] = value;
-        });
+        function saveAndClose() {
+            if (validateForm()) {
+                $('#from').val('close');
+                $('#employeeForm').submit();
+            } else {
+                alert('Please fill out all required fields correctly.');
+            }
+        }
 
-        return jsonObject;
-    }
-});
-
+        function showHelp() {
+            alert('Help information will be displayed here.\n\n' +
+                  '• First Name and Last Name are required\n' +
+                  '• Employee Code will be auto-generated\n' +
+                  '• Upload a photo for better identification\n' +
+                  '• Add notes for additional information');
+        }
     </script>
 </body>
 </html>

@@ -33,8 +33,10 @@ func HandlerEmployeeForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 		if er == nil {
 			employee = *u
 		}
+		data.IsNew = false
 	} else {
 		id = 0
+		data.IsNew = true
 	}
 
 	data.User = userName
