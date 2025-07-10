@@ -21,6 +21,22 @@
                         </div>
 
                         <div class="mb-3">
+                            <label for="outbreak_type" class="form-label">Outbreak Type</label>
+                            <select class="form-select" id="outbreak_type" name="outbreak_type" required>
+                                <option value="">Select Outbreak Type</option>
+                                {{if .Optionz.outbreak_types}}
+                                    {{range $key, $value := .Optionz.outbreak_types}}
+                                    <option value="{{$key}}" {{if eq $.Form.OutbreakType.String $key}}selected{{end}}>{{$value}}</option>
+                                    {{end}}
+                                {{else}}
+                                    <option value="vhf" {{if eq .Form.OutbreakType.String "vhf"}}selected{{end}}>VHF (Viral Hemorrhagic Fever)</option>
+                                    <option value="mpox" {{if eq .Form.OutbreakType.String "mpox"}}selected{{end}}>MPOX (Monkeypox)</option>
+                                    <option value="general" {{if eq .Form.OutbreakType.String "general"}}selected{{end}}>General</option>
+                                {{end}}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
                             <label for="start_date" class="form-label">Start Date</label>
                             <input type="date" class="form-control" id="start_date" name="start_date" value="{{if .Form.StartDate.Valid}}{{.Form.StartDate.Time.Format "2006-01-02"}}{{end}}" required>
                         </div>

@@ -13,33 +13,27 @@ import (
 
 // HandlerOutbreakList handles the outbreak list page
 func HandlerOutbreakList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
-	// Get active outbreaks
-	outbreaks, err := models.GetActiveOutbreaks(c.Context(), db)
+	// Get current user ID
+	userID := GetCurrentUser(c, store)
+	if userID == 0 {
+		return c.Redirect("/login")
+	}
+
+	// Get user-accessible outbreaks instead of all outbreaks
+	outbreaks, err := models.GetUserAccessibleOutbreaks(c.Context(), db, userID)
 	if err != nil {
-		sl.Error("Failed to get outbreaks: " + err.Error())
+		sl.Error("Failed to get user accessible outbreaks: " + err.Error())
 		return c.Status(500).SendString("Failed to get outbreaks")
 	}
 
-	// Get default outbreak
-	defaultOutbreak, err := models.GetDefaultOutbreak(c.Context(), db)
-	if err != nil && err != sql.ErrNoRows {
-		sl.Error("Failed to get default outbreak: " + err.Error())
-		return c.Status(500).SendString("Failed to get default outbreak")
-	}
-
-	// If no default outbreak exists, create it
-	if err == sql.ErrNoRows {
-		defaultOutbreak = &models.Outbreak{
-			Name:        sql.NullString{String: "Ebola 2025", Valid: true},
-			Description: sql.NullString{String: "Ebola outbreak in 2025", Valid: true},
-			StartDate:   sql.NullTime{Time: time.Now(), Valid: true},
-			Status:      sql.NullString{String: "active", Valid: true},
-			EnterOn:     sql.NullTime{Time: time.Now(), Valid: true},
-		}
-		if err := defaultOutbreak.Insert(c.Context(), db); err != nil {
-			sl.Error("Failed to create default outbreak: " + err.Error())
-			return c.Status(500).SendString("Failed to create default outbreak")
-		}
+	// Get default outbreak for this user
+	var defaultOutbreak *models.Outbreak
+	if len(outbreaks) > 0 {
+		defaultOutbreak = outbreaks[0]
+	} else {
+		// If no accessible outbreaks, create a default one or redirect
+		sl.Error("No outbreaks accessible to user", "user_id", userID)
+		return c.Status(403).SendString("No outbreaks accessible to your account. Please contact your administrator.")
 	}
 
 	// Convert outbreaks to interface slice
@@ -52,11 +46,34 @@ func HandlerOutbreakList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 	data.Items = items
 	data.Form = defaultOutbreak
 
+	// Add user management permissions to data
+	canManageOutbreak := make(map[int]bool)
+	for _, outbreak := range outbreaks {
+		canManage, err := models.CanUserManageOutbreak(c.Context(), db, userID, outbreak.ID)
+		if err != nil {
+			sl.Error("Failed to check outbreak management permission", "outbreak_id", outbreak.ID, "error", err)
+			canManage = false
+		}
+		canManageOutbreak[outbreak.ID] = canManage
+	}
+	data.Optionz = map[string]map[string]string{
+		"can_manage_outbreak": make(map[string]string),
+	}
+	for outbreakID, canManage := range canManageOutbreak {
+		data.Optionz["can_manage_outbreak"][strconv.Itoa(outbreakID)] = strconv.FormatBool(canManage)
+	}
+
 	return GenerateHTML(c, db, data, "outbreaks")
 }
 
 // HandlerOutbreakForm handles the outbreak form page
 func HandlerOutbreakForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	// Get current user ID
+	userID := GetCurrentUser(c, store)
+	if userID == 0 {
+		return c.Redirect("/login")
+	}
+
 	var outbreak *models.Outbreak
 	id := c.Params("i")
 	if id != "0" {
@@ -65,6 +82,17 @@ func HandlerOutbreakForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 			sl.Error("Invalid outbreak ID: " + err.Error())
 			return c.Status(400).SendString("Invalid outbreak ID")
 		}
+
+		// Check if user has access to this outbreak
+		hasAccess, err := models.CheckUserOutbreakAccess(c.Context(), db, userID, idInt)
+		if err != nil {
+			sl.Error("Failed to check outbreak access: " + err.Error())
+			return c.Status(500).SendString("Failed to check access")
+		}
+		if !hasAccess {
+			return c.Status(403).SendString("Access denied to this outbreak")
+		}
+
 		outbreak, err = models.OutbreakByID(c.Context(), db, idInt)
 		if err != nil {
 			sl.Error("Failed to get outbreak: " + err.Error())
@@ -77,15 +105,52 @@ func HandlerOutbreakForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 	data := NewTemplateData(c, store)
 	data.Form = outbreak
 
+	// Add outbreak type options
+	data.Optionz = map[string]map[string]string{
+		"outbreak_types": {
+			"vhf":     "VHF (Viral Hemorrhagic Fever)",
+			"mpox":    "MPOX (Monkeypox)",
+			"general": "General",
+		},
+	}
+
 	return GenerateHTML(c, db, data, "form_outbreak")
 }
 
 // HandlerOutbreakSubmit handles the outbreak form submission
 func HandlerOutbreakSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	// Get current user ID
+	userID := GetCurrentUser(c, store)
+	if userID == 0 {
+		return c.Redirect("/login")
+	}
+
 	var outbreak models.Outbreak
 	if err := DecodeFormData(c, &outbreak); err != nil {
 		sl.Error("Failed to decode form data: " + err.Error())
 		return c.Status(400).SendString("Invalid form data")
+	}
+
+	// If editing existing outbreak, check access
+	if outbreak.ID != 0 {
+		hasAccess, err := models.CheckUserOutbreakAccess(c.Context(), db, userID, outbreak.ID)
+		if err != nil {
+			sl.Error("Failed to check outbreak access: " + err.Error())
+			return c.Status(500).SendString("Failed to check access")
+		}
+		if !hasAccess {
+			return c.Status(403).SendString("Access denied to this outbreak")
+		}
+
+		// Check if user can manage this outbreak
+		canManage, err := models.CanUserManageOutbreak(c.Context(), db, userID, outbreak.ID)
+		if err != nil {
+			sl.Error("Failed to check outbreak management permission: " + err.Error())
+			return c.Status(500).SendString("Failed to check permissions")
+		}
+		if !canManage {
+			return c.Status(403).SendString("You don't have permission to edit this outbreak")
+		}
 	}
 
 	// Parse start date
@@ -96,8 +161,14 @@ func HandlerOutbreakSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 	}
 	outbreak.StartDate = sql.NullTime{Time: startDate, Valid: true}
 
+	// Set outbreak type and category
+	outbreakType := c.FormValue("outbreak_type")
+	if outbreakType != "" {
+		outbreak.OutbreakType = sql.NullString{String: outbreakType, Valid: true}
+		outbreak.OutbreakCategory = sql.NullString{String: outbreakType, Valid: true}
+	}
+
 	// Set audit fields
-	userID := GetCurrentUser(c, store)
 	now := time.Now()
 	if !outbreak.Exists() {
 		outbreak.EnterOn = sql.NullTime{Time: now, Valid: true}
@@ -117,30 +188,88 @@ func HandlerOutbreakSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 
 // HandlerOutbreakClose handles closing an outbreak
 func HandlerOutbreakClose(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
-	id := c.Params("i")
-	idInt, err := strconv.Atoi(id)
+	// Get current user ID
+	userID := GetCurrentUser(c, store)
+	if userID == 0 {
+		return c.Redirect("/login")
+	}
+
+	id, err := strconv.Atoi(c.Params("i"))
 	if err != nil {
 		sl.Error("Invalid outbreak ID: " + err.Error())
 		return c.Status(400).SendString("Invalid outbreak ID")
 	}
 
-	outbreak, err := models.OutbreakByID(c.Context(), db, idInt)
+	// Check if user has access to this outbreak
+	hasAccess, err := models.CheckUserOutbreakAccess(c.Context(), db, userID, id)
+	if err != nil {
+		sl.Error("Failed to check outbreak access: " + err.Error())
+		return c.Status(500).SendString("Failed to check access")
+	}
+	if !hasAccess {
+		return c.Status(403).SendString("Access denied to this outbreak")
+	}
+
+	// Check if user can manage this outbreak
+	canManage, err := models.CanUserManageOutbreak(c.Context(), db, userID, id)
+	if err != nil {
+		sl.Error("Failed to check outbreak management permission: " + err.Error())
+		return c.Status(500).SendString("Failed to check permissions")
+	}
+	if !canManage {
+		return c.Status(403).SendString("You don't have permission to close this outbreak")
+	}
+
+	// Get the outbreak
+	outbreak, err := models.OutbreakByID(c.Context(), db, id)
 	if err != nil {
 		sl.Error("Failed to get outbreak: " + err.Error())
 		return c.Status(500).SendString("Failed to get outbreak")
 	}
 
+	// Close the outbreak
 	outbreak.Status = sql.NullString{String: "closed", Valid: true}
-	outbreak.EndDate = sql.NullTime{Time: time.Now(), Valid: true}
 	outbreak.EditOn = sql.NullTime{Time: time.Now(), Valid: true}
-	outbreak.EditBy = sql.NullInt64{Int64: int64(GetCurrentUser(c, store)), Valid: true}
+	outbreak.EditBy = sql.NullInt64{Int64: int64(userID), Valid: true}
 
-	if err := outbreak.Update(c.Context(), db); err != nil {
+	if err := outbreak.Save(c.Context(), db); err != nil {
 		sl.Error("Failed to close outbreak: " + err.Error())
 		return c.Status(500).SendString("Failed to close outbreak")
 	}
 
 	return c.Redirect("/outbreaks")
+}
+
+// HandlerOutbreakSelect handles selecting an outbreak
+func HandlerOutbreakSelect(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	// Get current user ID
+	userID := GetCurrentUser(c, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	id, err := strconv.Atoi(c.Params("i"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid outbreak ID"})
+	}
+
+	// Check if user has access to this outbreak
+	hasAccess, err := models.CheckUserOutbreakAccess(c.Context(), db, userID, id)
+	if err != nil {
+		sl.Error("Failed to check outbreak access: " + err.Error())
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to check access"})
+	}
+	if !hasAccess {
+		return c.Status(403).JSON(fiber.Map{"error": "Access denied to this outbreak"})
+	}
+
+	// Set the selected outbreak in session
+	if err := SetSelectedOutbreak(c, store, id); err != nil {
+		sl.Error("Failed to set selected outbreak: " + err.Error())
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to select outbreak"})
+	}
+
+	return c.JSON(fiber.Map{"message": "Outbreak selected successfully"})
 }
 
 // SetSelectedOutbreak sets the selected outbreak in the session

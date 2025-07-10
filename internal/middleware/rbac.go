@@ -35,12 +35,17 @@ func PermissionRequired(resource, action string) fiber.Handler {
 			})
 		}
 
-		// Get user ID from session
-		userID, ok := sess.Get("user_id").(int)
-		if !ok {
-			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid user session",
-			})
+		// Get user ID from session (try both keys for compatibility)
+		var userID int
+		var ok bool
+		// Try user_id first (RBAC standard)
+		if userID, ok = sess.Get("user_id").(int); !ok {
+			// Fallback to user (legacy authentication)
+			if userID, ok = sess.Get("user").(int); !ok {
+				return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+					"error": "Invalid user session",
+				})
+			}
 		}
 
 		// Check permission
@@ -101,12 +106,17 @@ func RoleRequired(roleName string) fiber.Handler {
 			})
 		}
 
-		// Get user ID from session
-		userID, ok := sess.Get("user_id").(int)
-		if !ok {
-			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid user session",
-			})
+		// Get user ID from session (try both keys for compatibility)
+		var userID int
+		var ok bool
+		// Try user_id first (RBAC standard)
+		if userID, ok = sess.Get("user_id").(int); !ok {
+			// Fallback to user (legacy authentication)
+			if userID, ok = sess.Get("user").(int); !ok {
+				return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+					"error": "Invalid user session",
+				})
+			}
 		}
 
 		// Get user roles

@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -66,15 +67,22 @@ type TemplateData struct {
 	Flash           string
 	Menuz           string
 	IsAuthenticated bool
-	CSRFToken       string             // Add a CSRFToken field.
-	IsNew           bool               // Add IsNew field for form templates
-	Message         string             // Add Message field for alerts
-	MessageType     string             // Add MessageType field for alert styling
-	Stats           *Stats             // Add Stats field for dashboard statistics
-	Departments     []Department       // Add Departments field for RBAC
-	Roles           []Role             // Add Roles field for RBAC
-	Outbreaks       []*models.Outbreak // Correct type for outbreaks
-	Users           []*models.User     // Correct type for users
+	CSRFToken       string              // Add a CSRFToken field.
+	IsNew           bool                // Add IsNew field for form templates
+	Message         string              // Add Message field for alerts
+	MessageType     string              // Add MessageType field for alert styling
+	From            string              // Add From field for tracking form source
+	Stats           *Stats              // Add Stats field for dashboard statistics
+	Departments     []Department        // Add Departments field for RBAC
+	Roles           []Role              // Add Roles field for RBAC
+	Permissions     []Permission        // Add Permissions field for RBAC
+	UserPermissions map[string][]string // Add UserPermissions field for access control
+	Outbreaks       []*models.Outbreak  // Correct type for outbreaks
+	Users           []*models.User      // Correct type for users
+	Employee        *EmployeeForm       // Add Employee field for employee forms
+	Titles          []EmployeeTitle     // Add Titles field for employee titles
+	Facilities      []Facility          // Add Facilities field for facilities
+	Employees       []EmployeeForm      // Add Employees field for employee lists
 
 	// Custom fields for Mpox admission logic
 	HasMpoxAdmission bool
@@ -89,8 +97,22 @@ type Department struct {
 
 // Role represents a role in the RBAC system
 type Role struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+	ID          int    `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Selected    bool   `json:"selected"`
+}
+
+// Permission represents a permission in the RBAC system
+type Permission struct {
+	Resource string   `json:"resource"`
+	Actions  []Action `json:"actions"`
+}
+
+// Action represents an action within a permission
+type Action struct {
+	Action  string `json:"action"`
+	Granted bool   `json:"granted"`
 }
 
 // Stats contains dashboard statistics
@@ -102,6 +124,39 @@ type Stats struct {
 	TotalOutbreaks  int
 	TotalCases      int
 	TotalFacilities int
+	TotalEmployees  int
+}
+
+// EmployeeForm represents an employee for form templates
+type EmployeeForm struct {
+	EmployeeID         int
+	EmployeeFname      sql.NullString
+	EmployeeLname      sql.NullString
+	EmployeeSex        sql.NullString
+	EmployeeEmail      sql.NullString
+	EmployeePhone      sql.NullString
+	EmployeeCadre      sql.NullString
+	EmployeeTitle      sql.NullString
+	EmployeeDepartment sql.NullString
+	EmployeeSupervisor sql.NullInt64
+	EmployeeStatus     sql.NullString
+	EmployeeStartDate  sql.NullTime
+	EmployeeEndDate    sql.NullTime
+	EmployeePhotoURL   sql.NullString
+	EmployeeNotes      sql.NullString
+	Facility           sql.NullInt64
+}
+
+// EmployeeTitle represents an employee title
+type EmployeeTitle struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+// Facility represents a facility
+type Facility struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
 }
 
 func NewTemplateData(c *fiber.Ctx, store *session.Store) *TemplateData {
@@ -124,11 +179,29 @@ func CreateTemplateFunctions(c *fiber.Ctx, db *sql.DB) template.FuncMap {
 		"GetClientOptionLabel": GetClientOptionLabel,
 		"seq":                  Seq,
 		"GetOptionField":       GetOptionField,
+		"title":                Title,
+		"first":                First,
+		"safe":                 func(s string) template.HTML { return template.HTML(s) },
 		"GetDBOptions": func(table, cat, deflt, fld_name, fld_lab string, deflt_int int64) string {
 			return GetDBOptions(c, db, table, cat, deflt, fld_name, fld_lab, deflt_int)
 		},
 		"GetDBLabel": func(table, namesFld, indexFld string, indexID int64) string {
 			return GetDBLabel(c, db, table, namesFld, indexFld, indexID)
+		},
+		"hasPermission": func(permissions map[string][]string, resource, action string) bool {
+			if permissions == nil {
+				return false
+			}
+			actions, exists := permissions[resource]
+			if !exists {
+				return false
+			}
+			for _, a := range actions {
+				if a == action {
+					return true
+				}
+			}
+			return false
 		},
 		"renderSymptomRow": func(name, label string, value sql.NullBool, date sql.NullTime, duration sql.NullInt32) template.HTML {
 			var buf bytes.Buffer
@@ -194,6 +267,30 @@ func Seq(start, end int) []int {
 		s[i] = start + i
 	}
 	return s
+}
+
+// Title capitalizes the first letter of each word in a string
+func Title(s string) string {
+	if s == "" {
+		return s
+	}
+
+	// Split by spaces and capitalize first letter of each word
+	words := strings.Fields(s)
+	for i, word := range words {
+		if len(word) > 0 {
+			words[i] = strings.ToUpper(word[:1]) + strings.ToLower(word[1:])
+		}
+	}
+	return strings.Join(words, " ")
+}
+
+// First returns the first character of a string
+func First(s string) string {
+	if s == "" {
+		return ""
+	}
+	return string(s[0])
 }
 
 func IsNullStringEmpty(nullable sql.NullString) bool {

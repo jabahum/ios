@@ -530,8 +530,8 @@ func HandlerVHFPatientSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *s
 
 	// Send SMS notification if phone number is provided
 	if patient.DataCapturerPhone.String != "" {
-		message := fmt.Sprintf("VHF Case %s has been successfully registered. Patient: %s %s",
-			patient.CaseCode, patient.Surname, patient.OtherNames)
+		message := fmt.Sprintf("You have notified a suspected VHF Case %s and %s. Case DetailsPatient: %s %s",
+			patient.CaseCode, patient.ReportingHealthFacilityName.String, patient.Surname, patient.OtherNames)
 		if err := smsService.SendSMS(patient.DataCapturerPhone.String, message); err != nil {
 			sl.Error("Failed to send SMS notification", "error", err)
 			// Don't return error here, as the form was still saved successfully
@@ -550,8 +550,8 @@ func HandlerVHFPatientSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *s
 			if err != nil {
 				sl.Error("Failed to get focal person for district", "district_id", district.ID, "error", err)
 			} else if focalPerson != nil && focalPerson.Phone != "" {
-				dsfpMessage := fmt.Sprintf("VHF Case %s has been registered in %s district. Patient: %s %s. Please take necessary action.",
-					patient.CaseCode, patient.District, patient.Surname, patient.OtherNames)
+				dsfpMessage := fmt.Sprintf("A suspected VHF Case %s has been notified at %s in %s district. Patient: %s %s and a sample has been dispatched to CPHL. Please track the sample and results.",
+					patient.CaseCode, patient.ReportingHealthFacilityName.String, patient.District, patient.Surname, patient.OtherNames)
 				if err := smsService.SendSMS(focalPerson.Phone, dsfpMessage); err != nil {
 					sl.Error("Failed to send SMS notification to DSFP", "error", err)
 					// Don't return error here, as the form was still saved successfully
@@ -987,7 +987,7 @@ func HandlerVHFRiskFactorsSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, stor
 }
 
 // HandlerVHFLaboratorySubmit handles the submission of laboratory information
-func HandlerVHFLaboratorySubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFLaboratorySubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config, smsService *services.SMSService) error {
 	patientID, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
 		return c.Status(400).SendString("Invalid patient ID")
@@ -1010,7 +1010,22 @@ func HandlerVHFLaboratorySubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 		sl.Error("Failed to save laboratory data", "error", err)
 		return c.Status(500).SendString("Failed to save laboratory data")
 	}
+	// Send SMS notification to CPHL if phone number is provided
+	if laboratory.SampleType.String != "" {
+		// Get patient details first
+		patient, err := models.GetVHFPatient(db, patientID)
+		if err != nil {
+			sl.Error("Failed to get patient details for SMS", "error", err)
+			return c.Status(500).SendString("Failed to get patient details")
+		}
 
+		message := fmt.Sprintf("A suspected VHF Case %s has been notified at %s and sample has been dispatched to CPHL with Case Details: %s %s",
+			patient.CaseCode, patient.ReportingHealthFacilityName.String, patient.Surname, patient.OtherNames)
+		// Send SMS notification
+		if err := smsService.SendSMS("256783261162", message); err != nil {
+			sl.Error("Failed to send SMS notification", "error", err)
+		}
+	}
 	return c.Redirect(fmt.Sprintf("/vhf/view/%d", patientID))
 }
 

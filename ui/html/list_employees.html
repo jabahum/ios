@@ -205,19 +205,19 @@
             <!-- Statistics Cards -->
             <div class="stats-cards">
                 <div class="stat-card">
-                    <h3>{{ .Stats.totalEmployees }}</h3>
+                    <h3>{{ .Stats.TotalEmployees }}</h3>
                     <p>Total Employees</p>
                 </div>
                 <div class="stat-card">
-                    <h3>{{ .Stats.activeEmployees }}</h3>
+                    <h3>{{ .Stats.ActiveUsers }}</h3>
                     <p>Active Employees</p>
                 </div>
                 <div class="stat-card">
-                    <h3>{{ len .Stats.departmentStats }}</h3>
+                    <h3>{{ len .Departments }}</h3>
                     <p>Departments</p>
                 </div>
                 <div class="stat-card">
-                    <h3>{{ len .Stats.facilityStats }}</h3>
+                    <h3>{{ .Stats.TotalFacilities }}</h3>
                     <p>Facilities</p>
                 </div>
             </div>

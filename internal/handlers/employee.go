@@ -1,390 +1,232 @@
 package handlers
 
 import (
+	"case/internal/models"
+	"case/internal/security"
 	"database/sql"
 	"fmt"
-	"net/http"
+	"log"
+	"log/slog"
 	"strconv"
-	"time"
 
-	"case/internal/models"
-	"case/internal/utils"
-
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/session"
 )
 
-// EmployeeHandler handles employee management operations
-type EmployeeHandler struct {
-	employeeService *models.EmployeeService
-	userService     *models.UserService
-}
+// HandlerEmployeeForm handles the employee form display
+func HandlerEmployeeForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	userID, userName := GetUser(c, sl, store)
+	role := security.GetRoles(userID, "admin")
 
-// NewEmployeeHandler creates a new employee handler
-func NewEmployeeHandler(employeeService *models.EmployeeService, userService *models.UserService) *EmployeeHandler {
-	return &EmployeeHandler{
-		employeeService: employeeService,
-		userService:     userService,
-	}
-}
-
-// ListEmployees shows the employee listing page
-func (h *EmployeeHandler) ListEmployees(c *gin.Context) {
-	// Get query parameters for filtering
-	filters := make(map[string]interface{})
-	if status := c.Query("status"); status != "" {
-		filters["status"] = status
-	}
-	if department := c.Query("department"); department != "" {
-		filters["department"] = department
-	}
-	if facility := c.Query("facility"); facility != "" {
-		if facilityID, err := strconv.ParseInt(facility, 10, 64); err == nil {
-			filters["facility"] = facilityID
-		}
-	}
-	if search := c.Query("search"); search != "" {
-		filters["search"] = search
-	}
-
-	// Get employees with filters
-	employees, err := h.employeeService.GetEmployees(filters)
+	id, err := strconv.Atoi(c.Params("i"))
 	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error.html", gin.H{"error": err.Error()})
-		return
+		log.Println(err.Error())
 	}
 
-	// Get statistics
-	stats, err := h.employeeService.GetEmployeeStatistics()
-	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error.html", gin.H{"error": err.Error()})
-		return
-	}
-
-	// Get departments and titles for filters
-	departments, err := h.employeeService.GetEmployeeDepartments()
-	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error.html", gin.H{"error": err.Error()})
-		return
-	}
-
-	titles, err := h.employeeService.GetEmployeeTitles()
-	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error.html", gin.H{"error": err.Error()})
-		return
-	}
-
-	c.HTML(http.StatusOK, "list_employees.html", gin.H{
-		"Employees":   employees,
-		"Stats":       stats,
-		"Departments": departments,
-		"Titles":      titles,
-		"Filters":     filters,
-	})
-}
-
-// ShowEmployeeForm shows the employee creation/editing form
-func (h *EmployeeHandler) ShowEmployeeForm(c *gin.Context) {
-	employeeID := c.Param("id")
-	var employee *models.ExtendedEmployee
-	var err error
-
-	if employeeID != "0" {
-		// Editing existing employee
-		id, err := strconv.ParseInt(employeeID, 10, 64)
+	// Create an employee form struct that matches the template expectations
+	var employee EmployeeForm
+	if id > 0 {
+		// Load existing employee
+		query := `SELECT employee_id, employee_fname, employee_lname, employee_sex, 
+		          employee_email, employee_phone, employee_cadre, facility
+		          FROM public.employee WHERE employee_id = $1`
+		err := db.QueryRowContext(c.Context(), query, id).Scan(
+			&employee.EmployeeID, &employee.EmployeeFname, &employee.EmployeeLname, &employee.EmployeeSex,
+			&employee.EmployeeEmail, &employee.EmployeePhone, &employee.EmployeeCadre, &employee.Facility,
+		)
 		if err != nil {
-			c.HTML(http.StatusBadRequest, "error.html", gin.H{"error": "Invalid employee ID"})
-			return
+			sl.Error("Error loading employee", "error", err)
+			// Continue with empty employee for new form
 		}
-		employee, err = h.employeeService.GetEmployee(id)
-		if err != nil {
-			c.HTML(http.StatusNotFound, "error.html", gin.H{"error": "Employee not found"})
-			return
+	}
+
+	data := NewTemplateData(c, store)
+	data.User = userName
+	data.Role = role
+	data.Employee = &employee
+	data.IsNew = id == 0
+
+	// Add titles data
+	data.Titles = []EmployeeTitle{
+		{ID: 1, Name: "Doctor"},
+		{ID: 2, Name: "Nurse"},
+		{ID: 3, Name: "Clinical Officer"},
+		{ID: 4, Name: "Laboratory Technician"},
+		{ID: 5, Name: "Pharmacist"},
+		{ID: 6, Name: "Administrator"},
+		{ID: 7, Name: "Data Entry Clerk"},
+		{ID: 8, Name: "Security Guard"},
+		{ID: 9, Name: "Cleaner"},
+		{ID: 10, Name: "Driver"},
+	}
+
+	// Add departments data
+	data.Departments = []Department{
+		{ID: 1, Name: "Clinical Services"},
+		{ID: 2, Name: "Laboratory"},
+		{ID: 3, Name: "Pharmacy"},
+		{ID: 4, Name: "Administration"},
+		{ID: 5, Name: "Support Services"},
+		{ID: 6, Name: "Security"},
+	}
+
+	// Add facilities data
+	data.Facilities = []Facility{}
+	facilityQuery := `SELECT facility_id, facility_name FROM public.facility ORDER BY facility_name`
+	facilityRows, err := db.QueryContext(c.Context(), facilityQuery)
+	if err == nil {
+		defer facilityRows.Close()
+		for facilityRows.Next() {
+			var facility Facility
+			if err := facilityRows.Scan(&facility.ID, &facility.Name); err == nil {
+				data.Facilities = append(data.Facilities, facility)
+			}
 		}
-	} else {
-		// Creating new employee
-		employee = &models.ExtendedEmployee{}
 	}
 
-	// Get departments and titles for dropdowns
-	departments, err := h.employeeService.GetEmployeeDepartments()
-	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error.html", gin.H{"error": err.Error()})
-		return
+	// Add employees data for supervisor selection
+	data.Employees = []EmployeeForm{}
+	employeeQuery := `SELECT employee_id, employee_fname, employee_lname FROM public.employee ORDER BY employee_fname, employee_lname`
+	employeeRows, err := db.QueryContext(c.Context(), employeeQuery)
+	if err == nil {
+		defer employeeRows.Close()
+		for employeeRows.Next() {
+			var emp EmployeeForm
+			if err := employeeRows.Scan(&emp.EmployeeID, &emp.EmployeeFname, &emp.EmployeeLname); err == nil {
+				data.Employees = append(data.Employees, emp)
+			}
+		}
 	}
 
-	titles, err := h.employeeService.GetEmployeeTitles()
-	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error.html", gin.H{"error": err.Error()})
-		return
-	}
-
-	// Get all employees for supervisor selection
-	allEmployees, err := h.employeeService.GetEmployees(nil)
-	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error.html", gin.H{"error": err.Error()})
-		return
-	}
-
-	c.HTML(http.StatusOK, "form_employee.html", gin.H{
-		"Employee":    employee,
-		"Departments": departments,
-		"Titles":      titles,
-		"Employees":   allEmployees,
-		"IsNew":       employeeID == "0",
-	})
+	return GenerateHTML(c, db, data, "form_employee")
 }
 
-// SaveEmployee saves an employee (create or update)
-func (h *EmployeeHandler) SaveEmployee(c *gin.Context) {
-	var employee models.Employee
+// HandlerEmployeeSubmit handles employee form submission
+func HandlerEmployeeSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	_, _ = GetUser(c, sl, store) // Get user info but not used in this function
 
 	// Parse form data
-	if err := c.ShouldBind(&employee); err != nil {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{"error": err.Error()})
-		return
+	employeeID, err := strconv.Atoi(c.FormValue("employee_id"))
+	if err != nil {
+		employeeID = 0
 	}
 
-	// Get current user ID from session
-	currentUserID := utils.GetUserIDFromSession(c)
-	if currentUserID == 0 {
-		c.HTML(http.StatusUnauthorized, "error.html", gin.H{"error": "Unauthorized"})
-		return
+	employee := models.Employee{
+		EmployeeID:    employeeID,
+		EmployeeFname: ParseNullString(c.FormValue("employee_fname")),
+		EmployeeLname: ParseNullString(c.FormValue("employee_lname")),
+		EmployeeSex:   ParseNullString(c.FormValue("employee_sex")),
+		EmployeeEmail: ParseNullString(c.FormValue("employee_email")),
+		EmployeePhone: ParseNullString(c.FormValue("employee_phone")),
+		EmployeeCadre: ParseNullString(c.FormValue("employee_cadre")),
+		Facility:      ParseNullInt(c.FormValue("facility")),
 	}
 
-	var err error
 	if employee.EmployeeID == 0 {
 		// Creating new employee
-		err = h.employeeService.CreateEmployee(&employee, currentUserID)
+		err := employee.Insert(c.Context(), db)
+		if err != nil {
+			sl.Error("Error creating employee", "error", err)
+			return c.Status(500).SendString("Error creating employee")
+		}
 	} else {
 		// Updating existing employee
-		err = h.employeeService.UpdateEmployee(&employee, currentUserID)
-	}
-
-	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error.html", gin.H{"error": err.Error()})
-		return
+		employee.SetAsExists()
+		err := employee.Update(c.Context(), db)
+		if err != nil {
+			sl.Error("Error updating employee", "error", err)
+			return c.Status(500).SendString("Error updating employee")
+		}
 	}
 
 	// Redirect based on form action
-	from := c.PostForm("from")
+	from := c.FormValue("from")
 	if from == "close" {
-		c.Redirect(http.StatusSeeOther, "/employees")
+		return c.Redirect("/employees")
 	} else {
-		c.Redirect(http.StatusSeeOther, "/employees/new/"+strconv.FormatInt(int64(employee.EmployeeID), 10))
+		return c.Redirect(fmt.Sprintf("/employees/new/%d", employee.EmployeeID))
 	}
 }
 
-// DeleteEmployee deletes an employee
-func (h *EmployeeHandler) DeleteEmployee(c *gin.Context) {
-	id := c.Param("id")
-	employeeID, err := strconv.ParseInt(id, 10, 64)
+// HandlerEmployeeList handles the employee list display
+func HandlerEmployeeList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	userID, userName := GetUser(c, sl, store)
+	role := security.GetRoles(userID, "admin")
+
+	data := NewTemplateData(c, store)
+	data.User = userName
+	data.Role = role
+
+	// Initialize stats with default values
+	data.Stats = &Stats{
+		TotalUsers:      0,
+		ActiveUsers:     0,
+		LockedUsers:     0,
+		TotalRoles:      0,
+		TotalOutbreaks:  0,
+		TotalCases:      0,
+		TotalFacilities: 0,
+		TotalEmployees:  0,
+	}
+
+	// Get employee statistics
+	statsQuery := `SELECT COUNT(*) as total_employees FROM public.employee`
+	var totalEmployees int
+	err := db.QueryRowContext(c.Context(), statsQuery).Scan(&totalEmployees)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee ID"})
-		return
+		sl.Error("Failed to get employee statistics", "error", err)
+	} else {
+		data.Stats.TotalEmployees = totalEmployees
 	}
 
-	err = h.employeeService.DeleteEmployee(employeeID)
+	// Get active employees count
+	activeQuery := `SELECT COUNT(*) as active_employees FROM public.employee WHERE employee_status = 'active'`
+	var activeEmployees int
+	err = db.QueryRowContext(c.Context(), activeQuery).Scan(&activeEmployees)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		sl.Error("Failed to get active employee statistics", "error", err)
+	} else {
+		data.Stats.ActiveUsers = activeEmployees
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Employee deleted successfully"})
-}
 
-// GetEmployeeDetails gets employee details for AJAX requests
-func (h *EmployeeHandler) GetEmployeeDetails(c *gin.Context) {
-	id := c.Param("id")
-	employeeID, err := strconv.ParseInt(id, 10, 64)
+	// Get facilities count
+	facilityQuery := `SELECT COUNT(*) as total_facilities FROM public.facility`
+	var totalFacilities int
+	err = db.QueryRowContext(c.Context(), facilityQuery).Scan(&totalFacilities)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee ID"})
-		return
+		sl.Error("Failed to get facility statistics", "error", err)
+	} else {
+		data.Stats.TotalFacilities = totalFacilities
 	}
 
-	employee, err := h.employeeService.GetEmployee(employeeID)
+	// Get employees with basic information
+	query := `SELECT employee_id, employee_fname, employee_lname, employee_sex, 
+	          employee_email, employee_phone, employee_cadre, facility
+	          FROM public.employee ORDER BY employee_fname, employee_lname`
+
+	rows, err := db.QueryContext(c.Context(), query)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Employee not found"})
-		return
+		sl.Error("Database error in employee list", "error", err.Error())
+		data.Employees = []EmployeeForm{}
+		return GenerateHTML(c, db, data, "list_employees")
 	}
-	c.JSON(http.StatusOK, gin.H{"employee": employee})
-}
+	defer rows.Close()
 
-// AssignEmployee assigns an employee to a facility
-func (h *EmployeeHandler) AssignEmployee(c *gin.Context) {
-	var req struct {
-		EmployeeID     int64  `json:"employee_id" binding:"required"`
-		AssignmentType string `json:"assignment_type" binding:"required"`
-		AssignmentID   int64  `json:"assignment_id" binding:"required"`
-		AssignmentName string `json:"assignment_name" binding:"required"`
-		StartDate      string `json:"start_date" binding:"required"`
-		EndDate        string `json:"end_date"`
-		IsPrimary      bool   `json:"is_primary"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Parse start date
-	startDate, err := time.Parse("2006-01-02", req.StartDate)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start date format"})
-		return
-	}
-
-	// Parse end date if provided
-	var endDate sql.NullTime
-	if req.EndDate != "" {
-		parsedEndDate, err := time.Parse("2006-01-02", req.EndDate)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end date format"})
-			return
+	var employees []EmployeeForm
+	for rows.Next() {
+		var emp EmployeeForm
+		if err := rows.Scan(&emp.EmployeeID, &emp.EmployeeFname, &emp.EmployeeLname, &emp.EmployeeSex,
+			&emp.EmployeeEmail, &emp.EmployeePhone, &emp.EmployeeCadre, &emp.Facility); err != nil {
+			sl.Error("Row scan error in employee list", "error", err.Error())
+			continue
 		}
-		endDate = sql.NullTime{Time: parsedEndDate, Valid: true}
+		employees = append(employees, emp)
 	}
 
-	// Get current user ID from session
-	currentUserID := utils.GetUserIDFromSession(c)
-	if currentUserID == 0 {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
+	if err = rows.Err(); err != nil {
+		sl.Error("Rows iteration error in employee list", "error", err.Error())
 	}
 
-	assignment := &models.EmployeeAssignment{
-		EmployeeID:     req.EmployeeID,
-		AssignmentType: req.AssignmentType,
-		AssignmentID:   req.AssignmentID,
-		AssignmentName: req.AssignmentName,
-		StartDate:      startDate,
-		EndDate:        endDate,
-		IsPrimary:      req.IsPrimary,
-		IsActive:       true,
-	}
-
-	err = h.employeeService.AssignEmployee(assignment, currentUserID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"message": "Employee assigned successfully"})
-}
-
-// RemoveEmployeeAssignment removes an employee assignment
-func (h *EmployeeHandler) RemoveEmployeeAssignment(c *gin.Context) {
-	assignmentID := c.Param("assignment_id")
-	id, err := strconv.ParseInt(assignmentID, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid assignment ID"})
-		return
-	}
-
-	err = h.employeeService.RemoveEmployeeAssignment(id)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"message": "Assignment removed successfully"})
-}
-
-// GetEmployeeAssignments gets assignments for an employee
-func (h *EmployeeHandler) GetEmployeeAssignments(c *gin.Context) {
-	id := c.Param("id")
-	employeeID, err := strconv.ParseInt(id, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee ID"})
-		return
-	}
-
-	assignments, err := h.employeeService.GetEmployeeAssignments(employeeID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"assignments": assignments})
-}
-
-// ExportEmployees exports employee data
-func (h *EmployeeHandler) ExportEmployees(c *gin.Context) {
-	// Get all employees
-	employees, err := h.employeeService.GetEmployees(nil)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Set response headers for CSV download
-	c.Header("Content-Type", "text/csv")
-	c.Header("Content-Disposition", "attachment; filename=employees.csv")
-
-	// Write CSV header
-	c.Writer.WriteString("Employee ID,First Name,Last Name,Sex,Email,Phone,Cadre,Facility\n")
-
-	// Write employee data
-	for _, emp := range employees {
-		facilityName := "Unknown"
-		if emp.FacilityInfo != nil && emp.FacilityInfo.FacilityName.Valid {
-			facilityName = emp.FacilityInfo.FacilityName.String
-		}
-
-		line := fmt.Sprintf("%d,%s,%s,%s,%s,%s,%s,%s\n",
-			emp.EmployeeID,
-			emp.EmployeeFname.String,
-			emp.EmployeeLname.String,
-			emp.EmployeeSex.String,
-			emp.EmployeeEmail.String,
-			emp.EmployeePhone.String,
-			emp.EmployeeCadre.String,
-			facilityName,
-		)
-		c.Writer.WriteString(line)
-	}
-}
-
-// GetEmployeeStatistics gets employee statistics for dashboard
-func (h *EmployeeHandler) GetEmployeeStatistics(c *gin.Context) {
-	stats, err := h.employeeService.GetEmployeeStatistics()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"statistics": stats})
-}
-
-// GetEmployees returns all employees
-func (h *EmployeeHandler) GetEmployees(c *gin.Context) {
-	employees, err := h.employeeService.GetEmployees(nil)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"employees": employees})
-}
-
-// ShowEmployeeDetails shows employee details page
-func (h *EmployeeHandler) ShowEmployeeDetails(c *gin.Context) {
-	id := c.Param("id")
-	employeeID, err := strconv.ParseInt(id, 10, 64)
-	if err != nil {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{"error": "Invalid employee ID"})
-		return
-	}
-
-	employee, err := h.employeeService.GetEmployee(employeeID)
-	if err != nil {
-		c.HTML(http.StatusNotFound, "error.html", gin.H{"error": "Employee not found"})
-		return
-	}
-
-	// Get employee assignments
-	assignments, err := h.employeeService.GetEmployeeAssignments(employeeID)
-	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error.html", gin.H{"error": "Failed to load assignments"})
-		return
-	}
-
-	c.HTML(http.StatusOK, "employee_details.html", gin.H{
-		"employee":    employee,
-		"assignments": assignments,
-	})
+	data.Employees = employees
+	return GenerateHTML(c, db, data, "list_employees")
 }

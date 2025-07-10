@@ -219,7 +219,7 @@
             </div>
             {{ end }}
 
-            <form method="post" action="/users/save" id="userForm">
+            <form method="post" action="/users/save" id="userForm" enctype="multipart/form-data">
                 <!-- Basic Information Card -->
                 <div class="card">
                     <div class="card-header">
@@ -229,55 +229,26 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label class="form-label" for="first_name">First Name *</label>
-                                    <input type="text" class="form-control" id="first_name" name="first_name" 
-                                           value="{{ .Form.FirstName.String }}" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="form-label" for="last_name">Last Name *</label>
-                                    <input type="text" class="form-control" id="last_name" name="last_name" 
-                                           value="{{ .Form.LastName.String }}" required>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
                                     <label class="form-label" for="user_name">Username *</label>
                                     <input type="text" class="form-control" id="user_name" name="user_name" 
                                            value="{{ .Form.UserName.String }}" required>
+                                    <small class="form-text text-muted">Unique username for login</small>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label class="form-label" for="email">Email Address *</label>
-                                    <input type="email" class="form-control" id="email" name="email" 
-                                           value="{{ .Form.Email.String }}" required>
+                                    <label class="form-label" for="user_employee">Employee *</label>
+                                    {{ GetDBOptions "Employee" "" "" "user_employee" "Employee" .Form.UserEmployee.Int64 | safe }}
+                                    <small class="form-text text-muted">Select the employee this user account belongs to</small>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="form-label" for="department_id">Department</label>
-                                    <select class="form-select" id="department_id" name="department_id">
-                                        <option value="">Select Department</option>
-                                        {{ range .Departments }}
-                                        <option value="{{ .ID }}" {{ if eq .ID $.Form.DepartmentID.Int64 }}selected{{ end }}>
-                                            {{ .Name }}
-                                        </option>
-                                        {{ end }}
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="form-label" for="user_employee">Employee</label>
-                                    {{ GetDBOptions "Employee" "" "" "user_employee" "Employee" .Form.UserEmployee.Int64}}
+                            <div class="col-md-12">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Note:</strong> Employee details (name, email, department) will be automatically populated from the selected employee record.
                                 </div>
                             </div>
                         </div>
@@ -358,25 +329,25 @@
                         </div>
                         
                         <div class="permission-grid">
-                            {{ range .Permissions }}
+                            {{ range $permission := .Permissions }}
                             <div class="permission-item">
                                 <div class="permission-header">
-                                    <span>{{ .Resource | title }}</span>
+                                    <span>{{ $permission.Resource | title }}</span>
                                     <div class="form-check form-switch">
                                         <input class="form-check-input select-all-permissions" type="checkbox" 
-                                               data-resource="{{ .Resource }}" id="select_all_{{ .Resource }}">
-                                        <label class="form-check-label" for="select_all_{{ .Resource }}">Select All</label>
+                                               data-resource="{{ $permission.Resource }}" id="select_all_{{ $permission.Resource }}">
+                                        <label class="form-check-label" for="select_all_{{ $permission.Resource }}">Select All</label>
                                     </div>
                                 </div>
                                 <div class="permission-checkboxes">
-                                    {{ range .Actions }}
+                                    {{ range $permission.Actions }}
                                     <div class="form-check">
                                         <input class="form-check-input permission-checkbox" type="checkbox" 
-                                               name="permissions[{{ $.Resource }}][{{ .Action }}]" 
-                                               value="1" id="perm_{{ $.Resource }}_{{ .Action }}"
-                                               data-resource="{{ $.Resource }}" data-action="{{ .Action }}"
+                                               name="permissions[{{ $permission.Resource }}][{{ .Action }}]" 
+                                               value="1" id="perm_{{ $permission.Resource }}_{{ .Action }}"
+                                               data-resource="{{ $permission.Resource }}" data-action="{{ .Action }}"
                                                {{ if .Granted }}checked{{ end }}>
-                                        <label class="form-check-label" for="perm_{{ $.Resource }}_{{ .Action }}">
+                                        <label class="form-check-label" for="perm_{{ $permission.Resource }}_{{ .Action }}">
                                             {{ .Action | title }}
                                         </label>
                                     </div>

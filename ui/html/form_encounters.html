@@ -128,7 +128,7 @@
                             <div class="row">
                                 <label class="col-sm-5 col-form-label col-form-label-sm" for="encounter_type">Encounter Type</label>
                                 <div class="col-sm-5">
-                                    {{ GetOptionField "encounter_type" "encounter_type" "Encounter Type" "" (index .Form 0).EncounterType.Int64 1 }}
+                                    {{ GetOptionField "encounter_type" "encounter_type" "Encounter Type" "" (index .Form 0).EncounterType.Int64 1 | safe }}
                                 </div>
                             </div>
                         </div>
@@ -144,7 +144,7 @@
                             <div class="row">
                                 <label class="col-sm-4 col-form-label col-form-label-sm" for="managed_by">Clinician</label>
                                 <div class="col-sm-8">
-                                    {{ GetDBOptions "Employee" "" "" "managed_by" "Employee" (index .Form 0).ManagedBy.Int64}}
+                                    {{ GetDBOptions "Employee" "" "" "managed_by" "Employee" (index .Form 0).ManagedBy.Int64 | safe }}
                                 </div>
                             </div>
                         </div>
@@ -1132,7 +1132,7 @@
                                             <div class="row">
                                                 <label class="col-sm-6 col-form-label col-form-label-sm" >Specimen collection done for EVD patients?</label> 
                                                 <div class="col-sm-6">
-                                                    {{ GetOptionField "yn" "specimen" "Specimen" "" (index .FormChild3 0).Specimen.Int64 1 }}
+                                                    {{ GetOptionField "yn" "specimen" "Specimen" "" (index .FormChild3 0).Specimen.Int64 1 | safe }}
                                                 </div>
                                             </div>
                                         </div>

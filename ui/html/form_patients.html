@@ -317,7 +317,7 @@
                                             <div class="row">
                                                 <label class="col-sm-4 col-form-label col-form-label-sm" for="adm_date">Treatment Site</label>
                                                 <div class="col-sm-6">
-                                                    {{ GetOptionField "facility" "site" "Treatment Site" "" .Form.Site.Int64 1 }}
+                                                    {{ GetOptionField "facility" "site" "Treatment Site" "" .Form.Site.Int64 1 | safe }}
                                                     
                                                 </div>
                                             </div>
@@ -326,7 +326,7 @@
                                             <div class="row">
                                                 <label class="col-sm-4 col-form-label col-form-label-sm" for="adm_date">Baseline Status</label>
                                                 <div class="col-sm-6">
-                                                    {{ GetOptionField "Status" "status" "Baseline Status" .Form.Status.String 0 1 }}
+                                                    {{ GetOptionField "Status" "status" "Baseline Status" .Form.Status.String 0 1 | safe }}
                                                 </div>
                                             </div>
                                         </div>

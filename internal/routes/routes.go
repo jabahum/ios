@@ -11,13 +11,12 @@ import (
 	_ "github.com/lib/pq"
 
 	"case/internal/handlers"
+	"case/internal/models"
 	"case/internal/reports"
 	"case/internal/services"
 )
 
 func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger, config handlers.Config, smsService *services.SMSService) {
-	// Create handlers instance
-	handlersInstance := handlers.NewHandlers(db)
 
 	// Public routes
 	app.Get("/", func(c *fiber.Ctx) error {
@@ -60,7 +59,7 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		return handlers.GenerateHTML(c, db, fiber.Map{"PatientID": c.Params("id")}, "vhf_laboratory")
 	})
 	app.Post("/vhf-cif/laboratory/:id", func(c *fiber.Ctx) error {
-		return handlers.HandlerVHFLaboratorySubmit(c, db, sl, store, config)
+		return handlers.HandlerVHFLaboratorySubmit(c, db, sl, store, config, smsService)
 	})
 	app.Get("/vhf-cif/investigator/:id", func(c *fiber.Ctx) error {
 		return handlers.GenerateHTML(c, db, fiber.Map{"PatientID": c.Params("id")}, "vhf_investigator")
@@ -73,26 +72,6 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 	})
 	app.Get("/vhf-cif/view/:id", func(c *fiber.Ctx) error {
 		return handlers.HandlerVHFView(c, db, sl, store, config)
-	})
-	app.Get("/vhf-list", func(c *fiber.Ctx) error {
-		return handlers.HandlerVHFList(c, db, sl, store, config)
-	})
-
-	// Add outbreak routes
-	app.Get("/outbreaks", func(c *fiber.Ctx) error { return handlers.HandlerOutbreakList(c, db, sl, store, config) })
-	app.Get("/outbreaks/new/:i", func(c *fiber.Ctx) error { return handlers.HandlerOutbreakForm(c, db, sl, store, config) })
-	app.Get("/outbreaks/edit/:i", func(c *fiber.Ctx) error { return handlers.HandlerOutbreakForm(c, db, sl, store, config) })
-	app.Post("/outbreaks/save", func(c *fiber.Ctx) error { return handlers.HandlerOutbreakSubmit(c, db, sl, store, config) })
-	app.Get("/outbreaks/close/:i", func(c *fiber.Ctx) error { return handlers.HandlerOutbreakClose(c, db, sl, store, config) })
-	app.Post("/outbreaks/select/:i", func(c *fiber.Ctx) error {
-		id, err := strconv.Atoi(c.Params("i"))
-		if err != nil {
-			return c.Status(400).SendString("Invalid outbreak ID")
-		}
-		if err := handlers.SetSelectedOutbreak(c, store, id); err != nil {
-			return c.Status(500).SendString("Failed to select outbreak")
-		}
-		return c.SendStatus(200)
 	})
 
 	// Location API routes
@@ -123,6 +102,20 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		return handlers.HandlerGetFacilities(c, db, sl)
 	})
 
+	// Move these RBAC API endpoints to be public (before appGroup)
+	app.Get("/api/roles", func(c *fiber.Ctx) error { return handlers.HandlerGetRoles(c, db, sl) })
+	app.Get("/api/roles/:id", func(c *fiber.Ctx) error { return handlers.HandlerGetRole(c, db, sl) })
+	app.Put("/api/roles/:id", func(c *fiber.Ctx) error { return handlers.HandlerUpdateRole(c, db, sl, store, config) })
+	app.Delete("/api/roles/:id", func(c *fiber.Ctx) error { return handlers.HandlerDeleteRole(c, db, sl, store, config) })
+	app.Get("/api/permissions", func(c *fiber.Ctx) error { return handlers.HandlerGetPermissions(c, db, sl) })
+	app.Get("/api/permissions/:id", func(c *fiber.Ctx) error { return handlers.HandlerGetPermission(c, db, sl) })
+	app.Put("/api/permissions/:id", func(c *fiber.Ctx) error { return handlers.HandlerUpdatePermission(c, db, sl, store, config) })
+	app.Delete("/api/permissions/:id", func(c *fiber.Ctx) error { return handlers.HandlerDeletePermission(c, db, sl, store, config) })
+	app.Get("/api/rbac/migration-status", func(c *fiber.Ctx) error { return handlers.HandlerGetMigrationStatus(c, db, sl) })
+	app.Get("/api/users", func(c *fiber.Ctx) error { return handlers.HandlerGetUsers(c, db, sl) })
+	app.Get("/api/users/:id/permissions", func(c *fiber.Ctx) error { return handlers.HandlerGetUserPermissions(c, db, sl) })
+	app.Post("/api/users/roles", func(c *fiber.Ctx) error { return handlers.HandlerAssignUserRole(c, db, sl, store, config) })
+
 	// Protected routes
 	appGroup := app.Group("/")
 	appGroup.Use(AuthRequired(store))
@@ -139,12 +132,14 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		appGroup.Get("/vhf-cif/risk-factors/:id", func(c *fiber.Ctx) error { return handlers.GenerateHTML(c, db, nil, "vhf_risk_factors") })
 		appGroup.Post("/vhf-cif/risk-factors/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFRiskFactorsSubmit(c, db, sl, store, config) })
 		appGroup.Get("/vhf-cif/laboratory/:id", func(c *fiber.Ctx) error { return handlers.GenerateHTML(c, db, nil, "vhf_laboratory") })
-		appGroup.Post("/vhf-cif/laboratory/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFLaboratorySubmit(c, db, sl, store, config) })
+		appGroup.Post("/vhf-cif/laboratory/:id", func(c *fiber.Ctx) error {
+			return handlers.HandlerVHFLaboratorySubmit(c, db, sl, store, config, smsService)
+		})
 		appGroup.Get("/vhf-cif/investigator/:id", func(c *fiber.Ctx) error { return handlers.GenerateHTML(c, db, nil, "vhf_investigator") })
 		appGroup.Post("/vhf-cif/investigator/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFInvestigatorSubmit(c, db, sl, store, config) })
 		appGroup.Get("/vhf-cif/success", func(c *fiber.Ctx) error { return handlers.HandlerVHFSuccess(c, db, sl, store, config) })
-		appGroup.Get("/vhf/list", func(c *fiber.Ctx) error { return handlers.HandlerVHFList(c, db, sl, store, config) })
-		appGroup.Get("/vhf/view/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFView(c, db, sl, store, config) })
+		appGroup.Get("/vhf-list", func(c *fiber.Ctx) error { return handlers.HandlerVHFList(c, db, sl, store, config) })
+		appGroup.Get("/vhf-cif/view/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFView(c, db, sl, store, config) })
 		appGroup.Get("/vhf-lab/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFLabForm(c, db) })
 		appGroup.Post("/vhf-lab/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFLabSave(c, db, sl, store, config) })
 
@@ -189,17 +184,104 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		appGroup.Get("/vhf", func(c *fiber.Ctx) error { return handlers.HandlerVHFList(c, db, sl, store, config) })
 		appGroup.Get("/vhf/new", func(c *fiber.Ctx) error { return handlers.GenerateHTML(c, db, nil, "vhf_cif") })
 		appGroup.Get("/cases/new", func(c *fiber.Ctx) error { return handlers.HandlerCasesForm(c, db, sl, store, config) })
+		appGroup.Get("/cases/:outbreak_id", func(c *fiber.Ctx) error {
+			// Set the outbreak ID in session and redirect to cases list
+			outbreakID, err := strconv.Atoi(c.Params("outbreak_id"))
+			if err != nil {
+				return c.Status(400).SendString("Invalid outbreak ID")
+			}
+
+			// Set outbreak in session
+			sess, err := store.Get(c)
+			if err != nil {
+				return c.Status(500).SendString("Failed to get session")
+			}
+			sess.Set("outbreak_id", outbreakID)
+			if err := sess.Save(); err != nil {
+				return c.Status(500).SendString("Failed to save session")
+			}
+
+			// Redirect to cases list
+			return c.Redirect("/cases/list")
+		})
 		appGroup.Get("/lab", func(c *fiber.Ctx) error { return handlers.HandlerLabList(c, db, sl, store, config) })
 		appGroup.Get("/change-password", func(c *fiber.Ctx) error { return handlers.GenerateHTML(c, db, nil, "change_password") })
 		appGroup.Get("/outbreaks/assignments", func(c *fiber.Ctx) error { return handlers.GenerateHTML(c, db, nil, "outbreak_assignments") })
 		appGroup.Get("/outbreaks/assign", func(c *fiber.Ctx) error {
-			return handlersInstance.OutbreakAssignmentHandler.ShowAssignFormFiber(c)
+			// Create outbreak assignment handler directly
+			userService := models.NewUserService(db)
+			userOutbreakService := models.NewUserOutbreakService(db)
+			patientRoleService := models.NewPatientManagementRoleService(db)
+			outbreakService := models.NewOutbreakService(db)
+			facilityService := models.NewFacilityService(db)
+
+			handler := handlers.NewOutbreakAssignmentHandler(
+				userOutbreakService, patientRoleService, userService, outbreakService, facilityService,
+			)
+			return handler.ShowAssignFormFiber(c)
 		})
 		appGroup.Get("/patient-roles", func(c *fiber.Ctx) error { return handlers.GenerateHTML(c, db, nil, "patient_roles") })
 		appGroup.Get("/roles", func(c *fiber.Ctx) error { return handlers.GenerateHTML(c, db, nil, "list_roles") })
 		appGroup.Get("/roles/new", func(c *fiber.Ctx) error { return handlers.GenerateHTML(c, db, nil, "form_role") })
+		appGroup.Get("/rbac-dashboard", func(c *fiber.Ctx) error { return handlers.GenerateHTML(c, db, nil, "rbac_dashboard") })
+
+		// Development endpoint to create default admin user
+		appGroup.Get("/setup-admin", func(c *fiber.Ctx) error {
+			handler := handlers.NewRBACManagementHandler(db, sl, store, config)
+			return handler.CreateDefaultAdminUser(c)
+		})
+
+		// Temporary: Make RBAC API endpoints public for development
+		// appGroup.Get("/api/roles", func(c *fiber.Ctx) error { return handlers.HandlerGetRoles(c, db, sl) })
+		// appGroup.Get("/api/permissions", func(c *fiber.Ctx) error { return handlers.HandlerGetPermissions(c, db, sl) })
+		// appGroup.Get("/api/rbac/migration-status", func(c *fiber.Ctx) error { return handlers.HandlerGetMigrationStatus(c, db, sl) })
+		// appGroup.Get("/api/users", func(c *fiber.Ctx) error { return handlers.HandlerGetUsers(c, db, sl) })
+		// appGroup.Post("/api/users/roles", func(c *fiber.Ctx) error { return handlers.HandlerAssignUserRole(c, db, sl, store, config) })
+		appGroup.Get("/permissions", func(c *fiber.Ctx) error { return handlers.GenerateHTML(c, db, nil, "permissions") })
 		appGroup.Get("/employees/statistics", func(c *fiber.Ctx) error { return handlers.GenerateHTML(c, db, nil, "employee_statistics") })
 		appGroup.Get("/employees/export", func(c *fiber.Ctx) error { return handlers.GenerateHTML(c, db, nil, "employee_export") })
+
+		// User routes (protected)
+		appGroup.Get("/users", func(c *fiber.Ctx) error { return handlers.HandlerUserList(c, db, sl, store, config) })
+
+		// RBAC API routes (protected)
+		// appGroup.Get("/api/roles", func(c *fiber.Ctx) error { return handlers.HandlerGetRoles(c, db, sl) })
+		appGroup.Post("/api/roles", func(c *fiber.Ctx) error { return handlers.HandlerCreateRole(c, db, sl, store, config) })
+		appGroup.Put("/api/roles/:id", func(c *fiber.Ctx) error { return handlers.HandlerUpdateRole(c, db, sl, store, config) })
+		appGroup.Delete("/api/roles/:id", func(c *fiber.Ctx) error { return handlers.HandlerDeleteRole(c, db, sl, store, config) })
+
+		appGroup.Get("/api/permissions", func(c *fiber.Ctx) error { return handlers.HandlerGetPermissions(c, db, sl) })
+		appGroup.Post("/api/permissions", func(c *fiber.Ctx) error { return handlers.HandlerCreatePermission(c, db, sl, store, config) })
+		appGroup.Put("/api/permissions/:id", func(c *fiber.Ctx) error { return handlers.HandlerUpdatePermission(c, db, sl, store, config) })
+		appGroup.Delete("/api/permissions/:id", func(c *fiber.Ctx) error { return handlers.HandlerDeletePermission(c, db, sl, store, config) })
+
+		appGroup.Get("/api/user-roles/:user_id", func(c *fiber.Ctx) error { return handlers.HandlerGetUserRoles(c, db, sl) })
+		appGroup.Post("/api/user-roles", func(c *fiber.Ctx) error { return handlers.HandlerAssignUserRole(c, db, sl, store, config) })
+		appGroup.Delete("/api/user-roles/:user_id/:role_id", func(c *fiber.Ctx) error { return handlers.HandlerRemoveUserRole(c, db, sl, store, config) })
+
+		appGroup.Get("/api/role-permissions/:role_id", func(c *fiber.Ctx) error { return handlers.HandlerGetRolePermissions(c, db, sl) })
+		appGroup.Post("/api/role-permissions", func(c *fiber.Ctx) error { return handlers.HandlerAssignRolePermission(c, db, sl, store, config) })
+		appGroup.Delete("/api/role-permissions/:role_id/:permission_id", func(c *fiber.Ctx) error { return handlers.HandlerRemoveRolePermission(c, db, sl, store, config) })
+
+		appGroup.Get("/api/rbac/migration-status", func(c *fiber.Ctx) error { return handlers.HandlerGetMigrationStatus(c, db, sl) })
+		appGroup.Post("/scripts/migrate_user_rights_to_rbac", func(c *fiber.Ctx) error { return handlers.HandlerMigrateUserRightsToRBAC(c, db, sl, store, config) })
+
+		// Outbreak routes (protected)
+		appGroup.Get("/outbreaks", func(c *fiber.Ctx) error { return handlers.HandlerOutbreakList(c, db, sl, store, config) })
+		appGroup.Get("/outbreaks/new/:i", func(c *fiber.Ctx) error { return handlers.HandlerOutbreakForm(c, db, sl, store, config) })
+		appGroup.Get("/outbreaks/edit/:i", func(c *fiber.Ctx) error { return handlers.HandlerOutbreakForm(c, db, sl, store, config) })
+		appGroup.Post("/outbreaks/save", func(c *fiber.Ctx) error { return handlers.HandlerOutbreakSubmit(c, db, sl, store, config) })
+		appGroup.Get("/outbreaks/close/:i", func(c *fiber.Ctx) error { return handlers.HandlerOutbreakClose(c, db, sl, store, config) })
+		appGroup.Post("/outbreaks/select/:i", func(c *fiber.Ctx) error {
+			id, err := strconv.Atoi(c.Params("i"))
+			if err != nil {
+				return c.Status(400).SendString("Invalid outbreak ID")
+			}
+			if err := handlers.SetSelectedOutbreak(c, store, id); err != nil {
+				return c.Status(500).SendString("Failed to select outbreak")
+			}
+			return c.SendStatus(200)
+		})
 
 		// New routes for mpox daily follow-up
 		cse.Get("/encounters/mpox-admission/new/:i", func(c *fiber.Ctx) error { return handlers.HandlerMpoxAdmissionForm(c, db, sl, store, config) })
@@ -213,6 +295,31 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		protected := api.Group("/vhf")
 		protected.Get("/cases", func(c *fiber.Ctx) error { return handlers.HandlerVHFList(c, db, sl, store, config) })
 		protected.Get("/cases/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFView(c, db, sl, store, config) })
+
+		// RBAC Management routes
+		rbacHandler := handlers.NewRBACManagementHandler(db, sl, store, config)
+
+		// Role management
+		protected.Get("/roles", rbacHandler.ListRoles)
+		protected.Get("/roles/:id", rbacHandler.GetRole)
+		protected.Post("/roles", rbacHandler.CreateRole)
+		protected.Put("/roles/:id", rbacHandler.UpdateRole)
+		protected.Delete("/roles/:id", rbacHandler.DeleteRole)
+
+		// Permission management
+		protected.Get("/permissions", rbacHandler.ListPermissions)
+		protected.Get("/permissions/:id", rbacHandler.GetPermission)
+		protected.Post("/permissions", rbacHandler.CreatePermission)
+		protected.Put("/permissions/:id", rbacHandler.UpdatePermission)
+		protected.Delete("/permissions/:id", rbacHandler.DeletePermission)
+
+		// User-role assignment
+		protected.Post("/users/roles", rbacHandler.AssignUserRole)
+		protected.Delete("/users/roles", rbacHandler.RemoveUserRole)
+		protected.Get("/users/:user_id/roles", rbacHandler.GetUserRoles)
+
+		// Migration status
+		protected.Get("/rbac/migration-status", rbacHandler.GetMigrationStatus)
 	}
 
 	// MPOX CIF routes (public)
@@ -228,19 +335,22 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		return handlers.HandlerMpoxCIFSuccess(c, db, sl)
 	})
 
-	// API endpoints for dropdown data
-	api := app.Group("/api")
+	// API endpoints for dropdown data (protected)
+	protectedAPI := app.Group("/api")
+	protectedAPI.Use(AuthRequired(store))
 	{
-		api.Get("/outbreaks", func(c *fiber.Ctx) error {
-			outbreaks, err := handlersInstance.OutbreakAssignmentHandler.GetOutbreakService().GetAllOutbreaks()
+		protectedAPI.Get("/outbreaks", func(c *fiber.Ctx) error {
+			outbreakService := models.NewOutbreakService(db)
+			outbreaks, err := outbreakService.GetAllOutbreaks()
 			if err != nil {
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 			}
 			return c.JSON(outbreaks)
 		})
 
-		api.Get("/users", func(c *fiber.Ctx) error {
-			users, err := handlersInstance.OutbreakAssignmentHandler.GetUserService().GetAllUsers()
+		protectedAPI.Get("/users", func(c *fiber.Ctx) error {
+			userService := models.NewUserService(db)
+			users, err := userService.GetAllUsers()
 			if err != nil {
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 			}
@@ -359,7 +469,7 @@ func RouteHome(app *fiber.App, db *sql.DB, sl *slog.Logger, store *session.Store
 		return handlers.GenerateHTML(c, db, fiber.Map{"PatientID": c.Params("id")}, "vhf_laboratory")
 	})
 	app.Post("/vhf-cif/laboratory/:id", func(c *fiber.Ctx) error {
-		return handlers.HandlerVHFLaboratorySubmit(c, db, sl, store, config)
+		return handlers.HandlerVHFLaboratorySubmit(c, db, sl, store, config, smsService)
 	})
 	app.Get("/vhf-cif/investigator/:id", func(c *fiber.Ctx) error {
 		return handlers.GenerateHTML(c, db, fiber.Map{"PatientID": c.Params("id")}, "vhf_investigator")
@@ -409,6 +519,28 @@ func RouteCases(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Stor
 	v.Post("/filter", func(c *fiber.Ctx) error { return handlers.HandlerCasesList(c, db, sl, store, config) })
 	v.Get("/list", func(c *fiber.Ctx) error { return handlers.HandlerCasesList(c, db, sl, store, config) })
 	v.Get("/", func(c *fiber.Ctx) error { return handlers.HandlerCasesList(c, db, sl, store, config) })
+
+	// Add route for case manager redirect with outbreak ID
+	v.Get("/:outbreak_id", func(c *fiber.Ctx) error {
+		// Set the outbreak ID in session and redirect to cases list
+		outbreakID, err := strconv.Atoi(c.Params("outbreak_id"))
+		if err != nil {
+			return c.Status(400).SendString("Invalid outbreak ID")
+		}
+
+		// Set outbreak in session
+		sess, err := store.Get(c)
+		if err != nil {
+			return c.Status(500).SendString("Failed to get session")
+		}
+		sess.Set("outbreak_id", outbreakID)
+		if err := sess.Save(); err != nil {
+			return c.Status(500).SendString("Failed to save session")
+		}
+
+		// Redirect to cases list
+		return c.Redirect("/cases/list")
+	})
 
 	v.Get("/encounters/list/:i", func(c *fiber.Ctx) error { return handlers.HandlerCaseEncounterForm(c, db, sl, store, config) })
 	v.Get("/encounters/new/:i", func(c *fiber.Ctx) error { return handlers.HandlerCaseEncounterForm(c, db, sl, store, config) })
@@ -516,7 +648,9 @@ func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logg
 	protected.Get("/vhf-cif/risk-factors/:id", func(c *fiber.Ctx) error { return handlers.GenerateHTML(c, db, nil, "vhf_risk_factors") })
 	protected.Post("/vhf-cif/risk-factors/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFRiskFactorsSubmit(c, db, sl, store, config) })
 	protected.Get("/vhf-cif/laboratory/:id", func(c *fiber.Ctx) error { return handlers.GenerateHTML(c, db, nil, "vhf_laboratory") })
-	protected.Post("/vhf-cif/laboratory/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFLaboratorySubmit(c, db, sl, store, config) })
+	protected.Post("/vhf-cif/laboratory/:id", func(c *fiber.Ctx) error {
+		return handlers.HandlerVHFLaboratorySubmit(c, db, sl, store, config, smsService)
+	})
 	protected.Get("/vhf-cif/investigator/:id", func(c *fiber.Ctx) error { return handlers.GenerateHTML(c, db, nil, "vhf_investigator") })
 	protected.Post("/vhf-cif/investigator/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFInvestigatorSubmit(c, db, sl, store, config) })
 	protected.Get("/vhf-cif/success", func(c *fiber.Ctx) error { return handlers.HandlerVHFSuccess(c, db, sl, store, config) })

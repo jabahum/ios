@@ -9,16 +9,18 @@ import (
 
 // Outbreak represents a row from 'public.outbreaks'.
 type Outbreak struct {
-	ID          int             `json:"id"`           // id
-	Name        sql.NullString  `json:"name"`         // name
-	Description sql.NullString  `json:"description"`  // description
-	StartDate   sql.NullTime    `json:"start_date"`   // start_date
-	EndDate     sql.NullTime    `json:"end_date"`     // end_date
-	Status      sql.NullString  `json:"status"`       // status
-	EnterOn     sql.NullTime    `json:"enter_on"`     // enter_on
-	EnterBy     sql.NullInt64   `json:"enter_by"`     // enter_by
-	EditOn      sql.NullTime    `json:"edit_on"`      // edit_on
-	EditBy      sql.NullInt64   `json:"edit_by"`      // edit_by
+	ID               int            `json:"id"`                // id
+	Name             sql.NullString `json:"name"`              // name
+	Description      sql.NullString `json:"description"`       // description
+	StartDate        sql.NullTime   `json:"start_date"`        // start_date
+	EndDate          sql.NullTime   `json:"end_date"`          // end_date
+	Status           sql.NullString `json:"status"`            // status
+	OutbreakType     sql.NullString `json:"outbreak_type"`     // outbreak_type
+	OutbreakCategory sql.NullString `json:"outbreak_category"` // outbreak_category
+	EnterOn          sql.NullTime   `json:"enter_on"`          // enter_on
+	EnterBy          sql.NullInt64  `json:"enter_by"`          // enter_by
+	EditOn           sql.NullTime   `json:"edit_on"`           // edit_on
+	EditBy           sql.NullInt64  `json:"edit_by"`           // edit_by
 	// xo fields
 	_exists, _deleted bool
 }
@@ -44,13 +46,13 @@ func (o *Outbreak) Insert(ctx context.Context, db DB) error {
 	}
 	// insert (primary key generated and returned by database)
 	const sqlstr = `INSERT INTO public.outbreaks (` +
-		`name, description, start_date, end_date, status, enter_on, enter_by, edit_on, edit_by` +
+		`name, description, start_date, end_date, status, outbreak_type, outbreak_category, enter_on, enter_by, edit_on, edit_by` +
 		`) VALUES (` +
-		`$1, $2, $3, $4, $5, $6, $7, $8, $9` +
+		`$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11` +
 		`) RETURNING id`
 	// run
-	logf(sqlstr, o.Name, o.Description, o.StartDate, o.EndDate, o.Status, o.EnterOn, o.EnterBy, o.EditOn, o.EditBy)
-	if err := db.QueryRowContext(ctx, sqlstr, o.Name, o.Description, o.StartDate, o.EndDate, o.Status, o.EnterOn, o.EnterBy, o.EditOn, o.EditBy).Scan(&o.ID); err != nil {
+	logf(sqlstr, o.Name, o.Description, o.StartDate, o.EndDate, o.Status, o.OutbreakType, o.OutbreakCategory, o.EnterOn, o.EnterBy, o.EditOn, o.EditBy)
+	if err := db.QueryRowContext(ctx, sqlstr, o.Name, o.Description, o.StartDate, o.EndDate, o.Status, o.OutbreakType, o.OutbreakCategory, o.EnterOn, o.EnterBy, o.EditOn, o.EditBy).Scan(&o.ID); err != nil {
 		return logerror(err)
 	}
 	// set exists
@@ -68,11 +70,11 @@ func (o *Outbreak) Update(ctx context.Context, db DB) error {
 	}
 	// update with composite primary key
 	const sqlstr = `UPDATE public.outbreaks SET ` +
-		`name = $1, description = $2, start_date = $3, end_date = $4, status = $5, enter_on = $6, enter_by = $7, edit_on = $8, edit_by = $9 ` +
-		`WHERE id = $10`
+		`name = $1, description = $2, start_date = $3, end_date = $4, status = $5, outbreak_type = $6, outbreak_category = $7, enter_on = $8, enter_by = $9, edit_on = $10, edit_by = $11 ` +
+		`WHERE id = $12`
 	// run
-	logf(sqlstr, o.Name, o.Description, o.StartDate, o.EndDate, o.Status, o.EnterOn, o.EnterBy, o.EditOn, o.EditBy, o.ID)
-	if _, err := db.ExecContext(ctx, sqlstr, o.Name, o.Description, o.StartDate, o.EndDate, o.Status, o.EnterOn, o.EnterBy, o.EditOn, o.EditBy, o.ID); err != nil {
+	logf(sqlstr, o.Name, o.Description, o.StartDate, o.EndDate, o.Status, o.OutbreakType, o.OutbreakCategory, o.EnterOn, o.EnterBy, o.EditOn, o.EditBy, o.ID)
+	if _, err := db.ExecContext(ctx, sqlstr, o.Name, o.Description, o.StartDate, o.EndDate, o.Status, o.OutbreakType, o.OutbreakCategory, o.EnterOn, o.EnterBy, o.EditOn, o.EditBy, o.ID); err != nil {
 		return logerror(err)
 	}
 	return nil
@@ -111,7 +113,7 @@ func (o *Outbreak) Delete(ctx context.Context, db DB) error {
 func OutbreakByID(ctx context.Context, db DB, id int) (*Outbreak, error) {
 	// query
 	const sqlstr = `SELECT ` +
-		`id, name, description, start_date, end_date, status, enter_on, enter_by, edit_on, edit_by ` +
+		`id, name, description, start_date, end_date, status, outbreak_type, outbreak_category, enter_on, enter_by, edit_on, edit_by ` +
 		`FROM public.outbreaks ` +
 		`WHERE id = $1`
 	// run
@@ -119,7 +121,7 @@ func OutbreakByID(ctx context.Context, db DB, id int) (*Outbreak, error) {
 	o := Outbreak{
 		_exists: true,
 	}
-	if err := db.QueryRowContext(ctx, sqlstr, id).Scan(&o.ID, &o.Name, &o.Description, &o.StartDate, &o.EndDate, &o.Status, &o.EnterOn, &o.EnterBy, &o.EditOn, &o.EditBy); err != nil {
+	if err := db.QueryRowContext(ctx, sqlstr, id).Scan(&o.ID, &o.Name, &o.Description, &o.StartDate, &o.EndDate, &o.Status, &o.OutbreakType, &o.OutbreakCategory, &o.EnterOn, &o.EnterBy, &o.EditOn, &o.EditBy); err != nil {
 		return nil, logerror(err)
 	}
 	return &o, nil
@@ -128,11 +130,11 @@ func OutbreakByID(ctx context.Context, db DB, id int) (*Outbreak, error) {
 // GetActiveOutbreaks retrieves all active outbreaks
 func GetActiveOutbreaks(ctx context.Context, db DB) ([]*Outbreak, error) {
 	const sqlstr = `SELECT ` +
-		`id, name, description, start_date, end_date, status, enter_on, enter_by, edit_on, edit_by ` +
+		`id, name, description, start_date, end_date, status, outbreak_type, outbreak_category, enter_on, enter_by, edit_on, edit_by ` +
 		`FROM public.outbreaks ` +
 		`WHERE status != 'closed' ` +
 		`ORDER BY start_date DESC`
-	
+
 	rows, err := db.QueryContext(ctx, sqlstr)
 	if err != nil {
 		return nil, logerror(err)
@@ -144,7 +146,7 @@ func GetActiveOutbreaks(ctx context.Context, db DB) ([]*Outbreak, error) {
 		o := Outbreak{
 			_exists: true,
 		}
-		if err := rows.Scan(&o.ID, &o.Name, &o.Description, &o.StartDate, &o.EndDate, &o.Status, &o.EnterOn, &o.EnterBy, &o.EditOn, &o.EditBy); err != nil {
+		if err := rows.Scan(&o.ID, &o.Name, &o.Description, &o.StartDate, &o.EndDate, &o.Status, &o.OutbreakType, &o.OutbreakCategory, &o.EnterOn, &o.EnterBy, &o.EditOn, &o.EditBy); err != nil {
 			return nil, logerror(err)
 		}
 		outbreaks = append(outbreaks, &o)
@@ -155,16 +157,61 @@ func GetActiveOutbreaks(ctx context.Context, db DB) ([]*Outbreak, error) {
 // GetDefaultOutbreak retrieves the default outbreak (Ebola 2025)
 func GetDefaultOutbreak(ctx context.Context, db DB) (*Outbreak, error) {
 	const sqlstr = `SELECT ` +
-		`id, name, description, start_date, end_date, status, enter_on, enter_by, edit_on, edit_by ` +
+		`id, name, description, start_date, end_date, status, outbreak_type, outbreak_category, enter_on, enter_by, edit_on, edit_by ` +
 		`FROM public.outbreaks ` +
 		`WHERE name = 'Ebola 2025' ` +
 		`LIMIT 1`
-	
+
 	o := Outbreak{
 		_exists: true,
 	}
-	if err := db.QueryRowContext(ctx, sqlstr).Scan(&o.ID, &o.Name, &o.Description, &o.StartDate, &o.EndDate, &o.Status, &o.EnterOn, &o.EnterBy, &o.EditOn, &o.EditBy); err != nil {
+	if err := db.QueryRowContext(ctx, sqlstr).Scan(&o.ID, &o.Name, &o.Description, &o.StartDate, &o.EndDate, &o.Status, &o.OutbreakType, &o.OutbreakCategory, &o.EnterOn, &o.EnterBy, &o.EditOn, &o.EditBy); err != nil {
 		return nil, logerror(err)
 	}
 	return &o, nil
-} 
+}
+
+// GetUserAccessibleOutbreaks retrieves outbreaks accessible to a specific user
+func GetUserAccessibleOutbreaks(ctx context.Context, db DB, userID int) ([]*Outbreak, error) {
+	const sqlstr = `SELECT * FROM get_user_accessible_outbreaks($1)`
+
+	rows, err := db.QueryContext(ctx, sqlstr, userID)
+	if err != nil {
+		return nil, logerror(err)
+	}
+	defer rows.Close()
+
+	var outbreaks []*Outbreak
+	for rows.Next() {
+		o := Outbreak{
+			_exists: true,
+		}
+		if err := rows.Scan(&o.ID, &o.Name, &o.Description, &o.OutbreakType, &o.OutbreakCategory, &o.StartDate, &o.EndDate, &o.Status); err != nil {
+			return nil, logerror(err)
+		}
+		outbreaks = append(outbreaks, &o)
+	}
+	return outbreaks, nil
+}
+
+// CheckUserOutbreakAccess checks if a user has access to a specific outbreak
+func CheckUserOutbreakAccess(ctx context.Context, db DB, userID, outbreakID int) (bool, error) {
+	const sqlstr = `SELECT check_user_outbreak_access($1, $2)`
+
+	var hasAccess bool
+	if err := db.QueryRowContext(ctx, sqlstr, userID, outbreakID).Scan(&hasAccess); err != nil {
+		return false, logerror(err)
+	}
+	return hasAccess, nil
+}
+
+// CanUserManageOutbreak checks if a user can edit/close a specific outbreak
+func CanUserManageOutbreak(ctx context.Context, db DB, userID, outbreakID int) (bool, error) {
+	const sqlstr = `SELECT can_user_manage_outbreak($1, $2)`
+
+	var canManage bool
+	if err := db.QueryRowContext(ctx, sqlstr, userID, outbreakID).Scan(&canManage); err != nil {
+		return false, logerror(err)
+	}
+	return canManage, nil
+}

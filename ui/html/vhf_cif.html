@@ -221,11 +221,11 @@
                 </div>
               </div>
               <div class="col-md-3">
-                <label class="form-label">Dates residing at this location</label>
+                <label class="form-label">Date Started residing at this location</label>
                 <input type="date" class="form-control" name="date_residing_from">
               </div>
               <div class="col-md-3">
-                <label class="form-label">Dates residing at this location</label>
+                <label class="form-label">Date Stopped residing at this location</label>
                 <input type="date" class="form-control" name="date_residing_to">
               </div>
             </div>
@@ -599,7 +599,7 @@
                 <label class="form-label">Date of Hospital Admission</label>
                 <input type="date" class="form-control" name="admission_date" id="admission_date">
               </div>
-              
+
               <div class="col-md-6">
               <label class="form-label">Health Facility Name</label>
               <input type="text" class="form-control" name="health_facility_name">
@@ -630,7 +630,7 @@
                 <div class="row g-3">
                   <div class="col-md-6">
                     <label class="form-label">Dates of Hospitalization</label>
-                    <input type="text" class="form-control" name="prev_hospitalization_dates" placeholder="dd/mm/yyyy - dd/mm/yyyy">
+                    <input type="date" class="form-control" name="prev_hospitalization_dates" placeholder="dd/mm/yyyy - dd/mm/yyyy">
                   </div>
                   <div class="col-md-6">
                     <label class="form-label">Health Facility Name</label>
@@ -1377,11 +1377,15 @@ function toggleIsolation() {
 
   const isolationContainer = document.getElementById('isolation_date_container');
   const isolationDateInput = document.getElementById('isolation_date');
+  const prevHospitalizationDatesInput = document.getElementById('prev_hospitalization_dates');
 
   if (isolation == null|| isolation === 'No') {
     isolationContainer.style.display = 'none';
     isolationDateInput.value = '';
     isolationDateInput.removeAttribute('required');
+    prevHospitalizationDatesInput.value = '';
+    prevHospitalizationDatesInput.removeAttribute('required');
+    prevHospitalizationDatesInput.style.display = 'none';
   } else {
     isolationContainer.style.display = 'block';
     isolationDateInput.setAttribute('required', 'required');

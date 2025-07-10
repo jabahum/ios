@@ -8,6 +8,8 @@ import (
 	"log"
 	"log/slog"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
@@ -32,23 +34,44 @@ func HandlerUserForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.S
 		log.Println(err.Error())
 	}
 
-	var uzer models.User
-	uzer.UserEmployee.Valid = true
-	uzer.UserEmployee.Int64 = 0
-
-	data := NewTemplateData(c, store)
-
-	if id > 0 {
-		u, er := models.UserByUserID(c.Context(), db, id)
-		if er == nil {
-			uzer = *u
-		}
-	} else {
-		id = 0
+	// Create a simplified user form struct
+	type UserForm struct {
+		UserID            int
+		UserName          sql.NullString
+		UserPass          sql.NullString
+		UserEmployee      sql.NullInt64
+		IsActive          sql.NullBool
+		IsLocked          sql.NullBool
+		PasswordExpiresAt sql.NullTime
 	}
 
-	fmt.Println("Creating")
-	// Correct struct definition with semicolons
+	var uzer UserForm
+	uzer.UserEmployee.Valid = true
+	uzer.UserEmployee.Int64 = 0
+	uzer.IsActive.Valid = true
+	uzer.IsActive.Bool = true
+	uzer.IsLocked.Valid = true
+	uzer.IsLocked.Bool = false
+
+	// Load existing user if editing
+	if id > 0 {
+		query := `SELECT user_id, user_name, user_pass, user_employee, 
+		          COALESCE(is_active, true) as is_active,
+		          COALESCE(is_locked, false) as is_locked,
+		          password_expires_at
+		          FROM public.users WHERE user_id = $1`
+		err := db.QueryRowContext(c.Context(), query, id).Scan(
+			&uzer.UserID, &uzer.UserName, &uzer.UserPass, &uzer.UserEmployee,
+			&uzer.IsActive, &uzer.IsLocked, &uzer.PasswordExpiresAt,
+		)
+		if err != nil {
+			sl.Error("Error loading user", "error", err)
+			// Continue with empty user for new form
+		}
+	}
+
+	// Get functions for permissions (simplified)
+	// Define funclist struct
 	type funclist struct {
 		FID      sql.NullInt64 `json:"fid"`
 		MetaID   sql.NullInt64 `json:"meta_id"`
@@ -60,60 +83,128 @@ func HandlerUserForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.S
 		FRemove  sql.NullInt64 `json:"f_remove"`
 	}
 
-	// Use parameterized query to prevent SQL injection
-	mysql := `  
-	SELECT 
-		ur.user_rights_id, m.meta_id, m.meta_name, function_scope,
-		COALESCE(ur.user_rights_can_view, 0), 
-		COALESCE(ur.user_rights_can_create, 0), 
-		COALESCE(ur.user_rights_can_edit, 0), 
-		COALESCE(ur.user_rights_can_remove, 0)
-	FROM meta m 
-	LEFT JOIN public.user_right ur 
-		ON m.meta_id = ur.user_rights_function AND ur.user_id = $1
-	WHERE m.meta_category = 3`
-
-	// Execute query safely with parameterized input
-	rows, err := db.QueryContext(c.Context(), mysql, id)
-	if err != nil {
-		log.Println("Query Error:", err.Error())
-	}
-	defer rows.Close()
-
-	// Slice to store results
 	var functions []funclist
-
-	// Iterate over query results
-	for rows.Next() {
-		var f funclist
-		err := rows.Scan(
-			&f.FID, &f.MetaID, &f.MetaName, &f.FScope,
-			&f.FView, &f.FCreate, &f.FEdit, &f.FRemove,
-		)
-		if err != nil {
-			log.Println("Row Scan Error: ", err.Error())
-			continue
+	functionsQuery := `SELECT fid_id, meta_id, meta_name, f_scope, f_view, f_create, f_edit, f_remove 
+	                   FROM functions ORDER BY meta_name`
+	rows, err := db.QueryContext(c.Context(), functionsQuery)
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var f funclist
+			err := rows.Scan(
+				&f.FID, &f.MetaID, &f.MetaName, &f.FScope,
+				&f.FView, &f.FCreate, &f.FEdit, &f.FRemove,
+			)
+			if err != nil {
+				log.Println("Row Scan Error: ", err.Error())
+				continue
+			}
+			functions = append(functions, f)
 		}
-		functions = append(functions, f)
 	}
 
-	// Check for errors after looping
-	if err = rows.Err(); err != nil {
-		log.Println("Rows Iteration Error:", err)
+	// Add roles data
+	data := NewTemplateData(c, store)
+	data.Roles = []Role{}
+	rolesQuery := `SELECT id, name, COALESCE(description, '') as description FROM roles ORDER BY name`
+	rolesRows, err := db.QueryContext(c.Context(), rolesQuery)
+	if err == nil {
+		defer rolesRows.Close()
+		for rolesRows.Next() {
+			var role Role
+			if err := rolesRows.Scan(&role.ID, &role.Name, &role.Description); err == nil {
+				// Check if this role is assigned to the current user
+				if id > 0 {
+					userRoleQuery := `SELECT COUNT(*) FROM user_roles WHERE user_id = $1 AND role_id = $2`
+					var count int
+					if err := db.QueryRowContext(c.Context(), userRoleQuery, id, role.ID).Scan(&count); err == nil {
+						role.Selected = count > 0
+					}
+				}
+				data.Roles = append(data.Roles, role)
+			}
+		}
+	}
+
+	// Simplified permissions data
+	data.Permissions = []Permission{
+		{
+			Resource: "users",
+			Actions: []Action{
+				{Action: "create", Granted: false},
+				{Action: "read", Granted: false},
+				{Action: "update", Granted: false},
+				{Action: "delete", Granted: false},
+			},
+		},
+		{
+			Resource: "vhf_patients",
+			Actions: []Action{
+				{Action: "create", Granted: false},
+				{Action: "read", Granted: false},
+				{Action: "update", Granted: false},
+				{Action: "delete", Granted: false},
+			},
+		},
+		{
+			Resource: "outbreaks",
+			Actions: []Action{
+				{Action: "create", Granted: false},
+				{Action: "read", Granted: false},
+				{Action: "update", Granted: false},
+				{Action: "delete", Granted: false},
+			},
+		},
+		{
+			Resource: "reports",
+			Actions: []Action{
+				{Action: "create", Granted: false},
+				{Action: "read", Granted: false},
+				{Action: "update", Granted: false},
+				{Action: "delete", Granted: false},
+			},
+		},
 	}
 
 	data.User = userName
 	data.Role = role
 	data.Form = uzer
 	data.FormChild1 = functions
+	data.From = c.Query("from", "") // Get the 'from' parameter from the URL
 
 	return GenerateHTML(c, db, data, "form_user")
 }
 
 func HandlerUserSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	// Debug: Log all form values
+	sl.Info("Form submission received", "content_type", c.Get("Content-Type"))
+
 	id, er := strconv.Atoi(c.FormValue("id"))
 	if er != nil {
 		id = 0
+	}
+
+	// Debug: Log the user ID
+	sl.Info("Processing user submission", "user_id", id)
+
+	// Get employee details if employee is selected
+	employeeID, err := strconv.Atoi(c.FormValue("user_employee"))
+	if err != nil {
+		employeeID = 0
+	}
+
+	var firstName, lastName, email sql.NullString
+	var departmentID sql.NullInt64
+
+	if employeeID > 0 {
+		// Get employee details
+		empQuery := `SELECT employee_fname, employee_lname, employee_email, facility 
+		             FROM employee WHERE employee_id = $1`
+		err := db.QueryRowContext(c.Context(), empQuery, employeeID).Scan(
+			&firstName, &lastName, &email, &departmentID)
+		if err != nil {
+			sl.Error("Error getting employee details", "error", err, "employee_id", employeeID)
+		}
 	}
 
 	user := models.User{
@@ -122,76 +213,143 @@ func HandlerUserSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session
 		UserEmployee: ParseNullInt(c.FormValue("user_employee")),
 	}
 
+	// Set password for new users
 	if user.UserID == 0 {
-		user.UserPass = sql.NullString{String: models.Encrypt("123456"), Valid: true}
+		password := c.FormValue("user_pass")
+		if password == "" {
+			password = "123456" // Default password
+		}
+		user.UserPass = sql.NullString{String: models.Encrypt(password), Valid: true}
 		err := user.Insert(c.Context(), db)
 		if err != nil {
 			log.Println(err.Error())
 		}
+		// Get the inserted user ID
+		user.UserID = user.UserID // This should be set by the Insert method
+		sl.Info("Created new user", "user_id", user.UserID)
 	} else {
 		user.SetAsExists()
 		err := user.Update_NoPass(c.Context(), db)
 		if err != nil {
 			log.Println(err.Error())
 		}
+		sl.Info("Updated existing user", "user_id", user.UserID)
 	}
 
-	//================================================================
-
-	mysql := `SELECT m.meta_id, m.meta_name FROM meta m WHERE m.meta_category = 3`
-
-	// Execute query safely with parameterized input
-	rows, err := db.QueryContext(c.Context(), mysql)
-	if err != nil {
-		log.Println("Query Error:", err.Error())
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var m_id int64
-		var m_nm string
-		err := rows.Scan(&m_id, &m_nm)
+	// Update enhanced user data if employee is selected
+	if employeeID > 0 && user.UserID > 0 {
+		// Check if enhanced user record exists
+		var exists bool
+		err := db.QueryRowContext(c.Context(),
+			"SELECT EXISTS(SELECT 1 FROM enhanced_users WHERE user_id = $1)", user.UserID).Scan(&exists)
 		if err != nil {
-			log.Println("Row Scan Error:", err)
-			continue
+			sl.Error("Error checking enhanced user existence", "error", err)
 		}
 
-		fid, err := strconv.ParseInt(c.FormValue("input_fid_id_"+m_nm), 10, 64)
-		scope, err := strconv.ParseInt(c.FormValue("input_scope_"+m_nm), 10, 64)
-		view, err := strconv.ParseInt(c.FormValue("input_view_"+m_nm), 10, 64)
-		add, err := strconv.ParseInt(c.FormValue("input_add_"+m_nm), 10, 64)
-		edit, err := strconv.ParseInt(c.FormValue("input_edit_"+m_nm), 10, 64)
-		exec, err := strconv.ParseInt(c.FormValue("input_execute_"+m_nm), 10, 64)
-
-		right := models.UserRight{}
-
-		right.UserID.Valid = true
-		right.UserRightsFunction.Valid = true
-		right.FunctionScope.Valid = true
-		right.UserRightsCanView.Valid = true
-		right.UserRightsCanCreate.Valid = true
-		right.UserRightsCanEdit.Valid = true
-		right.UserRightsCanRemove.Valid = true
-
-		right.UserID.Int64 = int64(user.UserID)
-		right.UserRightsFunction.Int64 = m_id
-		right.FunctionScope.Int64 = scope
-		right.UserRightsCanView.Int64 = view
-		right.UserRightsCanCreate.Int64 = add
-		right.UserRightsCanEdit.Int64 = edit
-		right.UserRightsCanRemove.Int64 = exec
-
-		if fid > 0 {
-			right.UserRightsID = int(fid)
-			right.SetAsExists()
-			er := right.Update(c.Context(), db)
-			if er != nil {
-				log.Println(err.Error())
+		if exists {
+			// Update existing enhanced user
+			updateQuery := `UPDATE enhanced_users SET 
+				first_name = $1, last_name = $2, email = $3, department_id = $4, updated_at = $5
+				WHERE user_id = $6`
+			_, err := db.ExecContext(c.Context(), updateQuery,
+				firstName, lastName, email, departmentID, time.Now(), user.UserID)
+			if err != nil {
+				sl.Error("Error updating enhanced user", "error", err)
 			}
 		} else {
-			er := right.Insert(c.Context(), db)
-			if er != nil {
-				log.Println(err.Error())
+			// Create new enhanced user record
+			insertQuery := `INSERT INTO enhanced_users 
+				(user_id, first_name, last_name, email, department_id, is_active, created_at, updated_at)
+				VALUES ($1, $2, $3, $4, $5, true, $6, $7)`
+			_, err := db.ExecContext(c.Context(), insertQuery,
+				user.UserID, firstName, lastName, email, departmentID, time.Now(), time.Now())
+			if err != nil {
+				sl.Error("Error creating enhanced user", "error", err)
+			}
+		}
+	}
+
+	// Handle RBAC roles and permissions
+	// First, remove existing user roles
+	if user.UserID > 0 {
+		_, err := db.ExecContext(c.Context(), "DELETE FROM user_roles WHERE user_id = $1", user.UserID)
+		if err != nil {
+			sl.Error("Error removing existing user roles", "error", err)
+		}
+	}
+
+	// Add selected roles
+	// For multiple select, we need to get all form values with the same name
+	form, err := c.MultipartForm()
+	if err != nil {
+		sl.Error("Error parsing form", "error", err)
+		// Try alternative approach for non-multipart forms
+		sl.Info("Trying alternative form parsing approach")
+
+		// Try to get roles from regular form values
+		rolesValue := c.FormValue("roles")
+		sl.Info("Roles from FormValue", "roles", rolesValue)
+
+		if rolesValue != "" {
+			// Split by comma if multiple roles are sent as a single value
+			roleIDs := strings.Split(rolesValue, ",")
+			for _, roleIDStr := range roleIDs {
+				roleID, err := strconv.Atoi(strings.TrimSpace(roleIDStr))
+				if err != nil {
+					sl.Error("Invalid role ID", "role_id", roleIDStr, "error", err)
+					continue
+				}
+
+				// Insert user role
+				_, err = db.ExecContext(c.Context(),
+					"INSERT INTO user_roles (user_id, role_id, created_at) VALUES ($1, $2, $3)",
+					user.UserID, roleID, time.Now())
+				if err != nil {
+					sl.Error("Error assigning role to user", "user_id", user.UserID, "role_id", roleID, "error", err)
+				} else {
+					sl.Info("Successfully assigned role to user", "user_id", user.UserID, "role_id", roleID)
+				}
+			}
+		} else {
+			sl.Info("No roles selected for user", "user_id", user.UserID)
+		}
+	} else {
+		selectedRoles := form.Value["roles"]
+		sl.Info("Roles from MultipartForm", "roles", selectedRoles)
+		if len(selectedRoles) > 0 {
+			for _, roleIDStr := range selectedRoles {
+				roleID, err := strconv.Atoi(strings.TrimSpace(roleIDStr))
+				if err != nil {
+					sl.Error("Invalid role ID", "role_id", roleIDStr, "error", err)
+					continue
+				}
+
+				// Insert user role
+				_, err = db.ExecContext(c.Context(),
+					"INSERT INTO user_roles (user_id, role_id, created_at) VALUES ($1, $2, $3)",
+					user.UserID, roleID, time.Now())
+				if err != nil {
+					sl.Error("Error assigning role to user", "user_id", user.UserID, "role_id", roleID, "error", err)
+				} else {
+					sl.Info("Successfully assigned role to user", "user_id", user.UserID, "role_id", roleID)
+				}
+			}
+		} else {
+			sl.Info("No roles selected for user", "user_id", user.UserID)
+		}
+	}
+
+	// Handle individual permissions (if any are set)
+	// This is for granular permissions beyond role-based permissions
+	permissionResources := []string{"users", "vhf_patients", "outbreaks", "reports"}
+	for _, resource := range permissionResources {
+		for _, action := range []string{"create", "read", "update", "delete"} {
+			permissionKey := fmt.Sprintf("permissions[%s][%s]", resource, action)
+			if c.FormValue(permissionKey) == "1" {
+				// This user has this specific permission
+				// You might want to store this in a user_permissions table
+				// For now, we'll just log it
+				sl.Info("User has specific permission", "user_id", user.UserID, "resource", resource, "action", action)
 			}
 		}
 	}
@@ -301,9 +459,11 @@ func HandlerUserList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.S
 	type UserWithDetails struct {
 		UserID         int
 		UserName       sql.NullString
-		Email          sql.NullString
+		UserPass       sql.NullString
+		UserEmployee   sql.NullInt64
 		FirstName      sql.NullString
 		LastName       sql.NullString
+		Email          sql.NullString
 		IsActive       sql.NullBool
 		IsLocked       sql.NullBool
 		LastLoginAt    sql.NullTime
@@ -312,17 +472,18 @@ func HandlerUserList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.S
 		Roles          []Role
 	}
 
-	// Enhanced query to include RBAC fields
+	// Query to get user information with all available fields
 	mysql := `
-		SELECT DISTINCT u.user_id, u.user_name, u.email, u.first_name, u.last_name, 
-		       u.is_active, u.is_locked, u.last_login_at, u.created_at, d.name as department_name,
-		       array_agg(r.name) as role_names
-		FROM public.users u
-		LEFT JOIN departments d ON u.department_id = d.id
-		LEFT JOIN user_roles ur ON u.user_id = ur.user_id
-		LEFT JOIN roles r ON ur.role_id = r.id
-		GROUP BY u.user_id, d.name, u.last_login_at, u.created_at
-		ORDER BY u.user_name
+		SELECT user_id, user_name, user_pass, user_employee,
+		       COALESCE(first_name, '') as first_name,
+		       COALESCE(last_name, '') as last_name,
+		       COALESCE(email, '') as email,
+		       COALESCE(is_active, true) as is_active,
+		       COALESCE(is_locked, false) as is_locked,
+		       last_login_at,
+		       COALESCE(created_at, CURRENT_TIMESTAMP) as created_at
+		FROM public.users
+		ORDER BY user_name
 	`
 
 	// Execute query
@@ -341,17 +502,16 @@ func HandlerUserList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.S
 	// Iterate through rows
 	for rows.Next() {
 		var u UserWithDetails
-		var roleNames []string
-		if err := rows.Scan(&u.UserID, &u.UserName, &u.Email, &u.FirstName, &u.LastName,
-			&u.IsActive, &u.IsLocked, &u.LastLoginAt, &u.CreatedAt, &u.DepartmentName, &roleNames); err != nil {
+		if err := rows.Scan(&u.UserID, &u.UserName, &u.UserPass, &u.UserEmployee,
+			&u.FirstName, &u.LastName, &u.Email, &u.IsActive, &u.IsLocked,
+			&u.LastLoginAt, &u.CreatedAt); err != nil {
 			sl.Error("Row scan error in user list", "error", err.Error())
 			continue
 		}
 
-		// Convert role names to Role structs
-		for _, roleName := range roleNames {
-			u.Roles = append(u.Roles, Role{Name: roleName})
-		}
+		// Initialize empty arrays and default values for missing fields
+		u.Roles = []Role{}
+		u.DepartmentName = sql.NullString{String: "", Valid: false}
 
 		users = append(users, u)
 	}
