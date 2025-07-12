@@ -5,12 +5,17 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Active Outbreaks</h5>
-                    {{if .UserPermissions}}
-                        {{if hasPermission .UserPermissions "outbreaks" "create"}}
-                        <a href="/outbreaks/new/0" class="btn btn-primary">New Outbreak</a>
-                        {{end}}
+                    {{if eq (getOptionzValue .Optionz "has_case_role" "value") "true"}}
+                        <!-- Case users can only select outbreaks, not create new ones -->
+                        <span class="text-muted">Select an outbreak to manage cases</span>
                     {{else}}
-                        <a href="/outbreaks/new/0" class="btn btn-primary">New Outbreak</a>
+                        {{if .UserPermissions}}
+                            {{if hasPermission .UserPermissions "outbreaks" "create"}}
+                            <a href="/outbreaks/new/0" class="btn btn-primary">New Outbreak</a>
+                            {{end}}
+                        {{else}}
+                            <a href="/outbreaks/new/0" class="btn btn-primary">New Outbreak</a>
+                        {{end}}
                     {{end}}
                 </div>
                 <div class="card-body">
@@ -45,13 +50,19 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <div class="btn-group">
-                                            <a href="/outbreaks/edit/{{$outbreak.ID}}" class="btn btn-sm btn-info">Edit</a>
-                                            {{if eq $outbreak.Status.String "active"}}
-                                            <a href="/outbreaks/close/{{$outbreak.ID}}" class="btn btn-sm btn-warning" onclick="return confirm('Are you sure you want to close this outbreak?')">Close</a>
-                                            {{end}}
+                                        {{if eq (getOptionzValue .Optionz "has_case_role" "value") "true"}}
+                                            <!-- Case users can only select outbreaks -->
                                             <button onclick="selectOutbreak({{$outbreak.ID}})" class="btn btn-sm btn-primary">Select</button>
-                                        </div>
+                                        {{else}}
+                                            <!-- Regular users can edit, close, and select -->
+                                            <div class="btn-group">
+                                                <a href="/outbreaks/edit/{{$outbreak.ID}}" class="btn btn-sm btn-info">Edit</a>
+                                                {{if eq $outbreak.Status.String "active"}}
+                                                <a href="/outbreaks/close/{{$outbreak.ID}}" class="btn btn-sm btn-warning" onclick="return confirm('Are you sure you want to close this outbreak?')">Close</a>
+                                                {{end}}
+                                                <button onclick="selectOutbreak({{$outbreak.ID}})" class="btn btn-sm btn-primary">Select</button>
+                                            </div>
+                                        {{end}}
                                     </td>
                                 </tr>
                                 {{end}}
@@ -79,8 +90,8 @@ function selectOutbreak(outbreakId) {
     })
     .then(response => {
         if (response.ok) {
-            // Redirect to home page after successful selection
-            window.location.href = '/home';
+            // Redirect to cases page after successful selection
+            window.location.href = '/cases';
         } else {
             alert('Failed to select outbreak');
         }

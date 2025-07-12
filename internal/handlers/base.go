@@ -164,6 +164,7 @@ func NewTemplateData(c *fiber.Ctx, store *session.Store) *TemplateData {
 	return &TemplateData{
 		CurrentYear:     time.Now().Year(),
 		IsAuthenticated: IzAuthenticated(c, store),
+		Optionz:         make(map[string]map[string]string),
 		//CSRFToken:       c.Locals("csrf").(string), // Add the CSRF token.
 	}
 }
@@ -202,6 +203,17 @@ func CreateTemplateFunctions(c *fiber.Ctx, db *sql.DB) template.FuncMap {
 				}
 			}
 			return false
+		},
+		"getOptionzValue": func(optionz map[string]map[string]string, key1, key2 string) string {
+			if optionz == nil {
+				return ""
+			}
+			if subMap, exists := optionz[key1]; exists {
+				if value, found := subMap[key2]; found {
+					return value
+				}
+			}
+			return ""
 		},
 		"renderSymptomRow": func(name, label string, value sql.NullBool, date sql.NullTime, duration sql.NullInt32) template.HTML {
 			var buf bytes.Buffer
@@ -372,6 +384,15 @@ func GenerateHTML(c *fiber.Ctx, db *sql.DB, zdata interface{}, filenames ...stri
 
 	// Execute template and write output
 	c.Set("Content-Type", "text/html")
+
+	// Debug logging
+	log.Printf("DEBUG: Executing template with data type: %T", zdata)
+	if templateData, ok := zdata.(*TemplateData); ok {
+		log.Printf("DEBUG: TemplateData.Optionz initialized: %v, keys: %d", templateData.Optionz != nil, len(templateData.Optionz))
+	} else {
+		log.Printf("DEBUG: Data is not *TemplateData, actual type: %T", zdata)
+	}
+
 	if err := templates.ExecuteTemplate(c.Response().BodyWriter(), "layout", zdata); err != nil {
 		return c.Status(500).SendString(fmt.Sprintf("Template execution error: %v", err))
 	}
@@ -540,6 +561,38 @@ func GetCurrentUser(c *fiber.Ctx, store *session.Store) int {
 		return 0
 	}
 	return userInt
+}
+
+// GetCurrentOutbreak retrieves the current outbreak ID from the session
+func GetCurrentOutbreak(c *fiber.Ctx, store *session.Store) int {
+	sess, err := store.Get(c)
+	if err != nil {
+		fmt.Println("Error retrieving session:", err)
+		log.Println("Error retrieving session: ", err.Error())
+		return 0
+	}
+
+	// First try to get from "outbreak_id" key
+	outbreakID := sess.Get("outbreak_id")
+	if outbreakID != nil {
+		outbreakInt, ok := outbreakID.(int)
+		if ok {
+			return outbreakInt
+		}
+	}
+
+	// Fallback to "selected_outbreak" key
+	outbreakID = sess.Get("selected_outbreak")
+	if outbreakID != nil {
+		outbreakInt, ok := outbreakID.(int)
+		if ok {
+			return outbreakInt
+		}
+	}
+
+	fmt.Println("Outbreak ID not found or not an int")
+	log.Println("Outbreak ID not found or not an int")
+	return 0
 }
 
 // IsAuthenticated middleware checks if a user is authenticated

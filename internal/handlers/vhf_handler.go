@@ -1068,7 +1068,56 @@ func HandlerVHFInvestigatorSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, sto
 
 // HandlerVHFList handles the listing of all VHF cases
 func HandlerVHFList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
-	// Get all VHF cases with their lab status
+	// Get current user information
+	userID, _ := GetUser(c, sl, store)
+
+	// Check if user has role ID 65 (vhf_lab_technician) and get their facility
+	var facilityFilter string
+	var args []interface{}
+
+	// Check if user has vhf_lab_technician role (ID 65)
+	roleQuery := `
+		SELECT COUNT(*) FROM user_roles ur 
+		JOIN roles r ON ur.role_id = r.id 
+		WHERE ur.user_id = $1 AND r.id = 65 AND r.is_active = true
+	`
+	var roleCount int
+	err := db.QueryRowContext(c.Context(), roleQuery, userID).Scan(&roleCount)
+	if err != nil {
+		sl.Error("Failed to check user role", "error", err)
+		return c.Status(500).SendString("Failed to check user permissions")
+	}
+
+	// If user has role ID 65, check their facility assignment
+	if roleCount > 0 {
+		// Get user's facility ID from employee table
+		facilityQuery := `
+			SELECT e.facility 
+			FROM employee e
+			JOIN users u ON e.employee_email = u.email
+			WHERE u.user_id = $1
+			LIMIT 1
+		`
+		var userFacilityID sql.NullInt64
+		err := db.QueryRowContext(c.Context(), facilityQuery, userID).Scan(&userFacilityID)
+		if err != nil && err != sql.ErrNoRows {
+			sl.Error("Failed to get user facility", "error", err)
+			return c.Status(500).SendString("Failed to get user facility information")
+		}
+
+		// If user has a facility assigned, filter by that facility
+		if userFacilityID.Valid && userFacilityID.Int64 > 0 {
+			facilityFilter = "AND vc.facility_id = $1"
+			args = append(args, userFacilityID.Int64)
+			sl.Info("Filtering VHF cases by user facility", "user_id", userID, "facility_id", userFacilityID.Int64)
+		} else {
+			sl.Info("User has role 65 but no facility assigned, showing all VHF cases", "user_id", userID)
+		}
+	} else {
+		sl.Info("User does not have role 65, showing all VHF cases", "user_id", userID)
+	}
+
+	// Build the query with optional facility filtering
 	query := `
 		SELECT 
 			vc.id,
@@ -1085,9 +1134,10 @@ func HandlerVHFList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 			CASE WHEN vl.id IS NOT NULL THEN true ELSE false END as lab_status
 		FROM vhf_patients vc
 		LEFT JOIN vhf_laboratory vl ON vc.id = vl.patient_id
+		WHERE 1=1 ` + facilityFilter + `
 		ORDER BY vc.created_at DESC`
 
-	rows, err := db.Query(query)
+	rows, err := db.QueryContext(c.Context(), query, args...)
 	if err != nil {
 		sl.Error("Failed to query VHF cases", "error", err)
 		return c.Status(500).SendString("Failed to retrieve VHF cases")
@@ -1168,10 +1218,12 @@ func HandlerVHFList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 	}
 
 	// Return HTML response
-	return GenerateHTML(c, db, fiber.Map{
+	data := NewTemplateData(c, store)
+	data.Form = fiber.Map{
 		"Title": "VHF Cases",
 		"Cases": cases,
-	}, "vhf_list")
+	}
+	return GenerateHTML(c, db, data, "vhf_list")
 }
 
 // HandlerVHFView handles viewing a single VHF case
@@ -1372,7 +1424,8 @@ func HandlerVHFView(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 		}
 	}
 
-	return GenerateHTML(c, db, fiber.Map{
+	data := NewTemplateData(c, store)
+	data.Form = fiber.Map{
 		"Title":           "Update VHF Case Investigation Form",
 		"Case":            patient,
 		"Lab":             labData,
@@ -1380,7 +1433,8 @@ func HandlerVHFView(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 		"Hospitalization": hospitalization,
 		"RiskFactors":     riskFactors,
 		"Investigator":    investigatorData,
-	}, "update_vhf_cif")
+	}
+	return GenerateHTML(c, db, data, "update_vhf_cif")
 }
 
 // HandlerVHFSuccess handles the success page after form submission
@@ -1392,13 +1446,15 @@ func HandlerVHFSuccess(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session
 		return c.Status(400).SendString("No case code provided")
 	}
 
-	return GenerateHTML(c, db, fiber.Map{
+	data := NewTemplateData(c, store)
+	data.Form = fiber.Map{
 		"CaseCode": caseCode,
-	}, "vhf_success")
+	}
+	return GenerateHTML(c, db, data, "vhf_success")
 }
 
 // HandlerVHFLabForm handles displaying the lab form for a VHF case
-func HandlerVHFLabForm(c *fiber.Ctx, db *sql.DB) error {
+func HandlerVHFLabForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
 	caseID := c.Params("id")
 	if caseID == "" {
 		return c.Status(400).SendString("Case ID is required")
@@ -1450,7 +1506,8 @@ func HandlerVHFLabForm(c *fiber.Ctx, db *sql.DB) error {
 	log.Printf("Successfully retrieved patient with ID: %s", caseID)
 
 	// Return HTML response with patient and lab data
-	return GenerateHTML(c, db, fiber.Map{
+	data := NewTemplateData(c, store)
+	data.Form = fiber.Map{
 		"Title": "VHF Lab Form",
 		"Patient": fiber.Map{
 			"ID":           patient.ID,
@@ -1472,7 +1529,8 @@ func HandlerVHFLabForm(c *fiber.Ctx, db *sql.DB) error {
 			"DateTested":           lab.DateTested,
 			"LabName":              lab.LabName,
 		},
-	}, "vhf_lab_form")
+	}
+	return GenerateHTML(c, db, data, "vhf_lab_form")
 }
 
 // HandlerVHFLabSave handles the submission of laboratory information

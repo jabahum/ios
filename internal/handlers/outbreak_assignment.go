@@ -1,13 +1,13 @@
 package handlers
 
 import (
-	"fmt"
 	"strconv"
 
 	"case/internal/models"
 	"case/internal/utils"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/session"
 )
 
 // OutbreakAssignmentHandler handles outbreak assignment operations
@@ -17,6 +17,7 @@ type OutbreakAssignmentHandler struct {
 	userService         *models.UserService
 	outbreakService     *models.OutbreakService
 	facilityService     *models.FacilityService
+	store               *session.Store
 }
 
 // NewOutbreakAssignmentHandler creates a new outbreak assignment handler
@@ -26,6 +27,7 @@ func NewOutbreakAssignmentHandler(
 	userService *models.UserService,
 	outbreakService *models.OutbreakService,
 	facilityService *models.FacilityService,
+	store *session.Store,
 ) *OutbreakAssignmentHandler {
 	return &OutbreakAssignmentHandler{
 		userOutbreakService: userOutbreakService,
@@ -33,12 +35,13 @@ func NewOutbreakAssignmentHandler(
 		userService:         userService,
 		outbreakService:     outbreakService,
 		facilityService:     facilityService,
+		store:               store,
 	}
 }
 
 // ShowOutbreakAssignmentForm shows the outbreak assignment form
 func (h *OutbreakAssignmentHandler) ShowOutbreakAssignmentForm(c *fiber.Ctx) error {
-	return GenerateHTML(c, nil, nil, "assign_outbreak")
+	return GenerateHTML(c, nil, NewTemplateData(c, h.store), "assign_outbreak")
 }
 
 // AssignUserToOutbreak assigns a user to an outbreak
@@ -108,7 +111,7 @@ func (h *OutbreakAssignmentHandler) GetUserOutbreaks(c *fiber.Ctx) error {
 
 // ShowPatientRoleAssignmentForm shows the patient role assignment form
 func (h *OutbreakAssignmentHandler) ShowPatientRoleAssignmentForm(c *fiber.Ctx) error {
-	return GenerateHTML(c, nil, nil, "assign_patient_role")
+	return GenerateHTML(c, nil, NewTemplateData(c, h.store), "assign_patient_role")
 }
 
 // AssignPatientRole assigns a patient management role to a user
@@ -194,27 +197,27 @@ func (h *OutbreakAssignmentHandler) ListOutbreakAssignments(c *fiber.Ctx) error 
 
 // ShowOutbreakAssignments shows the outbreak assignments page
 func (h *OutbreakAssignmentHandler) ShowOutbreakAssignments(c *fiber.Ctx) error {
-	return GenerateHTML(c, nil, nil, "outbreak_assignments")
+	return GenerateHTML(c, nil, NewTemplateData(c, h.store), "outbreak_assignments")
 }
 
 // ShowAssignOutbreakForm shows the assign outbreak form
 func (h *OutbreakAssignmentHandler) ShowAssignOutbreakForm(c *fiber.Ctx) error {
-	return GenerateHTML(c, nil, nil, "assign_outbreak")
+	return GenerateHTML(c, nil, NewTemplateData(c, h.store), "assign_outbreak")
 }
 
 // ShowPatientRoles shows the patient roles page
 func (h *OutbreakAssignmentHandler) ShowPatientRoles(c *fiber.Ctx) error {
-	return GenerateHTML(c, nil, nil, "patient_roles")
+	return GenerateHTML(c, nil, NewTemplateData(c, h.store), "patient_roles")
 }
 
 // ShowAssignPatientRoleForm shows the assign patient role form
 func (h *OutbreakAssignmentHandler) ShowAssignPatientRoleForm(c *fiber.Ctx) error {
-	return GenerateHTML(c, nil, nil, "assign_patient_role")
+	return GenerateHTML(c, nil, NewTemplateData(c, h.store), "assign_patient_role")
 }
 
 // ShowAssignForm shows the assign form (legacy method)
 func (h *OutbreakAssignmentHandler) ShowAssignForm(c *fiber.Ctx) error {
-	return GenerateHTML(c, nil, nil, "assign_outbreak")
+	return GenerateHTML(c, nil, NewTemplateData(c, h.store), "assign_outbreak")
 }
 
 // ShowAssignFormFiber shows the assign form using Fiber
@@ -226,30 +229,17 @@ func (h *OutbreakAssignmentHandler) ShowAssignFormFiber(c *fiber.Ctx) error {
 	}
 
 	// Parse outbreak ID
-	id, err := strconv.Atoi(outbreakID)
-	if err != nil {
-		return c.Status(400).SendString("Invalid outbreak ID")
-	}
 
 	// Get outbreak details
-	outbreak, err := h.outbreakService.GetOutbreakByID(int64(id))
-	if err != nil {
-		return c.Status(500).SendString(fmt.Sprintf("Error getting outbreak: %v", err))
-	}
-
 	// Get all users for assignment
-	users, err := h.userService.GetAllUsers()
-	if err != nil {
-		return c.Status(500).SendString(fmt.Sprintf("Error getting users: %v", err))
-	}
 
 	// Prepare data for template
-	data := fiber.Map{
-		"Outbreak": outbreak,
-		"Users":    users,
-	}
+	// data := fiber.Map{
+	// 	"Outbreak": outbreak,
+	// 	"Users":    users,
+	// }
 
-	return GenerateHTML(c, nil, data, "assign_outbreak")
+	return GenerateHTML(c, nil, NewTemplateData(c, h.store), "assign_outbreak")
 }
 
 // GetOutbreakService returns the outbreak service

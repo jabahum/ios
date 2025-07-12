@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
+	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
@@ -42,7 +44,18 @@ func HandlerHome(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store
 		permissions = make(map[string][]string)
 	}
 
+	// Check if user has case-related roles
+	hasCaseRole, err := hasCaseRole(c, db, userID)
+	if err != nil {
+		sl.Error("Failed to check case role: " + err.Error())
+		hasCaseRole = false
+	}
+
 	data.UserPermissions = permissions
+	data.Optionz = map[string]map[string]string{
+		"has_case_role": make(map[string]string),
+	}
+	data.Optionz["has_case_role"]["value"] = strconv.FormatBool(hasCaseRole)
 
 	// Instead of redirecting, render the home page with the selected outbreak
 	return GenerateHTML(c, db, data, "home")
@@ -122,21 +135,68 @@ func getUserPrimaryRole(c *fiber.Ctx, db *sql.DB, userID int) (string, error) {
 
 // getDefaultOutbreakID gets the default outbreak ID for case managers
 func getDefaultOutbreakID(c *fiber.Ctx, db *sql.DB, userID int) (int, error) {
-	// For now, return a default outbreak ID (you can customize this logic)
-	// You might want to get this from user preferences or a specific assignment
-	query := `SELECT id FROM outbreaks WHERE outbreak_type = 'general' ORDER BY id LIMIT 1`
+	// Check if user has multiple active outbreaks
+	query := `
+		SELECT COUNT(*) 
+		FROM user_outbreaks uo
+		JOIN outbreaks o ON uo.outbreak_id = o.id
+		WHERE uo.user_id = $1 AND uo.is_active = true AND o.status = 'active'
+	`
 
-	var outbreakID int
-	err := db.QueryRowContext(c.Context(), query).Scan(&outbreakID)
+	var outbreakCount int
+	err := db.QueryRowContext(c.Context(), query, userID).Scan(&outbreakCount)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			// If no outbreaks exist, return 0
-			return 0, nil
-		}
 		return 0, err
 	}
 
-	return outbreakID, nil
+	// If user has multiple active outbreaks, return 0 to redirect to selection page
+	if outbreakCount > 1 {
+		return 0, nil
+	}
+
+	// If user has exactly one active outbreak, return it
+	if outbreakCount == 1 {
+		query = `
+			SELECT uo.outbreak_id 
+			FROM user_outbreaks uo
+			JOIN outbreaks o ON uo.outbreak_id = o.id
+			WHERE uo.user_id = $1 AND uo.is_active = true AND o.status = 'active'
+			ORDER BY uo.assigned_at DESC
+			LIMIT 1
+		`
+
+		var outbreakID int
+		err := db.QueryRowContext(c.Context(), query, userID).Scan(&outbreakID)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return 0, nil
+			}
+			return 0, err
+		}
+		return outbreakID, nil
+	}
+
+	// If user has no active outbreaks, return 0
+	return 0, nil
+}
+
+// hasCaseRole checks if a user has any role containing "case" in the name
+func hasCaseRole(c *fiber.Ctx, db *sql.DB, userID int) (bool, error) {
+	query := `
+		SELECT COUNT(*) 
+		FROM roles r
+		JOIN user_roles ur ON r.id = ur.role_id
+		WHERE ur.user_id = $1 AND r.is_active = true 
+		AND LOWER(r.name) LIKE '%case%'
+	`
+
+	var count int
+	err := db.QueryRowContext(c.Context(), query, userID).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
 }
 
 func HandlerLoginForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
@@ -198,6 +258,21 @@ func HandlerLoginSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 		sess.Set("isAuthenticated", true)
 		sess.Set("authenticated", true) // Set for RBAC compatibility
 
+		// Get user's default outbreak and set it in session
+		defaultOutbreakID, err := getDefaultOutbreakID(c, db, id)
+		if err != nil {
+			sl.Error("Failed to get default outbreak ID for session", "error", err, "user_id", id)
+			// Continue without outbreak_id if there's an error
+		} else if defaultOutbreakID > 0 {
+			// Only set outbreak_id if user has exactly one active outbreak
+			sess.Set("outbreak_id", defaultOutbreakID)
+			sess.Set("selected_outbreak", defaultOutbreakID) // Set both keys for consistency
+			sl.Info("Set default outbreak in session", "user_id", id, "outbreak_id", defaultOutbreakID)
+		} else {
+			// User has multiple outbreaks or no outbreaks - don't set outbreak_id
+			sl.Info("User has multiple outbreaks or no outbreaks - outbreak selection required", "user_id", id)
+		}
+
 		// Save session
 		if err := sess.Save(); err != nil {
 			sl.Info("Failed to save session")
@@ -227,19 +302,21 @@ func HandlerLoginSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 			sl.Info("Redirecting MPOX user to outbreaks", "user_id", id, "role", primaryRole)
 			return c.Redirect("/outbreaks")
 		case "case_manager":
-			// Case managers go to /cases with default outbreak
+			// Case managers go to /cases with default outbreak or /outbreaks for selection
 			defaultOutbreakID, err := getDefaultOutbreakID(c, db, id)
 			if err != nil {
 				sl.Error("Failed to get default outbreak ID for case manager", "error", err, "user_id", id)
-				return c.Redirect("/outbreaks") // Fallback to outbreaks if default ID fails
+				return c.Redirect("/outbreaks") // Fallback to outbreaks if lookup fails
 			}
 			if defaultOutbreakID > 0 {
+				// User has exactly one active outbreak - redirect to cases
 				fmt.Printf("DEBUG: Redirecting case manager (ID: %d, role: %s) to /cases/%d\n", id, primaryRole, defaultOutbreakID)
 				sl.Info("Redirecting case manager to cases with default outbreak", "user_id", id, "role", primaryRole, "outbreak_id", defaultOutbreakID)
 				return c.Redirect(fmt.Sprintf("/cases/%d", defaultOutbreakID))
 			} else {
-				fmt.Printf("DEBUG: Redirecting case manager (ID: %d, role: %s) to /outbreaks (no default outbreak)\n", id, primaryRole)
-				sl.Info("Redirecting case manager to outbreaks (no default outbreak)", "user_id", id, "role", primaryRole)
+				// User has multiple outbreaks or no outbreaks - redirect to outbreaks selection
+				fmt.Printf("DEBUG: Redirecting case manager (ID: %d, role: %s) to /outbreaks (multiple outbreaks or no outbreaks)\n", id, primaryRole)
+				sl.Info("Redirecting case manager to outbreaks selection", "user_id", id, "role", primaryRole)
 				return c.Redirect("/outbreaks")
 			}
 		case "outbreak_viewer", "outbreak_manager":
@@ -253,6 +330,13 @@ func HandlerLoginSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 			sl.Info("Redirecting admin user to outbreaks", "user_id", id, "role", primaryRole)
 			return c.Redirect("/outbreaks")
 		default:
+			// Check if the role contains "case" (for any case-related roles)
+			if strings.Contains(strings.ToLower(primaryRole), "case") {
+				// Case users go directly to /cases page
+				fmt.Printf("DEBUG: Redirecting case user (ID: %d, role: %s) to /cases\n", id, primaryRole)
+				sl.Info("Redirecting case user to cases", "user_id", id, "role", primaryRole)
+				return c.Redirect("/cases")
+			}
 			// Default redirect for users without specific roles or other roles
 			fmt.Printf("DEBUG: Redirecting user (ID: %d, role: '%s') to /outbreaks (default)\n", id, primaryRole)
 			sl.Info("Redirecting user to outbreaks (default)", "user_id", id, "role", primaryRole)

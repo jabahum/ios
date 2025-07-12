@@ -111,3 +111,37 @@ time=2025-07-10T11:23:51.726+03:00 level=INFO msg="Connecting to database" host=
 time=2025-07-10T11:23:51.926+03:00 level=INFO msg="Successfully connected to database"
 time=2025-07-10T11:23:51.926+03:00 level=INFO msg="Initializing SMS service" base_url=https://dispatcher2-mtracpro.health.go.ug username=case_management
 time=2025-07-10T11:23:51.926+03:00 level=INFO msg="starting server..."
+time=2025-07-10T15:09:04.991+03:00 level=INFO msg="Connecting to database" host=localhost user=postgres database=ios
+time=2025-07-10T15:09:05.027+03:00 level=INFO msg="Successfully connected to database"
+time=2025-07-10T15:09:05.028+03:00 level=INFO msg="Initializing SMS service" base_url=https://dispatcher2-mtracpro.health.go.ug username=case_management
+time=2025-07-10T15:09:05.028+03:00 level=INFO msg="starting server..."
+time=2025-07-10T15:12:33.149+03:00 level=INFO msg="Connecting to database" host=localhost user=postgres database=ios
+time=2025-07-10T15:12:33.196+03:00 level=INFO msg="Successfully connected to database"
+time=2025-07-10T15:12:33.197+03:00 level=INFO msg="Initializing SMS service" base_url=https://dispatcher2-mtracpro.health.go.ug username=case_management
+time=2025-07-10T15:12:33.198+03:00 level=INFO msg="starting server..."
+time=2025-07-10T15:15:47.229+03:00 level=INFO msg="Connecting to database" host=localhost user=postgres database=ios
+time=2025-07-10T15:15:47.269+03:00 level=INFO msg="Successfully connected to database"
+time=2025-07-10T15:15:47.269+03:00 level=INFO msg="Initializing SMS service" base_url=https://dispatcher2-mtracpro.health.go.ug username=case_management
+time=2025-07-10T15:15:47.270+03:00 level=INFO msg="starting server..."
+time=2025-07-10T15:23:24.920+03:00 level=INFO msg="Connecting to database" host=localhost user=postgres database=ios
+time=2025-07-10T15:23:25.001+03:00 level=INFO msg="Successfully connected to database"
+time=2025-07-10T15:23:25.001+03:00 level=INFO msg="Initializing SMS service" base_url=https://dispatcher2-mtracpro.health.go.ug username=case_management
+time=2025-07-10T15:23:25.002+03:00 level=INFO msg="starting server..."
+time=2025-07-10T15:32:16.863+03:00 level=INFO msg="Connecting to database" host=localhost user=postgres database=ios
+time=2025-07-10T15:32:16.901+03:00 level=INFO msg="Successfully connected to database"
+time=2025-07-10T15:32:16.901+03:00 level=INFO msg="Initializing SMS service" base_url=https://dispatcher2-mtracpro.health.go.ug username=case_management
+time=2025-07-10T15:32:16.902+03:00 level=INFO msg="starting server..."
+time=2025-07-10T15:38:00.378+03:00 level=INFO msg="Connecting to database" host=localhost user=postgres database=ios
+time=2025-07-10T15:38:00.413+03:00 level=INFO msg="Successfully connected to database"
+time=2025-07-10T15:38:00.413+03:00 level=INFO msg="Initializing SMS service" base_url=https://dispatcher2-mtracpro.health.go.ug username=case_management
+time=2025-07-10T15:38:00.414+03:00 level=INFO msg="starting server..."
+time=2025-07-10T16:02:57.267+03:00 level=INFO msg="Connecting to database" host=localhost user=postgres database=ios
+time=2025-07-10T16:02:57.319+03:00 level=INFO msg="Successfully connected to database"
+time=2025-07-10T16:02:57.319+03:00 level=INFO msg="Initializing SMS service" base_url=https://dispatcher2-mtracpro.health.go.ug username=case_management
+time=2025-07-10T16:02:57.320+03:00 level=INFO msg="starting server..."
+time=2025-07-10T17:14:29.292+03:00 level=INFO msg="Initializing SMS service" base_url=https://dispatcher2-mtracpro.health.go.ug username=case_management
+time=2025-07-10T17:14:29.295+03:00 level=INFO msg="starting server..."
+time=2025-07-10T17:16:32.648+03:00 level=INFO msg="Initializing SMS service" base_url=https://dispatcher2-mtracpro.health.go.ug username=case_management
+time=2025-07-10T17:16:32.650+03:00 level=INFO msg="starting server..."
+time=2025-07-11T01:32:35.785+03:00 level=INFO msg="Initializing SMS service" base_url=https://dispatcher2-mtracpro.health.go.ug username=case_management
+time=2025-07-11T01:32:35.785+03:00 level=INFO msg="starting server..."

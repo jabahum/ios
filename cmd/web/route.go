@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"log/slog"
-	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
@@ -18,9 +17,6 @@ import (
 func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger, config handlers.Config, smsService *services.SMSService) {
 	RouteHome(app, db, sl, store, config, smsService)
 	RouteVerify(app, db, sl, store, config)
-
-	// Add outbreak routes
-	RouteOutbreaks(app, db, sl, store, config)
 
 	// Main application routes
 	appGroup := app.Group("/")
@@ -193,24 +189,4 @@ func RouteReports(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.St
 	//+
 	v.Get("/view", func(c *fiber.Ctx) error { return reports.ReportView(c, db, sl, store, config) }) //+
 	v.Get("/", func(c *fiber.Ctx) error { return reports.ReportHome(c, db, sl, store, config) })
-}
-
-// Add this new function for outbreak routes
-func RouteOutbreaks(app *fiber.App, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
-	// Public routes
-	app.Get("/outbreaks", func(c *fiber.Ctx) error { return handlers.HandlerOutbreakList(c, db, sl, store, config) })
-	app.Get("/outbreaks/new/:i", func(c *fiber.Ctx) error { return handlers.HandlerOutbreakForm(c, db, sl, store, config) })
-	app.Get("/outbreaks/edit/:i", func(c *fiber.Ctx) error { return handlers.HandlerOutbreakForm(c, db, sl, store, config) })
-	app.Post("/outbreaks/save", func(c *fiber.Ctx) error { return handlers.HandlerOutbreakSubmit(c, db, sl, store, config) })
-	app.Get("/outbreaks/close/:i", func(c *fiber.Ctx) error { return handlers.HandlerOutbreakClose(c, db, sl, store, config) })
-	app.Post("/outbreaks/select/:i", func(c *fiber.Ctx) error {
-		id, err := strconv.Atoi(c.Params("i"))
-		if err != nil {
-			return c.Status(400).SendString("Invalid outbreak ID")
-		}
-		if err := handlers.SetSelectedOutbreak(c, store, id); err != nil {
-			return c.Status(500).SendString("Failed to select outbreak")
-		}
-		return c.SendStatus(200)
-	})
 }

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/lib/pq"
 )
 
@@ -376,7 +377,9 @@ func HandlerMpoxCIFSubmit(c *fiber.Ctx, db *sql.DB, logger *slog.Logger) error {
 	return c.Redirect("/mpox-cif/success?case_id=" + caseInvestigation.CaseID)
 }
 
-func HandlerMpoxCIFSuccess(c *fiber.Ctx, db *sql.DB, logger *slog.Logger) error {
+func HandlerMpoxCIFSuccess(c *fiber.Ctx, db *sql.DB, logger *slog.Logger, store *session.Store) error {
 	caseID := c.Query("case_id")
-	return GenerateHTML(c, db, fiber.Map{"case_id": caseID}, "mpox_cif_success")
+	data := NewTemplateData(c, store)
+	data.Form = fiber.Map{"case_id": caseID}
+	return GenerateHTML(c, db, data, "mpox_cif_success")
 }

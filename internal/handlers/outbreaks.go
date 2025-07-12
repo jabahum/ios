@@ -46,6 +46,13 @@ func HandlerOutbreakList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 	data.Items = items
 	data.Form = defaultOutbreak
 
+	// Check if user has case-related roles
+	hasCaseRole, err := hasCaseRole(c, db, userID)
+	if err != nil {
+		sl.Error("Failed to check case role", "user_id", userID, "error", err)
+		hasCaseRole = false
+	}
+
 	// Add user management permissions to data
 	canManageOutbreak := make(map[int]bool)
 	for _, outbreak := range outbreaks {
@@ -58,10 +65,20 @@ func HandlerOutbreakList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 	}
 	data.Optionz = map[string]map[string]string{
 		"can_manage_outbreak": make(map[string]string),
+		"has_case_role":       make(map[string]string),
 	}
 	for outbreakID, canManage := range canManageOutbreak {
 		data.Optionz["can_manage_outbreak"][strconv.Itoa(outbreakID)] = strconv.FormatBool(canManage)
 	}
+
+	// Add case role flag
+	data.Optionz["has_case_role"]["value"] = strconv.FormatBool(hasCaseRole)
+
+	// Debug logging
+	sl.Info("Template data debug",
+		"optionz_initialized", data.Optionz != nil,
+		"optionz_keys", len(data.Optionz),
+		"has_case_role_value", data.Optionz["has_case_role"]["value"])
 
 	return GenerateHTML(c, db, data, "outbreaks")
 }
@@ -289,9 +306,18 @@ func GetSelectedOutbreak(c *fiber.Ctx, store *session.Store) int {
 	if err != nil {
 		return 0
 	}
+
+	// First try to get from "selected_outbreak" key
 	outbreakID := sess.Get("selected_outbreak")
-	if outbreakID == nil {
-		return 0
+	if outbreakID != nil {
+		return outbreakID.(int)
 	}
-	return outbreakID.(int)
+
+	// Fallback to "outbreak_id" key for backward compatibility
+	outbreakID = sess.Get("outbreak_id")
+	if outbreakID != nil {
+		return outbreakID.(int)
+	}
+
+	return 0
 }

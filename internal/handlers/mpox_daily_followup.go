@@ -26,7 +26,8 @@ func HandlerMpoxDailyFollowUpForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, sto
 		encounterDate, _ = time.Parse("2006-01-02", dateStr)
 	}
 
-	data := fiber.Map{
+	data := NewTemplateData(c, store)
+	data.Form = fiber.Map{
 		"ClientID":      clientID,
 		"EncounterDate": encounterDate.Format("2006-01-02"),
 	}

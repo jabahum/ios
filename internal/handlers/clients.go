@@ -204,17 +204,16 @@ func HandlerCasesList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 	facility := GetCurrentFacility(c, db, sl, store)
 	scope := GetDBInt("user_right", "function_scope", "", "user_id= "+strconv.Itoa(userID), 0)
 
-	// Get outbreak ID from session
-	sess, err := store.Get(c)
-	if err != nil {
-		return c.Status(400).SendString("Failed to get session")
-	}
-	outbreakID := sess.Get("outbreak_id")
-	if outbreakID == nil {
-		return c.Status(400).SendString("No outbreak selected")
+	// Get outbreak ID from session using helper function
+	outbreakID := GetCurrentOutbreak(c, store)
+	if outbreakID == 0 {
+		sl.Error("No outbreak selected for user", "user_id", userID)
+		return c.Status(400).SendString("No outbreak selected. Please select an outbreak first.")
 	}
 
-	filter := fmt.Sprintf("outbreak_id = %d", outbreakID.(int))
+	sl.Info("Loading cases for outbreak", "user_id", userID, "outbreak_id", outbreakID)
+
+	filter := fmt.Sprintf("outbreak_id = %d", outbreakID)
 	if scope == 15 { // Full access to all facilities
 		// Keep outbreak filter
 	} else {
@@ -456,7 +455,8 @@ func HandlerCaseEncounterList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 		return c.Status(500).SendString("Failed to get client")
 	}
 
-	data := fiber.Map{
+	data := NewTemplateData(c, store)
+	data.Form = fiber.Map{
 		"Client":     client,
 		"Encounters": encounters,
 	}

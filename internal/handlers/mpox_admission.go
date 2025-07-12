@@ -73,7 +73,8 @@ func HandlerMpoxAdmissionForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 		},
 	}
 
-	data := fiber.Map{
+	data := NewTemplateData(c, store)
+	data.Form = fiber.Map{
 		"ClientID":      clientID,
 		"EncounterDate": dateStr,
 		"Client":        client,

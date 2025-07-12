@@ -10,17 +10,20 @@ import (
 	"case/internal/utils"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/session"
 )
 
 // PasswordHandler handles password change operations
 type PasswordHandler struct {
 	userService *models.UserService
+	store       *session.Store
 }
 
 // NewPasswordHandler creates a new password handler
-func NewPasswordHandler(userService *models.UserService) *PasswordHandler {
+func NewPasswordHandler(userService *models.UserService, store *session.Store) *PasswordHandler {
 	return &PasswordHandler{
 		userService: userService,
+		store:       store,
 	}
 }
 
@@ -37,9 +40,9 @@ func (h *PasswordHandler) ShowChangePasswordForm(c *fiber.Ctx) error {
 		Secure:   false,
 	})
 
-	return GenerateHTML(c, nil, fiber.Map{
-		"CSRFToken": csrfToken,
-	}, "change_password")
+	data := NewTemplateData(c, h.store)
+	data.CSRFToken = csrfToken
+	return GenerateHTML(c, nil, data, "change_password")
 }
 
 // ChangePassword handles password change requests
@@ -47,7 +50,10 @@ func (h *PasswordHandler) ChangePassword(c *fiber.Ctx) error {
 	// Get current user ID from session
 	userID := utils.GetUserIDFromSession(c)
 	if userID == 0 {
-		return GenerateHTML(c, nil, fiber.Map{"error": "Unauthorized"}, "error")
+		data := NewTemplateData(c, h.store)
+		data.Message = "Unauthorized"
+		data.MessageType = "error"
+		return GenerateHTML(c, nil, data, "error")
 	}
 
 	// Get form data
@@ -58,51 +64,51 @@ func (h *PasswordHandler) ChangePassword(c *fiber.Ctx) error {
 
 	// Validate CSRF token
 	if !validateCSRFToken(c, csrfToken) {
-		return GenerateHTML(c, nil, fiber.Map{
-			"Message":     "Invalid security token",
-			"MessageType": "error",
-		}, "change_password")
+		data := NewTemplateData(c, h.store)
+		data.Message = "Invalid security token"
+		data.MessageType = "error"
+		return GenerateHTML(c, nil, data, "change_password")
 	}
 
 	// Validate input
 	if currentPassword == "" || newPassword == "" || confirmPassword == "" {
-		return GenerateHTML(c, nil, fiber.Map{
-			"Message":     "All fields are required",
-			"MessageType": "error",
-		}, "change_password")
+		data := NewTemplateData(c, h.store)
+		data.Message = "All fields are required"
+		data.MessageType = "error"
+		return GenerateHTML(c, nil, data, "change_password")
 	}
 
 	// Check if new passwords match
 	if newPassword != confirmPassword {
-		return GenerateHTML(c, nil, fiber.Map{
-			"Message":     "New passwords do not match",
-			"MessageType": "error",
-		}, "change_password")
+		data := NewTemplateData(c, h.store)
+		data.Message = "New passwords do not match"
+		data.MessageType = "error"
+		return GenerateHTML(c, nil, data, "change_password")
 	}
 
 	// Validate password strength
 	if !validatePasswordStrength(newPassword) {
-		return GenerateHTML(c, nil, fiber.Map{
-			"Message":     "Password does not meet strength requirements",
-			"MessageType": "error",
-		}, "change_password")
+		data := NewTemplateData(c, h.store)
+		data.Message = "Password does not meet strength requirements"
+		data.MessageType = "error"
+		return GenerateHTML(c, nil, data, "change_password")
 	}
 
 	// Get user from database
 	user, err := h.userService.GetUserByID(userID)
 	if err != nil {
-		return GenerateHTML(c, nil, fiber.Map{
-			"Message":     "Error retrieving user information",
-			"MessageType": "error",
-		}, "change_password")
+		data := NewTemplateData(c, h.store)
+		data.Message = "Error retrieving user information"
+		data.MessageType = "error"
+		return GenerateHTML(c, nil, data, "change_password")
 	}
 
 	// Verify current password
 	if !verifyPassword(currentPassword, user.UserPass.String, "") {
-		return GenerateHTML(c, nil, fiber.Map{
-			"Message":     "Current password is incorrect",
-			"MessageType": "error",
-		}, "change_password")
+		data := NewTemplateData(c, h.store)
+		data.Message = "Current password is incorrect"
+		data.MessageType = "error"
+		return GenerateHTML(c, nil, data, "change_password")
 	}
 
 	// Generate new password hash and salt
@@ -112,10 +118,10 @@ func (h *PasswordHandler) ChangePassword(c *fiber.Ctx) error {
 	// Update user password
 	err = h.userService.UpdatePassword(int64(user.UserID), newHash, newSalt)
 	if err != nil {
-		return GenerateHTML(c, nil, fiber.Map{
-			"Message":     "Error updating password",
-			"MessageType": "error",
-		}, "change_password")
+		data := NewTemplateData(c, h.store)
+		data.Message = "Error updating password"
+		data.MessageType = "error"
+		return GenerateHTML(c, nil, data, "change_password")
 	}
 
 	// Log password change
@@ -174,45 +180,45 @@ func (h *PasswordHandler) ResetPassword(c *fiber.Ctx) error {
 	confirmPassword := c.FormValue("confirm_password")
 
 	if newPassword == "" || confirmPassword == "" {
-		return GenerateHTML(c, nil, fiber.Map{
-			"Message":     "All fields are required",
-			"MessageType": "error",
-			"Token":       token,
-		}, "reset_password")
+		data := NewTemplateData(c, h.store)
+		data.Message = "All fields are required"
+		data.MessageType = "error"
+		data.Form = fiber.Map{"Token": token}
+		return GenerateHTML(c, nil, data, "reset_password")
 	}
 
 	if newPassword != confirmPassword {
-		return GenerateHTML(c, nil, fiber.Map{
-			"Message":     "Passwords do not match",
-			"MessageType": "error",
-			"Token":       token,
-		}, "reset_password")
+		data := NewTemplateData(c, h.store)
+		data.Message = "Passwords do not match"
+		data.MessageType = "error"
+		data.Form = fiber.Map{"Token": token}
+		return GenerateHTML(c, nil, data, "reset_password")
 	}
 
 	if !validatePasswordStrength(newPassword) {
-		return GenerateHTML(c, nil, fiber.Map{
-			"Message":     "Password does not meet strength requirements",
-			"MessageType": "error",
-			"Token":       token,
-		}, "reset_password")
+		data := NewTemplateData(c, h.store)
+		data.Message = "Password does not meet strength requirements"
+		data.MessageType = "error"
+		data.Form = fiber.Map{"Token": token}
+		return GenerateHTML(c, nil, data, "reset_password")
 	}
 
 	// Get password change request by token (placeholder - implement this method)
 	// request, err := h.userService.GetPasswordChangeRequestByToken(token)
 	// if err != nil {
-	// 	return GenerateHTML(c, nil, fiber.Map{
-	// 		"Message":     "Invalid or expired reset token",
-	// 		"MessageType": "error",
-	// 		"Token":       token,
-	// 	}, "reset_password")
+	// 	data := NewTemplateData(c, nil)
+	// 	data.Message = "Invalid or expired reset token"
+	// 	data.MessageType = "error"
+	// 	data.Form = fiber.Map{"Token": token}
+	// 	return GenerateHTML(c, nil, data, "reset_password")
 	// }
 
 	// For now, return error since method doesn't exist
-	return GenerateHTML(c, nil, fiber.Map{
-		"Message":     "Password reset functionality not implemented",
-		"MessageType": "error",
-		"Token":       token,
-	}, "reset_password")
+	data := NewTemplateData(c, h.store)
+	data.Message = "Password reset functionality not implemented"
+	data.MessageType = "error"
+	data.Form = fiber.Map{"Token": token}
+	return GenerateHTML(c, nil, data, "reset_password")
 
 	// Check if token is expired (commented out since request is not defined)
 	// if time.Now().After(request.ExpiresAt) {
@@ -257,13 +263,15 @@ func (h *PasswordHandler) ResetPassword(c *fiber.Ctx) error {
 
 // ShowForgotPasswordForm shows the forgot password form
 func (h *PasswordHandler) ShowForgotPasswordForm(c *fiber.Ctx) error {
-	return GenerateHTML(c, nil, nil, "forgot")
+	return GenerateHTML(c, nil, NewTemplateData(c, h.store), "forgot")
 }
 
 // ShowResetPasswordForm shows the reset password form
 func (h *PasswordHandler) ShowResetPasswordForm(c *fiber.Ctx) error {
 	token := c.Params("token")
-	return GenerateHTML(c, nil, fiber.Map{"Token": token}, "reset_password")
+	data := NewTemplateData(c, h.store)
+	data.Form = fiber.Map{"Token": token}
+	return GenerateHTML(c, nil, data, "reset_password")
 }
 
 // Helper functions

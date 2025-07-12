@@ -224,8 +224,6 @@ func HandlerUserSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session
 		if err != nil {
 			log.Println(err.Error())
 		}
-		// Get the inserted user ID
-		user.UserID = user.UserID // This should be set by the Insert method
 		sl.Info("Created new user", "user_id", user.UserID)
 	} else {
 		user.SetAsExists()
