@@ -335,4 +335,181 @@
     codeDisplay.style.display = 'block';
   };
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Facility dropdown
+  const facilitySelect = document.querySelector('select[name="reporting_health_facility_name"]');
+  if (facilitySelect) {
+    fetch('/api/facilities')
+      .then(response => response.json())
+      .then(facilities => {
+        facilities.forEach(facility => {
+          const option = new Option(facility.facility_name, facility.facility_name);
+          facilitySelect.add(option);
+        });
+      })
+      .catch(error => console.error('Error loading facilities:', error));
+  }
+
+  // Main location dropdowns
+  const districtSelect = document.getElementById('district');
+  const subcountySelect = document.getElementById('subcounty');
+  const parishSelect = document.getElementById('parish');
+  const villageSelect = document.getElementById('village_town');
+
+  // 'Ill' location dropdowns
+  const illDistrictSelect = document.getElementById('ill_district');
+  const illSubcountySelect = document.getElementById('ill_subcounty');
+  const illVillageTownSelect = document.getElementById('ill_village_town');
+
+  // Helper to reset and disable a select
+  function resetSelect(select, placeholder) {
+    if (!select) return;
+    select.innerHTML = `<option value="">${placeholder}</option>`;
+    select.disabled = true;
+  }
+
+  // Load districts for both main and ill dropdowns
+  fetch('/api/locations/districts')
+    .then(response => response.json())
+    .then(districts => {
+      if (districtSelect) {
+        resetSelect(districtSelect, 'Select District');
+        districts.forEach(district => {
+          const option = new Option(district.name, district.name);
+          option.dataset.id = district.id;
+          districtSelect.add(option);
+        });
+        districtSelect.disabled = false;
+      }
+      if (illDistrictSelect) {
+        resetSelect(illDistrictSelect, 'Select District');
+        districts.forEach(district => {
+          const option = new Option(district.name, district.name);
+          option.dataset.id = district.id;
+          illDistrictSelect.add(option);
+        });
+        illDistrictSelect.disabled = false;
+      }
+    })
+    .catch(error => console.error('Error loading districts:', error));
+
+  // Main: On district change, load subcounties
+  if (districtSelect && subcountySelect) {
+    districtSelect.addEventListener('change', function() {
+      resetSelect(subcountySelect, 'Select Subcounty');
+      resetSelect(parishSelect, 'Select Parish');
+      resetSelect(villageSelect, 'Select Village');
+      const districtName = this.value;
+      if (!districtName) return;
+      const selectedOption = Array.from(this.options).find(opt => opt.value === districtName);
+      const districtId = selectedOption ? selectedOption.dataset.id : null;
+      if (!districtId) return;
+      fetch(`/api/locations/subcounties/${districtId}`)
+        .then(response => response.json())
+        .then(subcounties => {
+          subcounties.forEach(subcounty => {
+            const option = new Option(subcounty.name, subcounty.name);
+            option.dataset.id = subcounty.id;
+            subcountySelect.add(option);
+          });
+          subcountySelect.disabled = false;
+        })
+        .catch(error => console.error('Error loading subcounties:', error));
+    });
+  }
+
+  // Main: On subcounty change, load parishes
+  if (subcountySelect && parishSelect) {
+    subcountySelect.addEventListener('change', function() {
+      resetSelect(parishSelect, 'Select Parish');
+      resetSelect(villageSelect, 'Select Village');
+      const subcountyName = this.value;
+      if (!subcountyName) return;
+      const selectedOption = Array.from(this.options).find(opt => opt.value === subcountyName);
+      const subcountyId = selectedOption ? selectedOption.dataset.id : null;
+      if (!subcountyId) return;
+      fetch(`/api/locations/parishes/${subcountyId}`)
+        .then(response => response.json())
+        .then(parishes => {
+          parishes.forEach(parish => {
+            const option = new Option(parish.name, parish.name);
+            option.dataset.id = parish.id;
+            parishSelect.add(option);
+          });
+          parishSelect.disabled = false;
+        })
+        .catch(error => console.error('Error loading parishes:', error));
+    });
+  }
+
+  // Main: On parish change, load villages
+  if (parishSelect && villageSelect) {
+    parishSelect.addEventListener('change', function() {
+      resetSelect(villageSelect, 'Select Village');
+      const parishName = this.value;
+      if (!parishName) return;
+      const selectedOption = Array.from(this.options).find(opt => opt.value === parishName);
+      const parishId = selectedOption ? selectedOption.dataset.id : null;
+      if (!parishId) return;
+      fetch(`/api/locations/villages/${parishId}`)
+        .then(response => response.json())
+        .then(villages => {
+          villages.forEach(village => {
+            const option = new Option(village.name, village.name);
+            villageSelect.add(option);
+          });
+          villageSelect.disabled = false;
+        })
+        .catch(error => console.error('Error loading villages:', error));
+    });
+  }
+
+  // Ill: On district change, load subcounties
+  if (illDistrictSelect && illSubcountySelect) {
+    illDistrictSelect.addEventListener('change', function() {
+      resetSelect(illSubcountySelect, 'Select Subcounty');
+      resetSelect(illVillageTownSelect, 'Select Village');
+      const districtName = this.value;
+      if (!districtName) return;
+      const selectedOption = Array.from(this.options).find(opt => opt.value === districtName);
+      const districtId = selectedOption ? selectedOption.dataset.id : null;
+      if (!districtId) return;
+      fetch(`/api/locations/subcounties/${districtId}`)
+        .then(response => response.json())
+        .then(subcounties => {
+          subcounties.forEach(subcounty => {
+            const option = new Option(subcounty.name, subcounty.name);
+            option.dataset.id = subcounty.id;
+            illSubcountySelect.add(option);
+          });
+          illSubcountySelect.disabled = false;
+        })
+        .catch(error => console.error('Error loading subcounties:', error));
+    });
+  }
+
+  // Ill: On subcounty change, load villages (skip parish for ill fields)
+  if (illSubcountySelect && illVillageTownSelect) {
+    illSubcountySelect.addEventListener('change', function() {
+      resetSelect(illVillageTownSelect, 'Select Village');
+      const subcountyName = this.value;
+      if (!subcountyName) return;
+      const selectedOption = Array.from(this.options).find(opt => opt.value === subcountyName);
+      const subcountyId = selectedOption ? selectedOption.dataset.id : null;
+      if (!subcountyId) return;
+      fetch(`/api/locations/villages/subcounty/${subcountyId}`)
+        .then(response => response.json())
+        .then(villages => {
+          villages.forEach(village => {
+            const option = new Option(village.name, village.name);
+            illVillageTownSelect.add(option);
+          });
+          illVillageTownSelect.disabled = false;
+        })
+        .catch(error => console.error('Error loading villages:', error));
+    });
+  }
+});
+</script>
 {{end}} 

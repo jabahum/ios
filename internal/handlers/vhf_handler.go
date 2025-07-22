@@ -28,6 +28,7 @@ func HandlerVHFPatientSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *s
 		PhoneOwner:                  c.FormValue("phone_owner"),
 		NextOfKin:                   c.FormValue("next_of_kin"),
 		NextOfKinPhone:              c.FormValue("next_of_kin_phone"),
+		RelationshipToPatient:       c.FormValue("relationship_to_patient"),
 		DataCapturerName:            sql.NullString{String: c.FormValue("data_capturer_name"), Valid: c.FormValue("data_capturer_name") != ""},
 		DataCapturerPhone:           sql.NullString{String: c.FormValue("data_capturer_phone"), Valid: c.FormValue("data_capturer_phone") != ""},
 		ReportingHealthFacilityName: sql.NullString{String: c.FormValue("reporting_health_facility_name"), Valid: c.FormValue("reporting_health_facility_name") != ""},

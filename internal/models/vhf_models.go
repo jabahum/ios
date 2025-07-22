@@ -18,6 +18,7 @@ type VHFPatient struct {
 	PhoneOwner                  string          `json:"phone_owner"`
 	NextOfKin                   string          `json:"next_of_kin"`
 	NextOfKinPhone              string          `json:"next_of_kin_phone"`
+	RelationshipToPatient       string          `json:"relationship_to_patient"`
 	DataCapturerName            sql.NullString  `json:"data_capturer_name"`
 	DataCapturerPhone           sql.NullString  `json:"data_capturer_phone"`
 	ReportingHealthFacilityName sql.NullString  `json:"reporting_health_facility_name"`
@@ -236,21 +237,21 @@ func SaveVHFPatient(db *sql.DB, patient *VHFPatient) error {
 	query := `
 		INSERT INTO vhf_patients (
 			surname, other_names, date_of_birth, age_years, age_months,
-			gender, patient_phone, phone_owner, next_of_kin, next_of_kin_phone,
+			gender, patient_phone, phone_owner, next_of_kin, next_of_kin_phone, relationship_to_patient,
 			data_capturer_name, data_capturer_phone, reporting_health_facility_name, case_code, status, date_of_death,
 			head_of_household, village_town, parish, subcounty, district,
 			country_of_residence, occupation, ill_village_town, ill_subcounty, ill_district,
 			latitude, longitude, date_residing_from, date_residing_to
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
-			$16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30
+			$16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31
 		) RETURNING id, created_at`
 
 	err := db.QueryRow(
 		query,
 		patient.Surname, patient.OtherNames, patient.DateOfBirth, patient.AgeYears,
 		patient.AgeMonths, patient.Gender, patient.PatientPhone, patient.PhoneOwner,
-		patient.NextOfKin, patient.NextOfKinPhone, patient.DataCapturerName,
+		patient.NextOfKin, patient.NextOfKinPhone, patient.RelationshipToPatient, patient.DataCapturerName,
 		patient.DataCapturerPhone, patient.ReportingHealthFacilityName, patient.CaseCode, patient.Status, patient.DateOfDeath,
 		patient.HeadOfHousehold, patient.VillageTown, patient.Parish, patient.Subcounty,
 		patient.District, patient.CountryOfResidence, patient.Occupation,
@@ -266,7 +267,7 @@ func GetVHFPatient(db *sql.DB, id int64) (*VHFPatient, error) {
 	patient := &VHFPatient{}
 	query := `
 		SELECT id, surname, other_names, date_of_birth, age_years, age_months,
-			gender, patient_phone, phone_owner, next_of_kin, next_of_kin_phone,
+			gender, patient_phone, phone_owner, next_of_kin, next_of_kin_phone, relationship_to_patient,
 			data_capturer_name, data_capturer_phone, reporting_health_facility_name, case_code, status, date_of_death,
 			head_of_household, village_town, parish, subcounty, district,
 			country_of_residence, occupation, ill_village_town, ill_subcounty, ill_district,
@@ -278,6 +279,7 @@ func GetVHFPatient(db *sql.DB, id int64) (*VHFPatient, error) {
 		&patient.ID, &patient.Surname, &patient.OtherNames, &patient.DateOfBirth,
 		&patient.AgeYears, &patient.AgeMonths, &patient.Gender, &patient.PatientPhone,
 		&patient.PhoneOwner, &patient.NextOfKin, &patient.NextOfKinPhone,
+		&patient.RelationshipToPatient,
 		&patient.DataCapturerName, &patient.DataCapturerPhone, &patient.ReportingHealthFacilityName, &patient.CaseCode,
 		&patient.Status, &patient.DateOfDeath, &patient.HeadOfHousehold,
 		&patient.VillageTown, &patient.Parish, &patient.Subcounty, &patient.District,
@@ -298,7 +300,7 @@ func GetVHFPatient(db *sql.DB, id int64) (*VHFPatient, error) {
 func ListVHFPatients(db *sql.DB) ([]*VHFPatient, error) {
 	query := `
 		SELECT id, surname, other_names, date_of_birth, age_years, age_months,
-			gender, patient_phone, phone_owner, next_of_kin, next_of_kin_phone,
+			gender, patient_phone, phone_owner, next_of_kin, next_of_kin_phone, relationship_to_patient,
 			data_capturer_name, data_capturer_phone, reporting_health_facility_name, case_code, status, date_of_death,
 			head_of_household, village_town, parish, subcounty, district,
 			country_of_residence, occupation, ill_village_town, ill_subcounty, ill_district,
@@ -319,6 +321,7 @@ func ListVHFPatients(db *sql.DB) ([]*VHFPatient, error) {
 			&patient.ID, &patient.Surname, &patient.OtherNames, &patient.DateOfBirth,
 			&patient.AgeYears, &patient.AgeMonths, &patient.Gender, &patient.PatientPhone,
 			&patient.PhoneOwner, &patient.NextOfKin, &patient.NextOfKinPhone,
+			&patient.RelationshipToPatient,
 			&patient.DataCapturerName, &patient.DataCapturerPhone, &patient.ReportingHealthFacilityName, &patient.CaseCode,
 			&patient.Status, &patient.DateOfDeath, &patient.HeadOfHousehold,
 			&patient.VillageTown, &patient.Parish, &patient.Subcounty, &patient.District,
@@ -341,7 +344,7 @@ func GetVHFPatientByCaseCode(db *sql.DB, caseCode string) (*VHFPatient, error) {
 	patient := &VHFPatient{}
 	query := `
 		SELECT id, surname, other_names, date_of_birth, age_years, age_months,
-			gender, patient_phone, phone_owner, next_of_kin, next_of_kin_phone,
+			gender, patient_phone, phone_owner, next_of_kin, next_of_kin_phone, relationship_to_patient,
 			data_capturer_name, data_capturer_phone, reporting_health_facility_name, case_code, status, date_of_death,
 			head_of_household, village_town, parish, subcounty, district,
 			country_of_residence, occupation, ill_village_town, ill_subcounty, ill_district,
@@ -353,6 +356,7 @@ func GetVHFPatientByCaseCode(db *sql.DB, caseCode string) (*VHFPatient, error) {
 		&patient.ID, &patient.Surname, &patient.OtherNames, &patient.DateOfBirth,
 		&patient.AgeYears, &patient.AgeMonths, &patient.Gender, &patient.PatientPhone,
 		&patient.PhoneOwner, &patient.NextOfKin, &patient.NextOfKinPhone,
+		&patient.RelationshipToPatient,
 		&patient.DataCapturerName, &patient.DataCapturerPhone, &patient.ReportingHealthFacilityName, &patient.CaseCode,
 		&patient.Status, &patient.DateOfDeath, &patient.HeadOfHousehold,
 		&patient.VillageTown, &patient.Parish, &patient.Subcounty, &patient.District,
