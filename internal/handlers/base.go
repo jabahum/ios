@@ -54,6 +54,7 @@ type TemplateData struct {
 	IsOutbreakID    bool
 	AdmissionID     int
 	IsAdmissionID   bool
+	ClientID        int // Add ClientID field for templates
 	Form            any
 	FormRef         any
 	FormChild1      any
@@ -87,6 +88,7 @@ type TemplateData struct {
 	// Custom fields for Mpox admission logic
 	HasMpoxAdmission bool
 	MpoxAdmissionID  int
+	UserFacilityID   string // Add UserFacilityID field for default facility selection
 }
 
 // Department represents a department in the RBAC system
@@ -161,16 +163,43 @@ type Facility struct {
 
 func NewTemplateData(c *fiber.Ctx, store *session.Store) *TemplateData {
 	//log.Printf("template data")
+
+	// Get user's facility ID from session
+	userFacilityID := ""
+	sess, err := store.Get(c)
+	if err == nil {
+		val := sess.Get("facility_id")
+		switch v := val.(type) {
+		case int:
+			if v > 0 {
+				userFacilityID = strconv.Itoa(v)
+			}
+		case int64:
+			if v > 0 {
+				userFacilityID = strconv.FormatInt(v, 10)
+			}
+		case float64:
+			if v > 0 {
+				userFacilityID = strconv.FormatInt(int64(v), 10)
+			}
+		case string:
+			if v != "" {
+				userFacilityID = v
+			}
+		}
+	}
+
 	return &TemplateData{
 		CurrentYear:     time.Now().Year(),
 		IsAuthenticated: IzAuthenticated(c, store),
 		Optionz:         make(map[string]map[string]string),
+		UserFacilityID:  userFacilityID,
 		//CSRFToken:       c.Locals("csrf").(string), // Add the CSRF token.
 	}
 }
 
 // Initialize a template.FuncMap object and store it in a global variable. This is
-// essentially a string-keyed map which acts as a lookup between the names of our
+// essentially a string-keyed map which acts as a lookup between the names of my
 // custom template functions and the functions themselves.
 func CreateTemplateFunctions(c *fiber.Ctx, db *sql.DB) template.FuncMap {
 	return template.FuncMap{
@@ -185,6 +214,11 @@ func CreateTemplateFunctions(c *fiber.Ctx, db *sql.DB) template.FuncMap {
 		"safe":                 func(s string) template.HTML { return template.HTML(s) },
 		"GetDBOptions": func(table, cat, deflt, fld_name, fld_lab string, deflt_int int64) string {
 			return GetDBOptions(c, db, table, cat, deflt, fld_name, fld_lab, deflt_int)
+		},
+		"GetFacilityOptions": func(deflt string, fld_name, fld_lab string) template.HTML {
+			// Use the existing GetDBOptions with "site" table which queries the facility table
+			// and return as template.HTML so it renders as HTML instead of escaped text
+			return template.HTML(GetDBOptions(c, db, "site", "", deflt, fld_name, fld_lab, 0))
 		},
 		"GetDBLabel": func(table, namesFld, indexFld string, indexID int64) string {
 			return GetDBLabel(c, db, table, namesFld, indexFld, indexID)
@@ -443,7 +477,7 @@ func (nf *NullableTime) UnmarshalText(text []byte) error {
 		return nil
 	}
 
-	// Try to parse using a standard format (adjust based on your expected input)
+	// Try to parse using a standard format (adjust based on the expected input)
 	n, err := time.Parse("2006-01-02 15:04:05", string(text))
 	if err != nil {
 		return err
@@ -563,6 +597,26 @@ func GetCurrentUser(c *fiber.Ctx, store *session.Store) int {
 	return userInt
 }
 
+// GetUserFacility gets the facility ID assigned to a user from the employee table
+func GetUserFacility(c *fiber.Ctx, db *sql.DB, userID int) (int, error) {
+	var facilityID sql.NullInt64
+	err := db.QueryRowContext(c.Context(),
+		"SELECT facility_id FROM employees WHERE user_id = $1 AND is_active = true",
+		userID).Scan(&facilityID)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, nil // No facility assigned
+		}
+		return 0, err
+	}
+
+	if facilityID.Valid {
+		return int(facilityID.Int64), nil
+	}
+	return 0, nil
+}
+
 // GetCurrentOutbreak retrieves the current outbreak ID from the session
 func GetCurrentOutbreak(c *fiber.Ctx, store *session.Store) int {
 	sess, err := store.Get(c)
@@ -571,25 +625,21 @@ func GetCurrentOutbreak(c *fiber.Ctx, store *session.Store) int {
 		log.Println("Error retrieving session: ", err.Error())
 		return 0
 	}
-
-	// First try to get from "outbreak_id" key
-	outbreakID := sess.Get("outbreak_id")
-	if outbreakID != nil {
-		outbreakInt, ok := outbreakID.(int)
-		if ok {
-			return outbreakInt
+	// Try both keys
+	for _, key := range []string{"outbreak_id", "selected_outbreak"} {
+		val := sess.Get(key)
+		switch v := val.(type) {
+		case int:
+			return v
+		case int64:
+			return int(v)
+		case float64:
+			return int(v)
+		case string:
+			i, _ := strconv.Atoi(v)
+			return i
 		}
 	}
-
-	// Fallback to "selected_outbreak" key
-	outbreakID = sess.Get("selected_outbreak")
-	if outbreakID != nil {
-		outbreakInt, ok := outbreakID.(int)
-		if ok {
-			return outbreakInt
-		}
-	}
-
 	fmt.Println("Outbreak ID not found or not an int")
 	log.Println("Outbreak ID not found or not an int")
 	return 0
@@ -757,20 +807,13 @@ func GetOptionField(table, field, labs, defaultString string, defaultvalue, whol
 	optionz := ""
 
 	if table == "facility" {
-		if defaultvalue == 1 {
-			zaDefa1 = "selected"
-		}
-		if defaultvalue == 2 {
-			zaDefa2 = "selected"
-		}
-		if defaultvalue == 3 {
-			zaDefa3 = "selected"
-		}
+		// Use the existing GetDBOptions function to get facilities from database
+		// We need to pass the context and database, so we'll need to modify this approach
+		// For now, let's create a simpler version that can work with the current signature
+		optionz = `<option value=""> -- select -- </option>`
 
-		optionz = `<option value=""> -- select -- </option>
-					<option value="1" ` + zaDefa1 + `>Mulago ETU</option>
-					<option value="2" ` + zaDefa2 + `>Mbale ETU</option>
-					<option value="3" ` + zaDefa3 + `>Fort Portal ETU</option>`
+		// This will be replaced by a database call in the template functions
+		// The actual database query will be handled by GetDBOptions in the template
 	}
 
 	if table == "Status" {
@@ -821,7 +864,7 @@ func GetDBOptions(c *fiber.Ctx, db *sql.DB, table, cat, deflt, fld_name, fld_lab
 	case "function":
 		sql = "SELECT function_id as code, function_name as lab FROM public.function"
 	case "site":
-		sql = "SELECT facility_id as code, facility_name as lab FROM public.facility"
+		sql = "SELECT facility_id as code, facility_name as lab FROM public.facility ORDER BY facility_name ASC"
 	case "test":
 		// Handle test case
 	case "meta":
@@ -935,8 +978,33 @@ func GetCurrentFacility(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 		return 0
 	}
 
+	// First try to get from session
+	sess, err := store.Get(c)
+	if err == nil {
+		val := sess.Get("facility_id")
+		switch v := val.(type) {
+		case int:
+			if v > 0 {
+				return v
+			}
+		case int64:
+			if v > 0 {
+				return int(v)
+			}
+		case float64:
+			if v > 0 {
+				return int(v)
+			}
+		case string:
+			if i, err := strconv.Atoi(v); err == nil && i > 0 {
+				return i
+			}
+		}
+	}
+
+	// Fallback to database query
 	var facilityID sql.NullInt64
-	err := db.QueryRowContext(c.Context(), "SELECT facility FROM public.employee WHERE employee_id = $1", userID).Scan(&facilityID)
+	err = db.QueryRowContext(c.Context(), "SELECT facility_id FROM employees WHERE user_id = $1 AND is_active = true", userID).Scan(&facilityID)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			sl.Error("Error getting facility", "error", err)
@@ -977,4 +1045,16 @@ func GetDBInt(table, field, cat, filter string, defaultValue int) int {
 		return defaultValue
 	}
 	return value
+}
+
+type MeaslesCaseInvestigation struct {
+	ID          int
+	EpidNo      string
+	LabNo       string
+	VisitDate   string
+	HealthUnit  string
+	District    string
+	PatientType string
+	PatientNo   string
+	// ... all other fields as per schema above
 }

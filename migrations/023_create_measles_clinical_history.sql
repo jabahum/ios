@@ -1,0 +1,22 @@
+CREATE TABLE measles_clinical_history (
+    id SERIAL PRIMARY KEY,
+    patient_id UUID REFERENCES measles_patients(patient_id) ON DELETE CASCADE,
+    fever BOOLEAN,
+    fever_onset DATE,
+    temperature FLOAT,
+    rash BOOLEAN,
+    rash_onset DATE,
+    cough BOOLEAN,
+    red_eyes BOOLEAN,
+    running_nose BOOLEAN,
+    other_complications BOOLEAN,
+    complications_specify TEXT,
+    outcome INT,
+    vitamin_a BOOLEAN,
+    vitamin_a_doses INT,
+    immunisation_card_seen BOOLEAN,
+    measles_doses INT,
+    last_measles_vaccination DATE,
+    vaccination_reason TEXT,
+    diagnosis TEXT
+); 

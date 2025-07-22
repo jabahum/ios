@@ -201,9 +201,6 @@ func HandlerCasesList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 
 	fmt.Println("loading case list page")
 
-	facility := GetCurrentFacility(c, db, sl, store)
-	scope := GetDBInt("user_right", "function_scope", "", "user_id= "+strconv.Itoa(userID), 0)
-
 	// Get outbreak ID from session using helper function
 	outbreakID := GetCurrentOutbreak(c, store)
 	if outbreakID == 0 {
@@ -213,13 +210,18 @@ func HandlerCasesList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 
 	sl.Info("Loading cases for outbreak", "user_id", userID, "outbreak_id", outbreakID)
 
+	// Get user's facility from session
+	userFacility := GetCurrentFacility(c, db, sl, store)
+
+	// Build filter based on outbreak and facility
 	filter := fmt.Sprintf("outbreak_id = %d", outbreakID)
-	if scope == 15 { // Full access to all facilities
-		// Keep outbreak filter
+
+	// If user has a facility assigned, filter by that facility
+	if userFacility > 0 {
+		filter += fmt.Sprintf(" AND site = %d", userFacility)
+		sl.Info("Filtering cases by user facility", "user_id", userID, "facility_id", userFacility)
 	} else {
-		if facility > 0 {
-			filter += fmt.Sprintf(" AND site = %d", facility)
-		}
+		sl.Info("No facility assigned to user, showing all cases for outbreak", "user_id", userID)
 	}
 
 	clients, err := models.Clients(c.Context(), db, filter)

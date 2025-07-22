@@ -2,6 +2,7 @@ package routes
 
 import (
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"strconv"
 
@@ -79,6 +80,13 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 	})
 	app.Get("/vhf-cif/view/:id", func(c *fiber.Ctx) error {
 		return handlers.HandlerVHFView(c, db, sl, store, config)
+	})
+	app.Get("/measles_success", func(c *fiber.Ctx) error { return handlers.HandlerMeaslesSuccess(c, store) })
+	app.Get("/measles_cif", func(c *fiber.Ctx) error {
+		return handlers.HandlerMeaslesCIF(c, db, store)
+	})
+	app.Post("/measles_cif", func(c *fiber.Ctx) error {
+		return handlers.HandlerMeaslesCIF(c, db, store)
 	})
 
 	// Location API routes
@@ -223,7 +231,7 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 				return c.Status(500).SendString("Failed to save session")
 			}
 
-			// Redirect to cases list
+			// Else Redirect to cases list
 			return c.Redirect("/cases/list")
 		})
 		appGroup.Get("/lab", func(c *fiber.Ctx) error { return handlers.HandlerLabList(c, db, sl, store, config) })
@@ -245,6 +253,19 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 				userOutbreakService, patientRoleService, userService, outbreakService, facilityService, store,
 			)
 			return handler.ShowAssignFormFiber(c)
+		})
+		appGroup.Post("/outbreaks/assign", func(c *fiber.Ctx) error {
+			// Create outbreak assignment handler directly
+			userService := models.NewUserService(db)
+			userOutbreakService := models.NewUserOutbreakService(db)
+			patientRoleService := models.NewPatientManagementRoleService(db)
+			outbreakService := models.NewOutbreakService(db)
+			facilityService := models.NewFacilityService(db)
+
+			handler := handlers.NewOutbreakAssignmentHandler(
+				userOutbreakService, patientRoleService, userService, outbreakService, facilityService, store,
+			)
+			return handler.HandleAssignFormSubmission(c)
 		})
 		appGroup.Get("/patient-roles", func(c *fiber.Ctx) error {
 			return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "patient_roles")
@@ -378,20 +399,62 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 	protectedAPI.Use(AuthRequired(store))
 	{
 		protectedAPI.Get("/outbreaks", func(c *fiber.Ctx) error {
+			// Add debugging
+			fmt.Printf("API /outbreaks called - checking authentication...\n")
+
+			// Check session
+			sess, err := store.Get(c)
+			if err != nil {
+				fmt.Printf("Session error: %v\n", err)
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Session error"})
+			}
+
+			userID := sess.Get("user")
+			if userID == nil {
+				fmt.Printf("No user ID in session\n")
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "No user ID in session"})
+			}
+
+			fmt.Printf("User authenticated: %v\n", userID)
+
 			outbreakService := models.NewOutbreakService(db)
 			outbreaks, err := outbreakService.GetAllOutbreaks()
 			if err != nil {
+				fmt.Printf("Database error: %v\n", err)
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 			}
+
+			fmt.Printf("Found %d outbreaks in database\n", len(outbreaks))
 			return c.JSON(outbreaks)
 		})
 
 		protectedAPI.Get("/users", func(c *fiber.Ctx) error {
+			// Add debugging
+			fmt.Printf("API /users called - checking authentication...\n")
+
+			// Check session
+			sess, err := store.Get(c)
+			if err != nil {
+				fmt.Printf("Session error: %v\n", err)
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Session error"})
+			}
+
+			userID := sess.Get("user")
+			if userID == nil {
+				fmt.Printf("No user ID in session\n")
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "No user ID in session"})
+			}
+
+			fmt.Printf("User authenticated: %v\n", userID)
+
 			userService := models.NewUserService(db)
 			users, err := userService.GetAllUsers()
 			if err != nil {
+				fmt.Printf("Database error: %v\n", err)
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 			}
+
+			fmt.Printf("Found %d users in database\n", len(users))
 			return c.JSON(users)
 		})
 	}

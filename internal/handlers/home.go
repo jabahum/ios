@@ -212,7 +212,8 @@ func HandlerLoginForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 	}
 
 	// load page
-	data := map[string]string{"Title": "Login Page"}
+	data := NewTemplateData(c, store)
+	data.Form = map[string]string{"Title": "Login Page"}
 	return GenerateHTML(c, db, data, "login")
 }
 
@@ -271,6 +272,16 @@ func HandlerLoginSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 		} else {
 			// User has multiple outbreaks or no outbreaks - don't set outbreak_id
 			sl.Info("User has multiple outbreaks or no outbreaks - outbreak selection required", "user_id", id)
+		}
+
+		// Get user's facility and set it in session
+		userFacility, err := GetUserFacility(c, db, id)
+		if err != nil {
+			sl.Error("Failed to get user facility for session", "error", err, "user_id", id)
+			// Continue without facility_id if there's an error
+		} else {
+			sess.Set("facility_id", userFacility)
+			sl.Info("Set user facility in session", "user_id", id, "facility_id", userFacility)
 		}
 
 		// Save session
@@ -372,11 +383,13 @@ func HandlerLoginForgot(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 	}
 
 	// load page
-	data := map[string]string{"Title": "Forgot Password and/or username"}
+	data := NewTemplateData(c, store)
+	data.Form = map[string]string{"Title": "Forgot Password and/or username"}
 	return GenerateHTML(c, db, data, "forgot")
 }
 
 func HandlerHelp(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
-	data := map[string]string{"Title": "Help Page"}
+	data := NewTemplateData(c, store)
+	data.Form = map[string]string{"Title": "Help Page"}
 	return GenerateHTML(c, db, data, "help")
 }

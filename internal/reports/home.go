@@ -18,7 +18,9 @@ func ReportHome(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store,
 	}
 
 	// load page
-	data := map[string]string{"Title": "Login Page", "UserID": userName}
+	data := handlers.NewTemplateData(c, store)
+	data.User = userName
+	data.Form = map[string]string{"Title": "Reports Page", "UserID": userName}
 	return handlers.GenerateHTML(c, db, data, "reports")
 }
 

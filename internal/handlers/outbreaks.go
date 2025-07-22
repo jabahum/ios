@@ -306,18 +306,20 @@ func GetSelectedOutbreak(c *fiber.Ctx, store *session.Store) int {
 	if err != nil {
 		return 0
 	}
-
-	// First try to get from "selected_outbreak" key
-	outbreakID := sess.Get("selected_outbreak")
-	if outbreakID != nil {
-		return outbreakID.(int)
+	// Try both keys
+	for _, key := range []string{"selected_outbreak", "outbreak_id"} {
+		val := sess.Get(key)
+		switch v := val.(type) {
+		case int:
+			return v
+		case int64:
+			return int(v)
+		case float64:
+			return int(v)
+		case string:
+			i, _ := strconv.Atoi(v)
+			return i
+		}
 	}
-
-	// Fallback to "outbreak_id" key for backward compatibility
-	outbreakID = sess.Get("outbreak_id")
-	if outbreakID != nil {
-		return outbreakID.(int)
-	}
-
 	return 0
 }

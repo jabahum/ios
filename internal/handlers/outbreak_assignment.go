@@ -222,24 +222,46 @@ func (h *OutbreakAssignmentHandler) ShowAssignForm(c *fiber.Ctx) error {
 
 // ShowAssignFormFiber shows the assign form using Fiber
 func (h *OutbreakAssignmentHandler) ShowAssignFormFiber(c *fiber.Ctx) error {
-	// Get outbreak ID from URL parameter
-	outbreakID := c.Params("i")
-	if outbreakID == "" {
-		return c.Status(400).SendString("Outbreak ID is required")
+	// The template loads outbreaks and users via JavaScript from API endpoints
+	// No outbreak ID parameter is required for this form
+	return GenerateHTML(c, nil, NewTemplateData(c, h.store), "assign_outbreak")
+}
+
+// HandleAssignFormSubmission handles the form submission for assigning users to outbreaks
+func (h *OutbreakAssignmentHandler) HandleAssignFormSubmission(c *fiber.Ctx) error {
+	// Parse form data
+	outbreakID := c.FormValue("outbreak_id")
+	userID := c.FormValue("user_id")
+
+	if outbreakID == "" || userID == "" {
+		return c.Status(400).SendString("Outbreak ID and User ID are required")
 	}
 
-	// Parse outbreak ID
+	// Parse IDs
+	outbreakIDInt, err := strconv.ParseInt(outbreakID, 10, 64)
+	if err != nil {
+		return c.Status(400).SendString("Invalid outbreak ID")
+	}
 
-	// Get outbreak details
-	// Get all users for assignment
+	userIDInt, err := strconv.ParseInt(userID, 10, 64)
+	if err != nil {
+		return c.Status(400).SendString("Invalid user ID")
+	}
 
-	// Prepare data for template
-	// data := fiber.Map{
-	// 	"Outbreak": outbreak,
-	// 	"Users":    users,
-	// }
+	// Get current user ID from session
+	currentUserID := utils.GetUserIDFromSession(c)
+	if currentUserID == 0 {
+		return c.Status(401).SendString("Unauthorized")
+	}
 
-	return GenerateHTML(c, nil, NewTemplateData(c, h.store), "assign_outbreak")
+	// Assign user to outbreak
+	err = h.userOutbreakService.AssignUserToOutbreak(userIDInt, outbreakIDInt, currentUserID)
+	if err != nil {
+		return c.Status(500).SendString("Failed to assign user to outbreak: " + err.Error())
+	}
+
+	// Redirect to assignments page with success message
+	return c.Redirect("/outbreaks/assignments?success=User assigned successfully")
 }
 
 // GetOutbreakService returns the outbreak service

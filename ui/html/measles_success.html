@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Measles Case Submission Success</title>
+    <link href="/ui/static/app/assets/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-body text-center">
+            <h2 class="text-success">Submission Successful!</h2>
+            <p class="lead">Your case has been recorded.</p>
+            <div class="alert alert-info">
+                <strong>MEASLES-CODE:</strong> <span class="text-primary" style="font-size:1.5em;">{{.MeaslesCode}}</span>
+            </div>
+            <div class="mt-4">
+                <a href="/measles_cif" class="btn btn-primary me-2">Submit Another Case</a>
+                <a href="/" class="btn btn-secondary">Cancel</a>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html> 

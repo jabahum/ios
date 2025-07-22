@@ -53,31 +53,92 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Load outbreaks
     fetch('/api/outbreaks')
-        .then(response => response.json())
-        .then(data => {
-            const outbreakSelect = document.getElementById('outbreak_id');
-            data.forEach(outbreak => {
-                const option = document.createElement('option');
-                option.value = outbreak.id;
-                option.textContent = outbreak.name;
-                outbreakSelect.appendChild(option);
-            });
+        .then(response => {
+            console.log('Outbreaks response status:', response.status); // Debug response status
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
         })
-        .catch(error => console.error('Error loading outbreaks:', error));
+        .then(data => {
+            console.log('Outbreaks data:', data); // Debug log
+            const outbreakSelect = document.getElementById('outbreak_id');
+            if (data && data.length > 0) {
+                data.forEach(outbreak => {
+                    const option = document.createElement('option');
+                    option.value = outbreak.id;
+                    // Handle null name values
+                    const name = outbreak.name && outbreak.name.Valid ? outbreak.name.String : `Outbreak ${outbreak.id}`;
+                    option.textContent = name;
+                    outbreakSelect.appendChild(option);
+                });
+            } else {
+                console.log('No outbreaks found in data');
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No outbreaks available';
+                outbreakSelect.appendChild(option);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading outbreaks:', error);
+            const outbreakSelect = document.getElementById('outbreak_id');
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Error loading outbreaks';
+            outbreakSelect.appendChild(option);
+        });
 
     // Load users
     fetch('/api/users')
-        .then(response => response.json())
-        .then(data => {
-            const userSelect = document.getElementById('user_id');
-            data.forEach(user => {
-                const option = document.createElement('option');
-                option.value = user.user_id;
-                option.textContent = user.user_name;
-                userSelect.appendChild(option);
-            });
+        .then(response => {
+            console.log('Users response status:', response.status); // Debug response status
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
         })
-        .catch(error => console.error('Error loading users:', error));
+        .then(data => {
+            console.log('Users data:', data); // Debug log
+            const userSelect = document.getElementById('user_id');
+            
+            // Handle nested structure: {users: Array(39)}
+            const users = data.users || data;
+            
+            if (users && users.length > 0) {
+                users.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.user_id;
+                    // Handle the actual API response format
+                    let name = `User ${user.user_id}`;
+                    if (user.first_name && user.last_name) {
+                        name = `${user.first_name} ${user.last_name}`;
+                    } else if (user.first_name) {
+                        name = user.first_name;
+                    } else if (user.user_name) {
+                        name = user.user_name;
+                    } else if (user.email) {
+                        name = user.email;
+                    }
+                    option.textContent = name;
+                    userSelect.appendChild(option);
+                });
+            } else {
+                console.log('No users found in data');
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No users available';
+                userSelect.appendChild(option);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading users:', error);
+            const userSelect = document.getElementById('user_id');
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Error loading users';
+            userSelect.appendChild(option);
+        });
 });
 </script>
 {{end}} 
