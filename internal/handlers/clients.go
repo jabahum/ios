@@ -17,14 +17,15 @@ import (
 
 // Define a struct for the encounter form page data
 type EncounterPageData struct {
-	FormRef    models.Client
-	Form       []models.ClientEncounter
-	Date       string
-	FormChild1 []models.Clinical
-	FormChild2 []models.Vital
-	FormChild3 []models.Lab
-	FormChild4 []models.Treatment
-	Optionz    map[string]map[string]string
+	FormRef       models.Client
+	Form          []models.ClientEncounter
+	Date          string
+	FormChild1    []models.Clinical
+	FormChild2    []models.Vital
+	FormChild3    []models.Lab
+	FormChild4    []models.Treatment
+	AllEncounters []models.ClientEncounter // Add field for all encounters
+	Optionz       map[string]map[string]string
 }
 
 func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
@@ -287,24 +288,38 @@ func HandlerCaseEncounterForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 		return c.Status(500).SendString("Failed to get client details")
 	}
 
-	// Get encounters for this client and date
-	encounters, err := models.ClientEncounters(c.Context(), db, fmt.Sprintf("client_id = %d AND encounter_date = '%s'", clientID, encounterDate), outbreakID.(int))
+	// Get all encounters for this client (not filtered by date)
+	sl.Info("Fetching all encounters", "clientID", clientID, "outbreakID", outbreakID.(int))
+	allEncounters, err := models.ClientEncounters(c.Context(), db, fmt.Sprintf("client_id = %d", clientID), outbreakID.(int))
 	if err != nil {
-		sl.Error("Failed to get encounters", "error", err, "clientID", clientID, "date", encounterDate)
-		encounters = []models.ClientEncounter{}
+		sl.Error("Failed to get all encounters", "error", err, "clientID", clientID)
+		allEncounters = []models.ClientEncounter{}
+	} else {
+		sl.Info("Successfully fetched encounters", "count", len(allEncounters), "clientID", clientID)
 	}
 
-	// Ensure we have at least one empty encounter
-	if len(encounters) == 0 {
+	// Get encounters for the specific date (for editing existing encounters)
+	dateEncounters, err := models.ClientEncounters(c.Context(), db, fmt.Sprintf("client_id = %d AND encounter_date = '%s'", clientID, encounterDate), outbreakID.(int))
+	if err != nil {
+		sl.Error("Failed to get encounters for date", "error", err, "clientID", clientID, "date", encounterDate)
+		dateEncounters = []models.ClientEncounter{}
+	}
+
+	// Use date-specific encounters if they exist, otherwise create empty encounter
+	var encounters []models.ClientEncounter
+	if len(dateEncounters) > 0 {
+		encounters = dateEncounters
+	} else {
 		// Create an empty encounter with the current date
 		emptyEncounter := models.ClientEncounter{
 			EncounterID:   0,
-			EncounterType: sql.NullString{String: "", Valid: true},
+			EncounterType: sql.NullInt64{Int64: 0, Valid: false},
 			EmployeeFname: sql.NullString{String: "", Valid: true},
 			EmployeeLname: sql.NullString{String: "", Valid: true},
 			EncounterDate: sql.NullString{String: encounterDate, Valid: true},
 			EncounterTime: sql.NullString{String: "", Valid: true},
 			ClinicalTeam:  sql.NullString{String: "", Valid: true},
+			ManagedBy:     sql.NullInt64{Int64: 0, Valid: false},
 			ClientID:      clientID,
 		}
 		encounters = append(encounters, emptyEncounter)
@@ -320,6 +335,37 @@ func HandlerCaseEncounterForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 	}
 	if len(clinical) == 0 {
 		// Add empty clinical data
+		clinical = append(clinical, models.Clinical{
+			ClinicalID:            0,
+			PharyngealErythema:    sql.NullInt64{Int64: 0, Valid: true},
+			PharyngealExudate:     sql.NullInt64{Int64: 0, Valid: true},
+			ConjunctivalInjection: sql.NullInt64{Int64: 0, Valid: true},
+			OedemaFace:            sql.NullInt64{Int64: 0, Valid: true},
+			TenderAbdomen:         sql.NullInt64{Int64: 0, Valid: true},
+			SunkenEyes:            sql.NullInt64{Int64: 0, Valid: true},
+			TentingSkin:           sql.NullInt64{Int64: 0, Valid: true},
+			PalpableLiver:         sql.NullInt64{Int64: 0, Valid: true},
+			PalpableSpleen:        sql.NullInt64{Int64: 0, Valid: true},
+			Jaundice:              sql.NullInt64{Int64: 0, Valid: true},
+			EnlargedLymphNodes:    sql.NullInt64{Int64: 0, Valid: true},
+			LowerExtremityOedema:  sql.NullInt64{Int64: 0, Valid: true},
+			Bleeding:              sql.NullInt64{Int64: 0, Valid: true},
+			BleedingNose:          sql.NullInt64{Int64: 0, Valid: true},
+			BleedingMouth:         sql.NullInt64{Int64: 0, Valid: true},
+			BleedingVagina:        sql.NullInt64{Int64: 0, Valid: true},
+			BleedingRectum:        sql.NullInt64{Int64: 0, Valid: true},
+			Shock:                 sql.NullInt64{Int64: 0, Valid: true},
+			Meningitis:            sql.NullInt64{Int64: 0, Valid: true},
+			Confusion:             sql.NullInt64{Int64: 0, Valid: true},
+			Seizure:               sql.NullInt64{Int64: 0, Valid: true},
+			Coma:                  sql.NullInt64{Int64: 0, Valid: true},
+			Bacteraemia:           sql.NullInt64{Int64: 0, Valid: true},
+			Hyperglycemia:         sql.NullInt64{Int64: 0, Valid: true},
+			Hypoglycemia:          sql.NullInt64{Int64: 0, Valid: true},
+		})
+	}
+	// Ensure we have 3 clinical records for morning, afternoon, evening
+	for len(clinical) < 3 {
 		clinical = append(clinical, models.Clinical{
 			ClinicalID:            0,
 			PharyngealErythema:    sql.NullInt64{Int64: 0, Valid: true},
@@ -374,6 +420,22 @@ func HandlerCaseEncounterForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 			Muac:            sql.NullFloat64{Float64: 0, Valid: true},
 		})
 	}
+	// Ensure we have 3 vitals records for morning, afternoon, evening
+	for len(vitals) < 3 {
+		vitals = append(vitals, models.Vital{
+			VitalsID:        0,
+			HeartRate:       sql.NullFloat64{Float64: 0, Valid: true},
+			BpSystolic:      sql.NullFloat64{Float64: 0, Valid: true},
+			BpDiastolic:     sql.NullFloat64{Float64: 0, Valid: true},
+			RespiratoryRate: sql.NullFloat64{Float64: 0, Valid: true},
+			Saturation:      sql.NullFloat64{Float64: 0, Valid: true},
+			Weight:          sql.NullFloat64{Float64: 0, Valid: true},
+			Height:          sql.NullFloat64{Float64: 0, Valid: true},
+			Temperature:     sql.NullFloat64{Float64: 0, Valid: true},
+			MentalStatus:    sql.NullString{String: "", Valid: true},
+			Muac:            sql.NullFloat64{Float64: 0, Valid: true},
+		})
+	}
 
 	// Get lab data for the first encounter
 	var labs []models.Lab
@@ -385,6 +447,12 @@ func HandlerCaseEncounterForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 	}
 	if len(labs) == 0 {
 		// Add empty lab data
+		labs = append(labs, models.Lab{
+			LabID: 0,
+		})
+	}
+	// Ensure we have at least 1 lab record
+	for len(labs) < 1 {
 		labs = append(labs, models.Lab{
 			LabID: 0,
 		})
@@ -404,18 +472,36 @@ func HandlerCaseEncounterForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 			TreatmentID: 0,
 		})
 	}
+	// Ensure we have at least 1 treatment record
+	for len(treatments) < 1 {
+		treatments = append(treatments, models.Treatment{
+			TreatmentID: 0,
+		})
+	}
 
 	// Prepare strongly typed data for the template
 	data := EncounterPageData{
-		FormRef:    *client,
-		Form:       encounters,
-		Date:       encounterDate,
-		FormChild1: clinical,
-		FormChild2: vitals,
-		FormChild3: labs,
-		FormChild4: treatments,
-		Optionz:    Get_Client_Optionz(),
+		FormRef:       *client,
+		Form:          encounters,
+		Date:          encounterDate,
+		FormChild1:    clinical,
+		FormChild2:    vitals,
+		FormChild3:    labs,
+		FormChild4:    treatments,
+		AllEncounters: allEncounters, // Add all encounters
+		Optionz:       Get_Client_Optionz(),
 	}
+
+	// Debug: Log the client data being passed to template
+	sl.Info("Client data for template",
+		"clientID", client.ID,
+		"firstName", client.Firstname.String,
+		"lastName", client.Lastname.String,
+		"genderValid", client.Gender.Valid,
+		"genderValue", client.Gender.Int64,
+		"outbreakIDValid", client.OutbreakID.Valid,
+		"outbreakIDValue", client.OutbreakID.Int64,
+	)
 
 	return GenerateHTML(c, db, data, "form_encounters")
 }

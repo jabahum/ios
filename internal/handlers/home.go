@@ -15,26 +15,42 @@ import (
 
 // HandlerHome handles the home page
 func HandlerHome(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
-	// Check if an outbreak is selected
-	selectedOutbreakID := GetSelectedOutbreak(c, store)
-	if selectedOutbreakID == 0 {
-		// If no outbreak is selected, redirect to outbreak selection
-		return c.Redirect("/outbreaks")
-	}
-
-	// Get the selected outbreak
-	outbreak, err := models.OutbreakByID(c.Context(), db, selectedOutbreakID)
-	if err != nil {
-		sl.Error("Failed to get selected outbreak: " + err.Error())
-		return c.Redirect("/outbreaks")
-	}
-
 	// Get the current user
 	userID, username := GetUser(c, sl, store)
 
+	// Check if an outbreak is selected
+	selectedOutbreakID := GetSelectedOutbreak(c, store)
+
+	// Get user's primary role to check if they're admin
+	primaryRole, err := getUserPrimaryRole(c, db, userID)
+	if err != nil {
+		sl.Error("Failed to get user role for home access", "error", err, "user_id", userID)
+		primaryRole = ""
+	}
+
+	// Admin users can access home without outbreak_id, others need outbreak selection
+	if selectedOutbreakID == 0 && primaryRole != "super_admin" && primaryRole != "admin" {
+		// If no outbreak is selected and user is not admin, redirect to outbreak selection
+		return c.Redirect("/outbreaks")
+	}
+
 	data := NewTemplateData(c, store)
 	data.User = username
-	data.Form = outbreak
+
+	// Only try to get outbreak data if an outbreak is selected
+	if selectedOutbreakID > 0 {
+		// Get the selected outbreak
+		outbreak, err := models.OutbreakByID(c.Context(), db, selectedOutbreakID)
+		if err != nil {
+			sl.Error("Failed to get selected outbreak: " + err.Error())
+			// For admin users, continue without outbreak data
+			if primaryRole != "super_admin" && primaryRole != "admin" {
+				return c.Redirect("/outbreaks")
+			}
+		} else {
+			data.Form = outbreak
+		}
+	}
 
 	// Get user permissions for access control
 	permissions, err := getUserPermissions(c, db, userID)
@@ -52,9 +68,17 @@ func HandlerHome(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store
 	}
 
 	data.UserPermissions = permissions
-	data.Optionz = map[string]map[string]string{
-		"has_case_role": make(map[string]string),
+
+	// Ensure Optionz is properly initialized
+	if data.Optionz == nil {
+		data.Optionz = make(map[string]map[string]string)
 	}
+
+	// Initialize has_case_role if it doesn't exist
+	if data.Optionz["has_case_role"] == nil {
+		data.Optionz["has_case_role"] = make(map[string]string)
+	}
+
 	data.Optionz["has_case_role"]["value"] = strconv.FormatBool(hasCaseRole)
 
 	// Instead of redirecting, render the home page with the selected outbreak
@@ -336,10 +360,10 @@ func HandlerLoginSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 			sl.Info("Redirecting outbreak user to outbreaks", "user_id", id, "role", primaryRole)
 			return c.Redirect("/outbreaks")
 		case "super_admin", "admin":
-			// Admin users go to outbreaks page (they can see all outbreaks)
-			fmt.Printf("DEBUG: Redirecting admin user (ID: %d, role: %s) to /outbreaks\n", id, primaryRole)
-			sl.Info("Redirecting admin user to outbreaks", "user_id", id, "role", primaryRole)
-			return c.Redirect("/outbreaks")
+			// Admin users go directly to home page (they can access everything)
+			fmt.Printf("DEBUG: Redirecting admin user (ID: %d, role: %s) to /\n", id, primaryRole)
+			sl.Info("Redirecting admin user to home", "user_id", id, "role", primaryRole)
+			return c.Redirect("/")
 		default:
 			// Check if the role contains "case" (for any case-related roles)
 			if strings.Contains(strings.ToLower(primaryRole), "case") {

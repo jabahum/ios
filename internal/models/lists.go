@@ -53,12 +53,13 @@ func (c *Discharge) SetAsExists() {
 
 type ClientEncounter struct {
 	EncounterID   int
-	EncounterType sql.NullString
+	EncounterType sql.NullInt64
 	EmployeeFname sql.NullString
 	EmployeeLname sql.NullString
 	EncounterDate sql.NullString
 	EncounterTime sql.NullString
 	ClinicalTeam  sql.NullString
+	ManagedBy     sql.NullInt64
 	ClientID      int
 }
 
@@ -176,20 +177,20 @@ func Statuses(ctx context.Context, db DB, flt string) ([]Status, error) {
 }
 
 func ClientEncounters(ctx context.Context, db DB, flt string, outbreakID int) ([]ClientEncounter, error) {
-	// query
+	// query - handle both specific outbreak_id and NULL outbreak_id
 	sqlstr := ` SELECT 
-					encounter.encounter_id, meta.meta_name, employee.employee_fname, employee.employee_lname, encounter.encounter_date, encounter.encounter_time, encounter.client_id, encounter.clinical_team
+					encounter.encounter_id, encounter.encounter_type, employee.employee_fname, employee.employee_lname, encounter.encounter_date, encounter.encounter_time, encounter.client_id, encounter.clinical_team, encounter.managed_by
 				FROM encounter 
-				LEFT JOIN meta ON meta.meta_id = encounter.encounter_type
 				LEFT JOIN employee on employee.employee_id = encounter.managed_by 
-				WHERE encounter.outbreak_id = $1`
+				WHERE (encounter.outbreak_id = $1 OR encounter.outbreak_id IS NULL)`
 	var args []interface{}
 	args = append(args, outbreakID)
 	if flt != "" {
 		sqlstr += " AND " + flt
 	}
 
-	// Log the query
+	// Log the query with more details
+	log.Printf("ClientEncounters query: %s with args: %v", sqlstr, args)
 	logf(sqlstr)
 
 	// Execute query
@@ -206,7 +207,7 @@ func ClientEncounters(ctx context.Context, db DB, flt string, outbreakID int) ([
 	for rows.Next() {
 		var e ClientEncounter
 		if err := rows.Scan(
-			&e.EncounterID, &e.EncounterType, &e.EmployeeFname, &e.EmployeeLname, &e.EncounterDate, &e.EncounterTime, &e.ClientID, &e.ClinicalTeam,
+			&e.EncounterID, &e.EncounterType, &e.EmployeeFname, &e.EmployeeLname, &e.EncounterDate, &e.EncounterTime, &e.ClientID, &e.ClinicalTeam, &e.ManagedBy,
 		); err != nil {
 			return nil, logerror(err)
 		}
@@ -222,12 +223,12 @@ func ClientEncounters(ctx context.Context, db DB, flt string, outbreakID int) ([
 }
 
 func ClientEncounterz(ctx context.Context, db DB, flt string, outbreakID int) ([]ClientEncounter, error) {
-	// query
+	// query - handle both specific outbreak_id and NULL outbreak_id
 	sqlstr := ` SELECT DISTINCT 
 					employee_fname, employee_lname, encounter_date, client_id, clinical_team
 				FROM encounter 
 				LEFT JOIN employee ON employee.employee_id = encounter.managed_by 
-				WHERE encounter.outbreak_id = $1`
+				WHERE (encounter.outbreak_id = $1 OR encounter.outbreak_id IS NULL)`
 	var args []interface{}
 	args = append(args, outbreakID)
 	if flt != "" {
