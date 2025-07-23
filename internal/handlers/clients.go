@@ -200,6 +200,21 @@ func HandlerCasesList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 	data.User = userName
 	data.Role = role
 
+	// Ensure Optionz is properly initialized
+	if data.Optionz == nil {
+		data.Optionz = make(map[string]map[string]string)
+		data.Optionz["yn"] = map[string]string{"": " -- ", "1": "Yes", "2": "No"}
+		data.Optionz["yn_extra"] = map[string]string{"": " -- ", "1": "Yes", "2": "No", "3": "Unknown"}
+		data.Optionz["sex"] = map[string]string{"": " -- ", "1": "Male", "2": "Female"}
+		data.Optionz["marital"] = map[string]string{"": " -- ", "1": "Married", "2": "Cohabiting", "3": "Widowed", "4": "Separated", "5": "Divorced", "6": "Single"}
+		data.Optionz["nationality"] = map[string]string{"": " -- ", "1": "Ugandan", "2": "EAC", "3": "Other"}
+		data.Optionz["mental"] = map[string]string{"": " -- ", "a": "A", "v": "V", "p": "P", "u": "U"}
+		data.Optionz["preg"] = map[string]string{"": " -- ", "1": "Yes", "2": "No", "3": "ND"}
+		data.Optionz["ward"] = map[string]string{"": " -- ", "1": "Ward", "2": "ICU"}
+		data.Optionz["result1"] = map[string]string{"": " -- ", "1": "Pos", "2": "Neg", "3": "indeterminate"}
+		data.Optionz["result2"] = map[string]string{"": " -- ", "1": "Pos", "2": "Neg", "3": "ND"}
+	}
+
 	fmt.Println("loading case list page")
 
 	// Get outbreak ID from session using helper function

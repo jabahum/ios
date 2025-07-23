@@ -189,10 +189,23 @@ func NewTemplateData(c *fiber.Ctx, store *session.Store) *TemplateData {
 		}
 	}
 
+	// Initialize Optionz with default values to ensure it's always accessible
+	optionz := make(map[string]map[string]string)
+	optionz["yn"] = map[string]string{"": " -- ", "1": "Yes", "2": "No"}
+	optionz["yn_extra"] = map[string]string{"": " -- ", "1": "Yes", "2": "No", "3": "Unknown"}
+	optionz["sex"] = map[string]string{"": " -- ", "1": "Male", "2": "Female"}
+	optionz["marital"] = map[string]string{"": " -- ", "1": "Married", "2": "Cohabiting", "3": "Widowed", "4": "Separated", "5": "Divorced", "6": "Single"}
+	optionz["nationality"] = map[string]string{"": " -- ", "1": "Ugandan", "2": "EAC", "3": "Other"}
+	optionz["mental"] = map[string]string{"": " -- ", "a": "A", "v": "V", "p": "P", "u": "U"}
+	optionz["preg"] = map[string]string{"": " -- ", "1": "Yes", "2": "No", "3": "ND"}
+	optionz["ward"] = map[string]string{"": " -- ", "1": "Ward", "2": "ICU"}
+	optionz["result1"] = map[string]string{"": " -- ", "1": "Pos", "2": "Neg", "3": "indeterminate"}
+	optionz["result2"] = map[string]string{"": " -- ", "1": "Pos", "2": "Neg", "3": "ND"}
+
 	return &TemplateData{
 		CurrentYear:     time.Now().Year(),
 		IsAuthenticated: IzAuthenticated(c, store),
-		Optionz:         make(map[string]map[string]string),
+		Optionz:         optionz,
 		UserFacilityID:  userFacilityID,
 		//CSRFToken:       c.Locals("csrf").(string), // Add the CSRF token.
 	}
@@ -240,6 +253,7 @@ func CreateTemplateFunctions(c *fiber.Ctx, db *sql.DB) template.FuncMap {
 		},
 		"getOptionzValue": func(optionz map[string]map[string]string, key1, key2 string) string {
 			if optionz == nil {
+				log.Printf("DEBUG: getOptionzValue called with nil optionz")
 				return ""
 			}
 			if subMap, exists := optionz[key1]; exists {
@@ -248,6 +262,12 @@ func CreateTemplateFunctions(c *fiber.Ctx, db *sql.DB) template.FuncMap {
 				}
 			}
 			return ""
+		},
+		"safeOptionz": func(optionz map[string]map[string]string) map[string]map[string]string {
+			if optionz == nil {
+				return make(map[string]map[string]string)
+			}
+			return optionz
 		},
 		"renderSymptomRow": func(name, label string, value sql.NullBool, date sql.NullTime, duration sql.NullInt32) template.HTML {
 			var buf bytes.Buffer
@@ -423,8 +443,21 @@ func GenerateHTML(c *fiber.Ctx, db *sql.DB, zdata interface{}, filenames ...stri
 	log.Printf("DEBUG: Executing template with data type: %T", zdata)
 	if templateData, ok := zdata.(*TemplateData); ok {
 		log.Printf("DEBUG: TemplateData.Optionz initialized: %v, keys: %d", templateData.Optionz != nil, len(templateData.Optionz))
+		if templateData.Optionz != nil {
+			for key, value := range templateData.Optionz {
+				log.Printf("DEBUG: Optionz[%s] has %d items", key, len(value))
+			}
+		} else {
+			log.Printf("DEBUG: TemplateData.Optionz is nil - this might cause issues")
+		}
 	} else {
 		log.Printf("DEBUG: Data is not *TemplateData, actual type: %T", zdata)
+		// Try to convert to TemplateData if possible
+		if reflect.TypeOf(zdata).Kind() == reflect.Ptr {
+			log.Printf("DEBUG: Data is a pointer to: %T", reflect.ValueOf(zdata).Elem().Interface())
+		}
+		// Log the actual value for debugging
+		log.Printf("DEBUG: Data value: %+v", zdata)
 	}
 
 	if err := templates.ExecuteTemplate(c.Response().BodyWriter(), "layout", zdata); err != nil {
