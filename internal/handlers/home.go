@@ -28,10 +28,36 @@ func HandlerHome(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store
 		primaryRole = ""
 	}
 
-	// Admin users can access home without outbreak_id, others need outbreak selection
+	// If no outbreak is selected and user is not admin, try to auto-select outbreak
 	if selectedOutbreakID == 0 && primaryRole != "super_admin" && primaryRole != "admin" {
-		// If no outbreak is selected and user is not admin, redirect to outbreak selection
-		return c.Redirect("/outbreaks")
+		// Try to get user's default outbreak
+		defaultOutbreakID, err := getDefaultOutbreakID(c, db, userID)
+		if err != nil {
+			sl.Error("Failed to get default outbreak ID for home access", "error", err, "user_id", userID)
+			return c.Redirect("/outbreaks")
+		}
+
+		if defaultOutbreakID > 0 {
+			// User has exactly one active outbreak - set it in session
+			sess, err := store.Get(c)
+			if err != nil {
+				sl.Error("Failed to get session for outbreak selection", "error", err, "user_id", userID)
+				return c.Redirect("/outbreaks")
+			}
+
+			sess.Set("outbreak_id", defaultOutbreakID)
+			sess.Set("selected_outbreak", defaultOutbreakID)
+			if err := sess.Save(); err != nil {
+				sl.Error("Failed to save session with outbreak selection", "error", err, "user_id", userID)
+				return c.Redirect("/outbreaks")
+			}
+
+			selectedOutbreakID = defaultOutbreakID
+			sl.Info("Auto-selected outbreak for user", "user_id", userID, "outbreak_id", defaultOutbreakID)
+		} else {
+			// User has multiple outbreaks or no outbreaks - redirect to selection
+			return c.Redirect("/outbreaks")
+		}
 	}
 
 	data := NewTemplateData(c, store)
@@ -170,11 +196,15 @@ func getDefaultOutbreakID(c *fiber.Ctx, db *sql.DB, userID int) (int, error) {
 	var outbreakCount int
 	err := db.QueryRowContext(c.Context(), query, userID).Scan(&outbreakCount)
 	if err != nil {
+		fmt.Printf("DEBUG: Error counting outbreaks for user %d: %v\n", userID, err)
 		return 0, err
 	}
 
+	fmt.Printf("DEBUG: User %d has %d active outbreaks\n", userID, outbreakCount)
+
 	// If user has multiple active outbreaks, return 0 to redirect to selection page
 	if outbreakCount > 1 {
+		fmt.Printf("DEBUG: User %d has multiple outbreaks, returning 0\n", userID)
 		return 0, nil
 	}
 
@@ -193,14 +223,18 @@ func getDefaultOutbreakID(c *fiber.Ctx, db *sql.DB, userID int) (int, error) {
 		err := db.QueryRowContext(c.Context(), query, userID).Scan(&outbreakID)
 		if err != nil {
 			if err == sql.ErrNoRows {
+				fmt.Printf("DEBUG: No outbreak found for user %d despite count being 1\n", userID)
 				return 0, nil
 			}
+			fmt.Printf("DEBUG: Error getting outbreak ID for user %d: %v\n", userID, err)
 			return 0, err
 		}
+		fmt.Printf("DEBUG: User %d has exactly one outbreak: %d\n", userID, outbreakID)
 		return outbreakID, nil
 	}
 
 	// If user has no active outbreaks, return 0
+	fmt.Printf("DEBUG: User %d has no active outbreaks\n", userID)
 	return 0, nil
 }
 

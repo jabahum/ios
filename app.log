@@ -205,3 +205,11 @@ time=2025-07-23T07:44:57.449+03:00 level=INFO msg="Connecting to database" host=
 time=2025-07-23T07:44:57.486+03:00 level=INFO msg="Successfully connected to database"
 time=2025-07-23T07:44:57.486+03:00 level=INFO msg="Initializing SMS service" base_url=https://dispatcher2-mtracpro.health.go.ug username=case_management
 time=2025-07-23T07:44:57.487+03:00 level=INFO msg="starting server..."
+time=2025-07-23T08:18:52.653+03:00 level=INFO msg="Connecting to database" host=localhost user=postgres database=ios
+time=2025-07-23T08:18:52.692+03:00 level=INFO msg="Successfully connected to database"
+time=2025-07-23T08:18:52.692+03:00 level=INFO msg="Initializing SMS service" base_url=https://dispatcher2-mtracpro.health.go.ug username=case_management
+time=2025-07-23T08:18:52.693+03:00 level=INFO msg="starting server..."
+time=2025-07-23T08:23:33.684+03:00 level=INFO msg="Connecting to database" host=localhost user=postgres database=ios
+time=2025-07-23T08:23:33.720+03:00 level=INFO msg="Successfully connected to database"
+time=2025-07-23T08:23:33.720+03:00 level=INFO msg="Initializing SMS service" base_url=https://dispatcher2-mtracpro.health.go.ug username=case_management
+time=2025-07-23T08:23:33.720+03:00 level=INFO msg="starting server..."

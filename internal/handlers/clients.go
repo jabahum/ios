@@ -219,6 +219,8 @@ func HandlerCasesList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 
 	// Get outbreak ID from session using helper function
 	outbreakID := GetCurrentOutbreak(c, store)
+	fmt.Printf("DEBUG: HandlerCasesList - User %d, outbreakID from session: %d\n", userID, outbreakID)
+
 	if outbreakID == 0 {
 		sl.Error("No outbreak selected for user", "user_id", userID)
 		return c.Status(400).SendString("No outbreak selected. Please select an outbreak first.")
@@ -326,6 +328,22 @@ func HandlerCaseEncounterForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 		encounters = dateEncounters
 	} else {
 		// Create an empty encounter with the current date
+		emptyEncounter := models.ClientEncounter{
+			EncounterID:   0,
+			EncounterType: sql.NullInt64{Int64: 0, Valid: false},
+			EmployeeFname: sql.NullString{String: "", Valid: true},
+			EmployeeLname: sql.NullString{String: "", Valid: true},
+			EncounterDate: sql.NullString{String: encounterDate, Valid: true},
+			EncounterTime: sql.NullString{String: "", Valid: true},
+			ClinicalTeam:  sql.NullString{String: "", Valid: true},
+			ManagedBy:     sql.NullInt64{Int64: 0, Valid: false},
+			ClientID:      clientID,
+		}
+		encounters = append(encounters, emptyEncounter)
+	}
+
+	// Ensure we have 3 encounters for morning, afternoon, evening
+	for len(encounters) < 3 {
 		emptyEncounter := models.ClientEncounter{
 			EncounterID:   0,
 			EncounterType: sql.NullInt64{Int64: 0, Valid: false},
