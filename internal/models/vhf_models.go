@@ -13,19 +13,19 @@ type VHFPatient struct {
 	DateOfBirth                 sql.NullTime    `json:"date_of_birth"`
 	AgeYears                    sql.NullInt32   `json:"age_years"`
 	AgeMonths                   sql.NullInt32   `json:"age_months"`
-	Gender                      string          `json:"gender"`
-	PatientPhone                string          `json:"patient_phone"`
-	PhoneOwner                  string          `json:"phone_owner"`
-	NextOfKin                   string          `json:"next_of_kin"`
-	NextOfKinPhone              string          `json:"next_of_kin_phone"`
-	RelationshipToPatient       string          `json:"relationship_to_patient"`
+	Gender                      sql.NullString  `json:"gender"`
+	PatientPhone                sql.NullString  `json:"patient_phone"`
+	PhoneOwner                  sql.NullString  `json:"phone_owner"`
+	NextOfKin                   sql.NullString  `json:"next_of_kin"`
+	NextOfKinPhone              sql.NullString  `json:"next_of_kin_phone"`
+	RelationshipToPatient       sql.NullString  `json:"relationship_to_patient"`
 	DataCapturerName            sql.NullString  `json:"data_capturer_name"`
 	DataCapturerPhone           sql.NullString  `json:"data_capturer_phone"`
 	ReportingHealthFacilityName sql.NullString  `json:"reporting_health_facility_name"`
-	CaseCode                    string          `json:"case_code"`
-	Status                      string          `json:"status"`
+	CaseCode                    sql.NullString  `json:"case_code"`
+	Status                      sql.NullString  `json:"status"`
 	DateOfDeath                 sql.NullTime    `json:"date_of_death"`
-	HeadOfHousehold             string          `json:"head_of_household"`
+	HeadOfHousehold             sql.NullString  `json:"head_of_household"`
 	VillageTown                 string          `json:"village_town"`
 	Parish                      string          `json:"parish"`
 	Subcounty                   string          `json:"subcounty"`

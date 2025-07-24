@@ -22,7 +22,8 @@ import (
 	"context"
 )
 
-var store = session.New() // Session store
+// Replace the default in-memory session store with a file-based store for persistence
+var store = session.New() // Session store (in-memory)
 
 func trace() string {
 	pc, file, line, ok := runtime.Caller(1)
@@ -40,6 +41,20 @@ func main() {
 
 	// Initialize Fiber app
 	app := fiber.New()
+
+	// Debug middleware to log session cookie and session data for every request
+	app.Use(func(c *fiber.Ctx) error {
+		cookie := c.Cookies("fiber_sess")
+		log.Printf("DEBUG: Incoming request session cookie: %s", cookie)
+		sess, err := store.Get(c)
+		if err != nil {
+			log.Printf("DEBUG: Error getting session: %v", err)
+		} else {
+			log.Printf("DEBUG: Session keys: %v", sess.Keys())
+			log.Printf("DEBUG: Session isAuthenticated: %v", sess.Get("isAuthenticated"))
+		}
+		return c.Next()
+	})
 
 	// Serve static files
 	app.Static("/static", "../../ui/static")
@@ -89,6 +104,20 @@ func main() {
 		}
 
 		return c.SendString("Password for user 'philip' has been reset to '123456'. You can now log in.")
+	})
+
+	// Add test routes for session debugging
+	app.Get("/test-session", func(c *fiber.Ctx) error {
+		sess, _ := store.Get(c)
+		sess.Set("foo", "bar")
+		sess.Save()
+		return c.SendString("Session set: foo=bar")
+	})
+
+	app.Get("/check-session", func(c *fiber.Ctx) error {
+		sess, _ := store.Get(c)
+		val := sess.Get("foo")
+		return c.SendString(fmt.Sprintf("foo: %v", val))
 	})
 
 	// Set up routes

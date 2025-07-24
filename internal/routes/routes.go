@@ -385,7 +385,10 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 
 	// MPOX CIF routes (public)
 	app.Get("/mpox-cif", func(c *fiber.Ctx) error {
-		return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "mpox_cif")
+		caseID := c.Query("case_id")
+		data := handlers.NewTemplateData(c, store)
+		data.Form = map[string]interface{}{"case_id": caseID}
+		return handlers.GenerateHTML(c, db, data, "mpox_cif")
 	})
 	app.Post("/mpox-cif/save", func(c *fiber.Ctx) error {
 		return handlers.HandlerMpoxCIFSubmit(c, db, sl)

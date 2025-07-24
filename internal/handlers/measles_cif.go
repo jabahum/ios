@@ -30,16 +30,24 @@ func MeaslesCIFHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandlerMeaslesCIF(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
+	measlesCode := c.FormValue("measles_code")
 	if c.Method() == fiber.MethodPost {
 		pid := c.FormValue("patient_id")
-		measlesCode := c.FormValue("measles_code")
+		// Patch for DOB
+		var dob sql.NullTime
+		if v := c.FormValue("dob"); v != "" {
+			t, err := time.Parse("2006-01-02", v)
+			if err == nil {
+				dob = sql.NullTime{Time: t, Valid: true}
+			}
+		}
 		// Save patient core info
 		patient := &models.MeaslesPatient{
 			PatientID:   pid,
 			MeaslesCode: measlesCode,
 			PatientName: c.FormValue("patient_name"),
 			Sex:         c.FormValue("sex"),
-			DOB:         c.FormValue("dob"),
+			DOB:         dob,
 			CreatedAt:   time.Now().Format("2006-01-02 15:04:05"),
 		}
 		// Save demographics
@@ -79,37 +87,61 @@ func HandlerMeaslesCIF(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
 			VaccinationReason:      c.FormValue("vaccination_reason"),
 			Diagnosis:              c.FormValue("diagnosis"),
 		}
+		// Patch for all MeaslesSpecimens date fields
+		parseDate := func(val string) sql.NullTime {
+			if val == "" {
+				return sql.NullTime{Valid: false}
+			}
+			t, err := time.Parse("2006-01-02", val)
+			if err != nil {
+				return sql.NullTime{Valid: false}
+			}
+			return sql.NullTime{Time: t, Valid: true}
+		}
+		var bloodCollectionDate = parseDate(c.FormValue("blood_collection_date"))
+		var bloodSentDate = parseDate(c.FormValue("blood_sent_date"))
+		var bloodReceivedDate = parseDate(c.FormValue("blood_received_date"))
+		var urineCollectionDate = parseDate(c.FormValue("urine_collection_date"))
+		var urineSentDate = parseDate(c.FormValue("urine_sent_date"))
+		var urineReceivedDate = parseDate(c.FormValue("urine_received_date"))
+		var formSentDate = parseDate(c.FormValue("form_sent_date"))
+		var formReceivedDate = parseDate(c.FormValue("form_received_date"))
 		// Save specimens
 		specimens := &models.MeaslesSpecimens{
 			PatientID:           pid,
-			BloodCollectionDate: c.FormValue("blood_collection_date"),
-			BloodSentDate:       c.FormValue("blood_sent_date"),
-			BloodReceivedDate:   c.FormValue("blood_received_date"),
+			BloodCollectionDate: bloodCollectionDate,
+			BloodSentDate:       bloodSentDate,
+			BloodReceivedDate:   bloodReceivedDate,
 			BloodCondition:      c.FormValue("blood_condition"),
-			UrineCollectionDate: c.FormValue("urine_collection_date"),
-			UrineSentDate:       c.FormValue("urine_sent_date"),
-			UrineReceivedDate:   c.FormValue("urine_received_date"),
+			UrineCollectionDate: urineCollectionDate,
+			UrineSentDate:       urineSentDate,
+			UrineReceivedDate:   urineReceivedDate,
 			UrineCondition:      c.FormValue("urine_condition"),
-			FormSentDate:        c.FormValue("form_sent_date"),
-			FormReceivedDate:    c.FormValue("form_received_date"),
+			FormSentDate:        formSentDate,
+			FormReceivedDate:    formReceivedDate,
 		}
 		// Save investigators
+		var investigatorDate = parseDate(c.FormValue("investigator_date"))
 		investigators := &models.MeaslesInvestigators{
 			PatientID:         pid,
 			InvestigatorName:  c.FormValue("investigator_name"),
 			InvestigatorTitle: c.FormValue("investigator_title"),
-			InvestigatorDate:  c.FormValue("investigator_date"),
+			InvestigatorDate:  investigatorDate,
 		}
 		// Save results
+		var serologyDate = parseDate(c.FormValue("serology_date"))
+		var serologyEpiSentDate = parseDate(c.FormValue("serology_epi_sent_date"))
+		var virusIsolationDate = parseDate(c.FormValue("virus_isolation_date"))
+		var resultsSentDate = parseDate(c.FormValue("results_sent_date"))
 		results := &models.MeaslesResults{
 			PatientID:           pid,
 			SerologyIgM:         c.FormValue("serology_igm"),
-			SerologyDate:        c.FormValue("serology_date"),
-			SerologyEpiSentDate: c.FormValue("serology_epi_sent_date"),
+			SerologyDate:        serologyDate,
+			SerologyEpiSentDate: serologyEpiSentDate,
 			VirusIsolationUrine: c.FormValue("virus_isolation_urine"),
-			VirusIsolationDate:  c.FormValue("virus_isolation_date"),
+			VirusIsolationDate:  virusIsolationDate,
 			FinalClassification: parseInt(c.FormValue("final_classification")),
-			ResultsSentDate:     c.FormValue("results_sent_date"),
+			ResultsSentDate:     resultsSentDate,
 		}
 		// Insert all
 		if err := insertAllMeaslesSections(db, patient, demographics, clinical, specimens, investigators, results); err != nil {
@@ -119,6 +151,8 @@ func HandlerMeaslesCIF(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
 	}
 	// Render the form using GenerateHTML helper
 	data := NewTemplateData(c, store)
+	data.Form = map[string]interface{}{"MeaslesCode": measlesCode}
+	data.Optionz = Get_Client_Optionz()
 	return GenerateHTML(c, db, data, "measles_cif")
 }
 
@@ -126,6 +160,7 @@ func HandlerMeaslesSuccess(c *fiber.Ctx, store *session.Store) error {
 	code := c.Query("measles_code")
 	data := NewTemplateData(c, store)
 	data.Form = map[string]interface{}{"MeaslesCode": code}
+	data.Optionz = Get_Client_Optionz()
 	return GenerateHTML(c, nil, data, "measles_success")
 }
 

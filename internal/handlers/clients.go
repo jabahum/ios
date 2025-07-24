@@ -581,6 +581,7 @@ func HandlerCaseEncounterList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 		"Client":     client,
 		"Encounters": encounters,
 	}
+	data.Optionz = Get_Client_Optionz()
 
 	return GenerateHTML(c, db, data, "list_case_encounter")
 }

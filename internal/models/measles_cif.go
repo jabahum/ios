@@ -7,7 +7,7 @@ type MeaslesPatient struct {
 	MeaslesCode string
 	PatientName string
 	Sex         string
-	DOB         string
+	DOB         sql.NullTime
 	CreatedAt   string
 }
 
@@ -55,34 +55,34 @@ type MeaslesInvestigators struct {
 	PatientID         string
 	InvestigatorName  string
 	InvestigatorTitle string
-	InvestigatorDate  string
+	InvestigatorDate  sql.NullTime
 }
 
 type MeaslesResults struct {
 	ID                  int
 	PatientID           string
 	SerologyIgM         string
-	SerologyDate        string
-	SerologyEpiSentDate string
+	SerologyDate        sql.NullTime
+	SerologyEpiSentDate sql.NullTime
 	VirusIsolationUrine string
-	VirusIsolationDate  string
+	VirusIsolationDate  sql.NullTime
 	FinalClassification int
-	ResultsSentDate     string
+	ResultsSentDate     sql.NullTime
 }
 
 type MeaslesSpecimens struct {
 	ID                  int
 	PatientID           string
-	BloodCollectionDate string
-	BloodSentDate       string
-	BloodReceivedDate   string
+	BloodCollectionDate sql.NullTime
+	BloodSentDate       sql.NullTime
+	BloodReceivedDate   sql.NullTime
 	BloodCondition      string
-	UrineCollectionDate string
-	UrineSentDate       string
-	UrineReceivedDate   string
+	UrineCollectionDate sql.NullTime
+	UrineSentDate       sql.NullTime
+	UrineReceivedDate   sql.NullTime
 	UrineCondition      string
-	FormSentDate        string
-	FormReceivedDate    string
+	FormSentDate        sql.NullTime
+	FormReceivedDate    sql.NullTime
 }
 
 func (m *MeaslesPatient) Insert(db *sql.DB) error {

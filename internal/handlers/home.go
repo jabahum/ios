@@ -344,8 +344,11 @@ func HandlerLoginSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 
 		// Save session
 		if err := sess.Save(); err != nil {
-			sl.Info("Failed to save session")
-			return c.Redirect("/login?sfail")
+			sl.Info("Failed to save session", "error", err)
+		} else {
+			sl.Info("Session saved successfully for user", "user_id", id)
+			cookie := c.Cookies("fiber_sess")
+			sl.Info("Session cookie after login", "cookie", cookie)
 		}
 
 		// Get user's primary role to determine redirect destination

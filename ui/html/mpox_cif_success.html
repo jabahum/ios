@@ -1,4 +1,4 @@
-{{template "header" .}}
+{{ define "content" }}
 
 <div class="container mt-5">
     <div class="row justify-content-center">
@@ -9,7 +9,7 @@
                         <i class="fas fa-check-circle"></i> Form Submitted Successfully
                     </h2>
                     <p class="lead">Thank you for submitting the MPOX Case Investigation Form.</p>
-                    <p>Your case ID is: <strong>{{.case_id}}</strong></p>
+                    <p>Your case ID is: <strong>{{.Form.case_id}}</strong></p>
                     <p class="text-muted">Please keep this case ID for future reference.</p>
                     <hr>
                     <p>What would you like to do next?</p>
@@ -27,4 +27,4 @@
     </div>
 </div>
 
-{{template "footer" .}} 
+{{ end }}
