@@ -1576,14 +1576,50 @@ func HandlerVHFLabForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session
 
 	// Log successful retrieval
 	log.Printf("Successfully retrieved patient with ID: %s", caseID)
+	log.Printf("DEBUG: Patient data - ID: %d, CaseCode: %s, Surname: %s", patient.ID, patient.CaseCode.String, patient.Surname)
 
 	// Return HTML response with patient and lab data
 	data := NewTemplateData(c, store)
 	data.Patient = patient
 	data.Lab = lab
 	data.Form = fiber.Map{
-		"Title": "VHF Lab Form",
+		"Title":   "VHF Lab Form",
+		"Patient": patient, // Also add to Form as fallback
+		"Lab":     lab,     // Also add to Form as fallback
 	}
+
+	// Also set Case field for compatibility
+	data.Case = patient
+
+	// Ensure Optionz is initialized
+	if data.Optionz == nil {
+		data.Optionz = make(map[string]map[string]string)
+	}
+
+	// Debug logging
+	log.Printf("DEBUG: VHF Lab Form - Patient ID: %d, Case Code: %s", patient.ID, patient.CaseCode.String)
+	log.Printf("DEBUG: VHF Lab Form - Data.Patient is set: %v", data.Patient != nil)
+	log.Printf("DEBUG: VHF Lab Form - Data type: %T", data)
+	log.Printf("DEBUG: VHF Lab Form - Patient type: %T", data.Patient)
+
+	// Additional safety check
+	if data.Patient == nil {
+		log.Printf("ERROR: Patient data is nil, creating fallback")
+		data.Patient = &models.VHFPatient{
+			ID:       patient.ID,
+			CaseCode: patient.CaseCode,
+			Surname:  patient.Surname,
+		}
+	}
+
+	// Log template data structure
+	log.Printf("DEBUG: Template data structure - Patient: %+v", data.Patient)
+	log.Printf("DEBUG: Template data structure - Lab: %+v", data.Lab)
+	log.Printf("DEBUG: Template data structure - Form: %+v", data.Form)
+
+	// Try to render the template with error handling
+	log.Printf("DEBUG: About to render template 'vhf_lab_form'")
+	log.Printf("DEBUG: Template data keys - Patient: %v, Lab: %v, Case: %v", data.Patient != nil, data.Lab != nil, data.Case != nil)
 	return GenerateHTML(c, db, data, "vhf_lab_form")
 }
 

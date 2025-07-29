@@ -43,6 +43,12 @@ type Config struct {
 	SMSUsername  string `json:"SMSUser"`
 	SMSPassword  string `json:"SMSPassword"`
 	SMSBaseURL   string `json:"SMSURL"`
+	// Redis configuration
+	RedisHost     string `json:"RedisHost"`
+	RedisPort     int    `json:"RedisPort"`
+	RedisPassword string `json:"RedisPassword"`
+	RedisDatabase int    `json:"RedisDatabase"`
+	RedisEnabled  bool   `json:"RedisEnabled"`
 }
 
 type TemplateData struct {
