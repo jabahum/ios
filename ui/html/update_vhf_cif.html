@@ -19,7 +19,7 @@
 <div class="container my-5">
   <h2 class="mb-4 text-center">Update VHF Case Investigation Form</h2>
   <form id="updateVhfForm" method="POST" action="/vhf-cif/update">
-    <input type="hidden" name="case_code" value="{{.Case.CaseCode}}">
+    <input type="hidden" name="case_code" value="{{if .Case.CaseCode.Valid}}{{.Case.CaseCode.String}}{{end}}">
     <div class="accordion" id="vhfFormAccordion">
       <!-- Section 1: Patient Information -->
       <div class="accordion-item">
@@ -51,34 +51,34 @@
                 <label class="form-label">Gender*</label>
                 <div class="d-flex gap-4">
                   <div class="form-check">
-                    <input class="form-check-input" type="radio" name="gender" value="Male" {{if eq .Case.Gender "Male"}}checked{{end}} required>
+                    <input class="form-check-input" type="radio" name="gender" value="Male" {{if and .Case.Gender.Valid (eq .Case.Gender.String "Male")}}checked{{end}} required>
                     <label class="form-check-label">Male</label>
                   </div>
                   <div class="form-check">
-                    <input class="form-check-input" type="radio" name="gender" value="Female" {{if eq .Case.Gender "Female"}}checked{{end}}>
+                    <input class="form-check-input" type="radio" name="gender" value="Female" {{if and .Case.Gender.Valid (eq .Case.Gender.String "Female")}}checked{{end}}>
                     <label class="form-check-label">Female</label>
                   </div>
                 </div>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Contact Number</label>
-                <input type="tel" class="form-control" name="patient_phone" value="{{.Case.PatientPhone}}">
+                <input type="tel" class="form-control" name="patient_phone" value="{{if .Case.PatientPhone.Valid}}{{.Case.PatientPhone.String}}{{end}}">
               </div>
               <div class="col-md-6">
                 <label class="form-label">Phone Owner</label>
-                <input type="text" class="form-control" name="phone_owner" value="{{.Case.PhoneOwner}}">
+                <input type="text" class="form-control" name="phone_owner" value="{{if .Case.PhoneOwner.Valid}}{{.Case.PhoneOwner.String}}{{end}}">
               </div>
               <div class="col-md-6">
                 <label class="form-label">Next of Kin</label>
-                <input type="text" class="form-control" name="next_of_kin" value="{{.Case.NextOfKin}}">
+                <input type="text" class="form-control" name="next_of_kin" value="{{if .Case.NextOfKin.Valid}}{{.Case.NextOfKin.String}}{{end}}">
               </div>
               <div class="col-md-6">
                 <label class="form-label">Next of Kin Phone</label>
-                <input type="tel" class="form-control" name="next_of_kin_phone" value="{{.Case.NextOfKinPhone}}">
+                <input type="tel" class="form-control" name="next_of_kin_phone" value="{{if .Case.NextOfKinPhone.Valid}}{{.Case.NextOfKinPhone.String}}{{end}}">
               </div>
               <div class="col-md-6">
                 <label class="form-label">Head of Household</label>
-                <input type="text" class="form-control" name="head_of_household" value="{{.Case.HeadOfHousehold}}">
+                <input type="text" class="form-control" name="head_of_household" value="{{if .Case.HeadOfHousehold.Valid}}{{.Case.HeadOfHousehold.String}}{{end}}">
               </div>
               <div class="col-md-6">
                 <label class="form-label">District*</label>
@@ -280,35 +280,35 @@
               </div>
               <div class="col-md-6" id="contact_name_container">
                 <label class="form-label">Name of Contact</label>
-                <input type="text" class="form-control" name="contact_name" value="{{if .RiskFactors.ContactName}}{{.RiskFactors.ContactName}}{{end}}">
+                <input type="text" class="form-control" name="contact_name" value="{{.RiskFactors.ContactName}}">
               </div>
               <div class="col-md-6" id="contact_relation_container">
                 <label class="form-label">Relationship to Contact</label>
-                <input type="text" class="form-control" name="contact_relation" value="{{if .RiskFactors.ContactRelation}}{{.RiskFactors.ContactRelation}}{{end}}">
+                <input type="text" class="form-control" name="contact_relation" value="{{.RiskFactors.ContactRelation}}">
               </div>
               <div class="col-md-6" id="contact_dates_container">
                 <label class="form-label">Date(s) of Contact</label>
-                <input type="text" class="form-control" name="contact_dates" value="{{if .RiskFactors.ContactDates}}{{.RiskFactors.ContactDates}}{{end}}">
+                <input type="text" class="form-control" name="contact_dates" value="{{.RiskFactors.ContactDates}}">
               </div>
               <div class="col-md-6" id="contact_village_container">
                 <label class="form-label">Village of Contact</label>
-                <input type="text" class="form-control" name="contact_village" value="{{if .RiskFactors.ContactVillage}}{{.RiskFactors.ContactVillage}}{{end}}">
+                <input type="text" class="form-control" name="contact_village" value="{{.RiskFactors.ContactVillage}}">
               </div>
               <div class="col-md-6" id="contact_district_container">
                 <label class="form-label">District of Contact</label>
-                <input type="text" class="form-control" name="contact_district" value="{{if .RiskFactors.ContactDistrict}}{{.RiskFactors.ContactDistrict}}{{end}}">
+                <input type="text" class="form-control" name="contact_district" value="{{.RiskFactors.ContactDistrict}}">
               </div>
               <div class="col-md-6" id="contact_status_container">
                 <label class="form-label">Status of Contact</label>
                 <select class="form-select" name="contact_status">
                   <option value="">Select Status</option>
-                  <option value="Alive" {{if and .RiskFactors.ContactStatus (eq .RiskFactors.ContactStatus "Alive")}}selected{{end}}>Alive</option>
-                  <option value="Dead" {{if and .RiskFactors.ContactStatus (eq .RiskFactors.ContactStatus "Dead")}}selected{{end}}>Dead</option>
+                  <option value="Alive" {{if eq .RiskFactors.ContactStatus "Alive"}}selected{{end}}>Alive</option>
+                  <option value="Dead" {{if eq .RiskFactors.ContactStatus "Dead"}}selected{{end}}>Dead</option>
                 </select>
               </div>
               <div class="col-md-6" id="contact_death_date_container">
                 <label class="form-label">Date of Contact's Death</label>
-                <input type="date" class="form-control" name="contact_death_date" value="{{if .RiskFactors.ContactDeathDate}}{{.RiskFactors.ContactDeathDate}}{{end}}">
+                <input type="date" class="form-control" name="contact_death_date" value="{{if .RiskFactors.ContactDeathDate.Valid}}{{.RiskFactors.ContactDeathDate.Time.Format "2006-01-02"}}{{end}}">
               </div>
             </div>
           </div>
@@ -326,27 +326,27 @@
             <div class="row g-3">
               <div class="col-md-6">
                 <label class="form-label">Name of Investigator</label>
-                <input type="text" class="form-control" name="investigator_name" value="{{if .Investigator.InvestigatorName}}{{.Investigator.InvestigatorName}}{{end}}">
+                <input type="text" class="form-control" name="investigator_name" value="{{.Investigator.InvestigatorName}}">
               </div>
               <div class="col-md-6">
                 <label class="form-label">Phone Number</label>
-                <input type="text" class="form-control" name="investigator_phone" value="{{if .Investigator.Phone}}{{.Investigator.Phone}}{{end}}">
+                <input type="text" class="form-control" name="investigator_phone" value="{{.Investigator.Phone}}">
               </div>
               <div class="col-md-6">
                 <label class="form-label">Email</label>
-                <input type="email" class="form-control" name="investigator_email" value="{{if .Investigator.Email}}{{.Investigator.Email}}{{end}}">
+                <input type="email" class="form-control" name="investigator_email" value="{{.Investigator.Email}}">
               </div>
               <div class="col-md-6">
                 <label class="form-label">Position</label>
-                <input type="text" class="form-control" name="investigator_position" value="{{if .Investigator.Position}}{{.Investigator.Position}}{{end}}">
+                <input type="text" class="form-control" name="investigator_position" value="{{.Investigator.Position}}">
               </div>
               <div class="col-md-6">
                 <label class="form-label">District</label>
-                <input type="text" class="form-control" name="investigator_district" value="{{if .Investigator.District}}{{.Investigator.District}}{{end}}">
+                <input type="text" class="form-control" name="investigator_district" value="{{.Investigator.District}}">
               </div>
               <div class="col-md-6">
                 <label class="form-label">Health Facility</label>
-                <input type="text" class="form-control" name="investigator_health_facility" value="{{if .Investigator.HealthFacility}}{{.Investigator.HealthFacility}}{{end}}">
+                <input type="text" class="form-control" name="investigator_health_facility" value="{{.Investigator.HealthFacility}}">
               </div>
             </div>
           </div>

@@ -37,6 +37,9 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 	app.Post("/vhf-cif/save", func(c *fiber.Ctx) error {
 		return handlers.HandlerVHFPatientSubmit(c, db, sl, store, config, smsService)
 	})
+	app.Post("/vhf-cif/update", func(c *fiber.Ctx) error {
+		return handlers.HandlerVHFUpdate(c, db, sl, store, config)
+	})
 	app.Get("/vhf-cif/clinical-signs/:id", func(c *fiber.Ctx) error {
 		data := handlers.NewTemplateData(c, store)
 		data.Form = fiber.Map{"PatientID": c.Params("id")}
@@ -239,7 +242,17 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 			return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "change_password")
 		})
 		appGroup.Get("/outbreaks/assignments", func(c *fiber.Ctx) error {
-			return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "outbreak_assignments")
+			// Create outbreak assignment handler directly
+			userService := models.NewUserService(db)
+			userOutbreakService := models.NewUserOutbreakService(db)
+			patientRoleService := models.NewPatientManagementRoleService(db)
+			outbreakService := models.NewOutbreakService(db)
+			facilityService := models.NewFacilityService(db)
+
+			handler := handlers.NewOutbreakAssignmentHandler(
+				userOutbreakService, patientRoleService, userService, outbreakService, facilityService, store,
+			)
+			return handler.ShowOutbreakAssignments(c)
 		})
 		appGroup.Get("/outbreaks/assign", func(c *fiber.Ctx) error {
 			// Create outbreak assignment handler directly
@@ -266,6 +279,22 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 				userOutbreakService, patientRoleService, userService, outbreakService, facilityService, store,
 			)
 			return handler.HandleAssignFormSubmission(c)
+		})
+		appGroup.Delete("/api/outbreaks/:outbreak_id/users/:user_id", func(c *fiber.Ctx) error {
+			// Create outbreak assignment handler directly
+			userService := models.NewUserService(db)
+			userOutbreakService := models.NewUserOutbreakService(db)
+			patientRoleService := models.NewPatientManagementRoleService(db)
+			outbreakService := models.NewOutbreakService(db)
+			facilityService := models.NewFacilityService(db)
+
+			handler := handlers.NewOutbreakAssignmentHandler(
+				userOutbreakService, patientRoleService, userService, outbreakService, facilityService, store,
+			)
+			return handler.RemoveUserFromOutbreak(c)
+		})
+		appGroup.Get("/outbreaks/:id", func(c *fiber.Ctx) error {
+			return handlers.HandlerOutbreakForm(c, db, sl, store, config)
 		})
 		appGroup.Get("/patient-roles", func(c *fiber.Ctx) error {
 			return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "patient_roles")
@@ -804,4 +833,36 @@ func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logg
 	// VHF API routes
 	protected.Get("/api/vhf-cases", func(c *fiber.Ctx) error { return handlers.HandlerVHFList(c, db, sl, store, config) })
 	protected.Get("/api/vhf-cases/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFView(c, db, sl, store, config) })
+
+	// Inventory routes
+	inventoryHandler := handlers.NewInventoryHandler(db, store)
+
+	// Inventory dashboard
+	protected.Get("/inventory", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryDashboard(c) })
+
+	// Inventory items
+	protected.Get("/inventory/items", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryItemsList(c) })
+	protected.Get("/inventory/items/new", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryItemForm(c) })
+	protected.Get("/inventory/items/edit/:id", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryItemForm(c) })
+	protected.Post("/inventory/items/save", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryItemSave(c) })
+
+	// Inventory stock management
+	protected.Get("/inventory/stock", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryStockForm(c) })
+	protected.Post("/inventory/stock/save", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryStockSave(c) })
+
+	// Purchase orders
+	protected.Get("/inventory/purchase-orders", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryPurchaseOrderForm(c) })
+	protected.Post("/inventory/purchase-orders/save", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryPurchaseOrderSave(c) })
+
+	// Requisitions
+	protected.Get("/inventory/requisitions", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryRequisitionForm(c) })
+	protected.Post("/inventory/requisitions/save", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryRequisitionSave(c) })
+
+	// Reports
+	protected.Get("/inventory/reports", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryReports(c) })
+
+	// Inventory API routes
+	protected.Get("/api/inventory/items", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryAPIItems(c) })
+	protected.Get("/api/inventory/stock-levels", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryAPIStockLevels(c) })
+	protected.Get("/api/inventory/low-stock", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryAPILowStock(c) })
 }

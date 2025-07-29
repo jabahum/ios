@@ -157,6 +157,44 @@ func (s *UserOutbreakService) GetUserOutbreaks(userID int64) ([]UserOutbreak, er
 	return outbreaks, nil
 }
 
+// GetAllOutbreakAssignments gets all outbreak assignments for display
+func (s *UserOutbreakService) GetAllOutbreakAssignments() ([]UserOutbreak, error) {
+	query := `
+		SELECT uo.id, uo.user_id, uo.outbreak_id, uo.assigned_at, uo.assigned_by, uo.is_active,
+		       o.name, o.description, o.start_date, o.end_date, o.status, o.outbreak_type,
+		       u.user_name
+		FROM user_outbreaks uo
+		JOIN outbreaks o ON uo.outbreak_id = o.id
+		JOIN users u ON uo.user_id = u.user_id
+		WHERE uo.is_active = true
+		ORDER BY uo.assigned_at DESC
+	`
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var assignments []UserOutbreak
+	for rows.Next() {
+		var uo UserOutbreak
+		var outbreak Outbreak
+		var user User
+		err := rows.Scan(
+			&uo.ID, &uo.UserID, &uo.OutbreakID, &uo.AssignedAt, &uo.AssignedBy, &uo.IsActive,
+			&outbreak.Name, &outbreak.Description, &outbreak.StartDate, &outbreak.EndDate,
+			&outbreak.Status, &outbreak.OutbreakType, &user.UserName,
+		)
+		if err != nil {
+			return nil, err
+		}
+		uo.Outbreak = &outbreak
+		uo.User = &user
+		assignments = append(assignments, uo)
+	}
+	return assignments, nil
+}
+
 // GetOutbreakUsers gets all users assigned to an outbreak
 func (s *UserOutbreakService) GetOutbreakUsers(outbreakID int64) ([]User, error) {
 	query := `

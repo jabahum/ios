@@ -104,7 +104,7 @@
             <!-- Left-Hand Side Menu -->
             <!-- <div class="col-md-3 side-menu">
                 {{if .IsIDPos }}
-                <a href="/cases/encounters/new/{{.Form.ID}}/?dte=0000-00-00" class="menu-item">New Encounter</a>
+                <a href="/cases/encounters/new/{{.Form.ID}}/?dte=0000-00-00&outbreak_id={{.OutbreakID}}" class="menu-item">New Encounter</a>
                 <a href="/cases/patientreport/{{.Form.ID}}" class="menu-item">Report</a>
                 {{end}}
                 <a href="/patienthelp" class="menu-item">Help</a>
@@ -115,7 +115,7 @@
             <div class="col-md-3 side-menu">
             {{if .IsIDPos}}
                 {{if eq .OutbreakID 1}}
-                    <a href="/cases/encounters/ebola/new/{{.Form.ID}}/?dte=0000-00-00" class="menu-item">New Encounter</a>
+                    <a href="/cases/encounters/new/{{.Form.ID}}/?dte=0000-00-00&outbreak_id={{.OutbreakID}}" class="menu-item">New Encounter</a>
                 {{else if eq .OutbreakID 6}}
                     <a href="/cases/encounters/mpox-admission/new/{{.Form.ID}}/?dte=0000-00-00" class="menu-item">Admission Form</a>
                     <!-- {{if .HasMpoxAdmission}} -->
@@ -642,7 +642,7 @@
                                                                 <td>{{ $key }}</td>
                                                                 <td>{{ $value.EmployeeFname.String }} {{ $value.EmployeeLname.String }}</td>
                                                                 <td>{{ $value.EncounterDate.String }}</td>
-                                                                <td><a class="btn btn-primary btn-sm" href="/cases/encounters/new/{{ $value.ClientID}}/?dte={{ $value.EncounterDate.String }}" >Edit</a></td>
+                                                                <td><a class="btn btn-primary btn-sm" href="/cases/encounters/new/{{ $value.ClientID}}/?dte={{ $value.EncounterDate.String }}&outbreak_id={{$.OutbreakID}}" >Edit</a></td>
                                                             </tr>
                                                             {{ end }}
                                                         {{ end }}

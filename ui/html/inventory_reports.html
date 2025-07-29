@@ -1,0 +1,235 @@
+{{ define "content" }}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="/">Home</a></li>
+                        <li class="breadcrumb-item"><a href="/inventory">Inventory</a></li>
+                        <li class="breadcrumb-item active">Reports</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">Inventory Reports</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Levels Report -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="header-title">Stock Levels Report</h4>
+                        <button class="btn btn-primary" onclick="exportStockLevels()">
+                            <i class="fe-download me-2"></i>Export
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-centered table-nowrap table-hover mb-0" id="stock-levels-table">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Category</th>
+                                    <th>Site</th>
+                                    <th>Current Stock</th>
+                                    <th>Min Stock</th>
+                                    <th>Max Stock</th>
+                                    <th>Unit Cost</th>
+                                    <th>Total Value</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{range .StockLevelReports}}
+                                <tr>
+                                    <td>{{.ItemName}}</td>
+                                    <td>{{.CategoryName}}</td>
+                                    <td>{{.SiteName}}</td>
+                                    <td>
+                                        <span class="badge {{if le .CurrentStock .MinStock}}bg-danger{{else if ge .CurrentStock .MaxStock}}bg-warning{{else}}bg-success{{end}}">
+                                            {{.CurrentStock}}
+                                        </span>
+                                    </td>
+                                    <td>{{.MinStock}}</td>
+                                    <td>{{.MaxStock}}</td>
+                                    <td>${{printf "%.2f" .UnitCost}}</td>
+                                    <td>${{printf "%.2f" .TotalValue}}</td>
+                                    <td>
+                                        {{if le .CurrentStock .MinStock}}
+                                            <span class="badge bg-danger">Low Stock</span>
+                                        {{else if ge .CurrentStock .MaxStock}}
+                                            <span class="badge bg-warning">Overstocked</span>
+                                        {{else}}
+                                            <span class="badge bg-success">Normal</span>
+                                        {{end}}
+                                    </td>
+                                </tr>
+                                {{else}}
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted">
+                                        <i class="fe-bar-chart-2 font-24 mb-3"></i>
+                                        <h5>No stock data available</h5>
+                                        <p>Stock levels will appear here after items are added and transactions are recorded.</p>
+                                    </td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction History Report -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="header-title">Transaction History Report</h4>
+                        <button class="btn btn-primary" onclick="exportTransactions()">
+                            <i class="fe-download me-2"></i>Export
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-centered table-nowrap table-hover mb-0" id="transactions-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Item</th>
+                                    <th>Site</th>
+                                    <th>Type</th>
+                                    <th>Quantity</th>
+                                    <th>Unit Cost</th>
+                                    <th>Total Cost</th>
+                                    <th>Reason</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{range .TransactionReports}}
+                                <tr>
+                                    <td>{{.TransactionDate.Format "2006-01-02 15:04"}}</td>
+                                    <td>{{.ItemName}}</td>
+                                    <td>{{.SiteName}}</td>
+                                    <td>
+                                        {{if eq .TransactionType "in"}}
+                                            <span class="badge bg-success">Stock In</span>
+                                        {{else}}
+                                            <span class="badge bg-danger">Stock Out</span>
+                                        {{end}}
+                                    </td>
+                                    <td>{{.Quantity}}</td>
+                                    <td>${{printf "%.2f" .UnitCost}}</td>
+                                    <td>${{printf "%.2f" .TotalCost}}</td>
+                                    <td>{{.Reason}}</td>
+                                    <td>{{.Notes}}</td>
+                                </tr>
+                                {{else}}
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted">
+                                        <i class="fe-clock font-24 mb-3"></i>
+                                        <h5>No transaction data available</h5>
+                                        <p>Transaction history will appear here after stock transactions are recorded.</p>
+                                    </td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Statistics -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-primary">{{len .StockLevelReports}}</h3>
+                    <p class="text-muted mb-0">Total Stock Items</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-success">{{len .TransactionReports}}</h3>
+                    <p class="text-muted mb-0">Total Transactions</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-warning" id="low-stock-count">0</h3>
+                    <p class="text-muted mb-0">Low Stock Items</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-info" id="total-value">$0.00</h3>
+                    <p class="text-muted mb-0">Total Inventory Value</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTables if available
+    if (typeof $.fn.DataTable !== 'undefined') {
+        $('#stock-levels-table').DataTable({
+            "pageLength": 25,
+            "order": [[0, "asc"]]
+        });
+        
+        $('#transactions-table').DataTable({
+            "pageLength": 25,
+            "order": [[0, "desc"]]
+        });
+    }
+    
+    // Calculate summary statistics
+    calculateSummaryStats();
+});
+
+function calculateSummaryStats() {
+    let lowStockCount = 0;
+    let totalValue = 0;
+    
+    // Count low stock items
+    document.querySelectorAll('#stock-levels-table tbody tr').forEach(row => {
+        const currentStock = parseFloat(row.cells[3].textContent.trim()) || 0;
+        const minStock = parseFloat(row.cells[4].textContent.trim()) || 0;
+        const totalValueCell = row.cells[7].textContent;
+        const value = parseFloat(totalValueCell.replace('$', '')) || 0;
+        
+        if (currentStock <= minStock && minStock > 0) {
+            lowStockCount++;
+        }
+        totalValue += value;
+    });
+    
+    document.getElementById('low-stock-count').textContent = lowStockCount;
+    document.getElementById('total-value').textContent = '$' + totalValue.toFixed(2);
+}
+
+function exportStockLevels() {
+    // TODO: Implement export functionality
+    alert('Export functionality will be implemented here');
+}
+
+function exportTransactions() {
+    // TODO: Implement export functionality
+    alert('Export functionality will be implemented here');
+}
+</script>
+{{ end }} 

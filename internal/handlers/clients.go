@@ -26,6 +26,7 @@ type EncounterPageData struct {
 	FormChild4    []models.Treatment
 	AllEncounters []models.ClientEncounter // Add field for all encounters
 	Optionz       map[string]map[string]string
+	OutbreakID    int // Add OutbreakID field for templates
 }
 
 func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
@@ -271,16 +272,41 @@ func HandlerCaseEncounterForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 		return c.Status(400).SendString("Invalid client ID")
 	}
 
-	// Get outbreak ID from session
+	// Get outbreak ID from session or query parameter
 	sess, err := store.Get(c)
 	if err != nil {
 		sl.Error("Failed to get session", "error", err)
 		return c.Status(500).SendString("Failed to get session")
 	}
-	outbreakID := sess.Get("outbreak_id")
-	if outbreakID == nil {
-		sl.Error("No outbreak selected")
-		return c.Status(400).SendString("No outbreak selected")
+
+	// Check if outbreak_id is provided in query parameter
+	queryOutbreakID := c.Query("outbreak_id")
+	var outbreakID interface{}
+
+	if queryOutbreakID != "" {
+		// Convert query parameter to int
+		outbreakIDInt, err := strconv.Atoi(queryOutbreakID)
+		if err != nil {
+			sl.Error("Invalid outbreak_id in query parameter", "error", err, "outbreak_id", queryOutbreakID)
+			return c.Status(400).SendString("Invalid outbreak_id")
+		}
+		outbreakID = outbreakIDInt
+
+		// Update session with the new outbreak_id
+		sess.Set("outbreak_id", outbreakIDInt)
+		sess.Set("selected_outbreak", outbreakIDInt)
+		if err := sess.Save(); err != nil {
+			sl.Error("Failed to save outbreak_id to session", "error", err)
+		}
+
+		sl.Info("Updated outbreak_id from query parameter", "outbreak_id", outbreakIDInt)
+	} else {
+		// Get outbreak ID from session
+		outbreakID = sess.Get("outbreak_id")
+		if outbreakID == nil {
+			sl.Error("No outbreak selected")
+			return c.Status(400).SendString("No outbreak selected")
+		}
 	}
 
 	// Get encounter date from query parameter
@@ -523,6 +549,7 @@ func HandlerCaseEncounterForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 		FormChild4:    treatments,
 		AllEncounters: allEncounters, // Add all encounters
 		Optionz:       Get_Client_Optionz(),
+		OutbreakID:    outbreakID.(int), // Add OutbreakID for templates
 	}
 
 	// Debug: Log the client data being passed to template

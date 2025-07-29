@@ -19,10 +19,10 @@ func HandlerOutbreakList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 		return c.Redirect("/login")
 	}
 
-	// Get user-accessible outbreaks instead of all outbreaks
-	outbreaks, err := models.GetUserAccessibleOutbreaks(c.Context(), db, userID)
+	// Get all active outbreaks
+	outbreaks, err := models.GetActiveOutbreaks(c.Context(), db)
 	if err != nil {
-		sl.Error("Failed to get user accessible outbreaks: " + err.Error())
+		sl.Error("Failed to get active outbreaks: " + err.Error())
 		return c.Status(500).SendString("Failed to get outbreaks")
 	}
 
@@ -92,7 +92,7 @@ func HandlerOutbreakForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 	}
 
 	var outbreak *models.Outbreak
-	id := c.Params("i")
+	id := c.Params("id")
 	if id != "0" {
 		idInt, err := strconv.Atoi(id)
 		if err != nil {

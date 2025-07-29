@@ -84,11 +84,34 @@ type TemplateData struct {
 	Titles          []EmployeeTitle     // Add Titles field for employee titles
 	Facilities      []Facility          // Add Facilities field for facilities
 	Employees       []EmployeeForm      // Add Employees field for employee lists
+	Case            any                 // Add Case field for VHF case data
+	Patient         any                 // Add Patient field for patient data
+	Lab             any                 // Add Lab field for laboratory data
+	ClinicalSigns   any                 // Add ClinicalSigns field for VHF clinical signs data
+	Hospitalization any                 // Add Hospitalization field for VHF hospitalization data
+	RiskFactors     any                 // Add RiskFactors field for VHF risk factors data
+	Investigator    any                 // Add Investigator field for VHF investigator data
+	Districts       []string            // Add Districts field for location dropdowns
+	Subcounties     []string            // Add Subcounties field for location dropdowns
+	Parishes        []string            // Add Parishes field for location dropdowns
+	Villages        []string            // Add Villages field for location dropdowns
 
 	// Custom fields for Mpox admission logic
 	HasMpoxAdmission bool
 	MpoxAdmissionID  int
 	UserFacilityID   string // Add UserFacilityID field for default facility selection
+
+	// Inventory fields
+	InventoryStats          *InventoryStats
+	InventoryAlerts         []*InventoryAlert
+	InventoryTransactions   []*InventoryTransaction
+	InventoryItems          []*InventoryItem
+	InventoryItem           *InventoryItem
+	InventoryCategories     []*InventoryCategory
+	InventorySuppliers      []*InventorySupplier
+	InventoryTreatmentSites []*InventoryTreatmentSite
+	StockLevelReports       []*StockLevelReport
+	TransactionReports      []*TransactionReport
 }
 
 // Department represents a department in the RBAC system
@@ -839,17 +862,15 @@ func GetOptionField(table, field, labs, defaultString string, defaultvalue, whol
 	zaDefa3 := ""
 	optionz := ""
 
-	if table == "facility" {
-		// Use the existing GetDBOptions function to get facilities from database
-		// We need to pass the context and database, so we'll need to modify this approach
-		// For now, let's create a simpler version that can work with the current signature
+	// Get the options map
+	options := Get_Client_Optionz()
+
+	// Handle different option types
+	switch table {
+	case "facility":
 		optionz = `<option value=""> -- select -- </option>`
 
-		// This will be replaced by a database call in the template functions
-		// The actual database query will be handled by GetDBOptions in the template
-	}
-
-	if table == "Status" {
+	case "Status":
 		// Handle both string and sql.NullString types
 		statusValue := defaultString
 		if statusValue == "Suspect" {
@@ -866,6 +887,123 @@ func GetOptionField(table, field, labs, defaultString string, defaultvalue, whol
 					<option value="Suspect" ` + zaDefa1 + `>Suspect</option>
 					<option value="Case" ` + zaDefa2 + `>Case</option>
 					<option value="Other" ` + zaDefa3 + `>Other</option>`
+
+	case "encounter_type":
+		// Encounter type options
+		optionz = `<option value=""> -- select -- </option>
+					<option value="1" ` + zaDefa1 + `>Initial</option>
+					<option value="2" ` + zaDefa2 + `>Follow-up</option>
+					<option value="3" ` + zaDefa3 + `>Discharge</option>`
+
+	case "yn", "YN":
+		// Yes/No options - handle both cases
+		if defaultvalue == 1 {
+			zaDefa1 = "selected"
+		} else if defaultvalue == 2 {
+			zaDefa2 = "selected"
+		}
+		optionz = `<option value=""> -- select -- </option>
+					<option value="1" ` + zaDefa1 + `>Yes</option>
+					<option value="2" ` + zaDefa2 + `>No</option>`
+
+	case "posx":
+		// Positive/Negative/Indeterminate options
+		if defaultvalue == 1 {
+			zaDefa1 = "selected"
+		} else if defaultvalue == 2 {
+			zaDefa2 = "selected"
+		} else if defaultvalue == 3 {
+			zaDefa3 = "selected"
+		}
+		optionz = `<option value=""> -- select -- </option>
+					<option value="1" ` + zaDefa1 + `>Positive</option>
+					<option value="2" ` + zaDefa2 + `>Negative</option>
+					<option value="3" ` + zaDefa3 + `>Indeterminate</option>`
+
+	case "po":
+		// Positive/Negative options
+		if defaultvalue == 1 {
+			zaDefa1 = "selected"
+		} else if defaultvalue == 2 {
+			zaDefa2 = "selected"
+		}
+		optionz = `<option value=""> -- select -- </option>
+					<option value="1" ` + zaDefa1 + `>Positive</option>
+					<option value="2" ` + zaDefa2 + `>Negative</option>`
+
+	case "pos":
+		// Positive/Negative/ND options
+		if defaultvalue == 1 {
+			zaDefa1 = "selected"
+		} else if defaultvalue == 2 {
+			zaDefa2 = "selected"
+		} else if defaultvalue == 3 {
+			zaDefa3 = "selected"
+		}
+		optionz = `<option value=""> -- select -- </option>
+					<option value="1" ` + zaDefa1 + `>Positive</option>
+					<option value="2" ` + zaDefa2 + `>Negative</option>
+					<option value="3" ` + zaDefa3 + `>ND</option>`
+
+	case "blood":
+		// Blood gas options
+		if defaultvalue == 1 {
+			zaDefa1 = "selected"
+		} else if defaultvalue == 2 {
+			zaDefa2 = "selected"
+		} else if defaultvalue == 3 {
+			zaDefa3 = "selected"
+		}
+		optionz = `<option value=""> -- select -- </option>
+					<option value="1" ` + zaDefa1 + `>Normal</option>
+					<option value="2" ` + zaDefa2 + `>Abnormal</option>
+					<option value="3" ` + zaDefa3 + `>ND</option>`
+
+	case "e_rdt":
+		// Ebola RDT options
+		if defaultvalue == 1 {
+			zaDefa1 = "selected"
+		} else if defaultvalue == 2 {
+			zaDefa2 = "selected"
+		} else if defaultvalue == 3 {
+			zaDefa3 = "selected"
+		}
+		optionz = `<option value=""> -- select -- </option>
+					<option value="1" ` + zaDefa1 + `>Standard</option>
+					<option value="2" ` + zaDefa2 + `>Rapid</option>
+					<option value="3" ` + zaDefa3 + `>Other</option>`
+
+	case "e_pcr":
+		// Ebola PCR options
+		if defaultvalue == 1 {
+			zaDefa1 = "selected"
+		} else if defaultvalue == 2 {
+			zaDefa2 = "selected"
+		} else if defaultvalue == 3 {
+			zaDefa3 = "selected"
+		}
+		optionz = `<option value=""> -- select -- </option>
+					<option value="1" ` + zaDefa1 + `>Standard</option>
+					<option value="2" ` + zaDefa2 + `>Real-time</option>
+					<option value="3" ` + zaDefa3 + `>Other</option>`
+
+	default:
+		// Try to get from the options map
+		if optMap, exists := options[table]; exists {
+			optionz = `<option value=""> -- select -- </option>`
+			for key, value := range optMap {
+				if key != "" { // Skip empty key
+					selected := ""
+					if strconv.FormatInt(defaultvalue, 10) == key {
+						selected = "selected"
+					}
+					optionz += `<option value="` + key + `" ` + selected + `>` + value + `</option>`
+				}
+			}
+		} else {
+			// Fallback for unknown option types
+			optionz = `<option value=""> -- select -- </option>`
+		}
 	}
 
 	if whole == 1 {

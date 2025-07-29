@@ -1,10 +1,10 @@
 package handlers
 
 import (
+	"fmt"
 	"strconv"
 
 	"case/internal/models"
-	"case/internal/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
@@ -61,9 +61,26 @@ func (h *OutbreakAssignmentHandler) AssignUserToOutbreak(c *fiber.Ctx) error {
 	}
 
 	// Get current user ID from session
-	currentUserID := utils.GetUserIDFromSession(c)
-	if currentUserID == 0 {
-		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	sess, err := h.store.Get(c)
+	if err != nil {
+		return c.Status(401).JSON(fiber.Map{"error": "Session error"})
+	}
+
+	userIDFromSession := sess.Get("user")
+	if userIDFromSession == nil {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized - No user in session"})
+	}
+
+	var currentUserID int64
+	switch v := userIDFromSession.(type) {
+	case int:
+		currentUserID = int64(v)
+	case int64:
+		currentUserID = v
+	case float64:
+		currentUserID = int64(v)
+	default:
+		return c.Status(401).JSON(fiber.Map{"error": "Invalid user session"})
 	}
 
 	err = h.userOutbreakService.AssignUserToOutbreak(req.UserID, id, currentUserID)
@@ -97,9 +114,27 @@ func (h *OutbreakAssignmentHandler) RemoveUserFromOutbreak(c *fiber.Ctx) error {
 
 // GetUserOutbreaks returns outbreaks assigned to the current user
 func (h *OutbreakAssignmentHandler) GetUserOutbreaks(c *fiber.Ctx) error {
-	userID := utils.GetUserIDFromSession(c)
-	if userID == 0 {
-		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	// Get current user ID from session
+	sess, err := h.store.Get(c)
+	if err != nil {
+		return c.Status(401).JSON(fiber.Map{"error": "Session error"})
+	}
+
+	userIDFromSession := sess.Get("user")
+	if userIDFromSession == nil {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized - No user in session"})
+	}
+
+	var userID int64
+	switch v := userIDFromSession.(type) {
+	case int:
+		userID = int64(v)
+	case int64:
+		userID = v
+	case float64:
+		userID = int64(v)
+	default:
+		return c.Status(401).JSON(fiber.Map{"error": "Invalid user session"})
 	}
 
 	outbreaks, err := h.userOutbreakService.GetUserOutbreaks(userID)
@@ -128,12 +163,29 @@ func (h *OutbreakAssignmentHandler) AssignPatientRole(c *fiber.Ctx) error {
 	}
 
 	// Get current user ID from session
-	currentUserID := utils.GetUserIDFromSession(c)
-	if currentUserID == 0 {
-		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	sess, err := h.store.Get(c)
+	if err != nil {
+		return c.Status(401).JSON(fiber.Map{"error": "Session error"})
 	}
 
-	err := h.patientRoleService.AssignPatientRole(req.UserID, req.RoleType, req.OutbreakID, req.FacilityID, currentUserID)
+	userIDFromSession := sess.Get("user")
+	if userIDFromSession == nil {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized - No user in session"})
+	}
+
+	var currentUserID int64
+	switch v := userIDFromSession.(type) {
+	case int:
+		currentUserID = int64(v)
+	case int64:
+		currentUserID = v
+	case float64:
+		currentUserID = int64(v)
+	default:
+		return c.Status(401).JSON(fiber.Map{"error": "Invalid user session"})
+	}
+
+	err = h.patientRoleService.AssignPatientRole(req.UserID, req.RoleType, req.OutbreakID, req.FacilityID, currentUserID)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -197,7 +249,56 @@ func (h *OutbreakAssignmentHandler) ListOutbreakAssignments(c *fiber.Ctx) error 
 
 // ShowOutbreakAssignments shows the outbreak assignments page
 func (h *OutbreakAssignmentHandler) ShowOutbreakAssignments(c *fiber.Ctx) error {
-	return GenerateHTML(c, nil, NewTemplateData(c, h.store), "outbreak_assignments")
+	// Check if user is authenticated
+	sess, err := h.store.Get(c)
+	if err != nil {
+		return c.Status(401).SendString("Session error")
+	}
+
+	userIDFromSession := sess.Get("user")
+	if userIDFromSession == nil {
+		return c.Status(401).SendString("Unauthorized - No user in session")
+	}
+
+	// Get all outbreak assignments (not just for current user)
+	assignments, err := h.userOutbreakService.GetAllOutbreakAssignments()
+	if err != nil {
+		return c.Status(500).SendString("Failed to load outbreak assignments: " + err.Error())
+	}
+
+	// Debug logging
+	fmt.Printf("DEBUG: Loaded %d outbreak assignments\n", len(assignments))
+	for i, assignment := range assignments {
+		fmt.Printf("DEBUG: Assignment %d - User: %s, Outbreak: %s\n", i+1, assignment.User.UserName, assignment.Outbreak.Name.String)
+	}
+
+	// Get all outbreaks for the dropdown
+	outbreaks, err := h.outbreakService.GetAllOutbreaks()
+	if err != nil {
+		return c.Status(500).SendString("Failed to load outbreaks: " + err.Error())
+	}
+
+	// Get all users for the dropdown
+	users, err := h.userService.GetAllUsers()
+	if err != nil {
+		return c.Status(500).SendString("Failed to load users: " + err.Error())
+	}
+
+	// Convert assignments to interface slice for template
+	assignmentItems := make([]interface{}, len(assignments))
+	for i, assignment := range assignments {
+		assignmentItems[i] = assignment
+	}
+
+	data := NewTemplateData(c, h.store)
+	data.Items = assignmentItems
+	data.Outbreaks = outbreaks
+	data.Users = users
+
+	// Debug logging for template data
+	fmt.Printf("DEBUG: Template data - Items count: %d\n", len(data.Items))
+
+	return GenerateHTML(c, nil, data, "outbreak_assignments")
 }
 
 // ShowAssignOutbreakForm shows the assign outbreak form
@@ -249,9 +350,26 @@ func (h *OutbreakAssignmentHandler) HandleAssignFormSubmission(c *fiber.Ctx) err
 	}
 
 	// Get current user ID from session
-	currentUserID := utils.GetUserIDFromSession(c)
-	if currentUserID == 0 {
-		return c.Status(401).SendString("Unauthorized")
+	sess, err := h.store.Get(c)
+	if err != nil {
+		return c.Status(401).SendString("Session error")
+	}
+
+	userIDFromSession := sess.Get("user")
+	if userIDFromSession == nil {
+		return c.Status(401).SendString("Unauthorized - No user in session")
+	}
+
+	var currentUserID int64
+	switch v := userIDFromSession.(type) {
+	case int:
+		currentUserID = int64(v)
+	case int64:
+		currentUserID = v
+	case float64:
+		currentUserID = int64(v)
+	default:
+		return c.Status(401).SendString("Invalid user session")
 	}
 
 	// Assign user to outbreak

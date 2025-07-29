@@ -142,7 +142,7 @@
                                             <td>{{if .EncounterType.Valid}}{{if eq .EncounterType.Int64 1}}Initial{{else if eq .EncounterType.Int64 2}}Follow-up{{else if eq .EncounterType.Int64 3}}Discharge{{else}}{{.EncounterType.Int64}}{{end}}{{else}}--{{end}}</td>
                                             <td>{{.EmployeeFname.String}} {{.EmployeeLname.String}}</td>
                                             <td>
-                                                <a href="/cases/encounters/new/{{.ClientID}}/?dte={{.EncounterDate.String}}" class="btn btn-primary btn-sm">Edit</a>
+                                                <a href="/cases/encounters/new/{{.ClientID}}/?dte={{.EncounterDate.String}}&outbreak_id={{$.OutbreakID}}" class="btn btn-primary btn-sm">Edit</a>
                                             </td>
                                         </tr>
                                         {{end}}
@@ -962,61 +962,61 @@
                                     <div class="row">
                                         <label class="col-sm-4 col-form-label col-form-label-sm" for="pharyngeal_erythema">Pharyngeal erythema:</label>
                                         <div class="col-sm-6">
-                                            {{ GetOptionField "YN" "pharyngeal_erythema" "PharyngealErythema" "" (index .FormChild1 0).PharyngealErythema.Int64 1 }}
+                                            {{ GetOptionField "YN" "pharyngeal_erythema" "PharyngealErythema" "" (index .FormChild1 0).PharyngealErythema.Int64 1 | safe }}
                                         </div>
                                     </div>
                                     <div class="row">
                                         <label class="col-sm-4 col-form-label col-form-label-sm" for="pharyngeal_exudate">Pharyngeal exudate:</label>
                                         <div class="col-sm-6">
-                                            {{ GetOptionField "YN" "pharyngeal_exudate" "PharyngealExudate" "" (index .FormChild1 0).PharyngealExudate.Int64 1 }}
+                                            {{ GetOptionField "YN" "pharyngeal_exudate" "PharyngealExudate" "" (index .FormChild1 0).PharyngealExudate.Int64 1 | safe }}
                                         </div>
                                     </div>
                                     <div class="row">
                                         <label class="col-sm-4 col-form-label col-form-label-sm" for="conjunctival_injection">Conjunctival injection/bleeding:</label>
                                         <div class="col-sm-6">
-                                            {{ GetOptionField "YN" "conjunctival_injection" "ConjunctivalInjection" "" (index .FormChild1 0).ConjunctivalInjection.Int64 1 }}
+                                            {{ GetOptionField "YN" "conjunctival_injection" "ConjunctivalInjection" "" (index .FormChild1 0).ConjunctivalInjection.Int64 1 | safe }}
                                         </div>
                                     </div>
                                     <div class="row">
                                         <label class="col-sm-4 col-form-label col-form-label-sm" for="oedema_face">Oedema of face/neck:</label>
                                         <div class="col-sm-6">
-                                            {{ GetOptionField "YN" "oedema_face" "OedemaFace" "" (index .FormChild1 0).OedemaFace.Int64 1 }}
+                                            {{ GetOptionField "YN" "oedema_face" "OedemaFace" "" (index .FormChild1 0).OedemaFace.Int64 1 | safe }}
                                         </div>
                                     </div>
                                     <div class="row">
                                         <label class="col-sm-4 col-form-label col-form-label-sm" for="tender_abdomen">Tender abdomen:</label>
                                         <div class="col-sm-6">
-                                            {{ GetOptionField "YN" "tender_abdomen" "TenderAbdomen" "" (index .FormChild1 0).TenderAbdomen.Int64 1 }}
+                                            {{ GetOptionField "YN" "tender_abdomen" "TenderAbdomen" "" (index .FormChild1 0).TenderAbdomen.Int64 1 | safe }}
                                         </div>
                                     </div>
                                     <div class="row">
                                         <label class="col-sm-4 col-form-label col-form-label-sm" for="sunken_eyes">Sunken eyes or fontanelle:</label>
                                         <div class="col-sm-6">
-                                            {{ GetOptionField "YN" "sunken_eyes" "SunkenEyes" "" (index .FormChild1 0).SunkenEyes.Int64 1 }}
+                                            {{ GetOptionField "YN" "sunken_eyes" "SunkenEyes" "" (index .FormChild1 0).SunkenEyes.Int64 1 | safe }}
                                         </div>
                                     </div>
                                     <div class="row">
                                         <label class="col-sm-4 col-form-label col-form-label-sm" for="tenting_skin">Tenting on skin pinch:</label>
                                         <div class="col-sm-6">
-                                            {{ GetOptionField "YN" "tenting_skin" "TentingSkin" "" (index .FormChild1 0).TentingSkin.Int64 1 }}
+                                            {{ GetOptionField "YN" "tenting_skin" "TentingSkin" "" (index .FormChild1 0).TentingSkin.Int64 1 | safe }}
                                         </div>
                                     </div>
                                     <div class="row">
                                         <label class="col-sm-4 col-form-label col-form-label-sm" for="palpable_liver">Palpable liver:</label>
                                         <div class="col-sm-6">
-                                            {{ GetOptionField "YN" "palpable_liver" "PalpableLiver" "" (index .FormChild1 0).PalpableLiver.Int64 1 }}
+                                            {{ GetOptionField "YN" "palpable_liver" "PalpableLiver" "" (index .FormChild1 0).PalpableLiver.Int64 1 | safe }}
                                         </div>
                                     </div>
                                     <div class="row">
                                         <label class="col-sm-4 col-form-label col-form-label-sm" for="palpable_spleen">Palpable spleen Rash:</label>
                                         <div class="col-sm-6">
-                                            {{ GetOptionField "YN" "palpable_spleen" "PalpableSpleen" "" (index .FormChild1 0).PalpableSpleen.Int64 1 }}
+                                            {{ GetOptionField "YN" "palpable_spleen" "PalpableSpleen" "" (index .FormChild1 0).PalpableSpleen.Int64 1 | safe }}
                                         </div>
                                     </div>
                                     <div class="row">
                                         <label class="col-sm-4 col-form-label col-form-label-sm" for="jaundice">Jaundice:</label>
                                         <div class="col-sm-6">
-                                            {{ GetOptionField "YN" "jaundice" "Jaundice" "" (index .FormChild1 0).Jaundice.Int64 1 }}
+                                            {{ GetOptionField "YN" "jaundice" "Jaundice" "" (index .FormChild1 0).Jaundice.Int64 1 | safe }}
                                         </div>
                                     </div>
                                 </div>
@@ -1024,19 +1024,19 @@
                                     <div class="row">
                                         <label class="col-sm-4 col-form-label col-form-label-sm" for="enlarged_lymph_nodes">Enlarged lymph nodes:</label>
                                         <div class="col-sm-6">
-                                            {{ GetOptionField "YN" "enlarged_lymph_nodes" "Enlarged lymph nodes" "" (index .FormChild1 0).EnlargedLymphNodes.Int64 1 }}
+                                            {{ GetOptionField "YN" "enlarged_lymph_nodes" "Enlarged lymph nodes" "" (index .FormChild1 0).EnlargedLymphNodes.Int64 1 | safe }}
                                         </div>
                                     </div>
                                     <div class="row">
                                         <label class="col-sm-4 col-form-label col-form-label-sm" for="lower_extremity_oedema">Lower extremity oedema:</label>
                                         <div class="col-sm-6">
-                                            {{ GetOptionField "YN" "lower_extremity_oedema" "Lower extremity oedema" "" (index .FormChild1 0).LowerExtremityOedema.Int64 1 }}
+                                            {{ GetOptionField "YN" "lower_extremity_oedema" "Lower extremity oedema" "" (index .FormChild1 0).LowerExtremityOedema.Int64 1 | safe }}
                                         </div>
                                     </div>
                                     <div class="row">
                                         <label class="col-sm-4 col-form-label col-form-label-sm" for="clinical_bleeding">Bleeding:</label>
                                         <div class="col-sm-6">
-                                            {{ GetOptionField "YN" "clinical_bleeding" "Bleeding" "" (index .FormChild1 0).Bleeding.Int64 1 }}
+                                            {{ GetOptionField "YN" "clinical_bleeding" "Bleeding" "" (index .FormChild1 0).Bleeding.Int64 1 | safe }}
                                         </div>
                                     </div>
                                     <div class="row">
@@ -1086,31 +1086,31 @@
                                     <div class="row">
                                         <label class="col-sm-4 col-form-label col-form-label-sm" for="bleeding">Bleeding:</label>
                                         <div class="col-sm-6">
-                                            {{ GetOptionField "YN" "bleeding" "Bleeding" "" (index .FormChild1 0).Bleeding.Int64 1 }}                                            
+                                            {{ GetOptionField "YN" "bleeding" "Bleeding" "" (index .FormChild1 0).Bleeding.Int64 1 | safe }}                                            
                                         </div>
                                     </div>
                                     <div class="row">
                                         <label class="col-sm-4 col-form-label col-form-label-sm" for="shock">Shock:</label>
                                         <div class="col-sm-6">
-                                            {{ GetOptionField "YN" "shock" "Shock" "" (index .FormChild1 0).Shock.Int64 1 }}
+                                            {{ GetOptionField "YN" "shock" "Shock" "" (index .FormChild1 0).Shock.Int64 1 | safe }}
                                         </div>
                                     </div>
                                     <div class="row">
                                         <label class="col-sm-4 col-form-label col-form-label-sm" for="meningitis">Meningitis:</label>
                                         <div class="col-sm-6">
-                                            {{ GetOptionField "YN" "meningitis" "Meningitis" "" (index .FormChild1 0).Meningitis.Int64 1 }}
+                                            {{ GetOptionField "YN" "meningitis" "Meningitis" "" (index .FormChild1 0).Meningitis.Int64 1 | safe }}
                                         </div>
                                     </div>
                                     <div class="row">
                                         <label class="col-sm-4 col-form-label col-form-label-sm" for="confusion">Confusion:</label>
                                         <div class="col-sm-6">
-                                            {{ GetOptionField "YN" "confusion" "Confusion" "" (index .FormChild1 0).Confusion.Int64 1 }}
+                                            {{ GetOptionField "YN" "confusion" "Confusion" "" (index .FormChild1 0).Confusion.Int64 1 | safe }}
                                         </div>
                                     </div>
                                     <div class="row">
                                         <label class="col-sm-4 col-form-label col-form-label-sm" for="seizure">Seizure:</label>
                                         <div class="col-sm-6">
-                                            {{ GetOptionField "YN" "seizure" "Seizure" "" (index .FormChild1 0).Seizure.Int64 1 }}
+                                            {{ GetOptionField "YN" "seizure" "Seizure" "" (index .FormChild1 0).Seizure.Int64 1 | safe }}
                                         </div>
                                     </div>
                                 </div>
@@ -1118,25 +1118,25 @@
                                     <div class="row">
                                         <label class="col-sm-4 col-form-label col-form-label-sm" for="coma">Coma (P/U in AVPU scoring) :</label>
                                         <div class="col-sm-6">
-                                            {{ GetOptionField "YN" "coma" "Coma (P/U in AVPU scoring) " "" (index .FormChild1 0).Coma.Int64 1 }}
+                                            {{ GetOptionField "YN" "coma" "Coma (P/U in AVPU scoring) " "" (index .FormChild1 0).Coma.Int64 1 | safe }}
                                         </div>
                                     </div>
                                     <div class="row">
                                         <label class="col-sm-4 col-form-label col-form-label-sm" for="bacteraemia">Bacteraemia:</label>
                                         <div class="col-sm-6">
-                                            {{ GetOptionField "YN" "bacteraemia" "Bacteraemia" "" (index .FormChild1 0).Bacteraemia.Int64 1 }}
+                                            {{ GetOptionField "YN" "bacteraemia" "Bacteraemia" "" (index .FormChild1 0).Bacteraemia.Int64 1 | safe }}
                                         </div>
                                     </div>
                                     <div class="row">
                                         <label class="col-sm-4 col-form-label col-form-label-sm" for="hyperglycemia">Hyperglycemia:</label>
                                         <div class="col-sm-6">
-                                            {{ GetOptionField "YN" "hyperglycemia" "Hyperglycemia" "" (index .FormChild1 0).Hyperglycemia.Int64 1 }}
+                                            {{ GetOptionField "YN" "hyperglycemia" "Hyperglycemia" "" (index .FormChild1 0).Hyperglycemia.Int64 1 | safe }}
                                         </div>
                                     </div>
                                     <div class="row">
                                         <label class="col-sm-4 col-form-label col-form-label-sm" for="hypoglycemia">Hypoglycemia:</label>
                                         <div class="col-sm-6">
-                                            {{ GetOptionField "YN" "hypoglycemia" "Hypoglycemia" "" (index .FormChild1 0).Hypoglycemia.Int64 1 }}
+                                            {{ GetOptionField "YN" "hypoglycemia" "Hypoglycemia" "" (index .FormChild1 0).Hypoglycemia.Int64 1 | safe }}
                                         </div>
                                     </div>
                                     <div class="row">
@@ -1148,396 +1148,987 @@
                         </div>
 
                         <div class="tab-pane fade" id="lab" role="tabpanel" aria-labelledby="lab-tab">
-                            <p>Labs</p>
-                            <style>
-                                table {
-                                    width: 100%;
-                                    border: 1px solid lightgrey;
-                                    border-collapse: collapse;
-                                }
-                                th, td {
-                                    border: 1px solid lightgrey;
-                                    padding: 1px;
-                                    text-align: left;
-                                }
-                            </style>
-                            <table>
-                                <tr>
+                            <div class="card">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0"><i class="fas fa-flask"></i> Laboratory Tests</h5>
+                                </div>
+                                <div class="card-body p-0">
+                                    <style>
+                                        .lab-table {
+                                            width: 100%;
+                                            border-collapse: collapse;
+                                            font-size: 0.9rem;
+                                        }
+                                        .lab-table th {
+                                            background-color: #f8f9fa;
+                                            border: 1px solid #dee2e6;
+                                            padding: 8px 12px;
+                                            text-align: center;
+                                            font-weight: 600;
+                                            color: #495057;
+                                            vertical-align: middle;
+                                        }
+                                        .lab-table td {
+                                            border: 1px solid #dee2e6;
+                                            padding: 8px 12px;
+                                            vertical-align: middle;
+                                        }
+                                        .lab-table .section-header {
+                                            background-color: #e9ecef;
+                                            font-weight: 600;
+                                            text-align: center;
+                                            color: #495057;
+                                        }
+                                        .lab-table .test-name {
+                                            background-color: #f8f9fa;
+                                            font-weight: 500;
+                                            color: #495057;
+                                        }
+                                        .lab-table input[type="text"],
+                                        .lab-table input[type="date"],
+                                        .lab-table select {
+                                            width: 100%;
+                                            padding: 4px 8px;
+                                            border: 1px solid #ced4da;
+                                            border-radius: 4px;
+                                            font-size: 0.85rem;
+                                        }
+                                        .lab-table input[type="checkbox"] {
+                                            margin: 0;
+                                            transform: scale(1.2);
+                                        }
+                                        .lab-table .checkbox-label {
+                                            margin-left: 5px;
+                                            font-size: 0.85rem;
+                                        }
+                                        .lab-table .small-input {
+                                            width: 60px;
+                                            text-align: center;
+                                        }
+                                        .lab-table .form-group {
+                                            margin-bottom: 0;
+                                        }
+                                        .lab-table .row {
+                                            margin: 0;
+                                        }
+                                        .lab-table .col-sm-3,
+                                        .lab-table .col-sm-5,
+                                        .lab-table .col-sm-6 {
+                                            padding: 0 5px;
+                                        }
+                                        .lab-table .blood-gas-results {
+                                            display: flex;
+                                            gap: 10px;
+                                            align-items: center;
+                                            flex-wrap: wrap;
+                                        }
+                                        .lab-table .blood-gas-results input {
+                                            width: 80px;
+                                        }
+                                        .lab-table .blood-gas-results label {
+                                            margin: 0;
+                                            font-size: 0.85rem;
+                                            font-weight: 500;
+                                            min-width: 40px;
+                                        }
+                                        .lab-table .sample-checkboxes {
+                                            display: flex;
+                                            flex-direction: column;
+                                            gap: 5px;
+                                        }
+                                        .lab-table .sample-checkboxes .checkbox-item {
+                                            display: flex;
+                                            align-items: center;
+                                            gap: 5px;
+                                        }
+                                        .lab-table .sample-checkboxes input[type="text"] {
+                                            width: 120px;
+                                            margin-left: 10px;
+                                        }
+                                    </style>
+                                    <table class="lab-table">
+                                <tr class="section-header">
                                    <td colspan="6">
-                                    <div class="row registration-input-row">
+                                    <div class="row">
                                         <div class="col-lg-6">
-                                            <div class="row">
-                                                <label class="col-sm-6 col-form-label col-form-label-sm" >Specimen collection done for EVD patients?</label> 
-                                                <div class="col-sm-6">
+                                            <div class="form-group">
+                                                <label class="form-label fw-bold">Specimen collection done for EVD patients?</label> 
+                                                <div class="mt-2">
                                                     {{ GetOptionField "yn" "specimen" "Specimen" "" (index .FormChild3 0).Specimen.Int64 1 | safe }}
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-lg-6">
-                                            <div class="row">
-                                                <label class="col-sm-6 col-form-label col-form-label-sm" >If yes, what samples?</label> 
-                                                <div class="col-sm-6">
-                                                    <input type="checkbox" value="1" name="sample_blood" id="sample_blood" {{ if eq (index .FormChild3 0).SampleBlood.Int64 1 }}checked{{ end }}  > Blood <br />	
-                                                    <input type="checkbox" value="1" name="sample_urine" id="sample_urine" {{ if eq (index .FormChild3 0).SampleUrine.Int64 1 }}checked{{ end }}  > Urine	 <br />	
-                                                    <input type="checkbox" value="1" name="sample_swab" id="sample_swab"   {{ if eq (index .FormChild3 0).SampleSwab.Int64 1 }}checked{{ end }}  > Buccal swab  <br />	
-                                                    Other	<input type="text" name="sample_aza" id="sample_aza"  value="{{ (index .FormChild3 0).SampleAza.String }}"> 
+                                            <div class="form-group">
+                                                <label class="form-label fw-bold">If yes, what samples?</label> 
+                                                <div class="sample-checkboxes mt-2">
+                                                    <div class="checkbox-item">
+                                                        <input type="checkbox" value="1" name="sample_blood" id="sample_blood" {{ if eq (index .FormChild3 0).SampleBlood.Int64 1 }}checked{{ end }}>
+                                                        <span class="checkbox-label">Blood</span>
+                                                    </div>
+                                                    <div class="checkbox-item">
+                                                        <input type="checkbox" value="1" name="sample_urine" id="sample_urine" {{ if eq (index .FormChild3 0).SampleUrine.Int64 1 }}checked{{ end }}>
+                                                        <span class="checkbox-label">Urine</span>
+                                                    </div>
+                                                    <div class="checkbox-item">
+                                                        <input type="checkbox" value="1" name="sample_swab" id="sample_swab" {{ if eq (index .FormChild3 0).SampleSwab.Int64 1 }}checked{{ end }}>
+                                                        <span class="checkbox-label">Buccal swab</span>
+                                                    </div>
+                                                    <div class="checkbox-item">
+                                                        <span class="checkbox-label">Other:</span>
+                                                        <input type="text" name="sample_aza" id="sample_aza" value="{{ (index .FormChild3 0).SampleAza.String }}" placeholder="Specify">
+                                                    </div>
                                                 </div>
-                                                
                                             </div>
                                         </div>
                                     </div>
                                     </td> 
                                 </tr>
-                                <tr>
-                                    <th colspan="2">Ebola testing</th> 
-                                    <th>Collection date</th>
+                                <tr class="section-header">
+                                    <th colspan="2"><i class="fas fa-virus"></i> Ebola Testing</th> 
+                                    <th>Collection Date</th>
                                     <th colspan="3">Result</th> 
                                 </tr>
                                 <tr>
-                                    <td colspan="2">
-                                        <div class="row">
-                                            <label class="col-sm-5 col-form-label col-form-label-sm">Ebola RDT: </label>
-                                            <div class="col-sm-5">{{ GetOptionField "e_rdt" "ebola_rdt" "EbolaRdt" "" (index .FormChild3 0).EbolaRdt.Int64 1 }}</div>
+                                    <td colspan="2" class="test-name">
+                                        <div class="form-group">
+                                            <label class="form-label fw-bold">Ebola RDT:</label>
+                                            <div class="mt-2">
+                                                {{ GetOptionField "e_rdt" "ebola_rdt" "EbolaRdt" "" (index .FormChild3 0).EbolaRdt.Int64 1 | safe }}
+                                            </div>
+                                            <div class="mt-2">
+                                                <label class="form-label">Other specify:</label>
+                                                <input type="text" name="ebola_rdt" id="ebola_rdt" value="{{ (index .FormChild3 0).EbolaRdtAza.String }}" placeholder="Specify other">
+                                            </div>
                                         </div>
-                                        Other specify: <input type="text" name="ebola_rdt" id="ebola_rdt"  value="{{ (index .FormChild3 0).EbolaRdtAza.String }}">
                                     </td> 
-                                    <td><input size="5" value="{{ (index .FormChild3 0).EbolaRdtDate.String }}" type="date" id="ebola_rdt_date" name="ebola_rdt_date"></td>
-                                    <td colspan="3"><div class="row"> <div class="col-sm-3">{{ GetOptionField "posx" "ebola_rdt_results" "EbolaRdtResults" "" (index .FormChild3 0).EbolaRdtResults.Int64 1 }}</div></div> </td>
-                                </tr>
-                                <tr>
-                                    <td rowspan="2" colspan="2">
-                                        <div class="row">
-                                            <label class="col-sm-5 col-form-label col-form-label-sm">Ebola PCR:</label>
-                                            <div class="col-sm-5">{{ GetOptionField "e_pcr" "ebola_pcr" "EbolaPcr" "" (index .FormChild3 0).EbolaPcr.Int64 1 }}</div>
-                                        </div>
-                                        Other specify: <input type="text" name="ebola_pcr_aza" id="ebola_pcr_aza" value="{{ (index .FormChild3 0).EbolaPcrAza.String }}">
-                                    </td> 
-                                    <td rowspan="2" ><input size="5" value="{{ (index .FormChild3 0).EbolaPcrDate.String }}" type="date" id="ebola_pcr_date" name="ebola_pcr_date"></td>
-                                    <td>GP</td>
-                                    <td>NP</td>
-                                    <td></td>
-                                </tr>
-                                <tr>
                                     <td>
-                                        <div class="row"> <div class="col-sm-6">{{ GetOptionField "po" "ebola_pcr_gp" "EbolaPcrGp" "" (index .FormChild3 0).EbolaPcrGp.Int64 1 }}</div></div>
-                                        <br /> CT: <input size="5" type="text" name="ebola_pcr_gp_ct" id="ebola_pcr_gp_ct" value="{{ (index .FormChild3 0).EbolaPcrGpCt.Float64 }}">
+                                        <input value="{{ (index .FormChild3 0).EbolaRdtDate.String }}" type="date" id="ebola_rdt_date" name="ebola_rdt_date" class="form-control">
                                     </td>
-                                    <td>
-                                        <div class="row"> <div class="col-sm-6">{{ GetOptionField "po" "ebola_pcr_np" "EbolaPcrNp" "" (index .FormChild3 0).EbolaPcrNp.Int64 1 }}</div></div>
-                                        <br /> CT: <input size="5" type="text" name="ebola_pcr_np_ct" id="ebola_pcr_np_ct" value="{{ (index .FormChild3 0).EbolaPcrNpCt.Float64 }}">
-                                    </td>
-                                    <td><input type="checkbox" value="1" name="ebola_pcr_indeterminate" id="ebola_pcr_indeterminate"  {{ if eq (index .FormChild3 0).EbolaPcrIndeterminate.Int64 1 }}checked{{ end }} >indeterminate</td>
-                                </tr>
-                                <tr>
-                                    <td colspan="2">Malaria RDT</td> 
-                                    <td><input size="5" type="date" name="malaria_rdt_date" id="malaria_rdt_date" value="{{ (index .FormChild3 0).BloodCultureDate.String }}"></td>
-                                    <td colspan="3"><div class="row"> <div class="col-sm-3">{{ GetOptionField "posx" "malaria_rdt_result" "MalariaRdtResult" "" (index .FormChild3 0).MalariaRdtResult.Int64 1 }}</div></div> </td> 
-                                </tr>
-                                <tr>
-                                    <td colspan="2">Blood culture</td> 
-                                    <td><input size="5" type="date" name="blood_culture_date" id="blood_culture_date" value="{{ (index .FormChild3 0).BloodCultureDate.String }}"></td>
-                                    <td colspan="3"><div class="row"> <div class="col-sm-3">{{ GetOptionField "posx" "blood_culture_result" "BloodCultureResult" "" (index .FormChild3 0).BloodCultureResult.Int64 1 }}</div></div> </td> 
-                                </tr>
-                                <tr>
-                                    <td colspan="6">
-                                        <div class="row">
-                                            <label class="col-sm-4 col-form-label col-form-label-sm" >Did patient test positive for any other infection?</label> 
-                                            <div class="col-sm-1">{{ GetOptionField "yn" "test_pos_infection" "TestPosInfection" "" (index .FormChild3 0).TestPosInfection.Int64 1 }}</div> 
-                                            <label class="col-sm-4 col-form-label col-form-label-sm" >If Yes, specify</label> 
-                                            <div class="col-sm-3"><input type="text" name="test_pos_infection_aza" id="test_pos_infection_aza" value="{{ (index .FormChild3 0).TestPosInfectionAza.String }}"></div>
-                                        </div>
-                                    </td> 
-                                </tr>
-                                <tr>
-                                    <td colspan="6">Other clinical laboratory tests done on admission (ND = not done)</td> 
-                                </tr>
-                                <tr>
-                                    <td colspan="2">Haemoglobinuria</td> 
-                                    <td>{{ GetOptionField "pos" "haemoglobinuria" "Haemoglobinuria" "" (index .FormChild3 0).Haemoglobinuria.Int64 1 }} </td>
-                                    <td>Blood Gas</td> 
-                                    <td>{{ GetOptionField "blood" "blood_gas" "BloodGas" "" (index .FormChild3 0).BloodGas.Int64 1 }} </td>
-                                    <td></td> 
-                                    
-                                </tr>
-                                <tr>
-                                    <td colspan="2">Proteinuria</td> 
-                                    <td>{{ GetOptionField "pos" "proteinuria" "Proteinuria" "" (index .FormChild3 0).Proteinuria.Int64 1 }} </td>
                                     <td colspan="3">
-                                        Results: pH	<input type="text" size="5" name="ph" id="ph" value="{{ (index .FormChild3 0).Ph.Float64 }}">, 
-                                        pCO2	<input type="text" size="5" name="pco2" id="pco2" value="{{ (index .FormChild3 0).Pco2.Float64 }}">, 
-                                        PaO2 	<input type="text" size="5" name="pao2" id="pao2" value="{{ (index .FormChild3 0).Pao2.Float64 }}">,
-                                        HCO3<input type="text" size="5" name="hco3" id="hco3" value="{{ (index .FormChild3 0).Hco3.Float64 }}">
+                                        <div class="form-group">
+                                            {{ GetOptionField "posx" "ebola_rdt_results" "EbolaRdtResults" "" (index .FormChild3 0).EbolaRdtResults.Int64 1 | safe }}
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td rowspan="2" colspan="2" class="test-name">
+                                        <div class="form-group">
+                                            <label class="form-label fw-bold">Ebola PCR:</label>
+                                            <div class="mt-2">
+                                                {{ GetOptionField "e_pcr" "ebola_pcr" "EbolaPcr" "" (index .FormChild3 0).EbolaPcr.Int64 1 | safe }}
+                                            </div>
+                                            <div class="mt-2">
+                                                <label class="form-label">Other specify:</label>
+                                                <input type="text" name="ebola_pcr_aza" id="ebola_pcr_aza" value="{{ (index .FormChild3 0).EbolaPcrAza.String }}" placeholder="Specify other">
+                                            </div>
+                                        </div>
                                     </td> 
-                                    
+                                    <td rowspan="2">
+                                        <input value="{{ (index .FormChild3 0).EbolaPcrDate.String }}" type="date" id="ebola_pcr_date" name="ebola_pcr_date" class="form-control">
+                                    </td>
+                                    <td class="text-center fw-bold">GP</td>
+                                    <td class="text-center fw-bold">NP</td>
+                                    <td class="text-center fw-bold">Status</td>
                                 </tr>
                                 <tr>
-                                    <td colspan="2">Hematuria</td> 
-                                    <td>{{ GetOptionField "pos" "hematuria" "Hematuria" "" (index .FormChild3 0).Hematuria.Int64 1 }} </td>
-                                    <td>Oxygen therapy at time of blood gas (L/min)</td> 
-                                    <td><input type="text" size="5" name="oxygen_therapy" id="oxygen_therapy" value="{{ (index .FormChild3 0).OxygenTherapy.Float64 }}"></td>
+                                    <td>
+                                        <div class="form-group">
+                                            <div class="mb-2">
+                                                {{ GetOptionField "po" "ebola_pcr_gp" "EbolaPcrGp" "" (index .FormChild3 0).EbolaPcrGp.Int64 1 | safe }}
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <label class="form-label mb-0">CT:</label>
+                                                <input type="text" name="ebola_pcr_gp_ct" id="ebola_pcr_gp_ct" value="{{ (index .FormChild3 0).EbolaPcrGpCt.Float64 }}" class="small-input">
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="form-group">
+                                            <div class="mb-2">
+                                                {{ GetOptionField "po" "ebola_pcr_np" "EbolaPcrNp" "" (index .FormChild3 0).EbolaPcrNp.Int64 1 | safe }}
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <label class="form-label mb-0">CT:</label>
+                                                <input type="text" name="ebola_pcr_np_ct" id="ebola_pcr_np_ct" value="{{ (index .FormChild3 0).EbolaPcrNpCt.Float64 }}" class="small-input">
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="ebola_pcr_indeterminate" id="ebola_pcr_indeterminate" {{ if eq (index .FormChild3 0).EbolaPcrIndeterminate.Int64 1 }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="ebola_pcr_indeterminate">Indeterminate</label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="test-name">Malaria RDT</td> 
+                                    <td><input type="date" name="malaria_rdt_date" id="malaria_rdt_date" value="{{ (index .FormChild3 0).BloodCultureDate.String }}" class="form-control"></td>
+                                    <td colspan="3">
+                                        <div class="form-group">
+                                            {{ GetOptionField "posx" "malaria_rdt_result" "MalariaRdtResult" "" (index .FormChild3 0).MalariaRdtResult.Int64 1 | safe }}
+                                        </div>
+                                    </td> 
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="test-name">Blood culture</td> 
+                                    <td><input type="date" name="blood_culture_date" id="blood_culture_date" value="{{ (index .FormChild3 0).BloodCultureDate.String }}" class="form-control"></td>
+                                    <td colspan="3">
+                                        <div class="form-group">
+                                            {{ GetOptionField "posx" "blood_culture_result" "BloodCultureResult" "" (index .FormChild3 0).BloodCultureResult.Int64 1 | safe }}
+                                        </div>
+                                    </td> 
+                                </tr>
+                                <tr class="section-header">
+                                    <td colspan="6">
+                                        <div class="row align-items-center">
+                                            <div class="col-sm-4">
+                                                <label class="form-label fw-bold mb-0">Did patient test positive for any other infection?</label>
+                                            </div>
+                                            <div class="col-sm-2">
+                                                {{ GetOptionField "yn" "test_pos_infection" "TestPosInfection" "" (index .FormChild3 0).TestPosInfection.Int64 1 | safe }}
+                                            </div>
+                                            <div class="col-sm-3">
+                                                <label class="form-label fw-bold mb-0">If Yes, specify:</label>
+                                            </div>
+                                            <div class="col-sm-3">
+                                                <input type="text" name="test_pos_infection_aza" id="test_pos_infection_aza" value="{{ (index .FormChild3 0).TestPosInfectionAza.String }}" class="form-control" placeholder="Specify infection">
+                                            </div>
+                                        </div>
+                                    </td> 
+                                </tr>
+                                <tr class="section-header">
+                                    <td colspan="6" class="text-center">
+                                        <h6 class="mb-0"><i class="fas fa-microscope"></i> Other Clinical Laboratory Tests (ND = Not Done)</h6>
+                                    </td> 
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="test-name">Haemoglobinuria</td> 
+                                    <td>
+                                        <div class="form-group">
+                                            {{ GetOptionField "pos" "haemoglobinuria" "Haemoglobinuria" "" (index .FormChild3 0).Haemoglobinuria.Int64 1 | safe }}
+                                        </div>
+                                    </td> 
+                                    <td class="test-name">Blood Gas</td> 
+                                    <td>
+                                        <div class="form-group">
+                                            {{ GetOptionField "blood" "blood_gas" "BloodGas" "" (index .FormChild3 0).BloodGas.Int64 1 | safe }}
+                                        </div>
+                                    </td> 
                                     <td></td> 
-                                    
                                 </tr>
                                 <tr>
-                                    <td colspan="6">Laboratory tests on admission or Hospital Day 1(HD1). (ND = not done)</td> 
+                                    <td colspan="2" class="test-name">Proteinuria</td> 
+                                    <td>
+                                        <div class="form-group">
+                                            {{ GetOptionField "pos" "proteinuria" "Proteinuria" "" (index .FormChild3 0).Proteinuria.Int64 1 | safe }}
+                                        </div>
+                                    </td> 
+                                    <td colspan="3">
+                                        <div class="form-group">
+                                            <label class="form-label fw-bold mb-2">Blood Gas Results:</label>
+                                            <div class="blood-gas-results">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <label>pH:</label>
+                                                    <input type="text" name="ph" id="ph" value="{{ (index .FormChild3 0).Ph.Float64 }}" class="small-input">
+                                                </div>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <label>pCO2:</label>
+                                                    <input type="text" name="pco2" id="pco2" value="{{ (index .FormChild3 0).Pco2.Float64 }}" class="small-input">
+                                                </div>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <label>PaO2:</label>
+                                                    <input type="text" name="pao2" id="pao2" value="{{ (index .FormChild3 0).Pao2.Float64 }}" class="small-input">
+                                                </div>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <label>HCO3:</label>
+                                                    <input type="text" name="hco3" id="hco3" value="{{ (index .FormChild3 0).Hco3.Float64 }}" class="small-input">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td> 
                                 </tr>
                                 <tr>
-                                    <td>Biochemistry</td>
-                                    <td>Values</td>
-                                    <td>Not Done</td>
-                                    <td>CBC & Clotting panel</td>
-                                    <td>Values</td>
-                                    <td>Not Done</td>
+                                    <td colspan="2" class="test-name">Hematuria</td> 
+                                    <td>
+                                        <div class="form-group">
+                                            {{ GetOptionField "pos" "hematuria" "Hematuria" "" (index .FormChild3 0).Hematuria.Int64 1 | safe }}
+                                        </div>
+                                    </td> 
+                                    <td class="test-name">Oxygen therapy at time of blood gas (L/min)</td> 
+                                    <td>
+                                        <input type="text" name="oxygen_therapy" id="oxygen_therapy" value="{{ (index .FormChild3 0).OxygenTherapy.Float64 }}" class="form-control">
+                                    </td>
+                                    <td></td> 
+                                </tr>
+                                <tr class="section-header">
+                                    <td colspan="6" class="text-center">
+                                        <h6 class="mb-0"><i class="fas fa-flask"></i> Laboratory Tests on Admission or Hospital Day 1 (HD1) - ND = Not Done</h6>
+                                    </td> 
                                 </tr>
                                 <tr>
-                                    <td>ALT/SGPT (U/L)</td>
-                                    <td><input size="5" type="text" name="alt_sgpt" id="alt_sgpt" value="{{ (index .FormChild3 0).AltSgpt.Float64 }}"></td>
-                                    <td><input type="checkbox" value="1" name="alt_sgpt_nd" id="alt_sgpt_nd" {{ if eq (index .FormChild3 0).AltSgptNd.Int64 1 }}checked{{ end }} >DN</td>
-                                    <td>Glucose (mmol/L)</td>
-                                    <td><input size="5" type="text" name="glucose" id="glucose" value="{{ (index .FormChild3 0).Glucose.Float64 }}"></td>
-                                    <td><input type="checkbox" value="1" name="glucose_nd" id="glucose_nd" {{ if eq (index .FormChild3 0).GlucoseNd.Int64 1 }}checked{{ end }} >DN</td>
+                                    <th class="text-center">Biochemistry</th>
+                                    <th class="text-center">Values</th>
+                                    <th class="text-center">Not Done</th>
+                                    <th class="text-center">CBC & Clotting Panel</th>
+                                    <th class="text-center">Values</th>
+                                    <th class="text-center">Not Done</th>
                                 </tr>
                                 <tr>
-                                    <td>AST/SGO (U/L)</td>
-                                    <td><input size="5" type="text" name="ast_sgo" id="ast_sgo" value="{{ (index .FormChild3 0).AstSgo.Float64 }}"></td>
-                                    <td><input type="checkbox" value="1" name="ast_sgo_nd" id="ast_sgo_nd" {{ if eq (index .FormChild3 0).AstSgoNd.Int64 1 }}checked{{ end }} >DN</td>
-                                    <td>Lactate (mmol/L)</td>
-                                    <td><input size="5" type="text" name="lactate" id="lactate" value="{{ (index .FormChild3 0).Lactate.Float64 }}"></td>
-                                    <td><input type="checkbox" value="1" name="lactate_nd" id="lactate_nd" {{ if eq (index .FormChild3 0).LactateNd.Int64 1 }}checked{{ end }} >DN</td>
+                                    <td class="test-name">ALT/SGPT (U/L)</td>
+                                    <td><input type="text" name="alt_sgpt" id="alt_sgpt" value="{{ (index .FormChild3 0).AltSgpt.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="alt_sgpt_nd" id="alt_sgpt_nd" {{ if eq (index .FormChild3 0).AltSgptNd.Int64 1 }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="alt_sgpt_nd">ND</label>
+                                        </div>
+                                    </td>
+                                    <td class="test-name">Glucose (mmol/L)</td>
+                                    <td><input type="text" name="glucose" id="glucose" value="{{ (index .FormChild3 0).Glucose.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="glucose_nd" id="glucose_nd" {{ if eq (index .FormChild3 0).GlucoseNd.Int64 1 }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="glucose_nd">ND</label>
+                                        </div>
+                                    </td>
                                 </tr>
                                 <tr>
-                                    <td>Creatinine (µmol/L)</td>
-                                    <td><input size="5" type="text" name="creatinine" id="creatinine" value="{{ (index .FormChild3 0).Creatinine.Float64 }}"></td>
-                                    <td><input type="checkbox" value="1" name="creatinine_nd" id="creatinine_nd" {{ if eq (index .FormChild3 0).CreatinineNd.Int64 1 }}checked{{ end }} >DN</td>
-                                    <td>Haemoglobin (g/L)</td>
-                                    <td><input size="5" type="text" name="haemoglobin" id="haemoglobin" value="{{ (index .FormChild3 0).Haemoglobin.Float64 }}"></td>
-                                    <td><input type="checkbox" value="1" name="haemoglobin_nd" id="haemoglobin_nd" {{ if eq (index .FormChild3 0).HaemoglobinNd.Int64 1 }}checked{{ end }} >DN</td>
+                                    <td class="test-name">AST/SGO (U/L)</td>
+                                    <td><input type="text" name="ast_sgo" id="ast_sgo" value="{{ (index .FormChild3 0).AstSgo.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="ast_sgo_nd" id="ast_sgo_nd" {{ if eq (index .FormChild3 0).AstSgoNd.Int64 1 }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="ast_sgo_nd">ND</label>
+                                        </div>
+                                    </td>
+                                    <td class="test-name">Lactate (mmol/L)</td>
+                                    <td><input type="text" name="lactate" id="lactate" value="{{ (index .FormChild3 0).Lactate.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="lactate_nd" id="lactate_nd" {{ if eq (index .FormChild3 0).LactateNd.Int64 1 }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="lactate_nd">ND</label>
+                                        </div>
+                                    </td>
                                 </tr>
                                 <tr>
-                                    <td>Potassium (mmol/L)</td>
-                                    <td><input size="5" type="text" name="potassium" id="potassium" value="{{ (index .FormChild3 0).Potassium.Float64 }}"></td>
-                                    <td><input type="checkbox" value="1" name="potassium_nd" id="potassium_nd" {{ if eq (index .FormChild3 0).PotassiumNd.Int64 1 }}checked{{ end }}  >DN</td>
-                                    <td>Total bilirubin (µmol/L)</td>
-                                    <td><input size="5" type="text" name="total_bilirubin" id="total_bilirubin" value="{{ (index .FormChild3 0).TotalBilirubin.Float64 }}"></td>
-                                    <td><input type="checkbox" value="1" name="total_bilirubin_nd" id="total_bilirubin_nd" {{ if eq (index .FormChild3 0).TotalBilirubinNd.Int64 1 }}checked{{ end }} >DN</td>
+                                    <td class="test-name">Creatinine (µmol/L)</td>
+                                    <td><input type="text" name="creatinine" id="creatinine" value="{{ (index .FormChild3 0).Creatinine.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="creatinine_nd" id="creatinine_nd" {{ if eq (index .FormChild3 0).CreatinineNd.Int64 1 }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="creatinine_nd">ND</label>
+                                        </div>
+                                    </td>
+                                    <td class="test-name">Haemoglobin (g/L)</td>
+                                    <td><input type="text" name="haemoglobin" id="haemoglobin" value="{{ (index .FormChild3 0).Haemoglobin.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="haemoglobin_nd" id="haemoglobin_nd" {{ if eq (index .FormChild3 0).HaemoglobinNd.Int64 1 }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="haemoglobin_nd">ND</label>
+                                        </div>
+                                    </td>
                                 </tr>
                                 <tr>
-                                    <td>Urea (mmol/L)</td>
-                                    <td><input size="5" type="text" name="urea" id="urea" value="{{ (index .FormChild3 0).Urea.Float64 }}"></td>
-                                    <td><input type="checkbox" value="1" name="urea_nd" id="urea_nd" {{ if eq (index .FormChild3 0).UreaNd.Int64 1 }}checked{{ end }} >DN</td>
-                                    <td>WBC count (x109/L)</td>
-                                    <td><input size="5" type="text" name="wbc_count" id="wbc_count" value="{{ (index .FormChild3 0).WbcCount.Float64 }}"></td>
-                                    <td><input type="checkbox" value="1" name="wbc_count_nd" id="wbc_count_nd" {{ if eq (index .FormChild3 0).WbcCountNd.Int64 1 }}checked{{ end }} >DN</td>
+                                    <td class="test-name">Potassium (mmol/L)</td>
+                                    <td><input type="text" name="potassium" id="potassium" value="{{ (index .FormChild3 0).Potassium.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="potassium_nd" id="potassium_nd" {{ if eq (index .FormChild3 0).PotassiumNd.Int64 1 }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="potassium_nd">ND</label>
+                                        </div>
+                                    </td>
+                                    <td class="test-name">Total bilirubin (µmol/L)</td>
+                                    <td><input type="text" name="total_bilirubin" id="total_bilirubin" value="{{ (index .FormChild3 0).TotalBilirubin.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="total_bilirubin_nd" id="total_bilirubin_nd" {{ if eq (index .FormChild3 0).TotalBilirubinNd.Int64 1 }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="total_bilirubin_nd">ND</label>
+                                        </div>
+                                    </td>
                                 </tr>
                                 <tr>
-                                    <td>Creatinine kinase (U/L)</td>
-                                    <td><input size="5" type="text" name="creatinine_kinase" id="creatinine_kinase" value="{{ (index .FormChild3 0).CreatinineKinase.Float64 }}"></td>
-                                    <td><input type="checkbox" value="1" name="creatinine_kinase_nd" id="creatinine_kinase_nd" {{ if eq (index .FormChild3 0).CreatinineKinaseNd.Int64 1 }}checked{{ end }} >DN</td>
-                                    <td>Platelets (x109/L)</td>
-                                    <td><input size="5" type="text" name="platelets" id="platelets" value="{{ (index .FormChild3 0).Platelets.Float64 }}"></td>
-                                    <td><input type="checkbox" value="1" name="platelets_nd" id="platelets_nd" {{ if eq (index .FormChild3 0).PlateletsNd.Int64 1 }}checked{{ end }} >DN</td>
+                                    <td class="test-name">Urea (mmol/L)</td>
+                                    <td><input type="text" name="urea" id="urea" value="{{ (index .FormChild3 0).Urea.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="urea_nd" id="urea_nd" {{ if eq (index .FormChild3 0).UreaNd.Int64 1 }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="urea_nd">ND</label>
+                                        </div>
+                                    </td>
+                                    <td class="test-name">WBC count (x109/L)</td>
+                                    <td><input type="text" name="wbc_count" id="wbc_count" value="{{ (index .FormChild3 0).WbcCount.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="wbc_count_nd" id="wbc_count_nd" {{ if eq (index .FormChild3 0).WbcCountNd.Int64 1 }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="wbc_count_nd">ND</label>
+                                        </div>
+                                    </td>
                                 </tr>
                                 <tr>
-                                    <td>Calcium (mmol/L)</td>
-                                    <td><input size="5" type="text" name="calcium" id="calcium" value="{{ (index .FormChild3 0).Calcium.Float64 }}"></td>
-                                    <td><input type="checkbox" value="1" name="calcium_nd" id="calcium_nd" {{ if eq (index .FormChild3 0).CalciumNd.Int64 1 }}checked{{ end }} >DN</td>
-                                    <td>PT</td>
-                                    <td><input size="5" type="text" name="pt" id="pt" value="{{ (index .FormChild3 0).Pt.Float64 }}"></td>
-                                    <td><input type="checkbox" value="1" name="pt_nd" id="pt_nd" {{ if eq (index .FormChild3 0).PtNd.Int64 1 }}checked{{ end }} >DN</td>
+                                    <td class="test-name">Creatinine kinase (U/L)</td>
+                                    <td><input type="text" name="creatinine_kinase" id="creatinine_kinase" value="{{ (index .FormChild3 0).CreatinineKinase.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="creatinine_kinase_nd" id="creatinine_kinase_nd" {{ if eq (index .FormChild3 0).CreatinineKinaseNd.Int64 1 }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="creatinine_kinase_nd">ND</label>
+                                        </div>
+                                    </td>
+                                    <td class="test-name">Platelets (x109/L)</td>
+                                    <td><input type="text" name="platelets" id="platelets" value="{{ (index .FormChild3 0).Platelets.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="platelets_nd" id="platelets_nd" {{ if eq (index .FormChild3 0).PlateletsNd.Int64 1 }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="platelets_nd">ND</label>
+                                        </div>
+                                    </td>
                                 </tr>
                                 <tr>
-                                    <td>Sodium (mmol/L)</td>
-                                    <td><input size="5" type="text" name="sodium" id="sodium" value="{{ (index .FormChild3 0).Sodium.Float64 }}"></td>
-                                    <td><input type="checkbox" value="1" name="sodium_nd" id="sodium_nd" {{ if eq (index .FormChild3 0).SodiumNd.Int64 1 }}checked{{ end }} >DN</td>
-                                    <td>aPTT (seconds)</td>
-                                    <td><input size="5" type="text" name="aptt" id="aptt" value="{{ (index .FormChild3 0).Aptt.Float64 }}"></td>
-                                    <td><input type="checkbox" value="1" name="aptt_nd" id="aptt_nd" {{ if eq (index .FormChild3 0).ApttNd.Int64 1 }}checked{{ end }} >DN</td>
+                                    <td class="test-name">Calcium (mmol/L)</td>
+                                    <td><input type="text" name="calcium" id="calcium" value="{{ (index .FormChild3 0).Calcium.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="calcium_nd" id="calcium_nd" {{ if eq (index .FormChild3 0).CalciumNd.Int64 1 }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="calcium_nd">ND</label>
+                                        </div>
+                                    </td>
+                                    <td class="test-name">PT</td>
+                                    <td><input type="text" name="pt" id="pt" value="{{ (index .FormChild3 0).Pt.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="pt_nd" id="pt_nd" {{ if eq (index .FormChild3 0).PtNd.Int64 1 }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="pt_nd">ND</label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="test-name">Sodium (mmol/L)</td>
+                                    <td><input type="text" name="sodium" id="sodium" value="{{ (index .FormChild3 0).Sodium.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="sodium_nd" id="sodium_nd" {{ if eq (index .FormChild3 0).SodiumNd.Int64 1 }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="sodium_nd">ND</label>
+                                        </div>
+                                    </td>
+                                    <td class="test-name">aPTT (seconds)</td>
+                                    <td><input type="text" name="aptt" id="aptt" value="{{ (index .FormChild3 0).Aptt.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="aptt_nd" id="aptt_nd" {{ if eq (index .FormChild3 0).ApttNd.Int64 1 }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="aptt_nd">ND</label>
+                                        </div>
+                                    </td>
                                 </tr>
                             </table>
-                        </div>
-                        <div class="tab-pane fade" id="treat" role="tabpanel" aria-labelledby="treat-tab">
-                            <p> </p>
-                            <div class="container-fluid">
-                                <div class="row registration-input-row">
-                                    <table>
-                                        <tr>
-                                            <th width="30%">Type</th>
-                                            <th width="30%">Dose</th>
-                                            <th width="20%">Route</th>
-                                            <th width="20%">Frequency</th>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                    Antibacterial: 
-                                                    <input type="radio" name="antibacterial" value="1" {{ if eq (index .FormChild4 0).Antibacterial.Int64 1 }}checked{{ end }} >Yes 
-                                                    <input type="radio" name="antibacterial" value="2" {{ if eq (index .FormChild4 0).Antibacterial.Int64 2 }}checked{{ end }} > No <br>
-
-                                                    <input type="checkbox" name="amoxicillin" value="1" {{ if eq (index .FormChild4 0).Amoxicillin.Int64 1 }}checked{{ end }} > amoxicillin <br />
-                                                    <input type="checkbox" name="ceftriaxone" value="1" {{ if eq (index .FormChild4 0).Ceftriaxone.Int64 1 }}checked{{ end }} > ceftriaxone <br /> 
-                                                    <input type="checkbox" name="cefixime" value="1"    {{ if eq (index .FormChild4 0).Cefixime.Int64 1 }}checked{{ end }} > cefixime  <br />
-                                                    <input type="checkbox" name="antibacterial_aza" value="1" {{ if eq (index .FormChild4 0).AntibacterialAza.Int64 1 }}checked{{ end }} > other <br />
-
-                                                    Specify: <input value="{{ (index .FormChild4 0).AntibacterialOther.String }}" size="20" type="text" name="antibacterial_other" id="antibacterial_other"></td>
-
-                                            <td><input value="{{ (index .FormChild4 0).AntibacterialDose.String }}" type="text" name="antibacterial_dose" id="antibacterial_dose" size="20" ></td>
-                                            <td><input value="{{ (index .FormChild4 0).AntibacterialRoute.String }}" type="text" name="antibacterial_route" id="antibacterial_route"></td>
-                                            <td><input value="{{ (index .FormChild4 0).AntibacterialFreq.String }}" type="text" name="antibacterial_freq" id="antibacterial_freq" size="10" ></td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                Antimalarial: 
-                                                <input type="radio" name="antimalarial" value="1" {{ if eq (index .FormChild4 0).Antimalarial.Int64 1 }}checked{{ end }} >Yes 
-                                                <input type="radio" name="antimalarial" value="2" {{ if eq (index .FormChild4 0).Antimalarial.Int64 2 }}checked{{ end }} > No <br>
-                                            </td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <input type="checkbox" name="antimalarial_artesunate" value="1" {{ if eq (index .FormChild4 0).AntimalarialArtesunate.Int64 1 }}checked{{ end }} > Artesunate
-                                            </td>
-                                            <td><input value="{{ (index .FormChild4 0).AntimalarialArtesunateDose.String }}" type="text" name="antimalarial_artesunate_dose" id="antimalarial_artesunate_dose" size="20" ></td>
-                                            <td><input value="{{ (index .FormChild4 0).AntimalarialArtesunateRoute.String }}" type="text" name="antimalarial_artesunate_route" id="antimalarial_artesunate_route"></td>
-                                            <td><input value="{{ (index .FormChild4 0).AntimalarialArtesunateFreq.String }}" type="text" name="antimalarial_artesunate_freq" id="antimalarial_artesunate_freq" size="10"></td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <input type="checkbox" name="antimalarial_arthemeter" value="1" {{ if eq (index .FormChild4 0).AntimalarialArthemeter.Int64 1 }}checked{{ end }} > Arthemeter
-                                            </td>
-                                            <td><input value="{{ (index .FormChild4 0).AntimalarialArthemeterDose.String }}" type="text" name="antimalarial_arthemeter_dose" id="antimalarial_arthemeter_dose" size="20" ></td>
-                                            <td><input value="{{ (index .FormChild4 0).AntimalarialArthemeterRoute.String }}" type="text" name="antimalarial_arthemeter_route" id="antimalarial_arthemeter_route"></td>
-                                            <td><input value="{{ (index .FormChild4 0).AntimalarialArthemeterFreq.String }}" type="text" name="antimalarial_arthemeter_freq" id="antimalarial_arthemeter_freq" size="10" ></td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <input type="checkbox" name="antimalarial_al" value="1" {{ if eq (index .FormChild4 0).AntimalarialAl.Int64 1 }}checked{{ end }} > Arthemeter/Lumefantrine
-                                            </td>
-                                            <td><input value="{{ (index .FormChild4 0).AntimalarialAlDose.String }}" type="text" name="antimalarial_al_dose" id="antimalarial_al_dose" size="20" ></td>
-                                            <td><input value="{{ (index .FormChild4 0).AntimalarialAlRoute.String }}" type="text" name="antimalarial_al_route" id="antimalarial_al_route"></td>
-                                            <td><input value="{{ (index .FormChild4 0).AntimalarialAlFreq.String }}" type="text" name="antimalarial_al_freq" id="antimalarial_al_freq" size="10" ></td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <input type="checkbox" name="antimalarial_aa" value="1" {{ if eq (index .FormChild4 0).AntimalarialAa.Int64 1 }}checked{{ end }} > Artesunate/Amodiaquine
-                                            </td>
-                                            <td><input value="{{ (index .FormChild4 0).AntimalarialAaDose.String }}" type="text" name="antimalarial_aa_dose" id="antimalarial_aa_dose" size="20"></td>
-                                            <td><input value="{{ (index .FormChild4 0).AntimalarialAaRoute.String }}" type="text" name="antimalarial_aa_route" id="antimalarial_aa_route"></td>
-                                            <td><input value="{{ (index .FormChild4 0).AntimalarialAaFreq.String }}" type="text" name="antimalarial_aa_freq" id="antimalarial_aa_freq" size="10"></td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                Other<br>
-                                                Specify: <input type="text" name="other_meds_specify" value="{{ (index .FormChild4 0).OtherMedsSpecify.String }}">
-                                            </td>
-                                            <td><input value="{{ (index .FormChild4 0).OtherMedsDose.String }}" type="text" name="other_meds_dose" id="other_meds_dose" size="20" ></td>
-                                            <td><input value="{{ (index .FormChild4 0).OtherMedsRoute.String }}" type="text" name="other_meds_route" id="other_meds_route"></td>
-                                            <td><input value="{{ (index .FormChild4 0).OtherMedsFreq.String }}" type="text" name="other_meds_freq" id="other_meds_freq" size="10" ></td>
-                                        </tr>
-                                    </table>
                                 </div>
-                                <div class="row registration-input-row">
-                                    <table>
-                                        <tr>
-                                            <td>
-                                                Ebola experimental treatment: <br>
-                                                <input type="radio" name="ebola_experimental" value="1" {{ if eq (index .FormChild4 0).EbolaExperimental.Int64 1 }}checked{{ end }} >Yes 
-                                                <input type="radio" name="ebole_experimental" value="2" {{ if eq (index .FormChild4 0).EbolaExperimental.Int64 2 }}checked{{ end }} > No
-                                            </td>
-                                            <td>
-                                                Indicate if yes:  <br>
-                                                <input type="checkbox" name="ebola_experimental_if_zmap" value="1" {{ if eq (index .FormChild4 0).EbolaExperimentalIfZmap.Int64 1 }}checked{{ end }} > ZMapp.	
-                                                <input type="checkbox" name="ebola_experimental_if_remd" value="1" {{ if eq (index .FormChild4 0).EbolaExperimentalIfRemd.Int64 1 }}checked{{ end }} > Remdesivir (GS-5734).	
-                                                <input type="checkbox" name="ebola_experimental_if_regn" value="1" {{ if eq (index .FormChild4 0).EbolaExperimentalIfRegn.Int64 1 }}checked{{ end }} > REGN3470-3471-3479.	
-                                                <input type="checkbox" name="ebola_experimental_if_favi" value="1" {{ if eq (index .FormChild4 0).EbolaExperimentalIfFavi.Int64 1 }}checked{{ end }} > Favipiravir	
-                                                <input type="checkbox" name="ebola_experimental_if_mab"  value="1" {{ if eq (index .FormChild4 0).EbolaExperimentalIfMab.Int64 1 }}checked{{ end }} > mAb114
-
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </div>
-                                <div class="row registration-input-row">
-                                    At the time of admission, did the patient receive any of the following? <br>
-                                    <table>
-                                        <tr>
-                                            <td>
-                                                Oral/orogastric fluids? 
-                                                <input type="radio" name="oral" id="" value="1" {{ if eq (index .FormChild4 0).Oral.Int64 1 }}checked{{ end }} >Yes 
-                                                <input type="radio" name="oral" id="" value="2" {{ if eq (index .FormChild4 0).Oral.Int64 2 }}checked{{ end }} > No 
-                                                <input type="radio" name="oral" id="" value="3" {{ if eq (index .FormChild4 0).Oral.Int64 3 }}checked{{ end }} > Unknown <br>
-                                                To specify: <br>
-                                                ORS :	<input type="text" size="5"  name="oral_ors_qty"   value="{{ (index .FormChild4 0).OralOrsQty.Float64 }}"> ml  <br>
-                                                Water: 	<input type="text" size="5"  name="oral_water_qty" value="{{ (index .FormChild4 0).OralWaterQty.Float64 }}"> ml  <br>
-                                                Others:	<input type="text" size="15" name="oral_other_aza" value="{{ (index .FormChild4 0).OralOtherAza.String }}">
-                                                 & Vol	<input type="text" size="5" name="oral_other_qty"  value="{{ (index .FormChild4 0).OralOtherQty.Float64 }}"> ml
-
-                                            </td>
-                                            <td>
-                                                IV fluid therapy 
-                                                <input type="radio" name="iv" id="" value="1" {{ if eq (index .FormChild4 0).Iv.Int64 1 }}checked{{ end }} >Yes 
-                                                <input type="radio" name="iv" id="" value="2" {{ if eq (index .FormChild4 0).Iv.Int64 2 }}checked{{ end }} > No 
-                                                <input type="radio" name="iv" id="" value="3" {{ if eq (index .FormChild4 0).Iv.Int64 3 }}checked{{ end }} > Unknown <br>
-                                                If yes, specify: <input type="text" size="15" name="iv_using" value="{{ (index .FormChild4 0).IvUsing.String }}">	ml using <br>
-                                                <input type="radio" name="iv_qty" id="" value="1" {{ if eq (index .FormChild4 0).IvQty.String "1" }}checked{{ end }} > Ringer's lactate <br>
-                                                <input type="radio" name="iv_qty" id="" value="2" {{ if eq (index .FormChild4 0).IvQty.String "2" }}checked{{ end }} > Normal Saline <br>
-                                                <input type="radio" name="iv_qty" id="" value="3" {{ if eq (index .FormChild4 0).IvQty.String "3" }}checked{{ end }} > Others, specify 
-                                                <input type="text" size="15" name="iv_aza" value="{{ (index .FormChild4 0).IvAza.String }}">
-
-                                            </td>
-                                            <td>
-                                                Access type: 
-                                                <input type="radio" name="access_type" id="" value="1" {{ if eq (index .FormChild4 0).AccessType.Int64 1 }}checked{{ end }} > Intra-osseous 
-                                                <input type="radio" name="access_type" id="" value="2" {{ if eq (index .FormChild4 0).AccessType.Int64 2 }}checked{{ end }} > PIV 
-                                                <input type="radio" name="access_type" id="" value="3" {{ if eq (index .FormChild4 0).AccessType.Int64 3 }}checked{{ end }} > CVC 
-                                                <input type="radio" name="access_type" id="" value="4" {{ if eq (index .FormChild4 0).AccessType.Int64 4 }}checked{{ end }} > Unknown
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                Blood transfusion <br>
-                                                <input type="radio" name="blood_trans" value="1" {{ if eq (index .FormChild4 0).BloodTrans.Int64 1 }}checked{{ end }} >Yes 
-                                                <input type="radio" name="blood_trans" value="2" {{ if eq (index .FormChild4 0).BloodTrans.Int64 2 }}checked{{ end }} > No 
-                                                <input type="radio" name="blood_trans" value="3" {{ if eq (index .FormChild4 0).BloodTrans.Int64 3 }}checked{{ end }} > Unknown
-                                                
-                                            </td>
-                                            <td>
-                                                Oxygen therapy 
-                                                <input type="radio" name="oxygen_therapy" value="1" {{ if eq (index .FormChild4 0).OxygenTherapy.Int64 1 }}checked{{ end }} >Yes 
-                                                <input type="radio" name="oxygen_therapy" value="2" {{ if eq (index .FormChild4 0).OxygenTherapy.Int64 2 }}checked{{ end }} > No 
-                                                <input type="radio" name="oxygen_therapy" value="3" {{ if eq (index .FormChild4 0).OxygenTherapy.Int64 3 }}checked{{ end }} > Unknown <br>
-                                                If yes, specify: <input type="text" size="15" name="oxygen_qty" value="{{ (index .FormChild4 0).OxygenQty.Float64 }}"> L/min with <br>
-                                                <input type="radio" name="oxygen_with" value="1" {{ if eq (index .FormChild4 0).OxygenWith.String "1" }}checked{{ end }} >  Nasal cannula  <br>
-                                                <input type="radio" name="oxygen_with" value="2" {{ if eq (index .FormChild4 0).OxygenWith.String "2" }}checked{{ end }} >  Face mask <br>
-                                                <input type="radio" name="oxygen_with" value="3" {{ if eq (index .FormChild4 0).OxygenWith.String "3" }}checked{{ end }} >  face mask with reservoir bag
-
-                                            </td>
-                                            <td>
-                                                Vasopressors/inotropes <br>
-                                                <input type="radio" name="vasopressors" value="1" {{ if eq (index .FormChild4 0).Vasopressors.Int64 1 }}checked{{ end }} >Yes 
-                                                <input type="radio" name="vasopressors" value="2" {{ if eq (index .FormChild4 0).Vasopressors.Int64 2 }}checked{{ end }} > No 
-                                                <input type="radio" name="vasopressors" value="3" {{ if eq (index .FormChild4 0).Vasopressors.Int64 3 }}checked{{ end }} > Unknown
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                Renal replacement therapy <br>
-                                                <input type="radio" name="renal" value="1" {{ if eq (index .FormChild4 0).Renal.Int64 1 }}checked{{ end }} >Yes 
-                                                <input type="radio" name="renal" value="2" {{ if eq (index .FormChild4 0).Renal.Int64 2 }}checked{{ end }} > No 
-                                                <input type="radio" name="renal" value="3" {{ if eq (index .FormChild4 0).Renal.Int64 3 }}checked{{ end }} > Unknown
-                                            </td>
-                                            <td>
-                                                
-                                            </td>
-                                            <td>
-                                                Invasive mechanical ventilation <br>
-                                                <input type="radio" name="invasive" value="1" {{ if eq (index .FormChild4 0).Invasive.Int64 1 }}checked{{ end }} >Yes 
-                                                <input type="radio" name="invasive" value="2" {{ if eq (index .FormChild4 0).Invasive.Int64 2 }}checked{{ end }} > No 
-                                                <input type="radio" name="invasive" value="3" {{ if eq (index .FormChild4 0).Invasive.Int64 3 }}checked{{ end }} > Unknown
-                                            </td>
-                                        </tr>
-                                    </table>
                             </div>
                         </div>
+                        <div class="tab-pane fade" id="treat" role="tabpanel" aria-labelledby="treat-tab">
+                            <div class="card">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="mb-0"><i class="fas fa-pills"></i> Treatment & Medications</h5>
+                                </div>
+                                <div class="card-body p-0">
+                                    <style>
+                                        .treatment-table {
+                                            width: 100%;
+                                            border-collapse: collapse;
+                                            font-size: 0.9rem;
+                                        }
+                                        .treatment-table th {
+                                            background-color: #f8f9fa;
+                                            border: 1px solid #dee2e6;
+                                            padding: 8px 12px;
+                                            text-align: center;
+                                            font-weight: 600;
+                                            color: #495057;
+                                            vertical-align: middle;
+                                        }
+                                        .treatment-table td {
+                                            border: 1px solid #dee2e6;
+                                            padding: 8px 12px;
+                                            vertical-align: middle;
+                                        }
+                                        .treatment-table .section-header {
+                                            background-color: #e9ecef;
+                                            font-weight: 600;
+                                            text-align: center;
+                                            color: #495057;
+                                        }
+                                        .treatment-table .treatment-type {
+                                            background-color: #f8f9fa;
+                                            font-weight: 500;
+                                            color: #495057;
+                                        }
+                                        .treatment-table input[type="text"],
+                                        .treatment-table input[type="date"],
+                                        .treatment-table select {
+                                            width: 100%;
+                                            padding: 4px 8px;
+                                            border: 1px solid #ced4da;
+                                            border-radius: 4px;
+                                            font-size: 0.85rem;
+                                        }
+                                        .treatment-table input[type="checkbox"] {
+                                            margin: 0;
+                                            transform: scale(1.2);
+                                        }
+                                        .treatment-table input[type="radio"] {
+                                            margin: 0;
+                                            transform: scale(1.2);
+                                        }
+                                        .treatment-table .checkbox-label,
+                                        .treatment-table .radio-label {
+                                            margin-left: 5px;
+                                            font-size: 0.85rem;
+                                        }
+                                        .treatment-table .form-group {
+                                            margin-bottom: 0;
+                                        }
+                                        .treatment-table .row {
+                                            margin: 0;
+                                        }
+                                        .treatment-table .medication-options {
+                                            display: flex;
+                                            flex-direction: column;
+                                            gap: 5px;
+                                        }
+                                        .treatment-table .medication-options .checkbox-item {
+                                            display: flex;
+                                            align-items: center;
+                                            gap: 5px;
+                                        }
+                                        .treatment-table .medication-options input[type="text"] {
+                                            width: 120px;
+                                            margin-left: 10px;
+                                        }
+                                        .treatment-table .therapy-section {
+                                            background-color: #f8f9fa;
+                                            padding: 15px;
+                                            border-radius: 5px;
+                                            margin-bottom: 15px;
+                                        }
+                                        .treatment-table .therapy-section h6 {
+                                            color: #495057;
+                                            margin-bottom: 10px;
+                                            font-weight: 600;
+                                        }
+                                        .treatment-table .therapy-options {
+                                            display: flex;
+                                            flex-wrap: wrap;
+                                            gap: 15px;
+                                        }
+                                        .treatment-table .therapy-item {
+                                            flex: 1;
+                                            min-width: 200px;
+                                        }
+                                        .treatment-table .therapy-item .form-check {
+                                            margin-bottom: 8px;
+                                        }
+                                        .treatment-table .therapy-item input[type="text"] {
+                                            width: 80px;
+                                            margin: 0 5px;
+                                        }
+                                        .treatment-table .therapy-item label {
+                                            font-weight: 500;
+                                            margin-bottom: 5px;
+                                        }
+                                    </style>
+                                    <table class="treatment-table">
+                                        <tr>
+                                            <th class="text-center">Type</th>
+                                            <th class="text-center">Dose</th>
+                                            <th class="text-center">Route</th>
+                                            <th class="text-center">Frequency</th>
+                                        </tr>
+                                        <tr>
+                                            <td class="treatment-type">
+                                                <div class="form-group">
+                                                    <label class="form-label fw-bold">Antibacterial:</label>
+                                                    <div class="mb-2">
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="antibacterial" value="1" {{ if eq (index .FormChild4 0).Antibacterial.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">Yes</label>
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="antibacterial" value="2" {{ if eq (index .FormChild4 0).Antibacterial.Int64 2 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">No</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="medication-options">
+                                                        <div class="checkbox-item">
+                                                            <input type="checkbox" name="amoxicillin" value="1" {{ if eq (index .FormChild4 0).Amoxicillin.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                            <span class="checkbox-label">Amoxicillin</span>
+                                                        </div>
+                                                        <div class="checkbox-item">
+                                                            <input type="checkbox" name="ceftriaxone" value="1" {{ if eq (index .FormChild4 0).Ceftriaxone.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                            <span class="checkbox-label">Ceftriaxone</span>
+                                                        </div>
+                                                        <div class="checkbox-item">
+                                                            <input type="checkbox" name="cefixime" value="1" {{ if eq (index .FormChild4 0).Cefixime.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                            <span class="checkbox-label">Cefixime</span>
+                                                        </div>
+                                                        <div class="checkbox-item">
+                                                            <input type="checkbox" name="antibacterial_aza" value="1" {{ if eq (index .FormChild4 0).AntibacterialAza.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                            <span class="checkbox-label">Other:</span>
+                                                            <input type="text" name="antibacterial_other" id="antibacterial_other" value="{{ (index .FormChild4 0).AntibacterialOther.String }}" placeholder="Specify">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td><input value="{{ (index .FormChild4 0).AntibacterialDose.String }}" type="text" name="antibacterial_dose" id="antibacterial_dose" class="form-control" placeholder="Dose"></td>
+                                            <td><input value="{{ (index .FormChild4 0).AntibacterialRoute.String }}" type="text" name="antibacterial_route" id="antibacterial_route" class="form-control" placeholder="Route"></td>
+                                            <td><input value="{{ (index .FormChild4 0).AntibacterialFreq.String }}" type="text" name="antibacterial_freq" id="antibacterial_freq" class="form-control" placeholder="Frequency"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="treatment-type">
+                                                <div class="form-group">
+                                                    <label class="form-label fw-bold">Antimalarial:</label>
+                                                    <div class="mb-2">
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="antimalarial" value="1" {{ if eq (index .FormChild4 0).Antimalarial.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">Yes</label>
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="antimalarial" value="2" {{ if eq (index .FormChild4 0).Antimalarial.Int64 2 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">No</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="treatment-type">
+                                                <div class="form-check">
+                                                    <input type="checkbox" name="antimalarial_artesunate" value="1" {{ if eq (index .FormChild4 0).AntimalarialArtesunate.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                    <label class="form-check-label checkbox-label">Artesunate</label>
+                                                </div>
+                                            </td>
+                                            <td><input value="{{ (index .FormChild4 0).AntimalarialArtesunateDose.String }}" type="text" name="antimalarial_artesunate_dose" id="antimalarial_artesunate_dose" class="form-control" placeholder="Dose"></td>
+                                            <td><input value="{{ (index .FormChild4 0).AntimalarialArtesunateRoute.String }}" type="text" name="antimalarial_artesunate_route" id="antimalarial_artesunate_route" class="form-control" placeholder="Route"></td>
+                                            <td><input value="{{ (index .FormChild4 0).AntimalarialArtesunateFreq.String }}" type="text" name="antimalarial_artesunate_freq" id="antimalarial_artesunate_freq" class="form-control" placeholder="Frequency"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="treatment-type">
+                                                <div class="form-check">
+                                                    <input type="checkbox" name="antimalarial_arthemeter" value="1" {{ if eq (index .FormChild4 0).AntimalarialArthemeter.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                    <label class="form-check-label checkbox-label">Arthemeter</label>
+                                                </div>
+                                            </td>
+                                            <td><input value="{{ (index .FormChild4 0).AntimalarialArthemeterDose.String }}" type="text" name="antimalarial_arthemeter_dose" id="antimalarial_arthemeter_dose" class="form-control" placeholder="Dose"></td>
+                                            <td><input value="{{ (index .FormChild4 0).AntimalarialArthemeterRoute.String }}" type="text" name="antimalarial_arthemeter_route" id="antimalarial_arthemeter_route" class="form-control" placeholder="Route"></td>
+                                            <td><input value="{{ (index .FormChild4 0).AntimalarialArthemeterFreq.String }}" type="text" name="antimalarial_arthemeter_freq" id="antimalarial_arthemeter_freq" class="form-control" placeholder="Frequency"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="treatment-type">
+                                                <div class="form-check">
+                                                    <input type="checkbox" name="antimalarial_al" value="1" {{ if eq (index .FormChild4 0).AntimalarialAl.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                    <label class="form-check-label checkbox-label">Arthemeter/Lumefantrine</label>
+                                                </div>
+                                            </td>
+                                            <td><input value="{{ (index .FormChild4 0).AntimalarialAlDose.String }}" type="text" name="antimalarial_al_dose" id="antimalarial_al_dose" class="form-control" placeholder="Dose"></td>
+                                            <td><input value="{{ (index .FormChild4 0).AntimalarialAlRoute.String }}" type="text" name="antimalarial_al_route" id="antimalarial_al_route" class="form-control" placeholder="Route"></td>
+                                            <td><input value="{{ (index .FormChild4 0).AntimalarialAlFreq.String }}" type="text" name="antimalarial_al_freq" id="antimalarial_al_freq" class="form-control" placeholder="Frequency"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="treatment-type">
+                                                <div class="form-check">
+                                                    <input type="checkbox" name="antimalarial_aa" value="1" {{ if eq (index .FormChild4 0).AntimalarialAa.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                    <label class="form-check-label checkbox-label">Artesunate/Amodiaquine</label>
+                                                </div>
+                                            </td>
+                                            <td><input value="{{ (index .FormChild4 0).AntimalarialAaDose.String }}" type="text" name="antimalarial_aa_dose" id="antimalarial_aa_dose" class="form-control" placeholder="Dose"></td>
+                                            <td><input value="{{ (index .FormChild4 0).AntimalarialAaRoute.String }}" type="text" name="antimalarial_aa_route" id="antimalarial_aa_route" class="form-control" placeholder="Route"></td>
+                                            <td><input value="{{ (index .FormChild4 0).AntimalarialAaFreq.String }}" type="text" name="antimalarial_aa_freq" id="antimalarial_aa_freq" class="form-control" placeholder="Frequency"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="treatment-type">
+                                                <div class="form-group">
+                                                    <label class="form-label fw-bold">Other Medications:</label>
+                                                    <div class="mt-2">
+                                                        <label class="form-label">Specify:</label>
+                                                        <input type="text" name="other_meds_specify" value="{{ (index .FormChild4 0).OtherMedsSpecify.String }}" class="form-control" placeholder="Specify other medications">
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td><input value="{{ (index .FormChild4 0).OtherMedsDose.String }}" type="text" name="other_meds_dose" id="other_meds_dose" class="form-control" placeholder="Dose"></td>
+                                            <td><input value="{{ (index .FormChild4 0).OtherMedsRoute.String }}" type="text" name="other_meds_route" id="other_meds_route" class="form-control" placeholder="Route"></td>
+                                            <td><input value="{{ (index .FormChild4 0).OtherMedsFreq.String }}" type="text" name="other_meds_freq" id="other_meds_freq" class="form-control" placeholder="Frequency"></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                    <div class="therapy-section mb-4">
+                                        <h6><i class="fas fa-flask"></i> Ebola Experimental Treatment</h6>
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label class="form-label fw-bold">Ebola experimental treatment:</label>
+                                                    <div class="mt-2">
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="ebola_experimental" value="1" {{ if eq (index .FormChild4 0).EbolaExperimental.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">Yes</label>
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="ebola_experimental" value="2" {{ if eq (index .FormChild4 0).EbolaExperimental.Int64 2 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">No</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="form-group">
+                                                    <label class="form-label fw-bold">If Yes, specify treatment(s):</label>
+                                                    <div class="row">
+                                                        <div class="col-sm-6">
+                                                            <div class="form-check">
+                                                                <input type="checkbox" name="ebola_experimental_if_zmap" value="1" {{ if eq (index .FormChild4 0).EbolaExperimentalIfZmap.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                                <label class="form-check-label checkbox-label">ZMapp</label>
+                                                            </div>
+                                                            <div class="form-check">
+                                                                <input type="checkbox" name="ebola_experimental_if_remd" value="1" {{ if eq (index .FormChild4 0).EbolaExperimentalIfRemd.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                                <label class="form-check-label checkbox-label">Remdesivir (GS-5734)</label>
+                                                            </div>
+                                                            <div class="form-check">
+                                                                <input type="checkbox" name="ebola_experimental_if_regn" value="1" {{ if eq (index .FormChild4 0).EbolaExperimentalIfRegn.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                                <label class="form-check-label checkbox-label">REGN3470-3471-3479</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <div class="form-check">
+                                                                <input type="checkbox" name="ebola_experimental_if_favi" value="1" {{ if eq (index .FormChild4 0).EbolaExperimentalIfFavi.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                                <label class="form-check-label checkbox-label">Favipiravir</label>
+                                                            </div>
+                                                            <div class="form-check">
+                                                                <input type="checkbox" name="ebola_experimental_if_mab" value="1" {{ if eq (index .FormChild4 0).EbolaExperimentalIfMab.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                                <label class="form-check-label checkbox-label">mAb114</label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="therapy-section mb-4">
+                                        <h6><i class="fas fa-hospital"></i> Admission Therapies</h6>
+                                        <p class="text-muted mb-3">At the time of admission, did the patient receive any of the following?</p>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <!-- Oral/orogastric fluids -->
+                                                <div class="form-group mb-3">
+                                                    <label class="form-label fw-bold">Oral/orogastric fluids?</label>
+                                                    <div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="oral" value="1" {{ if eq (index .FormChild4 0).Oral.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">Yes</label>
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="oral" value="2" {{ if eq (index .FormChild4 0).Oral.Int64 2 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">No</label>
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="oral" value="3" {{ if eq (index .FormChild4 0).Oral.Int64 3 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">Unknown</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mt-2">
+                                                        <div class="col-4">
+                                                            <label class="form-label">ORS:</label>
+                                                            <input type="text" name="oral_ors_qty" value="{{ (index .FormChild4 0).OralOrsQty.Float64 }}" class="form-control" placeholder="ml">
+                                                        </div>
+                                                        <div class="col-4">
+                                                            <label class="form-label">Water:</label>
+                                                            <input type="text" name="oral_water_qty" value="{{ (index .FormChild4 0).OralWaterQty.Float64 }}" class="form-control" placeholder="ml">
+                                                        </div>
+                                                        <div class="col-4">
+                                                            <label class="form-label">Others:</label>
+                                                            <input type="text" name="oral_other_aza" value="{{ (index .FormChild4 0).OralOtherAza.String }}" class="form-control" placeholder="Specify">
+                                                            <input type="text" name="oral_other_qty" value="{{ (index .FormChild4 0).OralOtherQty.Float64 }}" class="form-control mt-1" placeholder="ml">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- IV fluid therapy -->
+                                                <div class="form-group mb-3">
+                                                    <label class="form-label fw-bold">IV fluid therapy</label>
+                                                    <div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="iv" value="1" {{ if eq (index .FormChild4 0).Iv.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">Yes</label>
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="iv" value="2" {{ if eq (index .FormChild4 0).Iv.Int64 2 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">No</label>
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="iv" value="3" {{ if eq (index .FormChild4 0).Iv.Int64 3 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">Unknown</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mt-2">
+                                                        <div class="col-6">
+                                                            <label class="form-label">If yes, specify volume (ml):</label>
+                                                            <input type="text" name="iv_using" value="{{ (index .FormChild4 0).IvUsing.String }}" class="form-control" placeholder="Volume">
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <label class="form-label">Type:</label>
+                                                            <div class="form-check">
+                                                                <input type="radio" name="iv_qty" value="1" {{ if eq (index .FormChild4 0).IvQty.String "1" }}checked{{ end }} class="form-check-input">
+                                                                <label class="form-check-label radio-label">Ringer's lactate</label>
+                                                            </div>
+                                                            <div class="form-check">
+                                                                <input type="radio" name="iv_qty" value="2" {{ if eq (index .FormChild4 0).IvQty.String "2" }}checked{{ end }} class="form-check-input">
+                                                                <label class="form-check-label radio-label">Normal Saline</label>
+                                                            </div>
+                                                            <div class="form-check">
+                                                                <input type="radio" name="iv_qty" value="3" {{ if eq (index .FormChild4 0).IvQty.String "3" }}checked{{ end }} class="form-check-input">
+                                                                <label class="form-check-label radio-label">Others, specify:</label>
+                                                                <input type="text" name="iv_aza" value="{{ (index .FormChild4 0).IvAza.String }}" class="form-control mt-1" placeholder="Specify">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- Access type -->
+                                                <div class="form-group mb-3">
+                                                    <label class="form-label fw-bold">Access type:</label>
+                                                    <div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="access_type" value="1" {{ if eq (index .FormChild4 0).AccessType.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">Intra-osseous</label>
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="access_type" value="2" {{ if eq (index .FormChild4 0).AccessType.Int64 2 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">PIV</label>
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="access_type" value="3" {{ if eq (index .FormChild4 0).AccessType.Int64 3 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">CVC</label>
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="access_type" value="4" {{ if eq (index .FormChild4 0).AccessType.Int64 4 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">Unknown</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <!-- Blood transfusion -->
+                                                <div class="form-group mb-3">
+                                                    <label class="form-label fw-bold">Blood transfusion</label>
+                                                    <div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="blood_trans" value="1" {{ if eq (index .FormChild4 0).BloodTrans.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">Yes</label>
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="blood_trans" value="2" {{ if eq (index .FormChild4 0).BloodTrans.Int64 2 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">No</label>
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="blood_trans" value="3" {{ if eq (index .FormChild4 0).BloodTrans.Int64 3 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">Unknown</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- Oxygen therapy -->
+                                                <div class="form-group mb-3">
+                                                    <label class="form-label fw-bold">Oxygen therapy</label>
+                                                    <div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="oxygen_therapy" value="1" {{ if eq (index .FormChild4 0).OxygenTherapy.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">Yes</label>
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="oxygen_therapy" value="2" {{ if eq (index .FormChild4 0).OxygenTherapy.Int64 2 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">No</label>
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="oxygen_therapy" value="3" {{ if eq (index .FormChild4 0).OxygenTherapy.Int64 3 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">Unknown</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mt-2">
+                                                        <div class="col-6">
+                                                            <label class="form-label">If yes, specify (L/min):</label>
+                                                            <input type="text" name="oxygen_qty" value="{{ (index .FormChild4 0).OxygenQty.Float64 }}" class="form-control" placeholder="L/min">
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <label class="form-label">With:</label>
+                                                            <div class="form-check">
+                                                                <input type="radio" name="oxygen_with" value="1" {{ if eq (index .FormChild4 0).OxygenWith.String "1" }}checked{{ end }} class="form-check-input">
+                                                                <label class="form-check-label radio-label">Nasal cannula</label>
+                                                            </div>
+                                                            <div class="form-check">
+                                                                <input type="radio" name="oxygen_with" value="2" {{ if eq (index .FormChild4 0).OxygenWith.String "2" }}checked{{ end }} class="form-check-input">
+                                                                <label class="form-check-label radio-label">Face mask</label>
+                                                            </div>
+                                                            <div class="form-check">
+                                                                <input type="radio" name="oxygen_with" value="3" {{ if eq (index .FormChild4 0).OxygenWith.String "3" }}checked{{ end }} class="form-check-input">
+                                                                <label class="form-check-label radio-label">Face mask with reservoir bag</label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- Vasopressors/inotropes -->
+                                                <div class="form-group mb-3">
+                                                    <label class="form-label fw-bold">Vasopressors/inotropes</label>
+                                                    <div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="vasopressors" value="1" {{ if eq (index .FormChild4 0).Vasopressors.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">Yes</label>
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="vasopressors" value="2" {{ if eq (index .FormChild4 0).Vasopressors.Int64 2 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">No</label>
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="vasopressors" value="3" {{ if eq (index .FormChild4 0).Vasopressors.Int64 3 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">Unknown</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- Renal replacement therapy -->
+                                                <div class="form-group mb-3">
+                                                    <label class="form-label fw-bold">Renal replacement therapy</label>
+                                                    <div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="renal" value="1" {{ if eq (index .FormChild4 0).Renal.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">Yes</label>
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="renal" value="2" {{ if eq (index .FormChild4 0).Renal.Int64 2 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">No</label>
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="renal" value="3" {{ if eq (index .FormChild4 0).Renal.Int64 3 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">Unknown</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- Invasive mechanical ventilation -->
+                                                <div class="form-group mb-3">
+                                                    <label class="form-label fw-bold">Invasive mechanical ventilation</label>
+                                                    <div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="invasive" value="1" {{ if eq (index .FormChild4 0).Invasive.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">Yes</label>
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="invasive" value="2" {{ if eq (index .FormChild4 0).Invasive.Int64 2 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">No</label>
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input type="radio" name="invasive" value="3" {{ if eq (index .FormChild4 0).Invasive.Int64 3 }}checked{{ end }} class="form-check-input">
+                                                            <label class="form-check-label radio-label">Unknown</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                         </div>
 
                     </div>
                    

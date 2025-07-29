@@ -20,7 +20,59 @@
                                     <h6>Current Outbreak Assignments</h6>
                                 </div>
                                 <div class="card-body">
-                                    <p class="text-muted">No outbreak assignments found. Click "Assign Users to Outbreak" to get started.</p>
+                                    {{if .Items}}
+                                    <div class="table-responsive">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>User</th>
+                                                    <th>Outbreak Name</th>
+                                                    <th>Description</th>
+                                                    <th>Type</th>
+                                                    <th>Status</th>
+                                                    <th>Assigned Date</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {{range .Items}}
+                                                {{$assignment := .}}
+                                                <tr>
+                                                    <td>{{$assignment.User.UserName.String}}</td>
+                                                    <td>{{$assignment.Outbreak.Name.String}}</td>
+                                                    <td>{{$assignment.Outbreak.Description.String}}</td>
+                                                    <td>
+                                                        <span class="badge {{if eq $assignment.Outbreak.OutbreakType.String "vhf"}}bg-danger{{else if eq $assignment.Outbreak.OutbreakType.String "mpox"}}bg-warning{{else}}bg-secondary{{end}}">
+                                                            {{if eq $assignment.Outbreak.OutbreakType.String "vhf"}}VHF{{else if eq $assignment.Outbreak.OutbreakType.String "mpox"}}MPOX{{else}}General{{end}}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge {{if eq $assignment.Outbreak.Status.String "active"}}bg-success{{else}}bg-danger{{end}}">
+                                                            {{$assignment.Outbreak.Status.String}}
+                                                        </span>
+                                                    </td>
+                                                    <td>{{humanDate $assignment.AssignedAt}}</td>
+                                                    <td>
+                                                        <div class="btn-group">
+                                                            <a href="/outbreaks/{{$assignment.OutbreakID}}" class="btn btn-sm btn-outline-primary">
+                                                                <i class="fas fa-eye"></i> View
+                                                            </a>
+                                                            <button class="btn btn-sm btn-outline-danger" onclick="removeAssignment({{$assignment.UserID}}, {{$assignment.OutbreakID}})">
+                                                                <i class="fas fa-trash"></i> Remove
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {{end}}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {{else}}
+                                    <div class="text-center py-4">
+                                        <i class="fas fa-info-circle text-muted" style="font-size: 3rem;"></i>
+                                        <p class="text-muted mt-3">No outbreak assignments found. Click "Assign Users to Outbreak" to get started.</p>
+                                    </div>
+                                    {{end}}
                                 </div>
                             </div>
                         </div>
@@ -30,4 +82,30 @@
         </div>
     </div>
 </div>
+
+<script>
+function removeAssignment(userID, outbreakID) {
+    if (confirm('Are you sure you want to remove this assignment?')) {
+        fetch('/api/outbreaks/' + outbreakID + '/users/' + userID, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                alert('Assignment removed successfully');
+                location.reload();
+            } else {
+                alert('Error removing assignment: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error removing assignment');
+        });
+    }
+}
+</script>
 {{end}} 

@@ -1,0 +1,197 @@
+{{ define "content" }}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="/">Home</a></li>
+                        <li class="breadcrumb-item"><a href="/inventory">Inventory</a></li>
+                        <li class="breadcrumb-item active">Purchase Order</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">Create Purchase Order</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST" action="/inventory/purchase-orders/save">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="supplier_id" class="form-label">Supplier *</label>
+                                    <select class="form-select" id="supplier_id" name="supplier_id" required>
+                                        <option value="">Select Supplier</option>
+                                        {{range .InventorySuppliers}}
+                                        <option value="{{.ID}}">{{.Name}} - {{.ContactPerson}}</option>
+                                        {{end}}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="expected_delivery" class="form-label">Expected Delivery Date</label>
+                                    <input type="date" class="form-control" id="expected_delivery" name="expected_delivery">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label for="notes" class="form-label">Order Notes</label>
+                                    <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Enter any special instructions or notes for this purchase order"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Order Items Section -->
+                        <div class="row">
+                            <div class="col-12">
+                                <h5 class="mb-3">Order Items</h5>
+                                <div id="order-items">
+                                    <div class="order-item row mb-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Item</label>
+                                            <select class="form-select" name="items[]" required>
+                                                <option value="">Select Item</option>
+                                                {{range .InventoryItems}}
+                                                <option value="{{.ID}}" data-cost="{{.UnitCost}}">{{.Name}} ({{.Unit}}) - ${{printf "%.2f" .UnitCost}}</option>
+                                                {{end}}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">Quantity</label>
+                                            <input type="number" class="form-control" name="quantities[]" min="1" required>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">Unit Cost</label>
+                                            <input type="number" step="0.01" class="form-control" name="unit_costs[]" required>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">Total</label>
+                                            <input type="number" step="0.01" class="form-control" name="totals[]" readonly>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">&nbsp;</label>
+                                            <button type="button" class="btn btn-danger btn-block" onclick="removeOrderItem(this)">
+                                                <i class="fe-trash-2"></i> Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-success" onclick="addOrderItem()">
+                                    <i class="fe-plus me-2"></i>Add Item
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Order Summary -->
+                        <div class="row">
+                            <div class="col-md-6 offset-md-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Order Summary</h5>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Subtotal:</span>
+                                            <span id="subtotal">$0.00</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Tax (10%):</span>
+                                            <span id="tax">$0.00</span>
+                                        </div>
+                                        <hr>
+                                        <div class="d-flex justify-content-between">
+                                            <strong>Total:</strong>
+                                            <strong id="total">$0.00</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-end">
+                                    <a href="/inventory" class="btn btn-secondary me-2">Cancel</a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fe-save me-2"></i>Create Purchase Order
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function addOrderItem() {
+    const container = document.getElementById('order-items');
+    const newItem = container.children[0].cloneNode(true);
+    
+    // Clear the values
+    newItem.querySelectorAll('input, select').forEach(input => {
+        if (input.type === 'number') {
+            input.value = '';
+        } else if (input.tagName === 'SELECT') {
+            input.selectedIndex = 0;
+        }
+    });
+    
+    container.appendChild(newItem);
+}
+
+function removeOrderItem(button) {
+    const items = document.querySelectorAll('.order-item');
+    if (items.length > 1) {
+        button.closest('.order-item').remove();
+    }
+}
+
+// Calculate totals when quantity or unit cost changes
+document.addEventListener('input', function(e) {
+    if (e.target.name === 'quantities[]' || e.target.name === 'unit_costs[]') {
+        const row = e.target.closest('.order-item');
+        const quantity = parseFloat(row.querySelector('input[name="quantities[]"]').value) || 0;
+        const unitCost = parseFloat(row.querySelector('input[name="unit_costs[]"]').value) || 0;
+        const total = quantity * unitCost;
+        row.querySelector('input[name="totals[]"]').value = total.toFixed(2);
+        
+        updateOrderSummary();
+    }
+});
+
+// Auto-fill unit cost when item is selected
+document.addEventListener('change', function(e) {
+    if (e.target.name === 'items[]') {
+        const row = e.target.closest('.order-item');
+        const selectedOption = e.target.options[e.target.selectedIndex];
+        const unitCost = selectedOption.dataset.cost;
+        if (unitCost) {
+            row.querySelector('input[name="unit_costs[]"]').value = unitCost;
+        }
+    }
+});
+
+function updateOrderSummary() {
+    let subtotal = 0;
+    document.querySelectorAll('input[name="totals[]"]').forEach(input => {
+        subtotal += parseFloat(input.value) || 0;
+    });
+    
+    const tax = subtotal * 0.1;
+    const total = subtotal + tax;
+    
+    document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
+    document.getElementById('tax').textContent = '$' + tax.toFixed(2);
+    document.getElementById('total').textContent = '$' + total.toFixed(2);
+}
+</script>
+{{ end }} 

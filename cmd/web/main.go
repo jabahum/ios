@@ -12,6 +12,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/session"
+	"github.com/gofiber/storage/redis"
 
 	_ "github.com/lib/pq"
 
@@ -22,8 +23,37 @@ import (
 	"context"
 )
 
-// Replace the default in-memory session store with a file-based store for persistence
-var store = session.New() // Session store (in-memory)
+// Initialize Redis storage for sessions
+var store *session.Store
+
+func init() {
+	// Create Redis storage
+	redisStorage := redis.New(redis.Config{
+		Host:      "localhost", // Redis host
+		Port:      6379,        // Redis port
+		Username:  "",          // Redis username (if needed)
+		Password:  "",          // Redis password (if needed)
+		Database:  0,           // Redis database number
+		Reset:     false,       // Do not flush DB on startup
+		TLSConfig: nil,         // TLS config (if using TLS)
+	})
+
+	// Test Redis connection
+	if err := redisStorage.Conn().Ping(context.Background()).Err(); err != nil {
+		log.Printf("WARNING: Failed to connect to Redis: %v", err)
+		log.Printf("WARNING: Sessions will not persist across restarts. Please ensure Redis is running on localhost:6379")
+	} else {
+		log.Printf("INFO: Successfully connected to Redis for session storage")
+	}
+
+	// Initialize session store with Redis storage
+	store = session.New(session.Config{
+		Storage: redisStorage,
+		// Optional: Configure session settings
+		Expiration: 24 * 60 * 60, // 24 hours in seconds
+		KeyLookup:  "cookie:fiber_sess",
+	})
+}
 
 func trace() string {
 	pc, file, line, ok := runtime.Caller(1)

@@ -1,0 +1,252 @@
+{{ define "content" }}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="/">Home</a></li>
+                        <li class="breadcrumb-item active">Inventory Dashboard</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">Inventory Management Dashboard</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="text-muted fw-normal mt-0" title="Total Items">Total Items</h5>
+                            <h3 class="mt-3 mb-3">{{.InventoryStats.TotalItems}}</h3>
+                        </div>
+                        <div class="avatar-sm">
+                            <span class="avatar-title bg-soft-primary rounded">
+                                <i class="fe-package font-20 text-primary"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="text-muted fw-normal mt-0" title="Stock Levels">Stock Levels</h5>
+                            <h3 class="mt-3 mb-3">{{.InventoryStats.TotalStockLevels}}</h3>
+                        </div>
+                        <div class="avatar-sm">
+                            <span class="avatar-title bg-soft-success rounded">
+                                <i class="fe-bar-chart-2 font-20 text-success"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="text-muted fw-normal mt-0" title="Low Stock Alerts">Low Stock</h5>
+                            <h3 class="mt-3 mb-3 text-warning">{{.InventoryStats.LowStockCount}}</h3>
+                        </div>
+                        <div class="avatar-sm">
+                            <span class="avatar-title bg-soft-warning rounded">
+                                <i class="fe-alert-triangle font-20 text-warning"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="text-muted fw-normal mt-0" title="Total Value">Total Value</h5>
+                            <h3 class="mt-3 mb-3">${{printf "%.2f" .InventoryStats.TotalValue}}</h3>
+                        </div>
+                        <div class="avatar-sm">
+                            <span class="avatar-title bg-soft-info rounded">
+                                <i class="fe-dollar-sign font-20 text-info"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="header-title mb-3">Quick Actions</h4>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <a href="/inventory/items/new" class="btn btn-primary btn-block mb-3">
+                                <i class="fe-plus me-2"></i>Add New Item
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="/inventory/stock" class="btn btn-success btn-block mb-3">
+                                <i class="fe-arrow-up me-2"></i>Stock In/Out
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="/inventory/purchase-orders" class="btn btn-info btn-block mb-3">
+                                <i class="fe-shopping-cart me-2"></i>Purchase Order
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="/inventory/requisitions" class="btn btn-warning btn-block mb-3">
+                                <i class="fe-file-text me-2"></i>Requisition
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions and Alerts -->
+    <div class="row">
+        <!-- Recent Transactions -->
+        <div class="col-xl-8">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="header-title mb-3">Recent Transactions</h4>
+                    <div class="table-responsive">
+                        <table class="table table-centered table-nowrap table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Item</th>
+                                    <th>Site</th>
+                                    <th>Type</th>
+                                    <th>Quantity</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{range .InventoryTransactions}}
+                                <tr>
+                                    <td>{{.TransactionDate.Format "2006-01-02 15:04"}}</td>
+                                    <td>{{.ItemName}}</td>
+                                    <td>{{.SiteName}}</td>
+                                    <td>
+                                        {{if eq .TransactionType "in"}}
+                                            <span class="badge bg-success">Stock In</span>
+                                        {{else}}
+                                            <span class="badge bg-danger">Stock Out</span>
+                                        {{end}}
+                                    </td>
+                                    <td>{{.Quantity}}</td>
+                                    <td>${{printf "%.2f" (mul .Quantity .UnitCost)}}</td>
+                                </tr>
+                                {{else}}
+                                <tr>
+                                    <td colspan="6" class="text-center">No recent transactions</td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Low Stock Alerts -->
+        <div class="col-xl-4">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="header-title mb-3">Low Stock Alerts</h4>
+                    <div class="table-responsive">
+                        <table class="table table-centered table-nowrap table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Site</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{range .InventoryAlerts}}
+                                <tr>
+                                    <td>{{.ItemName}}</td>
+                                    <td>{{.SiteName}}</td>
+                                    <td>
+                                        <span class="badge bg-warning">{{.AlertType}}</span>
+                                    </td>
+                                </tr>
+                                {{else}}
+                                <tr>
+                                    <td colspan="3" class="text-center">No low stock alerts</td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Cards -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fe-package font-24 text-primary mb-3"></i>
+                    <h5>Items Management</h5>
+                    <p class="text-muted">Manage inventory items, categories, and suppliers</p>
+                    <a href="/inventory/items" class="btn btn-sm btn-primary">View Items</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fe-bar-chart-2 font-24 text-success mb-3"></i>
+                    <h5>Stock Management</h5>
+                    <p class="text-muted">Track stock levels and manage transactions</p>
+                    <a href="/inventory/stock" class="btn btn-sm btn-success">Manage Stock</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fe-shopping-cart font-24 text-info mb-3"></i>
+                    <h5>Purchase Orders</h5>
+                    <p class="text-muted">Create and manage purchase orders</p>
+                    <a href="/inventory/purchase-orders" class="btn btn-sm btn-info">View Orders</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fe-file-text font-24 text-warning mb-3"></i>
+                    <h5>Reports</h5>
+                    <p class="text-muted">Generate inventory reports and analytics</p>
+                    <a href="/inventory/reports" class="btn btn-sm btn-warning">View Reports</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{ end }} 
