@@ -8,6 +8,7 @@
       <h5 class="mb-0">Case Information</h5>
     </div>
     <div class="card-body">
+      {{if .Patient}}
       <div class="row">
         <div class="col-md-4">
           <p><strong>Case Code:</strong> {{.Patient.CaseCode}}</p>
@@ -19,12 +20,21 @@
           <p><strong>Phone Number:</strong> {{.Patient.PatientPhone}}</p>
         </div>
       </div>
+      {{else}}
+      <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Warning:</strong> Patient information not available.
+      </div>
+      {{end}}
     </div>
   </div>
 
   <form id="labForm" method="POST" action="/vhf-lab/save">
+    {{if .Patient}}
     <input type="hidden" name="case_id" id="caseId" value="{{.Patient.ID}}">
+    {{end}}
     
+    {{if .Lab}}
     <div class="card p-4">
       <h5 class="mb-4">Sample Information</h5>
       <div class="row g-4">
@@ -132,6 +142,12 @@
           <input type="text" class="form-control" value="{{.Lab.LabName.String}}" readonly>
         </div>
       </div>
+    </div>
+    {{end}}
+    {{else}}
+    <div class="alert alert-info">
+      <i class="fas fa-info-circle me-2"></i>
+      <strong>Info:</strong> No laboratory data available for this case.
     </div>
     {{end}}
 

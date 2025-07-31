@@ -40,6 +40,7 @@
         <!-- Patient Information -->
         <div class="section">
             <h3 class="section-title">Patient Information</h3>
+            {{if .Case}}
             <div class="row">
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Case Code</label>
@@ -68,6 +69,12 @@
                     <input type="text" class="form-control readonly-field" value="{{.Case.Status}}" readonly>
                 </div>
             </div>
+            {{else}}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Warning:</strong> Patient information not available.
+            </div>
+            {{end}}
         </div>
 
         <!-- Laboratory Information -->
@@ -105,9 +112,11 @@
             {{else}}
             <div class="alert alert-info">
                 No laboratory information available. 
+                {{if .Case}}
                 <a href="/vhf-lab/{{.Case.ID}}" class="btn btn-primary ms-3">
                     <i class="bi bi-vial"></i> Add Lab Information
                 </a>
+                {{end}}
             </div>
             {{end}}
         </div>
@@ -115,6 +124,7 @@
         <!-- Clinical Information -->
         <div class="section">
             <h3 class="section-title">Clinical Information</h3>
+            {{if .Case}}
             <div class="row">
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Date of Onset</label>
@@ -135,6 +145,12 @@
                     <textarea class="form-control readonly-field" rows="3" readonly>{{.Case.ClinicalNotes}}</textarea>
                 </div>
             </div>
+            {{else}}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Warning:</strong> Clinical information not available.
+            </div>
+            {{end}}
         </div>
     </div>
 
