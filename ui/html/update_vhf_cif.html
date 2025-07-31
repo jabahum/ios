@@ -152,6 +152,7 @@
         </h2>
         <div id="clinicalSigns" class="accordion-collapse collapse">
           <div class="accordion-body">
+            {{if .ClinicalSigns}}
             <div class="row mb-3">
               <div class="col-md-6">
                 <label class="form-label">Date of Initial Onset</label>
@@ -200,6 +201,12 @@
                 {{renderSymptomRow "sensitive_to_light" "Sensitive to Light" .ClinicalSigns.SensitiveToLight .ClinicalSigns.DateSensitiveToLight .ClinicalSigns.DurationSensitiveToLight}}
               </tbody>
             </table>
+            {{else}}
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle me-2"></i>
+              No clinical signs data available for this case.
+            </div>
+            {{end}}
           </div>
         </div>
       </div>
@@ -212,6 +219,7 @@
         </h2>
         <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#vhfFormAccordion">
           <div class="accordion-body">
+            {{if .Hospitalization}}
             <div class="row g-4">
               <div class="col-md-6">
                 <label class="form-label fw-bold">Is the patient hospitalized?*</label>
@@ -252,6 +260,12 @@
                 <input type="date" class="form-control" name="isolation_date" id="isolation_date" value="{{if .Hospitalization.IsolationDate.Valid}}{{.Hospitalization.IsolationDate.Time.Format "2006-01-02"}}{{end}}">
               </div>
             </div>
+            {{else}}
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle me-2"></i>
+              No hospitalization data available for this case.
+            </div>
+            {{end}}
           </div>
         </div>
       </div>
@@ -264,6 +278,7 @@
         </h2>
         <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#vhfFormAccordion">
           <div class="accordion-body">
+            {{if .RiskFactors}}
             <div class="row g-3">
               <div class="col-md-6">
                 <label class="form-label">Contact with a known/suspected VHF case?*</label>
@@ -311,6 +326,12 @@
                 <input type="date" class="form-control" name="contact_death_date" value="{{if .RiskFactors.ContactDeathDate.Valid}}{{.RiskFactors.ContactDeathDate.Time.Format "2006-01-02"}}{{end}}">
               </div>
             </div>
+            {{else}}
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle me-2"></i>
+              No risk factors data available for this case.
+            </div>
+            {{end}}
           </div>
         </div>
       </div>
@@ -323,6 +344,7 @@
         </h2>
         <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive" data-bs-parent="#vhfFormAccordion">
           <div class="accordion-body">
+            {{if .Investigator}}
             <div class="row g-3">
               <div class="col-md-6">
                 <label class="form-label">Name of Investigator</label>
@@ -349,6 +371,12 @@
                 <input type="text" class="form-control" name="investigator_health_facility" value="{{.Investigator.HealthFacility}}">
               </div>
             </div>
+            {{else}}
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle me-2"></i>
+              No investigator data available for this case.
+            </div>
+            {{end}}
           </div>
         </div>
       </div>

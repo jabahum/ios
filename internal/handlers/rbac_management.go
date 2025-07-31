@@ -1036,14 +1036,17 @@ func HandlerGetMigrationStatus(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error 
 
 // HandlerGetUsers handles getting all users
 func HandlerGetUsers(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
-	// Query to get users with their roles
+	// Query to get users with their roles and permissions
 	query := `
 		SELECT DISTINCT u.user_id, u.user_name, u.email, u.first_name, u.last_name, 
 		       u.is_active, u.is_locked, u.last_login_at, u.created_at,
-		       COALESCE(array_agg(r.name) FILTER (WHERE r.name IS NOT NULL), ARRAY[]::text[]) as roles
+		       COALESCE(array_agg(DISTINCT r.name) FILTER (WHERE r.name IS NOT NULL), ARRAY[]::text[]) as roles,
+		       COALESCE(array_agg(DISTINCT p.name) FILTER (WHERE p.name IS NOT NULL), ARRAY[]::text[]) as permissions
 		FROM users u
 		LEFT JOIN user_roles ur ON u.user_id = ur.user_id
 		LEFT JOIN roles r ON ur.role_id = r.id
+		LEFT JOIN role_permissions rp ON r.id = rp.role_id
+		LEFT JOIN permissions p ON rp.permission_id = p.id
 		GROUP BY u.user_id, u.user_name, u.email, u.first_name, u.last_name, 
 		         u.is_active, u.is_locked, u.last_login_at, u.created_at
 		ORDER BY u.user_name
@@ -1069,11 +1072,12 @@ func HandlerGetUsers(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 			LastLoginAt sql.NullTime
 			CreatedAt   time.Time
 			Roles       pq.StringArray
+			Permissions pq.StringArray
 		}
 
 		err := rows.Scan(
 			&user.ID, &user.UserName, &user.Email, &user.FirstName, &user.LastName,
-			&user.IsActive, &user.IsLocked, &user.LastLoginAt, &user.CreatedAt, &user.Roles,
+			&user.IsActive, &user.IsLocked, &user.LastLoginAt, &user.CreatedAt, &user.Roles, &user.Permissions,
 		)
 		if err != nil {
 			sl.Error("Error scanning user row", "error", err)
@@ -1081,8 +1085,8 @@ func HandlerGetUsers(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 		}
 
 		users = append(users, fiber.Map{
-			"user_id":       user.ID,
-			"user_name":     user.UserName,
+			"id":            user.ID,
+			"username":      user.UserName, // Changed from user_name to username
 			"email":         user.Email.String,
 			"first_name":    user.FirstName.String,
 			"last_name":     user.LastName.String,
@@ -1091,6 +1095,7 @@ func HandlerGetUsers(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 			"last_login_at": user.LastLoginAt.Time,
 			"created_at":    user.CreatedAt,
 			"roles":         user.Roles,
+			"permissions":   user.Permissions, // Added permissions field
 		})
 	}
 
@@ -1253,4 +1258,148 @@ func (h *RBACManagementHandler) GetUserPermissions(c *fiber.Ctx) error {
 func HandlerGetUserPermissions(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 	handler := NewRBACManagementHandler(db, sl, nil, Config{})
 	return handler.GetUserPermissions(c)
+}
+
+// HandlerGetRBACStats handles getting overall RBAC statistics
+func HandlerGetRBACStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
+	handler := NewRBACManagementHandler(db, sl, nil, Config{})
+	return handler.GetRBACStats(c)
+}
+
+// GetRBACStats returns overall RBAC statistics
+func (h *RBACManagementHandler) GetRBACStats(c *fiber.Ctx) error {
+	// Get total users
+	var totalUsers int
+	err := h.db.QueryRowContext(c.Context(), "SELECT COUNT(*) FROM users").Scan(&totalUsers)
+	if err != nil {
+		h.logger.Error("Error counting users", "error", err)
+		totalUsers = 0
+	}
+
+	// Get total roles
+	var totalRoles int
+	err = h.db.QueryRowContext(c.Context(), "SELECT COUNT(*) FROM roles").Scan(&totalRoles)
+	if err != nil {
+		h.logger.Error("Error counting roles", "error", err)
+		totalRoles = 0
+	}
+
+	// Get total permissions
+	var totalPermissions int
+	err = h.db.QueryRowContext(c.Context(), "SELECT COUNT(*) FROM permissions").Scan(&totalPermissions)
+	if err != nil {
+		h.logger.Error("Error counting permissions", "error", err)
+		totalPermissions = 0
+	}
+
+	// Get active assignments (user-role assignments)
+	var activeAssignments int
+	err = h.db.QueryRowContext(c.Context(), "SELECT COUNT(*) FROM user_roles").Scan(&activeAssignments)
+	if err != nil {
+		h.logger.Error("Error counting user roles", "error", err)
+		activeAssignments = 0
+	}
+
+	return c.JSON(fiber.Map{
+		"totalUsers":        totalUsers,
+		"totalRoles":        totalRoles,
+		"totalPermissions":  totalPermissions,
+		"activeAssignments": activeAssignments,
+	})
+}
+
+// HandlerGetRBACRoleStats handles getting role-specific statistics
+func HandlerGetRBACRoleStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
+	handler := NewRBACManagementHandler(db, sl, nil, Config{})
+	return handler.GetRBACRoleStats(c)
+}
+
+// GetRBACRoleStats returns role-specific statistics
+func (h *RBACManagementHandler) GetRBACRoleStats(c *fiber.Ctx) error {
+	// Get total roles
+	var totalRoles int
+	err := h.db.QueryRowContext(c.Context(), "SELECT COUNT(*) FROM roles").Scan(&totalRoles)
+	if err != nil {
+		h.logger.Error("Error counting roles", "error", err)
+		totalRoles = 0
+	}
+
+	// Get active roles
+	var activeRoles int
+	err = h.db.QueryRowContext(c.Context(), "SELECT COUNT(*) FROM roles WHERE is_active = true").Scan(&activeRoles)
+	if err != nil {
+		h.logger.Error("Error counting active roles", "error", err)
+		activeRoles = 0
+	}
+
+	// Get assigned users
+	var assignedUsers int
+	err = h.db.QueryRowContext(c.Context(), "SELECT COUNT(DISTINCT user_id) FROM user_roles").Scan(&assignedUsers)
+	if err != nil {
+		h.logger.Error("Error counting assigned users", "error", err)
+		assignedUsers = 0
+	}
+
+	// Get total permissions
+	var totalPermissions int
+	err = h.db.QueryRowContext(c.Context(), "SELECT COUNT(*) FROM permissions").Scan(&totalPermissions)
+	if err != nil {
+		h.logger.Error("Error counting permissions", "error", err)
+		totalPermissions = 0
+	}
+
+	return c.JSON(fiber.Map{
+		"totalRoles":       totalRoles,
+		"activeRoles":      activeRoles,
+		"assignedUsers":    assignedUsers,
+		"totalPermissions": totalPermissions,
+	})
+}
+
+// HandlerGetRBACPermissionStats handles getting permission-specific statistics
+func HandlerGetRBACPermissionStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
+	handler := NewRBACManagementHandler(db, sl, nil, Config{})
+	return handler.GetRBACPermissionStats(c)
+}
+
+// GetRBACPermissionStats returns permission-specific statistics
+func (h *RBACManagementHandler) GetRBACPermissionStats(c *fiber.Ctx) error {
+	// Get total permissions
+	var totalPermissions int
+	err := h.db.QueryRowContext(c.Context(), "SELECT COUNT(*) FROM permissions").Scan(&totalPermissions)
+	if err != nil {
+		h.logger.Error("Error counting permissions", "error", err)
+		totalPermissions = 0
+	}
+
+	// Get active permissions
+	var activePermissions int
+	err = h.db.QueryRowContext(c.Context(), "SELECT COUNT(*) FROM permissions WHERE is_active = true").Scan(&activePermissions)
+	if err != nil {
+		h.logger.Error("Error counting active permissions", "error", err)
+		activePermissions = 0
+	}
+
+	// Get unique resources
+	var totalResources int
+	err = h.db.QueryRowContext(c.Context(), "SELECT COUNT(DISTINCT resource) FROM permissions").Scan(&totalResources)
+	if err != nil {
+		h.logger.Error("Error counting resources", "error", err)
+		totalResources = 0
+	}
+
+	// Get unique actions
+	var totalActions int
+	err = h.db.QueryRowContext(c.Context(), "SELECT COUNT(DISTINCT action) FROM permissions").Scan(&totalActions)
+	if err != nil {
+		h.logger.Error("Error counting actions", "error", err)
+		totalActions = 0
+	}
+
+	return c.JSON(fiber.Map{
+		"totalPermissions":  totalPermissions,
+		"activePermissions": activePermissions,
+		"totalResources":    totalResources,
+		"totalActions":      totalActions,
+	})
 }

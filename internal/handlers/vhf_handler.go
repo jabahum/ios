@@ -1219,11 +1219,296 @@ func HandlerVHFList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 		return c.JSON(cases)
 	}
 
+	// Load measles cases as well
+	measlesQuery := `
+		SELECT 
+			mp.id,
+			mp.measles_code,
+			mp.patient_name,
+			mp.sex,
+			mp.dob,
+			md.age_months,
+			md.onset_district,
+			mp.created_at,
+			CASE WHEN mr.id IS NOT NULL THEN true ELSE false END as results_status
+		FROM measles_patients mp
+		LEFT JOIN measles_demographics md ON mp.patient_id = md.patient_id
+		LEFT JOIN measles_results mr ON mp.patient_id = mr.patient_id
+		ORDER BY mp.created_at DESC`
+
+	measlesRows, err := db.QueryContext(c.Context(), measlesQuery)
+	if err != nil {
+		sl.Error("Failed to query measles cases", "error", err)
+		// Continue with VHF cases only if measles query fails
+	}
+
+	var measlesCases []fiber.Map
+	if measlesRows != nil {
+		defer measlesRows.Close()
+		for measlesRows.Next() {
+			var (
+				id            int64
+				measlesCode   sql.NullString
+				patientName   string
+				sex           string
+				dob           sql.NullTime
+				ageMonths     sql.NullInt32
+				onsetDistrict sql.NullString
+				createdAt     time.Time
+				resultsStatus bool
+			)
+
+			err := measlesRows.Scan(
+				&id,
+				&measlesCode,
+				&patientName,
+				&sex,
+				&dob,
+				&ageMonths,
+				&onsetDistrict,
+				&createdAt,
+				&resultsStatus,
+			)
+			if err != nil {
+				sl.Error("Failed to scan measles case", "error", err)
+				continue
+			}
+
+			// Calculate age display
+			var ageDisplay string
+			if ageMonths.Valid {
+				ageDisplay = fmt.Sprintf("%d months", ageMonths.Int32)
+			} else if dob.Valid {
+				age := time.Now().Year() - dob.Time.Year()
+				if time.Now().YearDay() < dob.Time.YearDay() {
+					age--
+				}
+				ageDisplay = fmt.Sprintf("%d years", age)
+			}
+
+			measlesCases = append(measlesCases, fiber.Map{
+				"ID":            id,
+				"MeaslesCode":   measlesCode.String,
+				"Name":          patientName,
+				"Age":           ageDisplay,
+				"Gender":        sex,
+				"District":      onsetDistrict.String,
+				"Status":        "Active", // Default status for measles cases
+				"ResultsStatus": resultsStatus,
+				"CreatedAt":     createdAt.Format("2006-01-02 15:04"),
+			})
+		}
+	}
+
+	// Load MPOX cases as well
+	mpoxQuery := `
+		SELECT 
+			mci.id,
+			mci.case_id,
+			mci.case_status,
+			mci.case_classification,
+			mci.date,
+			mpd.surname,
+			mpd.other_names,
+			mpd.sex,
+			mpd.age,
+			mpd.parish,
+			mpd.sub_county,
+			mpd.onset_date,
+			mpd.rash_onset_date,
+			CASE WHEN mli.id IS NOT NULL THEN true ELSE false END as lab_status
+		FROM mpox_case_investigation mci
+		LEFT JOIN mpox_patient_demographics mpd ON mci.case_id = mpd.case_id
+		LEFT JOIN mpox_lab_investigation mli ON mci.case_id = mli.case_id
+		ORDER BY mci.date DESC`
+
+	mpoxRows, err := db.QueryContext(c.Context(), mpoxQuery)
+	if err != nil {
+		sl.Error("Failed to query MPOX cases", "error", err)
+		// Continue with other cases if MPOX query fails
+	}
+
+	var mpoxCases []fiber.Map
+	if mpoxRows != nil {
+		defer mpoxRows.Close()
+		for mpoxRows.Next() {
+			var (
+				id                 int64
+				caseID             string
+				caseStatus         sql.NullString
+				caseClassification sql.NullString
+				date               time.Time
+				surname            string
+				otherNames         sql.NullString
+				sex                string
+				age                int
+				parish             sql.NullString
+				subCounty          sql.NullString
+				onsetDate          sql.NullTime
+				rashOnsetDate      sql.NullTime
+				labStatus          bool
+			)
+
+			err := mpoxRows.Scan(
+				&id,
+				&caseID,
+				&caseStatus,
+				&caseClassification,
+				&date,
+				&surname,
+				&otherNames,
+				&sex,
+				&age,
+				&parish,
+				&subCounty,
+				&onsetDate,
+				&rashOnsetDate,
+				&labStatus,
+			)
+			if err != nil {
+				sl.Error("Failed to scan MPOX case", "error", err)
+				continue
+			}
+
+			// Format name
+			name := surname
+			if otherNames.Valid && otherNames.String != "" {
+				name = fmt.Sprintf("%s %s", surname, otherNames.String)
+			}
+
+			// Format location
+			location := ""
+			if parish.Valid && parish.String != "" {
+				location = parish.String
+			}
+			if subCounty.Valid && subCounty.String != "" {
+				if location != "" {
+					location += ", "
+				}
+				location += subCounty.String
+			}
+
+			// Determine status
+			status := "Active"
+			if caseStatus.Valid && caseStatus.String != "" {
+				status = caseStatus.String
+			}
+
+			// Format onset date
+			onsetDateStr := ""
+			if onsetDate.Valid {
+				onsetDateStr = onsetDate.Time.Format("2006-01-02")
+			}
+
+			mpoxCases = append(mpoxCases, fiber.Map{
+				"ID":             id,
+				"CaseID":         caseID,
+				"Name":           name,
+				"Age":            fmt.Sprintf("%d years", age),
+				"Gender":         sex,
+				"Location":       location,
+				"Status":         status,
+				"Classification": caseClassification.String,
+				"LabStatus":      labStatus,
+				"OnsetDate":      onsetDateStr,
+				"CreatedAt":      date.Format("2006-01-02 15:04"),
+			})
+		}
+	}
+
+	// Load Polio cases as well
+	polioQuery := `
+		SELECT 
+			pci.id,
+			pci.case_id,
+			pci.case_status,
+			pci.case_classification,
+			pci.date,
+			pi.patient_name,
+			pi.sex,
+			pi.age_years,
+			pi.age_months,
+			pi.district
+		FROM polio_case_investigation pci
+		LEFT JOIN polio_identification pi ON pci.case_id = pi.case_id
+		ORDER BY pci.date DESC`
+
+	polioRows, err := db.QueryContext(c.Context(), polioQuery)
+	if err != nil {
+		sl.Error("Failed to query Polio cases", "error", err)
+		// Continue with other cases if Polio query fails
+	}
+
+	var polioCases []fiber.Map
+	if polioRows != nil {
+		defer polioRows.Close()
+		for polioRows.Next() {
+			var (
+				id                 int64
+				caseID             string
+				caseStatus         sql.NullString
+				caseClassification sql.NullString
+				date               time.Time
+				patientName        string
+				sex                string
+				ageYears           sql.NullInt32
+				ageMonths          sql.NullInt32
+				district           string
+			)
+
+			err := polioRows.Scan(
+				&id,
+				&caseID,
+				&caseStatus,
+				&caseClassification,
+				&date,
+				&patientName,
+				&sex,
+				&ageYears,
+				&ageMonths,
+				&district,
+			)
+			if err != nil {
+				sl.Error("Failed to scan Polio case", "error", err)
+				continue
+			}
+
+			// Calculate age display
+			var ageDisplay string
+			if ageYears.Valid {
+				ageDisplay = fmt.Sprintf("%d years", ageYears.Int32)
+			} else if ageMonths.Valid {
+				ageDisplay = fmt.Sprintf("%d months", ageMonths.Int32)
+			}
+
+			// Determine status
+			status := "Active"
+			if caseStatus.Valid && caseStatus.String != "" {
+				status = caseStatus.String
+			}
+
+			polioCases = append(polioCases, fiber.Map{
+				"ID":             id,
+				"CaseID":         caseID,
+				"Name":           patientName,
+				"Age":            ageDisplay,
+				"Gender":         sex,
+				"District":       district,
+				"Status":         status,
+				"Classification": caseClassification.String,
+				"CreatedAt":      date.Format("2006-01-02 15:04"),
+			})
+		}
+	}
+
 	// Return HTML response
 	data := NewTemplateData(c, store)
 	data.Form = fiber.Map{
-		"Title": "VHF Cases",
-		"Cases": cases,
+		"Title":        "Case Management",
+		"VHFCases":     cases,
+		"MeaslesCases": measlesCases,
+		"MpoxCases":    mpoxCases,
+		"PolioCases":   polioCases,
 	}
 	return GenerateHTML(c, db, data, "vhf_list")
 }

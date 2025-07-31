@@ -1,0 +1,459 @@
+{{define "content"}}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">Polio Case Investigation Form</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="/polio-cif/save">
+                        <div class="accordion" id="polioAccordion">
+                            <!-- Official Use Only -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="official-header">
+                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#official" aria-expanded="true" aria-controls="official">
+                                        Official Use Only
+                                    </button>
+                                </h2>
+                                <div id="official" class="accordion-collapse collapse show" aria-labelledby="official-header" data-bs-parent="#polioAccordion">
+                                    <div class="accordion-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Case ID</label>
+                                                    <input type="text" class="form-control" name="case_id" id="case_id" required readonly>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">EPID Number</label>
+                                                    <input type="text" class="form-control" name="epid_number" placeholder="EPID Number">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Location</label>
+                                                    <div class="row">
+                                                        <div class="col">
+                                                            <input type="text" class="form-control" name="country" placeholder="Country">
+                                                        </div>
+                                                        <div class="col">
+                                                            <input type="text" class="form-control" name="region_province" placeholder="Region/Prov.">
+                                                        </div>
+                                                        <div class="col">
+                                                            <input type="text" class="form-control" name="district" placeholder="District">
+                                                        </div>
+                                                        <div class="col">
+                                                            <input type="number" class="form-control" name="year_onset" placeholder="Year">
+                                                        </div>
+                                                        <div class="col">
+                                                            <input type="number" class="form-control" name="case_number" placeholder="Case #">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Received Date</label>
+                                                    <input type="date" class="form-control" name="received_date">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Identification -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="identification-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#identification" aria-expanded="false" aria-controls="identification">
+                                        Identification
+                                    </button>
+                                </h2>
+                                <div id="identification" class="accordion-collapse collapse" aria-labelledby="identification-header" data-bs-parent="#polioAccordion">
+                                    <div class="accordion-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Patient Name</label>
+                                                    <input type="text" class="form-control" name="patient_name" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Father/Mother</label>
+                                                    <input type="text" class="form-control" name="father_mother">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Date of Birth</label>
+                                                    <input type="date" class="form-control" name="date_of_birth">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Age (Years)</label>
+                                                    <input type="number" class="form-control" name="age_years">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Age (Months)</label>
+                                                    <input type="number" class="form-control" name="age_months">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Sex</label>
+                                                    <select class="form-select" name="sex" required>
+                                                        <option value="">Select...</option>
+                                                        <option value="M">Male</option>
+                                                        <option value="F">Female</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Phone Number</label>
+                                                    <input type="tel" class="form-control" name="phone_number">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Clinical History -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="clinical-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#clinical" aria-expanded="false" aria-controls="clinical">
+                                        Clinical History
+                                    </button>
+                                </h2>
+                                <div id="clinical" class="accordion-collapse collapse" aria-labelledby="clinical-header" data-bs-parent="#polioAccordion">
+                                    <div class="accordion-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Fever at onset of paralysis?</label>
+                                                    <select class="form-select" name="fever_at_onset">
+                                                        <option value="">Select...</option>
+                                                        <option value="1">Yes</option>
+                                                        <option value="2">No</option>
+                                                        <option value="99">Unknown</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Date onset of fever</label>
+                                                    <input type="date" class="form-control" name="date_onset_of_fever">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Date of onset of paralysis</label>
+                                                    <input type="date" class="form-control" name="date_onset_of_paralysis">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Is Paralysis flaccid and acute?</label>
+                                                    <select class="form-select" name="flaccid_acute_paralysis">
+                                                        <option value="">Select...</option>
+                                                        <option value="1">Yes</option>
+                                                        <option value="2">No</option>
+                                                        <option value="99">Unknown</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Site of Paralysis</label>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="left_arm_paralysis" value="on">
+                                                        <label class="form-check-label">Left Arm (LA)</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="right_arm_paralysis" value="on">
+                                                        <label class="form-check-label">Right Arm (RA)</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="left_leg_paralysis" value="on">
+                                                        <label class="form-check-label">Left Leg (LL)</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="right_leg_paralysis" value="on">
+                                                        <label class="form-check-label">Right Leg (RL)</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Symptoms/Signs</label>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="diminished_reflexes" value="on">
+                                                        <label class="form-check-label">Diminished reflexes</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="diminished_muscle_tone" value="on">
+                                                        <label class="form-check-label">Diminished muscle tone</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="muscle_wasting" value="on">
+                                                        <label class="form-check-label">Muscle wasting</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="muscle_weakness" value="on">
+                                                        <label class="form-check-label">Muscle weakness</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Immunization History -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="immunization-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#immunization" aria-expanded="false" aria-controls="immunization">
+                                        Immunization History
+                                    </button>
+                                </h2>
+                                <div id="immunization" class="accordion-collapse collapse" aria-labelledby="immunization-header" data-bs-parent="#polioAccordion">
+                                    <div class="accordion-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Total Number of Polio vaccine doses</label>
+                                                    <input type="number" class="form-control" name="total_polio_doses">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="exclude_dose_at_birth" value="on">
+                                                        <label class="form-check-label">Exclude dose at birth</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">OPV dose at birth</label>
+                                                    <input type="date" class="form-control" name="opv_dose_at_birth">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Last OPV dose</label>
+                                                    <input type="date" class="form-control" name="last_opv_dose">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Stool Specimen Collection -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="specimen-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#specimen" aria-expanded="false" aria-controls="specimen">
+                                        Stool Specimen Collection
+                                    </button>
+                                </h2>
+                                <div id="specimen" class="accordion-collapse collapse" aria-labelledby="specimen-header" data-bs-parent="#polioAccordion">
+                                    <div class="accordion-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Date 1st specimen</label>
+                                                    <input type="date" class="form-control" name="date_first_specimen">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Date 2nd specimen</label>
+                                                    <input type="date" class="form-control" name="date_second_specimen">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Follow-up Examination -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="followup-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#followup" aria-expanded="false" aria-controls="followup">
+                                        Follow-up Examination
+                                    </button>
+                                </h2>
+                                <div id="followup" class="accordion-collapse collapse" aria-labelledby="followup-header" data-bs-parent="#polioAccordion">
+                                    <div class="accordion-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Date of Follow-up exam</label>
+                                                    <input type="date" class="form-control" name="date_of_follow_up">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Residual Paralysis?</label>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="residual_paralysis_la" value="on">
+                                                        <label class="form-check-label">Left Arm (LA)</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="residual_paralysis_ra" value="on">
+                                                        <label class="form-check-label">Right Arm (RA)</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="residual_paralysis_ll" value="on">
+                                                        <label class="form-check-label">Left Leg (LL)</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="residual_paralysis_rl" value="on">
+                                                        <label class="form-check-label">Right Leg (RL)</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Results of exam</label>
+                                                    <select class="form-select" name="results_of_exam">
+                                                        <option value="">Select...</option>
+                                                        <option value="Residual Flaccid Paralysis">Residual Flaccid Paralysis</option>
+                                                        <option value="No residual paralysis">No residual paralysis</option>
+                                                        <option value="Lost follow-up">Lost follow-up</option>
+                                                        <option value="Died before follow-up">Died before follow-up</option>
+                                                        <option value="Residual Spastic Paralysis">Residual Spastic Paralysis</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Final Classification</label>
+                                                    <select class="form-select" name="final_classification">
+                                                        <option value="">Select...</option>
+                                                        <option value="Confirmed Polio">Confirmed Polio</option>
+                                                        <option value="Compatible">Compatible</option>
+                                                        <option value="Discarded">Discarded</option>
+                                                        <option value="Not an AFP case">Not an AFP case</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Investigator -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="investigator-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#investigator" aria-expanded="false" aria-controls="investigator">
+                                        Investigator Information
+                                    </button>
+                                </h2>
+                                <div id="investigator" class="accordion-collapse collapse" aria-labelledby="investigator-header" data-bs-parent="#polioAccordion">
+                                    <div class="accordion-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Investigator Name</label>
+                                                    <input type="text" class="form-control" name="investigator_name">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Title</label>
+                                                    <input type="text" class="form-control" name="investigator_title">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Unit</label>
+                                                    <input type="text" class="form-control" name="unit">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Telephone</label>
+                                                    <input type="tel" class="form-control" name="investigator_telephone">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Address</label>
+                                                    <textarea class="form-control" name="investigator_address" rows="3"></textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                            <button type="reset" class="btn btn-secondary ms-2">Reset</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Generate automatic case ID when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    const caseIdInput = document.getElementById('case_id');
+    
+    // Generate a unique case ID with format: POLIO-YYYY-MM-DD-HHMMSS
+    function generateCaseId() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        
+        const caseId = `POLIO-${year}-${month}-${day}-${hours}${minutes}${seconds}`;
+        return caseId;
+    }
+    
+    // Set the generated case ID
+    caseIdInput.value = generateCaseId();
+    
+    // Also update the case ID when the reset button is clicked
+    document.querySelector('button[type="reset"]').addEventListener('click', function() {
+        setTimeout(() => {
+            caseIdInput.value = generateCaseId();
+        }, 100);
+    });
+});
+</script>
+{{end}} 

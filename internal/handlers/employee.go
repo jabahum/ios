@@ -153,7 +153,7 @@ func HandlerEmployeeList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 	userID, userName := GetUser(c, sl, store)
 	role := security.GetRoles(userID, "admin")
 
-	data := NewTemplateData(c, store)
+	data := NewTemplateDataWithDB(c, store, db)
 	data.User = userName
 	data.Role = role
 
@@ -199,10 +199,13 @@ func HandlerEmployeeList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 		data.Stats.TotalFacilities = totalFacilities
 	}
 
-	// Get employees with basic information
-	query := `SELECT employee_id, employee_fname, employee_lname, employee_sex, 
-	          employee_email, employee_phone, employee_cadre, facility
-	          FROM public.employee ORDER BY employee_fname, employee_lname`
+	// Get employees with basic information and facility details
+	query := `SELECT e.employee_id, e.employee_fname, e.employee_lname, e.employee_sex, 
+	          e.employee_email, e.employee_phone, e.employee_cadre, e.facility,
+	          f.facility_name
+	          FROM public.employee e
+	          LEFT JOIN public.facility f ON e.facility = f.facility_id
+	          ORDER BY e.employee_fname, e.employee_lname`
 
 	rows, err := db.QueryContext(c.Context(), query)
 	if err != nil {
@@ -216,7 +219,7 @@ func HandlerEmployeeList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 	for rows.Next() {
 		var emp EmployeeForm
 		if err := rows.Scan(&emp.EmployeeID, &emp.EmployeeFname, &emp.EmployeeLname, &emp.EmployeeSex,
-			&emp.EmployeeEmail, &emp.EmployeePhone, &emp.EmployeeCadre, &emp.Facility); err != nil {
+			&emp.EmployeeEmail, &emp.EmployeePhone, &emp.EmployeeCadre, &emp.Facility, &emp.FacilityInfo.Name); err != nil {
 			sl.Error("Row scan error in employee list", "error", err.Error())
 			continue
 		}

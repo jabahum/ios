@@ -10,13 +10,13 @@ A comprehensive web application for managing health-related data, including pati
 - **Outbreak Management**: Outbreak assignment and tracking
 - **Inventory Management**: Complete inventory system for treatment sites
 - **RBAC System**: Role-based access control
-- **Session Management**: Redis-based session storage for persistence
+- **Session Management**: In-memory session storage
 
 ## Prerequisites
 
 - Go 1.21 or higher
 - PostgreSQL 12 or higher
-- Redis 6.0 or higher (optional, for session persistence)
+
 
 ## Installation
 
@@ -37,24 +37,7 @@ sudo apt install postgresql postgresql-contrib
 #### Windows:
 Download and install from [PostgreSQL official website](https://www.postgresql.org/download/windows/)
 
-### 3. Install Redis (Optional, for session persistence)
 
-#### Ubuntu/Debian:
-```bash
-sudo apt update
-sudo apt install redis-server
-sudo systemctl start redis-server
-sudo systemctl enable redis-server
-```
-
-#### Windows:
-Download and install from [Redis official website](https://redis.io/download) or use WSL2 with Ubuntu.
-
-#### macOS:
-```bash
-brew install redis
-brew services start redis
-```
 
 ### 4. Database Setup
 
@@ -87,12 +70,7 @@ cp cmd/web/config.json.example cmd/web/config.json
     "Port": "0.0.0.0:3000",
     "Ux": "postgres",
     "Px": "your_password",
-    "Dx": "ios",
-    "RedisEnabled": true,
-    "RedisHost": "localhost",
-    "RedisPort": 6379,
-    "RedisPassword": "",
-    "RedisDatabase": 0
+    "Dx": "ios"
 }
 ```
 
@@ -114,22 +92,9 @@ go build -o ios cmd/web/main.go
 
 ## Session Management
 
-The application supports both in-memory and Redis-based session storage:
+The application uses in-memory session storage:
 
-- **In-memory**: Sessions are lost when the application restarts
-- **Redis**: Sessions persist across application restarts
-
-### Redis Configuration
-
-To enable Redis session storage:
-
-1. Ensure Redis is running
-2. Set `"RedisEnabled": true` in `config.json`
-3. Configure Redis connection details:
-   - `RedisHost`: Redis server hostname (default: localhost)
-   - `RedisPort`: Redis server port (default: 6379)
-   - `RedisPassword`: Redis password (if required)
-   - `RedisDatabase`: Redis database number (default: 0)
+- **In-memory**: Sessions are stored in memory and will be lost when the application restarts
 
 ### Session Health Check
 
@@ -158,17 +123,13 @@ The application provides endpoints for monitoring session health:
 
 ## Troubleshooting
 
-### Redis Connection Issues
-
-If Redis is not available, the application will automatically fall back to in-memory session storage. Check the logs for connection status.
-
 ### Database Connection Issues
 
 Ensure PostgreSQL is running and the connection details in `config.json` are correct.
 
 ### Session Issues
 
-1. Check Redis connection: `GET /session/health`
+1. Check session health: `GET /session/health`
 2. Clear session if needed: `GET /session/clear`
 3. Check application logs for session-related errors
 

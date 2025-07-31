@@ -10,6 +10,8 @@ import (
 
 	"case/internal/models"
 
+	"log/slog"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
 )
@@ -162,6 +164,108 @@ func HandlerMeaslesSuccess(c *fiber.Ctx, store *session.Store) error {
 	data.Form = map[string]interface{}{"MeaslesCode": code}
 	data.Optionz = Get_Client_Optionz()
 	return GenerateHTML(c, nil, data, "measles_success")
+}
+
+func HandlerMeaslesList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	// Get current user information (for future use if needed)
+	_, _ = GetUser(c, sl, store)
+
+	// Build the query to get measles cases
+	query := `
+		SELECT 
+			mp.id,
+			mp.measles_code,
+			mp.patient_name,
+			mp.sex,
+			mp.dob,
+			md.age_months,
+			md.onset_district,
+			mp.created_at,
+			CASE WHEN mr.id IS NOT NULL THEN true ELSE false END as results_status
+		FROM measles_patients mp
+		LEFT JOIN measles_demographics md ON mp.patient_id = md.patient_id
+		LEFT JOIN measles_results mr ON mp.patient_id = mr.patient_id
+		ORDER BY mp.created_at DESC`
+
+	rows, err := db.QueryContext(c.Context(), query)
+	if err != nil {
+		sl.Error("Failed to query measles cases", "error", err)
+		return c.Status(500).SendString("Failed to retrieve measles cases")
+	}
+	defer rows.Close()
+
+	var cases []fiber.Map
+	for rows.Next() {
+		var (
+			id            int64
+			measlesCode   sql.NullString
+			patientName   string
+			sex           string
+			dob           sql.NullTime
+			ageMonths     sql.NullInt32
+			onsetDistrict sql.NullString
+			createdAt     time.Time
+			resultsStatus bool
+		)
+
+		err := rows.Scan(
+			&id,
+			&measlesCode,
+			&patientName,
+			&sex,
+			&dob,
+			&ageMonths,
+			&onsetDistrict,
+			&createdAt,
+			&resultsStatus,
+		)
+		if err != nil {
+			sl.Error("Failed to scan measles case", "error", err)
+			continue
+		}
+
+		// Calculate age display
+		var ageDisplay string
+		if ageMonths.Valid {
+			ageDisplay = fmt.Sprintf("%d months", ageMonths.Int32)
+		} else if dob.Valid {
+			age := time.Now().Year() - dob.Time.Year()
+			if time.Now().YearDay() < dob.Time.YearDay() {
+				age--
+			}
+			ageDisplay = fmt.Sprintf("%d years", age)
+		}
+
+		cases = append(cases, fiber.Map{
+			"ID":            id,
+			"MeaslesCode":   measlesCode.String,
+			"Name":          patientName,
+			"Age":           ageDisplay,
+			"Gender":        sex,
+			"District":      onsetDistrict.String,
+			"Status":        "Active", // Default status for measles cases
+			"ResultsStatus": resultsStatus,
+			"CreatedAt":     createdAt.Format("2006-01-02 15:04"),
+		})
+	}
+
+	if err = rows.Err(); err != nil {
+		sl.Error("Error iterating measles cases", "error", err)
+		return c.Status(500).SendString("Error retrieving measles cases")
+	}
+
+	// Check if this is an API request
+	if c.Get("Accept") == "application/json" {
+		return c.JSON(cases)
+	}
+
+	// Return HTML response
+	data := NewTemplateData(c, store)
+	data.Form = fiber.Map{
+		"Title": "Measles Cases",
+		"Cases": cases,
+	}
+	return GenerateHTML(c, db, data, "measles_list")
 }
 
 func insertAllMeaslesSections(db *sql.DB, patient *models.MeaslesPatient, demographics *models.MeaslesDemographics, clinical *models.MeaslesClinicalHistory, specimens *models.MeaslesSpecimens, investigators *models.MeaslesInvestigators, results *models.MeaslesResults) error {

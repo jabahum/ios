@@ -362,7 +362,7 @@ func HandlerUserList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.S
 	userID, userName := GetUser(c, sl, store)
 	role := security.GetRoles(userID, "admin")
 
-	data := NewTemplateData(c, store)
+	data := NewTemplateDataWithDB(c, store, db)
 	data.User = userName
 	data.Role = role
 

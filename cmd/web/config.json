@@ -11,10 +11,5 @@
     "Facility"       : "1",
     "SMSUser"        : "case_management",
     "SMSPassword"    : "C@s3mgt@2025",
-    "SMSURL"         : "https://dispatcher2-mtracpro.health.go.ug",
-    "RedisEnabled"   : true,
-    "RedisHost"      : "localhost",
-    "RedisPort"      : 6379,
-    "RedisPassword"  : "",
-    "RedisDatabase"  : 0
+    "SMSURL"         : "https://dispatcher2-mtracpro.health.go.ug"
 }

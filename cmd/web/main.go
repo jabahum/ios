@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -12,7 +13,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/session"
-	"github.com/gofiber/storage/redis"
 
 	_ "github.com/lib/pq"
 
@@ -20,111 +20,21 @@ import (
 	"case/internal/models"
 	"case/internal/routes"
 	"case/internal/services"
-	"context"
 )
 
-// Initialize Redis storage for sessions
+// Initialize session storage
 var store *session.Store
 
 func init() {
-	// Initialize session store with in-memory storage as fallback
+	// Initialize session store with in-memory storage
 	store = session.New(session.Config{
-		Expiration: 24 * 60 * 60, // 24 hours in seconds
-		KeyLookup:  "cookie:fiber_sess",
-	})
-}
-
-// checkRedisConnection checks if Redis is available and returns connection status
-func checkRedisConnection(config handlers.Config) (bool, string) {
-	if !config.RedisEnabled {
-		return false, "Redis is disabled in configuration"
-	}
-
-	// Set default Redis configuration if not provided
-	if config.RedisHost == "" {
-		config.RedisHost = "localhost"
-	}
-	if config.RedisPort == 0 {
-		config.RedisPort = 6379
-	}
-
-	// Create Redis storage for testing
-	redisStorage := redis.New(redis.Config{
-		Host:      config.RedisHost,
-		Port:      config.RedisPort,
-		Username:  "",
-		Password:  config.RedisPassword,
-		Database:  config.RedisDatabase,
-		Reset:     false,
-		TLSConfig: nil,
-	})
-
-	// Test Redis connection
-	if err := redisStorage.Conn().Ping(context.Background()).Err(); err != nil {
-		return false, fmt.Sprintf("Redis connection failed: %v", err)
-	}
-
-	return true, "Redis connection successful"
-}
-
-// initializeRedisSession initializes Redis session storage
-func initializeRedisSession(config handlers.Config, logger *slog.Logger) *session.Store {
-	if !config.RedisEnabled {
-		logger.Info("Redis is disabled, using in-memory session storage")
-		return session.New(session.Config{
-			Expiration: 24 * 60 * 60, // 24 hours in seconds
-			KeyLookup:  "cookie:fiber_sess",
-		})
-	}
-
-	// Set default Redis configuration if not provided
-	if config.RedisHost == "" {
-		config.RedisHost = "localhost"
-	}
-	if config.RedisPort == 0 {
-		config.RedisPort = 6379
-	}
-	if config.RedisDatabase == 0 {
-		config.RedisDatabase = 0
-	}
-
-	logger.Info("Initializing Redis session storage",
-		"host", config.RedisHost,
-		"port", config.RedisPort,
-		"database", config.RedisDatabase)
-
-	// Create Redis storage
-	redisStorage := redis.New(redis.Config{
-		Host:      config.RedisHost,
-		Port:      config.RedisPort,
-		Username:  "", // Redis username (if needed)
-		Password:  config.RedisPassword,
-		Database:  config.RedisDatabase,
-		Reset:     false, // Do not flush DB on startup
-		TLSConfig: nil,   // TLS config (if using TLS)
-	})
-
-	// Test Redis connection
-	if err := redisStorage.Conn().Ping(context.Background()).Err(); err != nil {
-		logger.Warn("Failed to connect to Redis, falling back to in-memory storage",
-			"error", err.Error(),
-			"host", config.RedisHost,
-			"port", config.RedisPort)
-
-		// Fallback to in-memory storage
-		return session.New(session.Config{
-			Expiration: 24 * 60 * 60, // 24 hours in seconds
-			KeyLookup:  "cookie:fiber_sess",
-		})
-	}
-
-	logger.Info("Successfully connected to Redis for session storage")
-
-	// Initialize session store with Redis storage
-	return session.New(session.Config{
-		Storage:    redisStorage,
-		Expiration: 24 * 60 * 60, // 24 hours in seconds
-		KeyLookup:  "cookie:fiber_sess",
+		Expiration:     24 * 60 * 60, // 24 hours in seconds
+		KeyLookup:      "cookie:fiber_sess",
+		CookieSecure:   false, // Set to true in production with HTTPS
+		CookieHTTPOnly: true,
+		CookiePath:     "/",
+		CookieDomain:   "",
+		CookieSameSite: "Lax",
 	})
 }
 
@@ -142,9 +52,6 @@ func main() {
 
 	mlogger := initLogger(config.LogFile)
 
-	// Initialize Redis session storage
-	store = initializeRedisSession(config, mlogger)
-
 	// Initialize Fiber app
 	app := fiber.New()
 
@@ -152,13 +59,15 @@ func main() {
 	app.Use(func(c *fiber.Ctx) error {
 		cookie := c.Cookies("fiber_sess")
 		log.Printf("DEBUG: Incoming request session cookie: %s", cookie)
+		log.Printf("DEBUG: Request path: %s", c.Path())
 		sess, err := store.Get(c)
 		if err != nil {
 			log.Printf("DEBUG: Error getting session: %v", err)
 		} else {
 			log.Printf("DEBUG: Session keys: %v", sess.Keys())
 			log.Printf("DEBUG: Session isAuthenticated: %v", sess.Get("isAuthenticated"))
-			log.Printf("DEBUG: Session userID: %v", sess.Get("userID"))
+			log.Printf("DEBUG: Session user: %v", sess.Get("user"))
+			log.Printf("DEBUG: Session user_id: %v", sess.Get("user_id"))
 			log.Printf("DEBUG: Session username: %v", sess.Get("username"))
 		}
 		return c.Next()
@@ -175,22 +84,11 @@ func main() {
 			})
 		}
 
-		// Check Redis connection status
-		redisConnected, redisMessage := checkRedisConnection(config)
-
 		return c.JSON(fiber.Map{
-			"status":         "success",
-			"sessionID":      sess.ID(),
-			"keys":           sess.Keys(),
-			"redisEnabled":   config.RedisEnabled,
-			"redisConnected": redisConnected,
-			"redisMessage":   redisMessage,
-			"storage": func() string {
-				if config.RedisEnabled && redisConnected {
-					return "redis"
-				}
-				return "memory"
-			}(),
+			"status":    "success",
+			"sessionID": sess.ID(),
+			"keys":      sess.Keys(),
+			"storage":   "memory",
 		})
 	})
 
@@ -216,6 +114,35 @@ func main() {
 		return c.JSON(fiber.Map{
 			"status":  "success",
 			"message": "Session cleared",
+		})
+	})
+
+	// Session test endpoint for debugging
+	app.Get("/session/test", func(c *fiber.Ctx) error {
+		sess, err := store.Get(c)
+		if err != nil {
+			return c.JSON(fiber.Map{
+				"status":  "error",
+				"message": "Failed to get session",
+				"error":   err.Error(),
+			})
+		}
+
+		// Set a test value in session
+		sess.Set("test_value", "session_working")
+		if err := sess.Save(); err != nil {
+			return c.JSON(fiber.Map{
+				"status":  "error",
+				"message": "Failed to save session",
+				"error":   err.Error(),
+			})
+		}
+
+		return c.JSON(fiber.Map{
+			"status":     "success",
+			"message":    "Session test value set",
+			"session_id": sess.ID(),
+			"test_value": sess.Get("test_value"),
 		})
 	})
 
@@ -267,6 +194,28 @@ func main() {
 		}
 
 		return c.SendString("Password for user 'philip' has been reset to '123456'. You can now log in.")
+	})
+
+	// Debug: List all users
+	app.Get("/debug-users", func(c *fiber.Ctx) error {
+		rows, err := db.QueryContext(context.Background(), "SELECT user_id, user_name, user_pass FROM users LIMIT 10")
+		if err != nil {
+			return c.SendString("Error querying users: " + err.Error())
+		}
+		defer rows.Close()
+
+		var result string
+		for rows.Next() {
+			var id int
+			var name, pass string
+			err := rows.Scan(&id, &name, &pass)
+			if err != nil {
+				continue
+			}
+			result += fmt.Sprintf("ID: %d, Name: %s, Pass: %s\n", id, name, pass)
+		}
+
+		return c.SendString(result)
 	})
 
 	// Add test routes for session debugging
@@ -340,7 +289,10 @@ func main() {
 	mlogger.Info("starting server...")
 	// Start the app
 
-	app.Listen(config.Address)
+	if err := app.Listen(config.Address); err != nil {
+		mlogger.Error("Failed to start server", "error", err.Error())
+		panic(fmt.Sprintf("Failed to start server: %v", err))
+	}
 }
 
 // connect to database

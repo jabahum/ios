@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -24,7 +25,18 @@ func NewInventoryHandler(db *sql.DB, store *session.Store) *InventoryHandler {
 
 // HandlerInventoryDashboard displays the main inventory dashboard
 func (h *InventoryHandler) HandlerInventoryDashboard(c *fiber.Ctx) error {
-	data := NewTemplateData(c, h.store)
+	log.Printf("DEBUG: HandlerInventoryDashboard called - START")
+	defer log.Printf("DEBUG: HandlerInventoryDashboard called - END")
+
+	data := NewTemplateDataWithDB(c, h.store, h.db)
+	log.Printf("DEBUG: TemplateData created, user authenticated: %v", data.IsAuthenticated)
+
+	// Check if user has inventory access (temporarily disabled for public access)
+	/*
+		if !h.hasInventoryAccess(c) {
+			return c.Status(403).SendString("Access denied. You don't have permission to access inventory management.")
+		}
+	*/
 
 	// Get summary statistics
 	stats, err := h.getInventoryStats()
@@ -34,12 +46,78 @@ func (h *InventoryHandler) HandlerInventoryDashboard(c *fiber.Ctx) error {
 	}
 
 	data.InventoryStats = stats
+	log.Printf("DEBUG: About to render inventory_dashboard template")
 
 	return GenerateHTML(c, h.db, data, "inventory_dashboard")
 }
 
+// hasInventoryAccess checks if the current user has permission to access inventory
+func (h *InventoryHandler) hasInventoryAccess(c *fiber.Ctx) bool {
+	// Get user session
+	sess, err := h.store.Get(c)
+	if err != nil {
+		log.Printf("Error getting session: %v", err)
+		return false
+	}
+
+	userID := sess.Get("user_id")
+	if userID == nil {
+		log.Printf("No user_id in session")
+		return false
+	}
+
+	// Get user's primary role
+	role, err := h.getUserPrimaryRole(userID.(int))
+	if err != nil {
+		log.Printf("Error getting user role: %v", err)
+		return false
+	}
+
+	// Define roles that have inventory access
+	inventoryRoles := []string{
+		"super_admin",
+		"admin",
+		"outbreak_manager",
+		"case_manager",
+		"outbreak_viewer",
+		"inventory_manager",
+		"logistics_coordinator",
+	}
+
+	// Check if user's role is in the allowed list
+	for _, allowedRole := range inventoryRoles {
+		if role == allowedRole {
+			log.Printf("User %d with role %s has inventory access", userID, role)
+			return true
+		}
+	}
+
+	log.Printf("User %d with role %s denied inventory access", userID, role)
+	return false
+}
+
+// getUserPrimaryRole gets the primary role for a user
+func (h *InventoryHandler) getUserPrimaryRole(userID int) (string, error) {
+	var role string
+	query := `
+		SELECT r.name 
+		FROM user_roles ur 
+		JOIN roles r ON ur.role_id = r.id 
+		WHERE ur.user_id = $1 
+		ORDER BY r.priority ASC 
+		LIMIT 1
+	`
+	err := h.db.QueryRow(query, userID).Scan(&role)
+	return role, err
+}
+
 // HandlerInventoryItemsList displays all inventory items
 func (h *InventoryHandler) HandlerInventoryItemsList(c *fiber.Ctx) error {
+	// Check if user has inventory access
+	if !h.hasInventoryAccess(c) {
+		return c.Status(403).SendString("Access denied. You don't have permission to access inventory management.")
+	}
+
 	data := NewTemplateData(c, h.store)
 
 	items, err := h.getAllInventoryItems()
@@ -71,15 +149,14 @@ func (h *InventoryHandler) HandlerInventoryItemForm(c *fiber.Ctx) error {
 	}
 
 	// Get treatment sites for dropdown
-	sites, err := h.getAllTreatmentSites()
+	_, err = h.getAllTreatmentSites()
 	if err != nil {
 		log.Printf("Error getting treatment sites: %v", err)
-		sites = []*InventoryTreatmentSite{}
 	}
 
 	data.InventoryCategories = categories
 	data.InventorySuppliers = suppliers
-	data.InventoryTreatmentSites = sites
+	// Note: TreatmentSites not available in TemplateData yet
 
 	// If editing, get the item
 	itemID := c.Params("id")
@@ -141,14 +218,13 @@ func (h *InventoryHandler) HandlerInventoryStockForm(c *fiber.Ctx) error {
 	}
 
 	// Get treatment sites for dropdown
-	sites, err := h.getAllTreatmentSites()
+	_, err = h.getAllTreatmentSites()
 	if err != nil {
 		log.Printf("Error getting treatment sites: %v", err)
-		sites = []*InventoryTreatmentSite{}
 	}
 
 	data.InventoryItems = items
-	data.InventoryTreatmentSites = sites
+	// Note: TreatmentSites not available in TemplateData yet
 
 	return GenerateHTML(c, h.db, data, "inventory_stock_form")
 }
@@ -223,10 +299,9 @@ func (h *InventoryHandler) HandlerInventoryRequisitionForm(c *fiber.Ctx) error {
 	data := NewTemplateData(c, h.store)
 
 	// Get treatment sites for dropdown
-	sites, err := h.getAllTreatmentSites()
+	_, err := h.getAllTreatmentSites()
 	if err != nil {
 		log.Printf("Error getting treatment sites: %v", err)
-		sites = []*InventoryTreatmentSite{}
 	}
 
 	// Get items for dropdown
@@ -236,7 +311,7 @@ func (h *InventoryHandler) HandlerInventoryRequisitionForm(c *fiber.Ctx) error {
 		items = []*InventoryItem{}
 	}
 
-	data.InventoryTreatmentSites = sites
+	// Note: TreatmentSites not available in TemplateData yet
 	data.InventoryItems = items
 
 	return GenerateHTML(c, h.db, data, "inventory_requisition_form")
@@ -285,6 +360,585 @@ func (h *InventoryHandler) HandlerInventoryReports(c *fiber.Ctx) error {
 	return GenerateHTML(c, h.db, data, "inventory_reports")
 }
 
+// ==================== DONATION MANAGEMENT HANDLERS ====================
+
+// HandlerDonationsList displays all donations
+func (h *InventoryHandler) HandlerDonationsList(c *fiber.Ctx) error {
+	// Check if user has inventory access
+	if !h.hasInventoryAccess(c) {
+		return c.Status(403).SendString("Access denied. You don't have permission to access inventory management.")
+	}
+
+	data := NewTemplateData(c, h.store)
+
+	donations, err := h.getAllDonations()
+	if err != nil {
+		log.Printf("Error getting donations: %v", err)
+		return c.Status(500).SendString("Error loading donations")
+	}
+
+	data.Donations = donations
+	return GenerateHTML(c, h.db, data, "inventory_donations_list")
+}
+
+// HandlerDonationForm displays the donation form
+func (h *InventoryHandler) HandlerDonationForm(c *fiber.Ctx) error {
+	// Check if user has inventory access
+	if !h.hasInventoryAccess(c) {
+		return c.Status(403).SendString("Access denied. You don't have permission to access inventory management.")
+	}
+
+	data := NewTemplateData(c, h.store)
+
+	// Get donors, donation types, outbreaks, and treatment sites for dropdowns
+	donors, err := h.getAllDonors()
+	if err != nil {
+		log.Printf("Error getting donors: %v", err)
+	}
+	data.Donors = donors
+
+	donationTypes, err := h.getAllDonationTypes()
+	if err != nil {
+		log.Printf("Error getting donation types: %v", err)
+	}
+	data.DonationTypes = donationTypes
+
+	// Note: Outbreaks and TreatmentSites are not available in TemplateData yet
+	// We'll add them later if needed
+
+	// Get items for donation items
+	items, err := h.getAllInventoryItems()
+	if err != nil {
+		log.Printf("Error getting items: %v", err)
+	}
+	data.InventoryItems = items
+
+	return GenerateHTML(c, h.db, data, "inventory_donation_form")
+}
+
+// HandlerDonationSave saves a new donation
+func (h *InventoryHandler) HandlerDonationSave(c *fiber.Ctx) error {
+	// Check if user has inventory access
+	if !h.hasInventoryAccess(c) {
+		return c.Status(403).SendString("Access denied. You don't have permission to access inventory management.")
+	}
+
+	// Parse form data
+	donorID := parseInventoryInt(c.FormValue("donor_id"))
+	donationTypeID := parseInventoryInt(c.FormValue("donation_type_id"))
+	donationDate := parseInventoryDate(c.FormValue("donation_date"))
+	receivedDate := parseInventoryDate(c.FormValue("received_date"))
+	description := c.FormValue("description")
+	monetaryValue := parseInventoryFloat(c.FormValue("monetary_value"))
+	currency := c.FormValue("currency")
+	if currency == "" {
+		currency = "USD"
+	}
+	outbreakID := parseInventoryInt(c.FormValue("outbreak_id"))
+	treatmentSiteID := parseInventoryInt(c.FormValue("treatment_site_id"))
+	notes := c.FormValue("notes")
+
+	// Get current user ID
+	sess, err := h.store.Get(c)
+	if err != nil {
+		return c.Status(500).SendString("Session error")
+	}
+	userID := sess.Get("user_id").(int)
+
+	// Insert donation
+	query := `
+		INSERT INTO inventory_donations (
+			donor_id, donation_type_id, donation_date, received_date, 
+			description, monetary_value, currency, outbreak_id, 
+			treatment_site_id, received_by, notes
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		RETURNING id
+	`
+
+	var donationID int
+	err = h.db.QueryRow(
+		query, donorID, donationTypeID, donationDate, receivedDate,
+		description, monetaryValue, currency, outbreakID, treatmentSiteID, userID, notes,
+	).Scan(&donationID)
+
+	if err != nil {
+		log.Printf("Error saving donation: %v", err)
+		return c.Status(500).SendString("Error saving donation")
+	}
+
+	// Handle donation items (for in-kind donations)
+	itemIDs := c.FormValue("item_ids")
+	quantities := c.FormValue("quantities")
+	units := c.FormValue("units")
+	estimatedValues := c.FormValue("estimated_values")
+	conditionStatuses := c.FormValue("condition_statuses")
+	expiryDates := c.FormValue("expiry_dates")
+	batchNumbers := c.FormValue("batch_numbers")
+	serialNumbers := c.FormValue("serial_numbers")
+	itemNotes := c.FormValue("item_notes")
+
+	if itemIDs != "" {
+		itemIDList := strings.Split(itemIDs, ",")
+		quantityList := strings.Split(quantities, ",")
+		unitList := strings.Split(units, ",")
+		valueList := strings.Split(estimatedValues, ",")
+		conditionList := strings.Split(conditionStatuses, ",")
+		expiryList := strings.Split(expiryDates, ",")
+		batchList := strings.Split(batchNumbers, ",")
+		serialList := strings.Split(serialNumbers, ",")
+		noteList := strings.Split(itemNotes, ",")
+
+		for i, itemIDStr := range itemIDList {
+			if itemIDStr == "" {
+				continue
+			}
+
+			itemID := parseInventoryInt(itemIDStr)
+			quantity := parseInventoryFloat(quantityList[i])
+			unit := unitList[i]
+			estimatedValue := parseInventoryFloat(valueList[i])
+			conditionStatus := conditionList[i]
+			expiryDate := parseInventoryDate(expiryList[i])
+			batchNumber := batchList[i]
+			serialNumber := serialList[i]
+			itemNote := noteList[i]
+
+			// Insert donation item
+			itemQuery := `
+				INSERT INTO inventory_donation_items (
+					donation_id, item_id, quantity, unit, estimated_value,
+					condition_status, expiry_date, batch_number, serial_number, notes
+				) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+			`
+			_, err = h.db.Exec(
+				itemQuery, donationID, itemID, quantity, unit, estimatedValue,
+				conditionStatus, expiryDate, batchNumber, serialNumber, itemNote,
+			)
+			if err != nil {
+				log.Printf("Error saving donation item: %v", err)
+			}
+		}
+	}
+
+	return c.Redirect("/inventory/donations")
+}
+
+// HandlerDonationView displays a specific donation
+func (h *InventoryHandler) HandlerDonationView(c *fiber.Ctx) error {
+	// Check if user has inventory access
+	if !h.hasInventoryAccess(c) {
+		return c.Status(403).SendString("Access denied. You don't have permission to access inventory management.")
+	}
+
+	donationID := parseInventoryInt(c.Params("id"))
+	if donationID == 0 {
+		return c.Status(400).SendString("Invalid donation ID")
+	}
+
+	data := NewTemplateData(c, h.store)
+
+	donation, err := h.getDonationByID(donationID)
+	if err != nil {
+		log.Printf("Error getting donation: %v", err)
+		return c.Status(500).SendString("Error loading donation")
+	}
+
+	data.Donation = donation
+	return GenerateHTML(c, h.db, data, "inventory_donation_view")
+}
+
+// HandlerDonorsList displays all donors
+func (h *InventoryHandler) HandlerDonorsList(c *fiber.Ctx) error {
+	// Check if user has inventory access
+	if !h.hasInventoryAccess(c) {
+		return c.Status(403).SendString("Access denied. You don't have permission to access inventory management.")
+	}
+
+	data := NewTemplateData(c, h.store)
+
+	donors, err := h.getAllDonors()
+	if err != nil {
+		log.Printf("Error getting donors: %v", err)
+		return c.Status(500).SendString("Error loading donors")
+	}
+
+	data.Donors = donors
+	return GenerateHTML(c, h.db, data, "inventory_donors_list")
+}
+
+// HandlerDonorForm displays the donor form
+func (h *InventoryHandler) HandlerDonorForm(c *fiber.Ctx) error {
+	// Check if user has inventory access
+	if !h.hasInventoryAccess(c) {
+		return c.Status(403).SendString("Access denied. You don't have permission to access inventory management.")
+	}
+
+	data := NewTemplateData(c, h.store)
+	return GenerateHTML(c, h.db, data, "inventory_donor_form")
+}
+
+// HandlerDonorSave saves a new donor
+func (h *InventoryHandler) HandlerDonorSave(c *fiber.Ctx) error {
+	// Check if user has inventory access
+	if !h.hasInventoryAccess(c) {
+		return c.Status(403).SendString("Access denied. You don't have permission to access inventory management.")
+	}
+
+	name := c.FormValue("name")
+	organization := c.FormValue("organization")
+	contactPerson := c.FormValue("contact_person")
+	phone := c.FormValue("phone")
+	email := c.FormValue("email")
+	address := c.FormValue("address")
+	donorType := c.FormValue("donor_type")
+	country := c.FormValue("country")
+	registrationNumber := c.FormValue("registration_number")
+	taxExempt := c.FormValue("tax_exempt") == "on"
+	notes := c.FormValue("notes")
+
+	query := `
+		INSERT INTO inventory_donors (
+			name, organization, contact_person, phone, email, address,
+			donor_type, country, registration_number, tax_exempt, notes
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+	`
+
+	_, err := h.db.Exec(
+		query, name, organization, contactPerson, phone, email, address,
+		donorType, country, registrationNumber, taxExempt, notes,
+	)
+
+	if err != nil {
+		log.Printf("Error saving donor: %v", err)
+		return c.Status(500).SendString("Error saving donor")
+	}
+
+	return c.Redirect("/inventory/donors")
+}
+
+// ==================== DONATION DATA ACCESS METHODS ====================
+
+// getAllDonations retrieves all donations with related data
+func (h *InventoryHandler) getAllDonations() ([]*DonationSummary, error) {
+	query := `
+		SELECT 
+			d.id, d.donation_date, d.received_date, d.donation_status,
+			dt.name as donation_type, dt.is_monetary,
+			dr.name as donor_name, dr.organization as donor_organization, dr.donor_type,
+			o.name as outbreak_name, ts.name as treatment_site_name,
+			u.username as received_by_user,
+			d.monetary_value, d.currency,
+			COUNT(di.id) as item_count,
+			SUM(di.quantity) as total_quantity,
+			SUM(di.estimated_value) as total_estimated_value
+		FROM inventory_donations d
+		LEFT JOIN inventory_donation_types dt ON d.donation_type_id = dt.id
+		LEFT JOIN inventory_donors dr ON d.donor_id = dr.id
+		LEFT JOIN outbreaks o ON d.outbreak_id = o.id
+		LEFT JOIN treatment_sites ts ON d.treatment_site_id = ts.id
+		LEFT JOIN users u ON d.received_by = u.id
+		LEFT JOIN inventory_donation_items di ON d.id = di.donation_id
+		GROUP BY d.id, dt.name, dt.is_monetary, dr.name, dr.organization, dr.donor_type, 
+				 o.name, ts.name, u.username, d.monetary_value, d.currency
+		ORDER BY d.donation_date DESC
+	`
+
+	rows, err := h.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var donations []*DonationSummary
+	for rows.Next() {
+		var d DonationSummary
+		err := rows.Scan(
+			&d.DonationID, &d.DonationDate, &d.ReceivedDate, &d.DonationStatus,
+			&d.DonationType, &d.IsMonetary,
+			&d.DonorName, &d.DonorOrganization, &d.DonorType,
+			&d.OutbreakName, &d.TreatmentSiteName,
+			&d.ReceivedByUser,
+			&d.MonetaryValue, &d.Currency,
+			&d.ItemCount, &d.TotalQuantity, &d.TotalEstimatedValue,
+		)
+		if err != nil {
+			return nil, err
+		}
+		donations = append(donations, &d)
+	}
+
+	return donations, nil
+}
+
+// getDonationByID retrieves a specific donation with all related data
+func (h *InventoryHandler) getDonationByID(donationID int) (*InventoryDonation, error) {
+	// Get main donation data
+	query := `
+		SELECT 
+			d.id, d.donor_id, d.donation_type_id, d.donation_date, d.received_date,
+			d.description, d.monetary_value, d.currency, d.donation_status,
+			d.outbreak_id, d.treatment_site_id, d.received_by, d.notes,
+			d.created_at, d.updated_at
+		FROM inventory_donations d
+		WHERE d.id = $1
+	`
+
+	var donation InventoryDonation
+	err := h.db.QueryRow(query, donationID).Scan(
+		&donation.ID, &donation.DonorID, &donation.DonationTypeID, &donation.DonationDate, &donation.ReceivedDate,
+		&donation.Description, &donation.MonetaryValue, &donation.Currency, &donation.DonationStatus,
+		&donation.OutbreakID, &donation.TreatmentSiteID, &donation.ReceivedBy, &donation.Notes,
+		&donation.CreatedAt, &donation.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get donor information
+	donor, err := h.getDonorByID(donation.DonorID)
+	if err == nil {
+		donation.Donor = donor
+	}
+
+	// Get donation type information
+	donationType, err := h.getDonationTypeByID(donation.DonationTypeID)
+	if err == nil {
+		donation.DonationType = donationType
+	}
+
+	// Get donation items
+	items, err := h.getDonationItemsByDonationID(donationID)
+	if err == nil {
+		donation.Items = items
+	}
+
+	return &donation, nil
+}
+
+// getAllDonors retrieves all donors
+func (h *InventoryHandler) getAllDonors() ([]*InventoryDonor, error) {
+	query := `
+		SELECT id, name, organization, contact_person, phone, email, address,
+			   donor_type, country, registration_number, tax_exempt, status, notes,
+			   created_at, updated_at
+		FROM inventory_donors
+		ORDER BY name
+	`
+
+	rows, err := h.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var donors []*InventoryDonor
+	for rows.Next() {
+		var d InventoryDonor
+		err := rows.Scan(
+			&d.ID, &d.Name, &d.Organization, &d.ContactPerson, &d.Phone, &d.Email, &d.Address,
+			&d.DonorType, &d.Country, &d.RegistrationNumber, &d.TaxExempt, &d.Status, &d.Notes,
+			&d.CreatedAt, &d.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		donors = append(donors, &d)
+	}
+
+	return donors, nil
+}
+
+// getDonorByID retrieves a specific donor
+func (h *InventoryHandler) getDonorByID(donorID int) (*InventoryDonor, error) {
+	query := `
+		SELECT id, name, organization, contact_person, phone, email, address,
+			   donor_type, country, registration_number, tax_exempt, status, notes,
+			   created_at, updated_at
+		FROM inventory_donors
+		WHERE id = $1
+	`
+
+	var donor InventoryDonor
+	err := h.db.QueryRow(query, donorID).Scan(
+		&donor.ID, &donor.Name, &donor.Organization, &donor.ContactPerson, &donor.Phone, &donor.Email, &donor.Address,
+		&donor.DonorType, &donor.Country, &donor.RegistrationNumber, &donor.TaxExempt, &donor.Status, &donor.Notes,
+		&donor.CreatedAt, &donor.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &donor, nil
+}
+
+// getAllDonationTypes retrieves all donation types
+func (h *InventoryHandler) getAllDonationTypes() ([]*InventoryDonationType, error) {
+	query := `
+		SELECT id, name, description, is_monetary, status, created_at
+		FROM inventory_donation_types
+		WHERE status = 'active'
+		ORDER BY name
+	`
+
+	rows, err := h.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var types []*InventoryDonationType
+	for rows.Next() {
+		var t InventoryDonationType
+		err := rows.Scan(
+			&t.ID, &t.Name, &t.Description, &t.IsMonetary, &t.Status, &t.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		types = append(types, &t)
+	}
+
+	return types, nil
+}
+
+// getDonationTypeByID retrieves a specific donation type
+func (h *InventoryHandler) getDonationTypeByID(typeID int) (*InventoryDonationType, error) {
+	query := `
+		SELECT id, name, description, is_monetary, status, created_at
+		FROM inventory_donation_types
+		WHERE id = $1
+	`
+
+	var donationType InventoryDonationType
+	err := h.db.QueryRow(query, typeID).Scan(
+		&donationType.ID, &donationType.Name, &donationType.Description, &donationType.IsMonetary, &donationType.Status, &donationType.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &donationType, nil
+}
+
+// getDonationItemsByDonationID retrieves all items for a specific donation
+func (h *InventoryHandler) getDonationItemsByDonationID(donationID int) ([]*InventoryDonationItem, error) {
+	query := `
+		SELECT di.id, di.donation_id, di.item_id, di.quantity, di.unit,
+			   di.estimated_value, di.condition_status, di.expiry_date,
+			   di.batch_number, di.serial_number, di.notes, di.created_at
+		FROM inventory_donation_items di
+		WHERE di.donation_id = $1
+		ORDER BY di.id
+	`
+
+	rows, err := h.db.Query(query, donationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []*InventoryDonationItem
+	for rows.Next() {
+		var item InventoryDonationItem
+		err := rows.Scan(
+			&item.ID, &item.DonationID, &item.ItemID, &item.Quantity, &item.Unit,
+			&item.EstimatedValue, &item.ConditionStatus, &item.ExpiryDate,
+			&item.BatchNumber, &item.SerialNumber, &item.Notes, &item.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		// Get item details
+		inventoryItem, err := h.getInventoryItemByID(strconv.Itoa(item.ItemID))
+		if err == nil {
+			item.Item = inventoryItem
+		}
+
+		items = append(items, &item)
+	}
+
+	return items, nil
+}
+
+// getAllOutbreaks retrieves all outbreaks for dropdown
+func (h *InventoryHandler) getAllOutbreaks() ([]map[string]interface{}, error) {
+	query := `
+		SELECT id, name, outbreak_type, start_date, end_date, status
+		FROM outbreaks
+		ORDER BY name
+	`
+
+	rows, err := h.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var outbreaks []map[string]interface{}
+	for rows.Next() {
+		var id int
+		var name, outbreakType, status string
+		var startDate, endDate sql.NullTime
+
+		err := rows.Scan(&id, &name, &outbreakType, &startDate, &endDate, &status)
+		if err != nil {
+			return nil, err
+		}
+
+		outbreak := map[string]interface{}{
+			"id":            id,
+			"name":          name,
+			"outbreak_type": outbreakType,
+			"start_date":    startDate,
+			"end_date":      endDate,
+			"status":        status,
+		}
+		outbreaks = append(outbreaks, outbreak)
+	}
+
+	return outbreaks, nil
+}
+
+// getAllTreatmentSites retrieves all treatment sites for dropdown
+func (h *InventoryHandler) getAllTreatmentSites() ([]map[string]interface{}, error) {
+	query := `
+		SELECT id, name, location, contact_person, phone, email, status
+		FROM treatment_sites
+		ORDER BY name
+	`
+
+	rows, err := h.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var sites []map[string]interface{}
+	for rows.Next() {
+		var id int
+		var name, location, contactPerson, phone, email, status string
+
+		err := rows.Scan(&id, &name, &location, &contactPerson, &phone, &email, &status)
+		if err != nil {
+			return nil, err
+		}
+
+		site := map[string]interface{}{
+			"id":             id,
+			"name":           name,
+			"location":       location,
+			"contact_person": contactPerson,
+			"phone":          phone,
+			"email":          email,
+			"status":         status,
+		}
+		sites = append(sites, site)
+	}
+
+	return sites, nil
+}
+
 // API Handlers for AJAX calls
 
 // HandlerInventoryAPIItems returns inventory items as JSON
@@ -326,11 +980,11 @@ func (h *InventoryHandler) getInventoryStats() (*InventoryStats, error) {
 		SELECT 
 			COUNT(DISTINCT i.id) as total_items,
 			COUNT(DISTINCT sl.id) as total_stock_levels,
-			SUM(CASE WHEN sl.quantity <= i.min_stock THEN 1 ELSE 0 END) as low_stock_count,
-			SUM(sl.quantity * i.unit_cost) as total_value
+			SUM(CASE WHEN sl.current_quantity <= i.minimum_stock_level THEN 1 ELSE 0 END) as low_stock_count,
+			SUM(sl.current_quantity * i.unit_cost) as total_value
 		FROM inventory_items i
 		LEFT JOIN inventory_stock_levels sl ON i.id = sl.item_id
-		WHERE i.status = 'active'
+		WHERE i.is_active = true
 	`
 
 	var stats InventoryStats
@@ -352,7 +1006,7 @@ func (h *InventoryHandler) getLowStockAlerts() ([]*InventoryAlert, error) {
 			s.name as site_name
 		FROM inventory_alerts a
 		JOIN inventory_items i ON a.item_id = i.id
-		JOIN inventory_treatment_sites s ON a.site_id = s.id
+		JOIN treatment_sites s ON a.site_id = s.id
 		WHERE a.status = 'active'
 		ORDER BY a.created_at DESC
 		LIMIT 10
@@ -389,7 +1043,7 @@ func (h *InventoryHandler) getRecentTransactions() ([]*InventoryTransaction, err
 			s.name as site_name
 		FROM inventory_transactions t
 		JOIN inventory_items i ON t.item_id = i.id
-		JOIN inventory_treatment_sites s ON t.site_id = s.id
+		JOIN treatment_sites s ON t.site_id = s.id
 		ORDER BY t.transaction_date DESC
 		LIMIT 10
 	`
@@ -546,28 +1200,6 @@ func (h *InventoryHandler) getAllSuppliers() ([]*InventorySupplier, error) {
 	}
 
 	return suppliers, nil
-}
-
-func (h *InventoryHandler) getAllTreatmentSites() ([]*InventoryTreatmentSite, error) {
-	query := `SELECT id, name, location, contact_person, phone, email, status FROM inventory_treatment_sites ORDER BY name`
-
-	rows, err := h.db.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var sites []*InventoryTreatmentSite
-	for rows.Next() {
-		var site InventoryTreatmentSite
-		err := rows.Scan(&site.ID, &site.Name, &site.Location, &site.ContactPerson, &site.Phone, &site.Email, &site.Status)
-		if err != nil {
-			return nil, err
-		}
-		sites = append(sites, &site)
-	}
-
-	return sites, nil
 }
 
 func (h *InventoryHandler) createInventoryTransaction(trans *InventoryTransaction) error {
@@ -810,6 +1442,13 @@ type InventoryItem struct {
 	CreatedAt    time.Time `json:"created_at"`
 	CategoryName string    `json:"category_name"`
 	SupplierName string    `json:"supplier_name"`
+	// Donation-related fields
+	IsDonated           bool            `json:"is_donated"`
+	DonorID             sql.NullInt64   `json:"donor_id"`
+	DonationDate        sql.NullTime    `json:"donation_date"`
+	EstimatedDonorValue sql.NullFloat64 `json:"estimated_donor_value"`
+	ConditionOnReceipt  string          `json:"condition_on_receipt"`
+	DonorName           string          `json:"donor_name,omitempty"`
 }
 
 type InventoryCategory struct {
@@ -922,4 +1561,113 @@ type TransactionReport struct {
 	TotalCost       float64   `json:"total_cost"`
 	Reason          string    `json:"reason"`
 	Notes           string    `json:"notes"`
+}
+
+// Donation-related structures
+type InventoryDonor struct {
+	ID                 int       `json:"id"`
+	Name               string    `json:"name"`
+	Organization       string    `json:"organization"`
+	ContactPerson      string    `json:"contact_person"`
+	Phone              string    `json:"phone"`
+	Email              string    `json:"email"`
+	Address            string    `json:"address"`
+	DonorType          string    `json:"donor_type"`
+	Country            string    `json:"country"`
+	RegistrationNumber string    `json:"registration_number"`
+	TaxExempt          bool      `json:"tax_exempt"`
+	Status             string    `json:"status"`
+	Notes              string    `json:"notes"`
+	CreatedAt          time.Time `json:"created_at"`
+	UpdatedAt          time.Time `json:"updated_at"`
+}
+
+type InventoryDonationType struct {
+	ID          int       `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	IsMonetary  bool      `json:"is_monetary"`
+	Status      string    `json:"status"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+type InventoryDonation struct {
+	ID              int             `json:"id"`
+	DonorID         int             `json:"donor_id"`
+	DonationTypeID  int             `json:"donation_type_id"`
+	DonationDate    time.Time       `json:"donation_date"`
+	ReceivedDate    sql.NullTime    `json:"received_date"`
+	Description     string          `json:"description"`
+	MonetaryValue   sql.NullFloat64 `json:"monetary_value"`
+	Currency        string          `json:"currency"`
+	DonationStatus  string          `json:"donation_status"`
+	OutbreakID      sql.NullInt64   `json:"outbreak_id"`
+	TreatmentSiteID sql.NullInt64   `json:"treatment_site_id"`
+	ReceivedBy      sql.NullInt64   `json:"received_by"`
+	Notes           string          `json:"notes"`
+	CreatedAt       time.Time       `json:"created_at"`
+	UpdatedAt       time.Time       `json:"updated_at"`
+	// Related data
+	Donor        *InventoryDonor          `json:"donor,omitempty"`
+	DonationType *InventoryDonationType   `json:"donation_type,omitempty"`
+	Items        []*InventoryDonationItem `json:"items,omitempty"`
+}
+
+type InventoryDonationItem struct {
+	ID              int             `json:"id"`
+	DonationID      int             `json:"donation_id"`
+	ItemID          int             `json:"item_id"`
+	Quantity        float64         `json:"quantity"`
+	Unit            string          `json:"unit"`
+	EstimatedValue  sql.NullFloat64 `json:"estimated_value"`
+	ConditionStatus string          `json:"condition_status"`
+	ExpiryDate      sql.NullTime    `json:"expiry_date"`
+	BatchNumber     string          `json:"batch_number"`
+	SerialNumber    string          `json:"serial_number"`
+	Notes           string          `json:"notes"`
+	CreatedAt       time.Time       `json:"created_at"`
+	// Related data
+	Item *InventoryItem `json:"item,omitempty"`
+}
+
+type InventoryDonationAcknowledgment struct {
+	ID                 int           `json:"id"`
+	DonationID         int           `json:"donation_id"`
+	AcknowledgmentType string        `json:"acknowledgment_type"`
+	SentDate           sql.NullTime  `json:"sent_date"`
+	SentBy             sql.NullInt64 `json:"sent_by"`
+	RecipientName      string        `json:"recipient_name"`
+	RecipientEmail     string        `json:"recipient_email"`
+	AcknowledgmentText string        `json:"acknowledgment_text"`
+	Status             string        `json:"status"`
+	CreatedAt          time.Time     `json:"created_at"`
+}
+
+type DonationSummary struct {
+	DonationID          int             `json:"donation_id"`
+	DonationDate        time.Time       `json:"donation_date"`
+	ReceivedDate        sql.NullTime    `json:"received_date"`
+	DonationStatus      string          `json:"donation_status"`
+	DonationType        string          `json:"donation_type"`
+	IsMonetary          bool            `json:"is_monetary"`
+	DonorName           string          `json:"donor_name"`
+	DonorOrganization   string          `json:"donor_organization"`
+	DonorType           string          `json:"donor_type"`
+	OutbreakName        string          `json:"outbreak_name"`
+	TreatmentSiteName   string          `json:"treatment_site_name"`
+	ReceivedByUser      string          `json:"received_by_user"`
+	MonetaryValue       sql.NullFloat64 `json:"monetary_value"`
+	Currency            string          `json:"currency"`
+	ItemCount           int             `json:"item_count"`
+	TotalQuantity       sql.NullFloat64 `json:"total_quantity"`
+	TotalEstimatedValue sql.NullFloat64 `json:"total_estimated_value"`
+}
+
+type DonationStatistics struct {
+	TotalDonations     int     `json:"total_donations"`
+	TotalMonetaryValue float64 `json:"total_monetary_value"`
+	TotalInKindValue   float64 `json:"total_in_kind_value"`
+	DonorCount         int     `json:"donor_count"`
+	TopDonorName       string  `json:"top_donor_name"`
+	TopDonorValue      float64 `json:"top_donor_value"`
 }

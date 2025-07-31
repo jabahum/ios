@@ -60,7 +60,50 @@
         <div class="row">
             <!-- Left-Hand Side Menu -->
             <div class="col-md-3 side-menu">
+                {{if or (hasPermission .UserPermissions "polio_cif" "read") (not .IsAuthenticated)}}
+                <a href="/polio-cif" class="menu-item">Polio CIF</a>
+                {{end}}
+                
+                {{if hasPermission .UserPermissions "admin" "read"}}
+                <a href="/rbac-dashboard" class="menu-item">RBAC Dashboard</a>
+                {{end}}
+                
+                {{if or (hasPermission .UserPermissions "inventory" "read") (not .IsAuthenticated)}}
+                <a href="/inventory" class="menu-item">Inventory</a>
+                {{end}}
+                
+                {{if hasPermission .UserPermissions "facilities" "read"}}
+                <a href="/facilities" class="menu-item">Facilities</a>
+                {{end}}
+                
+                {{if hasPermission .UserPermissions "users" "read"}}
+                <a href="/users" class="menu-item">Users</a>
+                {{end}}
+                
+                {{if hasPermission .UserPermissions "alerts" "read"}}
+                <a href="/alerts" class="menu-item">Alerts</a>
+                {{end}}
+                
+                {{if hasPermission .UserPermissions "vhf_cases" "read"}}
+                <a href="/vhf-list" class="menu-item">View CIF Data</a>
+                {{end}}
+                
+                {{if hasPermission .UserPermissions "employees" "read"}}
+                <a href="/employees" class="menu-item">View Employee Data</a>
+                {{end}}
+                
+                {{if hasPermission .UserPermissions "outbreaks" "read"}}
+                <a href="/outbreaks" class="menu-item">Outbreaks</a>
+                {{end}}
+                
+                {{if hasPermission .UserPermissions "outbreak_assignment" "read"}}
+                <a href="/outbreaks/assign" class="menu-item">Assign Outbreaks</a>
+                {{end}}
+                
+                {{if hasPermission .UserPermissions "reports" "read"}}
                 <a href="/reports" class="menu-item">Generate Reports</a>
+                {{end}}
+                
                 {{.Menuz}}
                 <a href="/help" class="menu-item">Help</a>
             </div>

@@ -92,6 +92,17 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		return handlers.HandlerMeaslesCIF(c, db, store)
 	})
 
+	// Polio CIF routes (public)
+	app.Get("/polio-cif", func(c *fiber.Ctx) error {
+		return handlers.HandlerPolioCIF(c, db, sl, store, config)
+	})
+	app.Post("/polio-cif/save", func(c *fiber.Ctx) error {
+		return handlers.HandlerPolioCIFSubmit(c, db, sl, store, config)
+	})
+	app.Get("/polio-cif/success", func(c *fiber.Ctx) error {
+		return handlers.HandlerPolioCIFSuccess(c, db, sl, store, config)
+	})
+
 	// Location API routes
 	app.Get("/api/locations/districts", func(c *fiber.Ctx) error {
 		return handlers.HandlerGetDistricts(c, db, sl)
@@ -130,6 +141,27 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 	app.Put("/api/permissions/:id", func(c *fiber.Ctx) error { return handlers.HandlerUpdatePermission(c, db, sl, store, config) })
 	app.Delete("/api/permissions/:id", func(c *fiber.Ctx) error { return handlers.HandlerDeletePermission(c, db, sl, store, config) })
 	app.Get("/api/rbac/migration-status", func(c *fiber.Ctx) error { return handlers.HandlerGetMigrationStatus(c, db, sl) })
+
+	// RBAC API Routes
+	app.Get("/api/rbac/stats", func(c *fiber.Ctx) error { return handlers.HandlerGetRBACStats(c, db, sl) })
+	app.Get("/api/rbac/roles", func(c *fiber.Ctx) error { return handlers.HandlerGetRoles(c, db, sl) })
+	app.Post("/api/rbac/roles", func(c *fiber.Ctx) error { return handlers.HandlerCreateRole(c, db, sl, store, config) })
+	app.Get("/api/rbac/roles/:id", func(c *fiber.Ctx) error { return handlers.HandlerGetRole(c, db, sl) })
+	app.Put("/api/rbac/roles/:id", func(c *fiber.Ctx) error { return handlers.HandlerUpdateRole(c, db, sl, store, config) })
+	app.Delete("/api/rbac/roles/:id", func(c *fiber.Ctx) error { return handlers.HandlerDeleteRole(c, db, sl, store, config) })
+
+	app.Get("/api/rbac/permissions", func(c *fiber.Ctx) error { return handlers.HandlerGetPermissions(c, db, sl) })
+	app.Post("/api/rbac/permissions", func(c *fiber.Ctx) error { return handlers.HandlerCreatePermission(c, db, sl, store, config) })
+	app.Get("/api/rbac/permissions/:id", func(c *fiber.Ctx) error { return handlers.HandlerGetPermission(c, db, sl) })
+	app.Put("/api/rbac/permissions/:id", func(c *fiber.Ctx) error { return handlers.HandlerUpdatePermission(c, db, sl, store, config) })
+	app.Delete("/api/rbac/permissions/:id", func(c *fiber.Ctx) error { return handlers.HandlerDeletePermission(c, db, sl, store, config) })
+
+	app.Get("/api/rbac/users", func(c *fiber.Ctx) error { return handlers.HandlerGetUsers(c, db, sl) })
+	app.Post("/api/rbac/user-roles", func(c *fiber.Ctx) error { return handlers.HandlerAssignUserRole(c, db, sl, store, config) })
+	app.Delete("/api/rbac/user-roles/:user_id/:role_id", func(c *fiber.Ctx) error { return handlers.HandlerRemoveUserRole(c, db, sl, store, config) })
+	app.Get("/api/rbac/role-stats", func(c *fiber.Ctx) error { return handlers.HandlerGetRBACRoleStats(c, db, sl) })
+	app.Get("/api/rbac/permission-stats", func(c *fiber.Ctx) error { return handlers.HandlerGetRBACPermissionStats(c, db, sl) })
+
 	app.Get("/api/users", func(c *fiber.Ctx) error { return handlers.HandlerGetUsers(c, db, sl) })
 	app.Get("/api/users/:id/permissions", func(c *fiber.Ctx) error { return handlers.HandlerGetUserPermissions(c, db, sl) })
 	app.Post("/api/users/roles", func(c *fiber.Ctx) error { return handlers.HandlerAssignUserRole(c, db, sl, store, config) })
@@ -184,9 +216,9 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		lab := api.Group("/lab")
 		sta := api.Group("/status")
 
-		emp := app.Group("/employees") // Employees
-		usr := app.Group("/users")     // users
-		hfs := app.Group("/secure")    // Health facilities
+		emp := appGroup.Group("/employees") // Employees
+		usr := appGroup.Group("/users")     // users
+		hfs := app.Group("/secure")         // Health facilities
 		cse := app.Group("/cases")
 
 		//enc := app.Group("/encounter")
@@ -306,7 +338,7 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 			return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "form_role")
 		})
 		appGroup.Get("/rbac-dashboard", func(c *fiber.Ctx) error {
-			return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "rbac_dashboard")
+			return handlers.GenerateHTML(c, db, handlers.NewTemplateDataWithDB(c, store, db), "rbac_dashboard")
 		})
 
 		// Development endpoint to create default admin user
@@ -331,8 +363,7 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 			return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "employee_export")
 		})
 
-		// User routes (protected)
-		appGroup.Get("/users", func(c *fiber.Ctx) error { return handlers.HandlerUserList(c, db, sl, store, config) })
+		// User routes are handled by RouteUsers function
 
 		// RBAC API routes (protected)
 		// appGroup.Get("/api/roles", func(c *fiber.Ctx) error { return handlers.HandlerGetRoles(c, db, sl) })
@@ -506,6 +537,10 @@ func AuthRequired(store *session.Store) fiber.Handler {
 			"/mpox-cif",
 			"/mpox-cif/save",
 			"/mpox-cif/success",
+			"/polio-cif",
+			"/polio-cif/save",
+			"/polio-cif/success",
+			"/inventory",
 			"/api/locations/districts",
 			"/api/locations/subcounties/:district_id",
 			"/api/locations/parishes/:subcounty_id",
@@ -763,6 +798,90 @@ func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logg
 		return handlers.HandlerLoginOut(c, sl, store, config)
 	})
 
+	app.Get("/vhf-cif", func(c *fiber.Ctx) error {
+		return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "vhf_cif")
+	})
+	app.Post("/vhf-cif/save", func(c *fiber.Ctx) error {
+		return handlers.HandlerVHFPatientSubmit(c, db, sl, store, config, smsService)
+	})
+	app.Post("/vhf-cif/update", func(c *fiber.Ctx) error {
+		return handlers.HandlerVHFUpdate(c, db, sl, store, config)
+	})
+	app.Get("/vhf-cif/clinical-signs/:id", func(c *fiber.Ctx) error {
+		data := handlers.NewTemplateData(c, store)
+		data.Form = fiber.Map{"PatientID": c.Params("id")}
+		return handlers.GenerateHTML(c, db, data, "vhf_clinical_signs")
+	})
+	app.Post("/vhf-cif/clinical-signs/:id", func(c *fiber.Ctx) error {
+		return handlers.HandlerVHFClinicalSignsSubmit(c, db, sl, store, config)
+	})
+	app.Get("/vhf-cif/hospitalization/:id", func(c *fiber.Ctx) error {
+		data := handlers.NewTemplateData(c, store)
+		data.Form = fiber.Map{"PatientID": c.Params("id")}
+		return handlers.GenerateHTML(c, db, data, "vhf_hospitalization")
+	})
+	app.Post("/vhf-cif/hospitalization/:id", func(c *fiber.Ctx) error {
+		return handlers.HandlerVHFHospitalizationSubmit(c, db, sl, store, config)
+	})
+	app.Get("/vhf-cif/risk-factors/:id", func(c *fiber.Ctx) error {
+		data := handlers.NewTemplateData(c, store)
+		data.Form = fiber.Map{"PatientID": c.Params("id")}
+		return handlers.GenerateHTML(c, db, data, "vhf_risk_factors")
+	})
+	app.Post("/vhf-cif/risk-factors/:id", func(c *fiber.Ctx) error {
+		return handlers.HandlerVHFRiskFactorsSubmit(c, db, sl, store, config)
+	})
+	app.Get("/vhf-cif/laboratory/:id", func(c *fiber.Ctx) error {
+		data := handlers.NewTemplateData(c, store)
+		data.Form = fiber.Map{"PatientID": c.Params("id")}
+		return handlers.GenerateHTML(c, db, data, "vhf_laboratory")
+	})
+	app.Post("/vhf-cif/laboratory/:id", func(c *fiber.Ctx) error {
+		return handlers.HandlerVHFLaboratorySubmit(c, db, sl, store, config, smsService)
+	})
+	app.Get("/vhf-cif/investigator/:id", func(c *fiber.Ctx) error {
+		return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "vhf_investigator")
+	})
+	app.Post("/vhf-cif/investigator/:id", func(c *fiber.Ctx) error {
+		return handlers.HandlerVHFInvestigatorSubmit(c, db, sl, store, config)
+	})
+	app.Get("/vhf-cif/success", func(c *fiber.Ctx) error {
+		return handlers.HandlerVHFSuccess(c, db, sl, store, config)
+	})
+	app.Get("/vhf-cif/view/:id", func(c *fiber.Ctx) error {
+		return handlers.HandlerVHFView(c, db, sl, store, config)
+	})
+	app.Get("/measles_success", func(c *fiber.Ctx) error { return handlers.HandlerMeaslesSuccess(c, store) })
+	app.Get("/measles_cif", func(c *fiber.Ctx) error {
+		return handlers.HandlerMeaslesCIF(c, db, store)
+	})
+	app.Post("/measles_cif", func(c *fiber.Ctx) error {
+		return handlers.HandlerMeaslesCIF(c, db, store)
+	})
+
+	// Location API routes
+	app.Get("/api/locations/districts", func(c *fiber.Ctx) error {
+		return handlers.HandlerGetDistricts(c, db, sl)
+	})
+	app.Get("/api/locations/subcounties/:district_id", func(c *fiber.Ctx) error {
+		return handlers.HandlerGetSubcountiesByDistrict(c, db, sl)
+	})
+	app.Get("/api/locations/parishes/:subcounty_id", func(c *fiber.Ctx) error {
+		return handlers.HandlerGetParishesBySubcounty(c, db, sl)
+	})
+	app.Get("/api/locations/parishes/district/:district_id", func(c *fiber.Ctx) error {
+		return handlers.HandlerGetParishesByDistrict(c, db, sl)
+	})
+	app.Get("/api/locations/villages/:parish_id", func(c *fiber.Ctx) error {
+		return handlers.HandlerGetVillagesByParish(c, db, sl)
+	})
+	app.Get("/api/locations/villages/district/:district_id", func(c *fiber.Ctx) error {
+		return handlers.HandlerGetVillagesByDistrict(c, db, sl)
+	})
+	app.Get("/api/locations/villages/subcounty/:subcounty_id", func(c *fiber.Ctx) error {
+		return handlers.HandlerGetVillagesBySubcounty(c, db, sl)
+	})
+
 	// Protected routes
 	protected := app.Group("/", AuthRequired(store))
 
@@ -797,6 +916,8 @@ func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logg
 	protected.Post("/vhf-cif/investigator/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFInvestigatorSubmit(c, db, sl, store, config) })
 	protected.Get("/vhf-cif/success", func(c *fiber.Ctx) error { return handlers.HandlerVHFSuccess(c, db, sl, store, config) })
 	protected.Get("/vhf/list", func(c *fiber.Ctx) error { return handlers.HandlerVHFList(c, db, sl, store, config) })
+	protected.Get("/measles/list", func(c *fiber.Ctx) error { return handlers.HandlerMeaslesList(c, db, sl, store, config) })
+	protected.Get("/mpox/list", func(c *fiber.Ctx) error { return handlers.HandlerMpoxList(c, db, sl, store, config) })
 	protected.Get("/vhf/view/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFView(c, db, sl, store, config) })
 	protected.Get("/vhf-lab/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFLabForm(c, db, sl, store, config) })
 	protected.Post("/vhf-lab/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFLabSave(c, db, sl, store, config) })
@@ -830,15 +951,25 @@ func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logg
 		return handlers.HandlerGetVillagesBySubcounty(c, db, sl)
 	})
 
-	// VHF API routes
-	protected.Get("/api/vhf-cases", func(c *fiber.Ctx) error { return handlers.HandlerVHFList(c, db, sl, store, config) })
-	protected.Get("/api/vhf-cases/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFView(c, db, sl, store, config) })
-
-	// Inventory routes
+	// Inventory routes (moved to top to avoid conflicts)
 	inventoryHandler := handlers.NewInventoryHandler(db, store)
 
 	// Inventory dashboard
-	protected.Get("/inventory", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryDashboard(c) })
+	app.Get("/inventory", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryDashboard(c) })
+
+	// Test route
+	app.Get("/test-inventory", func(c *fiber.Ctx) error {
+		return c.SendString("Inventory test route working!")
+	})
+
+	// Test inventory handler
+	app.Get("/test-inventory-handler", func(c *fiber.Ctx) error {
+		return inventoryHandler.HandlerInventoryDashboard(c)
+	})
+
+	// VHF API routes
+	protected.Get("/api/vhf-cases", func(c *fiber.Ctx) error { return handlers.HandlerVHFList(c, db, sl, store, config) })
+	protected.Get("/api/vhf-cases/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFView(c, db, sl, store, config) })
 
 	// Inventory items
 	protected.Get("/inventory/items", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryItemsList(c) })
@@ -860,6 +991,15 @@ func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logg
 
 	// Reports
 	protected.Get("/inventory/reports", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryReports(c) })
+
+	// Donation routes
+	protected.Get("/inventory/donations", func(c *fiber.Ctx) error { return inventoryHandler.HandlerDonationsList(c) })
+	protected.Get("/inventory/donations/new", func(c *fiber.Ctx) error { return inventoryHandler.HandlerDonationForm(c) })
+	protected.Post("/inventory/donations/save", func(c *fiber.Ctx) error { return inventoryHandler.HandlerDonationSave(c) })
+	protected.Get("/inventory/donations/:id", func(c *fiber.Ctx) error { return inventoryHandler.HandlerDonationView(c) })
+	protected.Get("/inventory/donors", func(c *fiber.Ctx) error { return inventoryHandler.HandlerDonorsList(c) })
+	protected.Get("/inventory/donors/new", func(c *fiber.Ctx) error { return inventoryHandler.HandlerDonorForm(c) })
+	protected.Post("/inventory/donors/save", func(c *fiber.Ctx) error { return inventoryHandler.HandlerDonorSave(c) })
 
 	// Inventory API routes
 	protected.Get("/api/inventory/items", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryAPIItems(c) })

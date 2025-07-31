@@ -43,12 +43,6 @@ type Config struct {
 	SMSUsername  string `json:"SMSUser"`
 	SMSPassword  string `json:"SMSPassword"`
 	SMSBaseURL   string `json:"SMSURL"`
-	// Redis configuration
-	RedisHost     string `json:"RedisHost"`
-	RedisPort     int    `json:"RedisPort"`
-	RedisPassword string `json:"RedisPassword"`
-	RedisDatabase int    `json:"RedisDatabase"`
-	RedisEnabled  bool   `json:"RedisEnabled"`
 }
 
 type TemplateData struct {
@@ -118,6 +112,17 @@ type TemplateData struct {
 	InventoryTreatmentSites []*InventoryTreatmentSite
 	StockLevelReports       []*StockLevelReport
 	TransactionReports      []*TransactionReport
+	// Donation-related fields
+	Donations              []*DonationSummary
+	Donation               *InventoryDonation
+	Donors                 []*InventoryDonor
+	Donor                  *InventoryDonor
+	DonationTypes          []*InventoryDonationType
+	DonationType           *InventoryDonationType
+	DonationItems          []*InventoryDonationItem
+	DonationItem           *InventoryDonationItem
+	DonationAcknowledgment *InventoryDonationAcknowledgment
+	DonationStatistics     *DonationStatistics
 }
 
 // Department represents a department in the RBAC system
@@ -176,6 +181,9 @@ type EmployeeForm struct {
 	EmployeePhotoURL   sql.NullString
 	EmployeeNotes      sql.NullString
 	Facility           sql.NullInt64
+	FacilityInfo       struct {
+		Name sql.NullString
+	}
 }
 
 // EmployeeTitle represents an employee title
@@ -191,10 +199,16 @@ type Facility struct {
 }
 
 func NewTemplateData(c *fiber.Ctx, store *session.Store) *TemplateData {
+	return NewTemplateDataWithDB(c, store, nil)
+}
+
+func NewTemplateDataWithDB(c *fiber.Ctx, store *session.Store, db *sql.DB) *TemplateData {
 	//log.Printf("template data")
 
 	// Get user's facility ID from session
 	userFacilityID := ""
+	userPermissions := make(map[string][]string)
+
 	sess, err := store.Get(c)
 	if err == nil {
 		val := sess.Get("facility_id")
@@ -214,6 +228,17 @@ func NewTemplateData(c *fiber.Ctx, store *session.Store) *TemplateData {
 		case string:
 			if v != "" {
 				userFacilityID = v
+			}
+		}
+
+		// Load user permissions if user is authenticated and database is available
+		if IzAuthenticated(c, store) && db != nil {
+			userID := GetCurrentUser(c, store)
+			if userID > 0 {
+				permissions, err := getUserPermissions(c, db, userID)
+				if err == nil {
+					userPermissions = permissions
+				}
 			}
 		}
 	}
@@ -236,6 +261,7 @@ func NewTemplateData(c *fiber.Ctx, store *session.Store) *TemplateData {
 		IsAuthenticated: IzAuthenticated(c, store),
 		Optionz:         optionz,
 		UserFacilityID:  userFacilityID,
+		UserPermissions: userPermissions,
 		//CSRFToken:       c.Locals("csrf").(string), // Add the CSRF token.
 	}
 }
@@ -479,6 +505,12 @@ func GenerateHTML(c *fiber.Ctx, db *sql.DB, zdata interface{}, filenames ...stri
 		} else {
 			log.Printf("DEBUG: TemplateData.Optionz is nil - this might cause issues")
 		}
+		log.Printf("DEBUG: TemplateData.UserPermissions initialized: %v, keys: %d", templateData.UserPermissions != nil, len(templateData.UserPermissions))
+		if templateData.UserPermissions != nil {
+			for resource, actions := range templateData.UserPermissions {
+				log.Printf("DEBUG: UserPermissions[%s] has actions: %v", resource, actions)
+			}
+		}
 	} else {
 		log.Printf("DEBUG: Data is not *TemplateData, actual type: %T", zdata)
 		// Try to convert to TemplateData if possible
@@ -649,14 +681,39 @@ func GetCurrentUser(c *fiber.Ctx, store *session.Store) int {
 		return 0
 	}
 
-	userID := sess.Get("user")
-	userInt, ok := userID.(int)
-	if !ok {
-		fmt.Println("User not found or not an int")
-		log.Println("User not found or not an int")
+	// Try to get userID from session with multiple type handling
+	userIDVal := sess.Get("user")
+	if userIDVal == nil {
+		// Try alternative key
+		userIDVal = sess.Get("user_id")
+	}
+
+	if userIDVal == nil {
+		fmt.Println("User not found in session")
+		log.Println("User not found in session")
 		return 0
 	}
-	return userInt
+
+	switch v := userIDVal.(type) {
+	case int:
+		return v
+	case int64:
+		return int(v)
+	case float64:
+		return int(v)
+	case string:
+		if i, err := strconv.Atoi(v); err == nil {
+			return i
+		} else {
+			fmt.Println("Failed to convert session userID string to int:", err)
+			log.Println("Failed to convert session userID string to int:", err)
+			return 0
+		}
+	default:
+		fmt.Println("Unknown session userID type:", fmt.Sprintf("%T", userIDVal))
+		log.Println("Unknown session userID type:", fmt.Sprintf("%T", userIDVal))
+		return 0
+	}
 }
 
 // GetUserFacility gets the facility ID assigned to a user from the employee table
@@ -1133,15 +1190,39 @@ func GetUser(c *fiber.Ctx, sl *slog.Logger, store *session.Store) (int, string) 
 		return 0, ""
 	}
 
-	userID, ok := sess.Get("user").(int)
-	if !ok {
-		fmt.Println("Failed to convert session value to int")
+	// Try to get userID from session with multiple type handling
+	userIDVal := sess.Get("user")
+	sl.Info("Session debug", "user_key_value", userIDVal, "user_key_type", fmt.Sprintf("%T", userIDVal))
+
+	if userIDVal == nil {
+		// Try alternative key
+		userIDVal = sess.Get("user_id")
+		sl.Info("Session debug", "user_id_key_value", userIDVal, "user_id_key_type", fmt.Sprintf("%T", userIDVal))
+	}
+
+	var userID int
+	switch v := userIDVal.(type) {
+	case int:
+		userID = v
+	case int64:
+		userID = int(v)
+	case float64:
+		userID = int(v)
+	case string:
+		if i, err := strconv.Atoi(v); err == nil {
+			userID = i
+		} else {
+			sl.Error("Failed to convert session userID string to int", "error", err, "value", v)
+			return 0, ""
+		}
+	default:
+		sl.Error("Unknown session userID type", "type", fmt.Sprintf("%T", userIDVal), "value", userIDVal)
 		return 0, ""
 	}
 
 	username, ok := sess.Get("username").(string)
 	if !ok {
-		fmt.Println("Failed to convert session value to string")
+		sl.Error("Failed to convert session username to string", "value", sess.Get("username"))
 		return 0, ""
 	}
 

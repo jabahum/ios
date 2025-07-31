@@ -1,0 +1,30 @@
+{{define "content"}}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="card-title mb-0">
+                        <i class="bi bi-check-circle"></i> Success
+                    </h4>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    <h5 class="card-title">{{.Form.Message}}</h5>
+                    <p class="card-text">Case ID: <strong>{{.Form.CaseID}}</strong></p>
+                    <div class="mt-4">
+                        <a href="/polio-cif" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> New Case
+                        </a>
+                        <a href="/vhf-list" class="btn btn-secondary ms-2">
+                            <i class="bi bi-list"></i> View All Cases
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}} 

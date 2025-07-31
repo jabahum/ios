@@ -5,26 +5,16 @@
         <input type="hidden" name="patient_id" id="patient_id" value="">
         <input type="hidden" name="measles_code" id="measles_code" value="">
         <div class="alert alert-info" id="measlesCodeDisplay" style="display:none;"></div>
-        <ul class="nav nav-tabs" id="measlesTab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="demographics-tab" data-bs-toggle="tab" data-bs-target="#demographics" type="button" role="tab">Demographics</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="clinical-tab" data-bs-toggle="tab" data-bs-target="#clinical" type="button" role="tab">Clinical History</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="specimens-tab" data-bs-toggle="tab" data-bs-target="#specimens" type="button" role="tab">Specimens</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="investigators-tab" data-bs-toggle="tab" data-bs-target="#investigators" type="button" role="tab">Investigators</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="results-tab" data-bs-toggle="tab" data-bs-target="#results" type="button" role="tab">Results</button>
-            </li>
-        </ul>
-        <div class="tab-content border border-top-0 p-3" id="measlesTabContent">
-            <!-- Demographics Tab -->
-            <div class="tab-pane fade show active" id="demographics" role="tabpanel">
+        <div class="accordion" id="measlesAccordion">
+            <!-- Demographics Accordion Item -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="demographics-header">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#demographics" aria-expanded="true" aria-controls="demographics">
+                        Demographics
+                    </button>
+                </h2>
+                <div id="demographics" class="accordion-collapse collapse show" aria-labelledby="demographics-header" data-bs-parent="#measlesAccordion">
+                    <div class="accordion-body">
                 <div class="row mb-2">
                     <div class="col-md-6">
                         <label>Name of Patient:</label>
@@ -98,9 +88,18 @@
                     <label>L.C.T1 Tel. Contact:</label>
                     <input type="text" name="lc1_tel" class="form-control">
                 </div>
+                    </div>
+                </div>
             </div>
-            <!-- Clinical History Tab -->
-            <div class="tab-pane fade" id="clinical" role="tabpanel">
+            <!-- Clinical History Accordion Item -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="clinical-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#clinical" aria-expanded="false" aria-controls="clinical">
+                        Clinical History
+                    </button>
+                </h2>
+                <div id="clinical" class="accordion-collapse collapse" aria-labelledby="clinical-header" data-bs-parent="#measlesAccordion">
+                    <div class="accordion-body">
                 <div class="mb-2">
                     <label>Symptoms (circle as appropriate):</label>
                     <div class="row">
@@ -190,9 +189,18 @@
                         <input type="text" name="diagnosis" class="form-control">
                     </div>
                 </div>
+                    </div>
+                </div>
             </div>
-            <!-- Specimens Tab -->
-            <div class="tab-pane fade" id="specimens" role="tabpanel">
+            <!-- Specimens Accordion Item -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="specimens-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#specimens" aria-expanded="false" aria-controls="specimens">
+                        Specimens
+                    </button>
+                </h2>
+                <div id="specimens" class="accordion-collapse collapse" aria-labelledby="specimens-header" data-bs-parent="#measlesAccordion">
+                    <div class="accordion-body">
                 <div class="mb-2">
                     <strong>Blood:</strong>
                     <div class="row">
@@ -245,9 +253,18 @@
                         <input type="date" name="form_received_date" class="form-control">
                     </div>
                 </div>
+                    </div>
+                </div>
             </div>
-            <!-- Investigators Tab -->
-            <div class="tab-pane fade" id="investigators" role="tabpanel">
+            <!-- Investigators Accordion Item -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="investigators-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#investigators" aria-expanded="false" aria-controls="investigators">
+                        Investigators
+                    </button>
+                </h2>
+                <div id="investigators" class="accordion-collapse collapse" aria-labelledby="investigators-header" data-bs-parent="#measlesAccordion">
+                    <div class="accordion-body">
                 <div class="row mb-2">
                     <div class="col-md-6">
                         <label>Name (person filling form):</label>
@@ -262,9 +279,18 @@
                         <input type="date" name="investigator_date" class="form-control">
                     </div>
                 </div>
+                    </div>
+                </div>
             </div>
-            <!-- Results Tab -->
-            <div class="tab-pane fade" id="results" role="tabpanel">
+            <!-- Results Accordion Item -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="results-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#results" aria-expanded="false" aria-controls="results">
+                        Results
+                    </button>
+                </h2>
+                <div id="results" class="accordion-collapse collapse" aria-labelledby="results-header" data-bs-parent="#measlesAccordion">
+                    <div class="accordion-body">
                 <div class="row mb-2">
                     <div class="col-md-4">
                         <label>Serology: IgM</label>
@@ -302,6 +328,8 @@
                 <div class="mb-2">
                     <label>Date results sent to district:</label>
                     <input type="date" name="results_sent_date" class="form-control">
+                </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -1153,10 +1153,10 @@
                                     <h5 class="mb-0"><i class="fas fa-flask"></i> Laboratory Tests</h5>
                                 </div>
                                 <div class="card-body p-0">
-                                    <style>
+                            <style>
                                         .lab-table {
-                                            width: 100%;
-                                            border-collapse: collapse;
+                                    width: 100%;
+                                    border-collapse: collapse;
                                             font-size: 0.9rem;
                                         }
                                         .lab-table th {
@@ -1244,12 +1244,12 @@
                                         .lab-table .sample-checkboxes input[type="text"] {
                                             width: 120px;
                                             margin-left: 10px;
-                                        }
-                                    </style>
+                                }
+                            </style>
                                     <table class="lab-table">
                                 <tr class="section-header">
                                    <td colspan="6">
-                                    <div class="row">
+                                            <div class="row">
                                         <div class="col-lg-6">
                                             <div class="form-group">
                                                 <label class="form-label fw-bold">Specimen collection done for EVD patients?</label> 
@@ -1265,11 +1265,11 @@
                                                     <div class="checkbox-item">
                                                         <input type="checkbox" value="1" name="sample_blood" id="sample_blood" {{ if eq (index .FormChild3 0).SampleBlood.Int64 1 }}checked{{ end }}>
                                                         <span class="checkbox-label">Blood</span>
-                                                    </div>
+                                                </div>
                                                     <div class="checkbox-item">
                                                         <input type="checkbox" value="1" name="sample_urine" id="sample_urine" {{ if eq (index .FormChild3 0).SampleUrine.Int64 1 }}checked{{ end }}>
                                                         <span class="checkbox-label">Urine</span>
-                                                    </div>
+                                            </div>
                                                     <div class="checkbox-item">
                                                         <input type="checkbox" value="1" name="sample_swab" id="sample_swab" {{ if eq (index .FormChild3 0).SampleSwab.Int64 1 }}checked{{ end }}>
                                                         <span class="checkbox-label">Buccal swab</span>
@@ -1295,7 +1295,7 @@
                                             <label class="form-label fw-bold">Ebola RDT:</label>
                                             <div class="mt-2">
                                                 {{ GetOptionField "e_rdt" "ebola_rdt" "EbolaRdt" "" (index .FormChild3 0).EbolaRdt.Int64 1 | safe }}
-                                            </div>
+                                        </div>
                                             <div class="mt-2">
                                                 <label class="form-label">Other specify:</label>
                                                 <input type="text" name="ebola_rdt" id="ebola_rdt" value="{{ (index .FormChild3 0).EbolaRdtAza.String }}" placeholder="Specify other">
@@ -1317,7 +1317,7 @@
                                             <label class="form-label fw-bold">Ebola PCR:</label>
                                             <div class="mt-2">
                                                 {{ GetOptionField "e_pcr" "ebola_pcr" "EbolaPcr" "" (index .FormChild3 0).EbolaPcr.Int64 1 | safe }}
-                                            </div>
+                                        </div>
                                             <div class="mt-2">
                                                 <label class="form-label">Other specify:</label>
                                                 <input type="text" name="ebola_pcr_aza" id="ebola_pcr_aza" value="{{ (index .FormChild3 0).EbolaPcrAza.String }}" placeholder="Specify other">
@@ -1850,8 +1850,8 @@
                                                     <div class="mt-2">
                                                         <label class="form-label">Specify:</label>
                                                         <input type="text" name="other_meds_specify" value="{{ (index .FormChild4 0).OtherMedsSpecify.String }}" class="form-control" placeholder="Specify other medications">
-                                                    </div>
-                                                </div>
+                                </div>
+                                </div>
                                             </td>
                                             <td><input value="{{ (index .FormChild4 0).OtherMedsDose.String }}" type="text" name="other_meds_dose" id="other_meds_dose" class="form-control" placeholder="Dose"></td>
                                             <td><input value="{{ (index .FormChild4 0).OtherMedsRoute.String }}" type="text" name="other_meds_route" id="other_meds_route" class="form-control" placeholder="Route"></td>
@@ -2128,7 +2128,7 @@
                                     </div>
                                 </div>
                             </div>
-                         </div>
+                        </div>
 
                     </div>
                    

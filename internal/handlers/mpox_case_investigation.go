@@ -3,6 +3,7 @@ package handlers
 import (
 	"case/internal/models"
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"strconv"
 	"strings"
@@ -382,4 +383,137 @@ func HandlerMpoxCIFSuccess(c *fiber.Ctx, db *sql.DB, logger *slog.Logger, store 
 	data := NewTemplateData(c, store)
 	data.Form = fiber.Map{"case_id": caseID}
 	return GenerateHTML(c, db, data, "mpox_cif_success")
+}
+
+// HandlerMpoxList handles the listing of all MPOX cases
+func HandlerMpoxList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	// Get current user information (for future use if needed)
+	_, _ = GetUser(c, sl, store)
+
+	// Build the query to get MPOX cases
+	query := `
+		SELECT 
+			mci.id,
+			mci.case_id,
+			mci.case_status,
+			mci.case_classification,
+			mci.date,
+			mpd.surname,
+			mpd.other_names,
+			mpd.sex,
+			mpd.age,
+			mpd.parish,
+			mpd.sub_county,
+			mpd.onset_date,
+			mpd.rash_onset_date,
+			CASE WHEN mli.id IS NOT NULL THEN true ELSE false END as lab_status
+		FROM mpox_case_investigation mci
+		LEFT JOIN mpox_patient_demographics mpd ON mci.case_id = mpd.case_id
+		LEFT JOIN mpox_lab_investigation mli ON mci.case_id = mli.case_id
+		ORDER BY mci.date DESC`
+
+	rows, err := db.QueryContext(c.Context(), query)
+	if err != nil {
+		sl.Error("Failed to query MPOX cases", "error", err)
+		return c.Status(500).SendString("Failed to retrieve MPOX cases")
+	}
+	defer rows.Close()
+
+	var cases []fiber.Map
+	for rows.Next() {
+		var (
+			id                 int64
+			caseID             string
+			caseStatus         sql.NullString
+			caseClassification sql.NullString
+			date               time.Time
+			surname            string
+			otherNames         sql.NullString
+			sex                string
+			age                int
+			parish             sql.NullString
+			subCounty          sql.NullString
+			onsetDate          sql.NullTime
+			rashOnsetDate      sql.NullTime
+			labStatus          bool
+		)
+
+		err := rows.Scan(
+			&id,
+			&caseID,
+			&caseStatus,
+			&caseClassification,
+			&date,
+			&surname,
+			&otherNames,
+			&sex,
+			&age,
+			&parish,
+			&subCounty,
+			&onsetDate,
+			&rashOnsetDate,
+			&labStatus,
+		)
+		if err != nil {
+			sl.Error("Failed to scan MPOX case", "error", err)
+			continue
+		}
+
+		// Format name
+		name := surname
+		if otherNames.Valid && otherNames.String != "" {
+			name = fmt.Sprintf("%s %s", surname, otherNames.String)
+		}
+
+		// Format location
+		location := ""
+		if parish.Valid && parish.String != "" {
+			location = parish.String
+		}
+		if subCounty.Valid && subCounty.String != "" {
+			if location != "" {
+				location += ", "
+			}
+			location += subCounty.String
+		}
+
+		// Determine status
+		status := "Active"
+		if caseStatus.Valid && caseStatus.String != "" {
+			status = caseStatus.String
+		}
+
+		cases = append(cases, fiber.Map{
+			"ID":             id,
+			"CaseID":         caseID,
+			"Name":           name,
+			"Age":            fmt.Sprintf("%d years", age),
+			"Gender":         sex,
+			"Location":       location,
+			"Status":         status,
+			"Classification": caseClassification.String,
+			"LabStatus":      labStatus,
+			"OnsetDate":      onsetDate.Time.Format("2006-01-02"),
+			"RashOnsetDate":  rashOnsetDate.Time.Format("2006-01-02"),
+			"CreatedAt":      date.Format("2006-01-02 15:04"),
+		})
+	}
+
+	if err = rows.Err(); err != nil {
+		sl.Error("Error iterating MPOX cases", "error", err)
+		return c.Status(500).SendString("Error retrieving MPOX cases")
+	}
+
+	// Check if this is an API request
+	if c.Get("Accept") == "application/json" {
+		return c.JSON(cases)
+	}
+
+	// Return HTML response
+	data := NewTemplateData(c, store)
+	data.Form = fiber.Map{
+		"Title": "MPOX Cases",
+		"Cases": cases,
+	}
+	return GenerateHTML(c, db, data, "mpox_list")
 }

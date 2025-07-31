@@ -313,9 +313,16 @@ func HandlerLoginSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 		// Set session variables
 		sess.Set("user", id)    // Keep for backward compatibility
 		sess.Set("user_id", id) // Set for RBAC compatibility
+		sess.Set("userID", id)  // Set for debug middleware compatibility
 		sess.Set("username", username)
 		sess.Set("isAuthenticated", true)
 		sess.Set("authenticated", true) // Set for RBAC compatibility
+
+		// Debug logging
+		sl.Info("Setting session variables",
+			"user_id", id,
+			"username", username,
+			"session_keys", []string{"user", "user_id", "userID", "username", "isAuthenticated"})
 
 		// Get user's default outbreak and set it in session
 		defaultOutbreakID, err := getDefaultOutbreakID(c, db, id)

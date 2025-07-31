@@ -14,12 +14,8 @@ import (
 )
 
 // PermissionRequired creates middleware that checks if user has specific permission
-func PermissionRequired(resource, action string) fiber.Handler {
+func PermissionRequired(store *session.Store, db *sql.DB, sl *slog.Logger, resource, action string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		store := c.Locals("store").(*session.Store)
-		db := c.Locals("db").(*sql.DB)
-		sl := c.Locals("logger").(*slog.Logger)
-
 		// Get user session
 		sess, err := store.Get(c)
 		if err != nil {
@@ -29,7 +25,7 @@ func PermissionRequired(resource, action string) fiber.Handler {
 		}
 
 		// Check if user is authenticated
-		if sess.Get("authenticated") != true {
+		if sess.Get("isAuthenticated") != true {
 			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Authentication required",
 			})
@@ -85,12 +81,8 @@ func PermissionRequired(resource, action string) fiber.Handler {
 }
 
 // RoleRequired creates middleware that checks if user has specific role
-func RoleRequired(roleName string) fiber.Handler {
+func RoleRequired(store *session.Store, db *sql.DB, sl *slog.Logger, roleName string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		store := c.Locals("store").(*session.Store)
-		db := c.Locals("db").(*sql.DB)
-		sl := c.Locals("logger").(*slog.Logger)
-
 		// Get user session
 		sess, err := store.Get(c)
 		if err != nil {
@@ -100,7 +92,7 @@ func RoleRequired(roleName string) fiber.Handler {
 		}
 
 		// Check if user is authenticated
-		if sess.Get("authenticated") != true {
+		if sess.Get("isAuthenticated") != true {
 			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Authentication required",
 			})
@@ -161,11 +153,8 @@ func RoleRequired(roleName string) fiber.Handler {
 }
 
 // EnhancedAuthRequired combines authentication with basic permission checking
-func EnhancedAuthRequired() fiber.Handler {
+func EnhancedAuthRequired(store *session.Store, db *sql.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		store := c.Locals("store").(*session.Store)
-		db := c.Locals("db").(*sql.DB)
-
 		// Get user session
 		sess, err := store.Get(c)
 		if err != nil {
@@ -173,7 +162,7 @@ func EnhancedAuthRequired() fiber.Handler {
 		}
 
 		// Check if user is authenticated
-		if sess.Get("authenticated") != true {
+		if sess.Get("isAuthenticated") != true {
 			return c.Redirect("/login")
 		}
 
