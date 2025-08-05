@@ -104,7 +104,7 @@ func HandlerMpoxAdmissionSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 	demographics := models.MpoxDemographics{
 		ClientID:             sql.NullInt64{Int64: int64(clientID), Valid: true},
 		Sex:                  sql.NullString{String: c.FormValue("sex"), Valid: true},
-		DateOfBirth:          sql.NullTime{Time: utils.ParseDate(c.FormValue("date_of_birth")), Valid: true},
+		DateOfBirth:          ParseNullTime(c.FormValue("date_of_birth")),
 		AgeYears:             sql.NullInt64{Int64: utils.ParseInt64(c.FormValue("age_years")), Valid: true},
 		AgeMonths:            sql.NullInt64{Int64: utils.ParseInt64(c.FormValue("age_months")), Valid: true},
 		AgeDays:              sql.NullInt64{Int64: utils.ParseInt64(c.FormValue("age_days")), Valid: true},
@@ -114,7 +114,7 @@ func HandlerMpoxAdmissionSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 		Tribe:                sql.NullString{String: c.FormValue("tribe"), Valid: true},
 		Pregnant:             sql.NullBool{Bool: c.FormValue("pregnant") == "Y", Valid: true},
 		GestationalWeeks:     sql.NullInt64{Int64: utils.ParseInt64(c.FormValue("gestational_weeks")), Valid: true},
-		LMNP:                 sql.NullTime{Time: utils.ParseDate(c.FormValue("lmnp")), Valid: true},
+		LMNP:                 ParseNullTime(c.FormValue("lmnp")),
 		RecentlyPregnant:     sql.NullBool{Bool: c.FormValue("recently_pregnant") == "Y", Valid: true},
 		Pregnant22_42:        sql.NullBool{Bool: c.FormValue("pregnant_22_42") == "Y", Valid: true},
 		TetanusVaccination:   sql.NullBool{Bool: c.FormValue("tetanus_vaccination") == "Y", Valid: true},
@@ -148,7 +148,7 @@ func HandlerMpoxAdmissionSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 	// Create and insert onset vitals
 	vitals := models.MpoxOnsetVitals{
 		DemographicsID:  demographics.ID,
-		SymptomOnset:    sql.NullTime{Time: utils.ParseDate(c.FormValue("symptom_onset")), Valid: true},
+		SymptomOnset:    ParseNullTime(c.FormValue("symptom_onset")),
 		Fever:           sql.NullBool{Bool: c.FormValue("fever") == "Y", Valid: true},
 		SoreThroat:      sql.NullBool{Bool: c.FormValue("sore_throat") == "Y", Valid: true},
 		Headache:        sql.NullBool{Bool: c.FormValue("headache") == "Y", Valid: true},

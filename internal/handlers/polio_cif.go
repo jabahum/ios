@@ -23,6 +23,8 @@ func HandlerPolioCIF(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.S
 
 // HandlerPolioCIFSubmit handles the submission of the Polio CIF form
 func HandlerPolioCIFSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	// Debug: Log that the handler was called
+	sl.Info("Polio CIF submit handler called", "method", c.Method(), "path", c.Path())
 	// Start a transaction
 	tx, err := db.Begin()
 	if err != nil {
@@ -237,26 +239,15 @@ func HandlerPolioCIFSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 		UnknownZeroDoseReasons: c.FormValue("unknown_zero_dose_reasons"),
 	}
 
-	// Parse immunization dates
-	parseDate := func(dateStr string) sql.NullTime {
-		if dateStr == "" {
-			return sql.NullTime{Valid: false}
-		}
-		if t, err := time.Parse("2006-01-02", dateStr); err == nil {
-			return sql.NullTime{Time: t, Valid: true}
-		}
-		return sql.NullTime{Valid: false}
-	}
-
-	immunization.OPVDoseAtBirth = parseDate(c.FormValue("opv_dose_at_birth"))
-	immunization.OPVDose1 = parseDate(c.FormValue("opv_dose1"))
-	immunization.OPVDose2 = parseDate(c.FormValue("opv_dose2"))
-	immunization.OPVDose3 = parseDate(c.FormValue("opv_dose3"))
-	immunization.OPVDose4 = parseDate(c.FormValue("opv_dose4"))
-	immunization.OPVDoseMoreThan4 = parseDate(c.FormValue("opv_dose_more_than4"))
-	immunization.LastOPVDose = parseDate(c.FormValue("last_opv_dose"))
-	immunization.LastOPVSIA = parseDate(c.FormValue("last_opv_sia"))
-	immunization.LastIPVSIA = parseDate(c.FormValue("last_ipv_sia"))
+	immunization.OPVDoseAtBirth = ParseNullTime(c.FormValue("opv_dose_at_birth"))
+	immunization.OPVDose1 = ParseNullTime(c.FormValue("opv_dose1"))
+	immunization.OPVDose2 = ParseNullTime(c.FormValue("opv_dose2"))
+	immunization.OPVDose3 = ParseNullTime(c.FormValue("opv_dose3"))
+	immunization.OPVDose4 = ParseNullTime(c.FormValue("opv_dose4"))
+	immunization.OPVDoseMoreThan4 = ParseNullTime(c.FormValue("opv_dose_more_than4"))
+	immunization.LastOPVDose = ParseNullTime(c.FormValue("last_opv_dose"))
+	immunization.LastOPVSIA = ParseNullTime(c.FormValue("last_opv_sia"))
+	immunization.LastIPVSIA = ParseNullTime(c.FormValue("last_ipv_sia"))
 
 	// Parse numeric fields
 	parseInt32 := func(value string) sql.NullInt32 {
@@ -287,11 +278,11 @@ func HandlerPolioCIFSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 		CaseID: caseID,
 	}
 
-	specimenCollection.DateFirstSpecimen = parseDate(c.FormValue("date_first_specimen"))
-	specimenCollection.DateSecondSpecimen = parseDate(c.FormValue("date_second_specimen"))
-	specimenCollection.DateSpecimenSentNational = parseDate(c.FormValue("date_specimen_sent_national"))
-	specimenCollection.DateSpecimenReceivedNational = parseDate(c.FormValue("date_specimen_received_national"))
-	specimenCollection.DateSpecimenSentLab = parseDate(c.FormValue("date_specimen_sent_lab"))
+	specimenCollection.DateFirstSpecimen = ParseNullTime(c.FormValue("date_first_specimen"))
+	specimenCollection.DateSecondSpecimen = ParseNullTime(c.FormValue("date_second_specimen"))
+	specimenCollection.DateSpecimenSentNational = ParseNullTime(c.FormValue("date_specimen_sent_national"))
+	specimenCollection.DateSpecimenReceivedNational = ParseNullTime(c.FormValue("date_specimen_received_national"))
+	specimenCollection.DateSpecimenSentLab = ParseNullTime(c.FormValue("date_specimen_sent_lab"))
 
 	if err := specimenCollection.Insert(db); err != nil {
 		sl.Error("Failed to insert specimen collection", "error", err)
@@ -305,11 +296,11 @@ func HandlerPolioCIFSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 		CaseID: caseID,
 	}
 
-	specimenResults.DateReceivedAtLab = parseDate(c.FormValue("date_received_at_lab"))
+	specimenResults.DateReceivedAtLab = ParseNullTime(c.FormValue("date_received_at_lab"))
 	specimenResults.SpecimenStatusAtReception = sql.NullString{String: c.FormValue("specimen_status_at_reception"), Valid: c.FormValue("specimen_status_at_reception") != ""}
-	specimenResults.DateCombinedCellCulture = parseDate(c.FormValue("date_combined_cell_culture"))
-	specimenResults.DateResultsSentToEPI = parseDate(c.FormValue("date_results_sent_to_epi"))
-	specimenResults.DateResultsReceivedAtEPI = parseDate(c.FormValue("date_results_received_at_epi"))
+	specimenResults.DateCombinedCellCulture = ParseNullTime(c.FormValue("date_combined_cell_culture"))
+	specimenResults.DateResultsSentToEPI = ParseNullTime(c.FormValue("date_results_sent_to_epi"))
+	specimenResults.DateResultsReceivedAtEPI = ParseNullTime(c.FormValue("date_results_received_at_epi"))
 	specimenResults.FinalCellCultureResults = sql.NullString{String: c.FormValue("final_cell_culture_results"), Valid: c.FormValue("final_cell_culture_results") != ""}
 	specimenResults.W1 = sql.NullString{String: c.FormValue("w1"), Valid: c.FormValue("w1") != ""}
 	specimenResults.W2 = sql.NullString{String: c.FormValue("w2"), Valid: c.FormValue("w2") != ""}
@@ -320,11 +311,11 @@ func HandlerPolioCIFSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 	specimenResults.SL3 = sql.NullString{String: c.FormValue("sl3"), Valid: c.FormValue("sl3") != ""}
 	specimenResults.RNPENT = sql.NullString{String: c.FormValue("r_npent"), Valid: c.FormValue("r_npent") != ""}
 	specimenResults.NEV = sql.NullString{String: c.FormValue("nev"), Valid: c.FormValue("nev") != ""}
-	specimenResults.DateSentToRegionalLab = parseDate(c.FormValue("date_sent_to_regional_lab"))
-	specimenResults.DateITDifferentiationSent = parseDate(c.FormValue("date_it_differentiation_sent"))
-	specimenResults.DateITDifferentiationReceived = parseDate(c.FormValue("date_it_differentiation_received"))
-	specimenResults.DateIsolateSentSequencing = parseDate(c.FormValue("date_isolate_sent_sequencing"))
-	specimenResults.DateSeqResultsSentProgram = parseDate(c.FormValue("date_seq_results_sent_program"))
+	specimenResults.DateSentToRegionalLab = ParseNullTime(c.FormValue("date_sent_to_regional_lab"))
+	specimenResults.DateITDifferentiationSent = ParseNullTime(c.FormValue("date_it_differentiation_sent"))
+	specimenResults.DateITDifferentiationReceived = ParseNullTime(c.FormValue("date_it_differentiation_received"))
+	specimenResults.DateIsolateSentSequencing = ParseNullTime(c.FormValue("date_isolate_sent_sequencing"))
+	specimenResults.DateSeqResultsSentProgram = ParseNullTime(c.FormValue("date_seq_results_sent_program"))
 
 	if err := specimenResults.Insert(db); err != nil {
 		sl.Error("Failed to insert specimen results", "error", err)
@@ -345,7 +336,7 @@ func HandlerPolioCIFSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 		IVDPV:               c.FormValue("ivdpv") == "on",
 	}
 
-	followUp.DateOfFollowUp = parseDate(c.FormValue("date_of_follow_up"))
+	followUp.DateOfFollowUp = ParseNullTime(c.FormValue("date_of_follow_up"))
 	followUp.ResultsOfExam = sql.NullString{String: c.FormValue("results_of_exam"), Valid: c.FormValue("results_of_exam") != ""}
 	followUp.ImmunocompromisedStatus = sql.NullString{String: c.FormValue("immunocompromised_status"), Valid: c.FormValue("immunocompromised_status") != ""}
 	followUp.FinalClassification = sql.NullString{String: c.FormValue("final_classification"), Valid: c.FormValue("final_classification") != ""}

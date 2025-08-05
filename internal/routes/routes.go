@@ -3,6 +3,7 @@ package routes
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"log/slog"
 	"strconv"
 
@@ -11,6 +12,7 @@ import (
 	_ "github.com/lib/pq"
 
 	"case/internal/handlers"
+	"case/internal/middleware"
 	"case/internal/models"
 	"case/internal/reports"
 	"case/internal/services"
@@ -92,7 +94,7 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		return handlers.HandlerMeaslesCIF(c, db, store)
 	})
 
-	// Polio CIF routes (public)
+	// Polio CIF routes (public) - must be defined BEFORE the protected routes group
 	app.Get("/polio-cif", func(c *fiber.Ctx) error {
 		return handlers.HandlerPolioCIF(c, db, sl, store, config)
 	})
@@ -131,79 +133,243 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		return handlers.HandlerGetFacilities(c, db, sl)
 	})
 
-	// Move these RBAC API endpoints to be public (before appGroup)
-	app.Get("/api/roles", func(c *fiber.Ctx) error { return handlers.HandlerGetRoles(c, db, sl) })
-	app.Get("/api/roles/:id", func(c *fiber.Ctx) error { return handlers.HandlerGetRole(c, db, sl) })
-	app.Put("/api/roles/:id", func(c *fiber.Ctx) error { return handlers.HandlerUpdateRole(c, db, sl, store, config) })
-	app.Delete("/api/roles/:id", func(c *fiber.Ctx) error { return handlers.HandlerDeleteRole(c, db, sl, store, config) })
-	app.Get("/api/permissions", func(c *fiber.Ctx) error { return handlers.HandlerGetPermissions(c, db, sl) })
-	app.Get("/api/permissions/:id", func(c *fiber.Ctx) error { return handlers.HandlerGetPermission(c, db, sl) })
-	app.Put("/api/permissions/:id", func(c *fiber.Ctx) error { return handlers.HandlerUpdatePermission(c, db, sl, store, config) })
-	app.Delete("/api/permissions/:id", func(c *fiber.Ctx) error { return handlers.HandlerDeletePermission(c, db, sl, store, config) })
-	app.Get("/api/rbac/migration-status", func(c *fiber.Ctx) error { return handlers.HandlerGetMigrationStatus(c, db, sl) })
+	// RBAC API endpoints - Admin only access
+	app.Get("/api/roles", middleware.PermissionRequired(store, db, sl, "admin", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerGetRoles(c, db, sl)
+	})
+	app.Get("/api/roles/:id", middleware.PermissionRequired(store, db, sl, "admin", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerGetRole(c, db, sl)
+	})
+	app.Put("/api/roles/:id", middleware.PermissionRequired(store, db, sl, "admin", "update"), func(c *fiber.Ctx) error {
+		return handlers.HandlerUpdateRole(c, db, sl, store, config)
+	})
+	app.Delete("/api/roles/:id", middleware.PermissionRequired(store, db, sl, "admin", "delete"), func(c *fiber.Ctx) error {
+		return handlers.HandlerDeleteRole(c, db, sl, store, config)
+	})
+	app.Get("/api/permissions", middleware.PermissionRequired(store, db, sl, "admin", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerGetPermissions(c, db, sl)
+	})
+	app.Get("/api/permissions/:id", middleware.PermissionRequired(store, db, sl, "admin", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerGetPermission(c, db, sl)
+	})
+	app.Put("/api/permissions/:id", middleware.PermissionRequired(store, db, sl, "admin", "update"), func(c *fiber.Ctx) error {
+		return handlers.HandlerUpdatePermission(c, db, sl, store, config)
+	})
+	app.Delete("/api/permissions/:id", middleware.PermissionRequired(store, db, sl, "admin", "delete"), func(c *fiber.Ctx) error {
+		return handlers.HandlerDeletePermission(c, db, sl, store, config)
+	})
+	app.Get("/api/rbac/migration-status", middleware.PermissionRequired(store, db, sl, "admin", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerGetMigrationStatus(c, db, sl)
+	})
 
-	// RBAC API Routes
-	app.Get("/api/rbac/stats", func(c *fiber.Ctx) error { return handlers.HandlerGetRBACStats(c, db, sl) })
-	app.Get("/api/rbac/roles", func(c *fiber.Ctx) error { return handlers.HandlerGetRoles(c, db, sl) })
-	app.Post("/api/rbac/roles", func(c *fiber.Ctx) error { return handlers.HandlerCreateRole(c, db, sl, store, config) })
-	app.Get("/api/rbac/roles/:id", func(c *fiber.Ctx) error { return handlers.HandlerGetRole(c, db, sl) })
-	app.Put("/api/rbac/roles/:id", func(c *fiber.Ctx) error { return handlers.HandlerUpdateRole(c, db, sl, store, config) })
-	app.Delete("/api/rbac/roles/:id", func(c *fiber.Ctx) error { return handlers.HandlerDeleteRole(c, db, sl, store, config) })
+	// RBAC API Routes - Admin only access
+	app.Get("/api/rbac/stats", middleware.PermissionRequired(store, db, sl, "admin", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerGetRBACStats(c, db, sl)
+	})
+	app.Get("/api/rbac/roles", middleware.PermissionRequired(store, db, sl, "admin", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerGetRoles(c, db, sl)
+	})
+	app.Post("/api/rbac/roles", middleware.PermissionRequired(store, db, sl, "admin", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerCreateRole(c, db, sl, store, config)
+	})
+	app.Get("/api/rbac/roles/:id", middleware.PermissionRequired(store, db, sl, "admin", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerGetRole(c, db, sl)
+	})
+	app.Put("/api/rbac/roles/:id", middleware.PermissionRequired(store, db, sl, "admin", "update"), func(c *fiber.Ctx) error {
+		return handlers.HandlerUpdateRole(c, db, sl, store, config)
+	})
+	app.Delete("/api/rbac/roles/:id", middleware.PermissionRequired(store, db, sl, "admin", "delete"), func(c *fiber.Ctx) error {
+		return handlers.HandlerDeleteRole(c, db, sl, store, config)
+	})
 
-	app.Get("/api/rbac/permissions", func(c *fiber.Ctx) error { return handlers.HandlerGetPermissions(c, db, sl) })
-	app.Post("/api/rbac/permissions", func(c *fiber.Ctx) error { return handlers.HandlerCreatePermission(c, db, sl, store, config) })
-	app.Get("/api/rbac/permissions/:id", func(c *fiber.Ctx) error { return handlers.HandlerGetPermission(c, db, sl) })
-	app.Put("/api/rbac/permissions/:id", func(c *fiber.Ctx) error { return handlers.HandlerUpdatePermission(c, db, sl, store, config) })
-	app.Delete("/api/rbac/permissions/:id", func(c *fiber.Ctx) error { return handlers.HandlerDeletePermission(c, db, sl, store, config) })
+	app.Get("/api/rbac/permissions", middleware.PermissionRequired(store, db, sl, "admin", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerGetPermissions(c, db, sl)
+	})
+	app.Post("/api/rbac/permissions", middleware.PermissionRequired(store, db, sl, "admin", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerCreatePermission(c, db, sl, store, config)
+	})
+	app.Get("/api/rbac/permissions/:id", middleware.PermissionRequired(store, db, sl, "admin", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerGetPermission(c, db, sl)
+	})
+	app.Put("/api/rbac/permissions/:id", middleware.PermissionRequired(store, db, sl, "admin", "update"), func(c *fiber.Ctx) error {
+		return handlers.HandlerUpdatePermission(c, db, sl, store, config)
+	})
+	app.Delete("/api/rbac/permissions/:id", middleware.PermissionRequired(store, db, sl, "admin", "delete"), func(c *fiber.Ctx) error {
+		return handlers.HandlerDeletePermission(c, db, sl, store, config)
+	})
 
-	app.Get("/api/rbac/users", func(c *fiber.Ctx) error { return handlers.HandlerGetUsers(c, db, sl) })
-	app.Post("/api/rbac/user-roles", func(c *fiber.Ctx) error { return handlers.HandlerAssignUserRole(c, db, sl, store, config) })
-	app.Delete("/api/rbac/user-roles/:user_id/:role_id", func(c *fiber.Ctx) error { return handlers.HandlerRemoveUserRole(c, db, sl, store, config) })
-	app.Get("/api/rbac/role-stats", func(c *fiber.Ctx) error { return handlers.HandlerGetRBACRoleStats(c, db, sl) })
-	app.Get("/api/rbac/permission-stats", func(c *fiber.Ctx) error { return handlers.HandlerGetRBACPermissionStats(c, db, sl) })
+	app.Get("/api/rbac/users", middleware.PermissionRequired(store, db, sl, "users", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerGetUsers(c, db, sl)
+	})
+	app.Post("/api/rbac/user-roles", middleware.PermissionRequired(store, db, sl, "users", "update"), func(c *fiber.Ctx) error {
+		return handlers.HandlerAssignUserRole(c, db, sl, store, config)
+	})
+	app.Delete("/api/rbac/user-roles/:user_id/:role_id", middleware.PermissionRequired(store, db, sl, "users", "update"), func(c *fiber.Ctx) error {
+		return handlers.HandlerRemoveUserRole(c, db, sl, store, config)
+	})
+	app.Get("/api/rbac/role-stats", middleware.PermissionRequired(store, db, sl, "admin", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerGetRBACRoleStats(c, db, sl)
+	})
+	app.Get("/api/rbac/permission-stats", middleware.PermissionRequired(store, db, sl, "admin", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerGetRBACPermissionStats(c, db, sl)
+	})
 
-	app.Get("/api/users", func(c *fiber.Ctx) error { return handlers.HandlerGetUsers(c, db, sl) })
-	app.Get("/api/users/:id/permissions", func(c *fiber.Ctx) error { return handlers.HandlerGetUserPermissions(c, db, sl) })
-	app.Post("/api/users/roles", func(c *fiber.Ctx) error { return handlers.HandlerAssignUserRole(c, db, sl, store, config) })
+	app.Get("/api/users", middleware.PermissionRequired(store, db, sl, "users", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerGetUsers(c, db, sl)
+	})
+	app.Get("/api/users/:id/permissions", middleware.PermissionRequired(store, db, sl, "users", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerGetUserPermissions(c, db, sl)
+	})
+	app.Post("/api/users/roles", middleware.PermissionRequired(store, db, sl, "users", "update"), func(c *fiber.Ctx) error {
+		return handlers.HandlerAssignUserRole(c, db, sl, store, config)
+	})
 
 	// Protected routes
 	appGroup := app.Group("/")
 	appGroup.Use(AuthRequired(store))
 	{
 		appGroup.Get("/home", func(c *fiber.Ctx) error { return handlers.HandlerHome(c, db, sl, store, config) })
-		appGroup.Get("/vhf-cif", func(c *fiber.Ctx) error {
+		appGroup.Get("/alerts", middleware.PermissionRequired(store, db, sl, "alerts", "read"), func(c *fiber.Ctx) error {
+			return handlers.HandlerAlerts(c, db, sl, store, config)
+		})
+		// VHF CIF routes with RBAC protection
+		appGroup.Get("/vhf-cif", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
 			return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "vhf_cif")
 		})
-		appGroup.Post("/vhf-cif", func(c *fiber.Ctx) error {
+		appGroup.Post("/vhf-cif", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
 			return handlers.HandlerVHFPatientSubmit(c, db, sl, store, config, smsService)
 		})
-		appGroup.Get("/vhf-cif/clinical-signs/:id", func(c *fiber.Ctx) error {
+		appGroup.Get("/vhf-cif/clinical-signs/:id", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
 			return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "vhf_clinical_signs")
 		})
-		appGroup.Post("/vhf-cif/clinical-signs/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFClinicalSignsSubmit(c, db, sl, store, config) })
-		appGroup.Get("/vhf-cif/hospitalization/:id", func(c *fiber.Ctx) error {
+		appGroup.Post("/vhf-cif/clinical-signs/:id", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
+			return handlers.HandlerVHFClinicalSignsSubmit(c, db, sl, store, config)
+		})
+		appGroup.Get("/vhf-cif/hospitalization/:id", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
 			return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "vhf_hospitalization")
 		})
-		appGroup.Post("/vhf-cif/hospitalization/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFHospitalizationSubmit(c, db, sl, store, config) })
-		appGroup.Get("/vhf-cif/risk-factors/:id", func(c *fiber.Ctx) error {
+		appGroup.Post("/vhf-cif/hospitalization/:id", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
+			return handlers.HandlerVHFHospitalizationSubmit(c, db, sl, store, config)
+		})
+		appGroup.Get("/vhf-cif/risk-factors/:id", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
 			return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "vhf_risk_factors")
 		})
-		appGroup.Post("/vhf-cif/risk-factors/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFRiskFactorsSubmit(c, db, sl, store, config) })
-		appGroup.Get("/vhf-cif/laboratory/:id", func(c *fiber.Ctx) error {
+		appGroup.Post("/vhf-cif/risk-factors/:id", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
+			return handlers.HandlerVHFRiskFactorsSubmit(c, db, sl, store, config)
+		})
+		appGroup.Get("/vhf-cif/laboratory/:id", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
 			return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "vhf_laboratory")
 		})
-		appGroup.Post("/vhf-cif/laboratory/:id", func(c *fiber.Ctx) error {
+		appGroup.Post("/vhf-cif/laboratory/:id", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
 			return handlers.HandlerVHFLaboratorySubmit(c, db, sl, store, config, smsService)
 		})
-		appGroup.Get("/vhf-cif/investigator/:id", func(c *fiber.Ctx) error {
+		appGroup.Get("/vhf-cif/investigator/:id", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
 			return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "vhf_investigator")
 		})
-		appGroup.Post("/vhf-cif/investigator/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFInvestigatorSubmit(c, db, sl, store, config) })
-		appGroup.Get("/vhf-cif/success", func(c *fiber.Ctx) error { return handlers.HandlerVHFSuccess(c, db, sl, store, config) })
-		appGroup.Get("/vhf-list", func(c *fiber.Ctx) error { return handlers.HandlerVHFList(c, db, sl, store, config) })
-		appGroup.Get("/vhf-cif/view/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFView(c, db, sl, store, config) })
-		appGroup.Get("/vhf-lab/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFLabForm(c, db, sl, store, config) })
-		appGroup.Post("/vhf-lab/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFLabSave(c, db, sl, store, config) })
+		appGroup.Post("/vhf-cif/investigator/:id", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
+			return handlers.HandlerVHFInvestigatorSubmit(c, db, sl, store, config)
+		})
+		appGroup.Get("/vhf-cif/success", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
+			return handlers.HandlerVHFSuccess(c, db, sl, store, config)
+		})
+		appGroup.Get("/vhf-list", middleware.PermissionRequired(store, db, sl, "vhf_cases", "read"), func(c *fiber.Ctx) error {
+			return handlers.HandlerVHFList(c, db, sl, store, config)
+		})
+		appGroup.Get("/vhf-cif/view/:id", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
+			return handlers.HandlerVHFView(c, db, sl, store, config)
+		})
+		appGroup.Get("/vhf-lab/:id", middleware.PermissionRequired(store, db, sl, "vhf_lab", "read"), func(c *fiber.Ctx) error {
+			return handlers.HandlerVHFLabForm(c, db, sl, store, config)
+		})
+		appGroup.Post("/vhf-lab/:id", middleware.PermissionRequired(store, db, sl, "vhf_lab", "create"), func(c *fiber.Ctx) error {
+			return handlers.HandlerVHFLabSave(c, db, sl, store, config)
+		})
+
+		// Inventory routes
+		inventoryHandler := handlers.NewInventoryHandler(db, store)
+
+		// Inventory dashboard
+		appGroup.Get("/inventory", func(c *fiber.Ctx) error {
+			log.Printf("DEBUG: /inventory route accessed")
+			return inventoryHandler.HandlerInventoryDashboard(c)
+		})
+
+		// Inventory items
+		appGroup.Get("/inventory/items", func(c *fiber.Ctx) error {
+			return inventoryHandler.HandlerInventoryItemsList(c)
+		})
+		appGroup.Get("/inventory/items/new", func(c *fiber.Ctx) error {
+			return inventoryHandler.HandlerInventoryItemForm(c)
+		})
+		appGroup.Get("/inventory/items/edit/:id", func(c *fiber.Ctx) error {
+			return inventoryHandler.HandlerInventoryItemForm(c)
+		})
+		appGroup.Post("/inventory/items/save", func(c *fiber.Ctx) error {
+			return inventoryHandler.HandlerInventoryItemSave(c)
+		})
+
+		// Inventory stock management
+		appGroup.Get("/inventory/stock", func(c *fiber.Ctx) error {
+			return inventoryHandler.HandlerInventoryStockForm(c)
+		})
+		appGroup.Post("/inventory/stock/save", func(c *fiber.Ctx) error {
+			return inventoryHandler.HandlerInventoryStockSave(c)
+		})
+
+		// Purchase orders
+		appGroup.Get("/inventory/purchase-orders", func(c *fiber.Ctx) error {
+			return inventoryHandler.HandlerInventoryPurchaseOrderForm(c)
+		})
+		appGroup.Post("/inventory/purchase-orders/save", func(c *fiber.Ctx) error {
+			return inventoryHandler.HandlerInventoryPurchaseOrderSave(c)
+		})
+
+		// Requisitions
+		appGroup.Get("/inventory/requisitions", func(c *fiber.Ctx) error {
+			return inventoryHandler.HandlerInventoryRequisitionForm(c)
+		})
+		appGroup.Post("/inventory/requisitions/save", func(c *fiber.Ctx) error {
+			return inventoryHandler.HandlerInventoryRequisitionSave(c)
+		})
+
+		// Reports
+		appGroup.Get("/inventory/reports", func(c *fiber.Ctx) error {
+			return inventoryHandler.HandlerInventoryReports(c)
+		})
+
+		// Donation routes
+		appGroup.Get("/inventory/donations", func(c *fiber.Ctx) error {
+			return inventoryHandler.HandlerDonationsList(c)
+		})
+		appGroup.Get("/inventory/donations/new", func(c *fiber.Ctx) error {
+			return inventoryHandler.HandlerDonationForm(c)
+		})
+		appGroup.Post("/inventory/donations/save", func(c *fiber.Ctx) error {
+			return inventoryHandler.HandlerDonationSave(c)
+		})
+		appGroup.Get("/inventory/donations/:id", func(c *fiber.Ctx) error {
+			return inventoryHandler.HandlerDonationView(c)
+		})
+		appGroup.Get("/inventory/donors", func(c *fiber.Ctx) error {
+			return inventoryHandler.HandlerDonorsList(c)
+		})
+		appGroup.Get("/inventory/donors/new", func(c *fiber.Ctx) error {
+			return inventoryHandler.HandlerDonorForm(c)
+		})
+		appGroup.Post("/inventory/donors/save", func(c *fiber.Ctx) error {
+			return inventoryHandler.HandlerDonorSave(c)
+		})
+
+		// Inventory API routes
+		appGroup.Get("/api/inventory/items", func(c *fiber.Ctx) error {
+			return inventoryHandler.HandlerInventoryAPIItems(c)
+		})
+		appGroup.Get("/api/inventory/stock-levels", func(c *fiber.Ctx) error {
+			return inventoryHandler.HandlerInventoryAPIStockLevels(c)
+		})
+		appGroup.Get("/api/inventory/low-stock", func(c *fiber.Ctx) error {
+			return inventoryHandler.HandlerInventoryAPILowStock(c)
+		})
 
 		// Add more protected routes...
 
@@ -408,6 +574,10 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		cse.Get("/encounters/mpox-admission/new/:i", func(c *fiber.Ctx) error { return handlers.HandlerMpoxAdmissionForm(c, db, sl, store, config) })
 		cse.Post("/encounters/mpox-admission/save", func(c *fiber.Ctx) error { return handlers.HandlerMpoxAdmissionSubmit(c, db, sl, store, config) })
 
+		// Mpox daily follow-up routes
+		cse.Get("/encounters/mpox-daily-follow-up/new/:i", func(c *fiber.Ctx) error { return handlers.HandlerMpoxDailyFollowUpForm(c, db, sl, store, config) })
+		cse.Post("/encounters/mpox-daily-follow-up/save", func(c *fiber.Ctx) error { return handlers.HandlerMpoxDailyFollowUpSubmit(c, db, sl, store, config) })
+
 		// VHF API routes
 		lab.Get("/api/vhf-cases", func(c *fiber.Ctx) error { return handlers.HandlerVHFList(c, db, sl, store, config) })
 		lab.Get("/api/vhf-cases/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFView(c, db, sl, store, config) })
@@ -540,7 +710,8 @@ func AuthRequired(store *session.Store) fiber.Handler {
 			"/polio-cif",
 			"/polio-cif/save",
 			"/polio-cif/success",
-			"/inventory",
+			"/test-simple",
+			"/inventory-test",
 			"/api/locations/districts",
 			"/api/locations/subcounties/:district_id",
 			"/api/locations/parishes/:subcounty_id",
@@ -577,18 +748,33 @@ func AuthRequired(store *session.Store) fiber.Handler {
 }
 
 func RouteAPIEncounter(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
-	v.Get("/", func(c *fiber.Ctx) error { return handlers.HandlerAPIGetEncounter(c, db, sl, store, config) })
+	// Add RBAC permission checks for API encounter
+	v.Get("/", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerAPIGetEncounter(c, db, sl, store, config)
+	})
 }
 
 func RouteAPIStatus(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
-	v.Get("/list", func(c *fiber.Ctx) error { return handlers.HandlerAPIGetStatuses(c, db, sl, store, config) })
-	v.Post("/save", func(c *fiber.Ctx) error { return handlers.HandlerAPIPostStatus(c, db, sl, store, config) })
+	// Add RBAC permission checks for API status
+	v.Get("/list", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerAPIGetStatuses(c, db, sl, store, config)
+	})
+	v.Post("/save", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerAPIPostStatus(c, db, sl, store, config)
+	})
 }
 
 func RouteDischarge(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
-	v.Get("/list", func(c *fiber.Ctx) error { return handlers.GetDischarge(c, db, sl, store, config) })
-	v.Get("/certificate", func(c *fiber.Ctx) error { return handlers.Certificate(c, db, sl, store, config) })
-	v.Post("/save", func(c *fiber.Ctx) error { return handlers.Discharge(c, db, sl, store, config) })
+	// Add RBAC permission checks for discharge management
+	v.Get("/list", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
+		return handlers.GetDischarge(c, db, sl, store, config)
+	})
+	v.Get("/certificate", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
+		return handlers.Certificate(c, db, sl, store, config)
+	})
+	v.Post("/save", middleware.PermissionRequired(store, db, sl, "vhf_patients", "update"), func(c *fiber.Ctx) error {
+		return handlers.Discharge(c, db, sl, store, config)
+	})
 }
 
 func RouteHome(app *fiber.App, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config, smsService *services.SMSService) {
@@ -668,38 +854,82 @@ func RouteVerify(app *fiber.App, db *sql.DB, sl *slog.Logger, store *session.Sto
 }
 
 func RouteFacilities(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
-	v.Get("/new/:i", func(c *fiber.Ctx) error { return handlers.HandlerFacilityForm(c, db, sl, store, config) })
-	v.Post("/save", func(c *fiber.Ctx) error { return handlers.HandlerFacilitySubmit(c, db, sl, store, config) })
-	v.Post("/filter", func(c *fiber.Ctx) error { return handlers.HandlerFacilityList(c, db, sl, store, config) })
-	v.Get("/list", func(c *fiber.Ctx) error { return handlers.HandlerFacilityList(c, db, sl, store, config) })
-	v.Get("/", func(c *fiber.Ctx) error { return handlers.HandlerFacilityList(c, db, sl, store, config) })
+	// Add RBAC permission checks for facility management
+	v.Get("/new/:i", middleware.PermissionRequired(store, db, sl, "facilities", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerFacilityForm(c, db, sl, store, config)
+	})
+	v.Post("/save", middleware.PermissionRequired(store, db, sl, "facilities", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerFacilitySubmit(c, db, sl, store, config)
+	})
+	v.Post("/filter", middleware.PermissionRequired(store, db, sl, "facilities", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerFacilityList(c, db, sl, store, config)
+	})
+	v.Get("/list", middleware.PermissionRequired(store, db, sl, "facilities", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerFacilityList(c, db, sl, store, config)
+	})
+	v.Get("/", middleware.PermissionRequired(store, db, sl, "facilities", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerFacilityList(c, db, sl, store, config)
+	})
 }
 
 func RouteUsers(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
-	v.Get("/new/:i", func(c *fiber.Ctx) error { return handlers.HandlerUserForm(c, db, sl, store, config) })
-	v.Post("/save", func(c *fiber.Ctx) error { return handlers.HandlerUserSubmit(c, db, sl, store, config) })
-	v.Post("/filter", func(c *fiber.Ctx) error { return handlers.HandlerUserList(c, db, sl, store, config) })
-	v.Get("/list", func(c *fiber.Ctx) error { return handlers.HandlerUserList(c, db, sl, store, config) })
-	v.Get("/", func(c *fiber.Ctx) error { return handlers.HandlerUserList(c, db, sl, store, config) })
+	// Add RBAC permission checks for user management
+	v.Get("/new/:i", middleware.PermissionRequired(store, db, sl, "users", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerUserForm(c, db, sl, store, config)
+	})
+	v.Post("/save", middleware.PermissionRequired(store, db, sl, "users", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerUserSubmit(c, db, sl, store, config)
+	})
+	v.Post("/filter", middleware.PermissionRequired(store, db, sl, "users", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerUserList(c, db, sl, store, config)
+	})
+	v.Get("/list", middleware.PermissionRequired(store, db, sl, "users", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerUserList(c, db, sl, store, config)
+	})
+	v.Get("/", middleware.PermissionRequired(store, db, sl, "users", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerUserList(c, db, sl, store, config)
+	})
 }
 
 func RouteEmployees(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
-	v.Get("/new/:i", func(c *fiber.Ctx) error { return handlers.HandlerEmployeeForm(c, db, sl, store, config) })
-	v.Post("/save", func(c *fiber.Ctx) error { return handlers.HandlerEmployeeSubmit(c, db, sl, store, config) })
-	v.Post("/filter", func(c *fiber.Ctx) error { return handlers.HandlerEmployeeList(c, db, sl, store, config) })
-	v.Get("/list", func(c *fiber.Ctx) error { return handlers.HandlerEmployeeList(c, db, sl, store, config) })
-	v.Get("/", func(c *fiber.Ctx) error { return handlers.HandlerEmployeeList(c, db, sl, store, config) })
+	// Add RBAC permission checks for employee management
+	v.Get("/new/:i", middleware.PermissionRequired(store, db, sl, "employees", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerEmployeeForm(c, db, sl, store, config)
+	})
+	v.Post("/save", middleware.PermissionRequired(store, db, sl, "employees", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerEmployeeSubmit(c, db, sl, store, config)
+	})
+	v.Post("/filter", middleware.PermissionRequired(store, db, sl, "employees", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerEmployeeList(c, db, sl, store, config)
+	})
+	v.Get("/list", middleware.PermissionRequired(store, db, sl, "employees", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerEmployeeList(c, db, sl, store, config)
+	})
+	v.Get("/", middleware.PermissionRequired(store, db, sl, "employees", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerEmployeeList(c, db, sl, store, config)
+	})
 }
 
 func RouteCases(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
-	v.Get("/new/:i", func(c *fiber.Ctx) error { return handlers.HandlerCasesForm(c, db, sl, store, config) })
-	v.Post("/save", func(c *fiber.Ctx) error { return handlers.HandlerCasesSubmit(c, db, sl, store, config) })
-	v.Post("/filter", func(c *fiber.Ctx) error { return handlers.HandlerCasesList(c, db, sl, store, config) })
-	v.Get("/list", func(c *fiber.Ctx) error { return handlers.HandlerCasesList(c, db, sl, store, config) })
-	v.Get("/", func(c *fiber.Ctx) error { return handlers.HandlerCasesList(c, db, sl, store, config) })
+	// Add RBAC permission checks for case management
+	v.Get("/new/:i", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerCasesForm(c, db, sl, store, config)
+	})
+	v.Post("/save", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerCasesSubmit(c, db, sl, store, config)
+	})
+	v.Post("/filter", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerCasesList(c, db, sl, store, config)
+	})
+	v.Get("/list", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerCasesList(c, db, sl, store, config)
+	})
+	v.Get("/", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerCasesList(c, db, sl, store, config)
+	})
 
 	// Add route for case manager redirect with outbreak ID
-	v.Get("/:outbreak_id", func(c *fiber.Ctx) error {
+	v.Get("/:outbreak_id", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
 		// Set the outbreak ID in session and redirect to cases list
 		outbreakID, err := strconv.Atoi(c.Params("outbreak_id"))
 		if err != nil {
@@ -721,57 +951,124 @@ func RouteCases(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Stor
 		return c.Redirect("/cases/list")
 	})
 
-	v.Get("/encounters/list/:i", func(c *fiber.Ctx) error { return handlers.HandlerCaseEncounterForm(c, db, sl, store, config) })
-	v.Get("/encounters/new/:i", func(c *fiber.Ctx) error { return handlers.HandlerCaseEncounterForm(c, db, sl, store, config) })
-	v.Get("/encounters/new/:i/:j", func(c *fiber.Ctx) error { return handlers.HandlerCaseEncounterForm(c, db, sl, store, config) })
-	v.Post("/encounters/save", func(c *fiber.Ctx) error { return handlers.HandlerCaseEncounterSubmit(c, db, sl, store, config) })
+	v.Get("/encounters/list/:i", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerCaseEncounterForm(c, db, sl, store, config)
+	})
+	v.Get("/encounters/new/:i", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerCaseEncounterForm(c, db, sl, store, config)
+	})
+	v.Get("/encounters/new/:i/:j", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerCaseEncounterForm(c, db, sl, store, config)
+	})
+	v.Post("/encounters/save", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerCaseEncounterSubmit(c, db, sl, store, config)
+	})
 
-	v.Get("/encounters/mpox-admission/new/:i", func(c *fiber.Ctx) error { return handlers.HandlerMpoxAdmissionForm(c, db, sl, store, config) })
-	v.Post("/encounters//save", func(c *fiber.Ctx) error { return handlers.HandlerMpoxAdmissionSubmit(c, db, sl, store, config) })
+	v.Get("/encounters/mpox-admission/new/:i", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerMpoxAdmissionForm(c, db, sl, store, config)
+	})
+	v.Post("/encounters//save", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerMpoxAdmissionSubmit(c, db, sl, store, config)
+	})
 }
 
 func RouteCaseDischarge(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
-	v.Get("/view/:i/:j", func(c *fiber.Ctx) error { return handlers.HandlerCasesForm(c, db, sl, store, config) })
-	v.Get("/new/:i/:j", func(c *fiber.Ctx) error { return handlers.HandlerCasesForm(c, db, sl, store, config) })
-	v.Post("/save/:i/:j", func(c *fiber.Ctx) error { return handlers.HandlerCasesSubmit(c, db, sl, store, config) })
+	// Add RBAC permission checks for case discharge
+	v.Get("/view/:i/:j", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerCasesForm(c, db, sl, store, config)
+	})
+	v.Get("/new/:i/:j", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerCasesForm(c, db, sl, store, config)
+	})
+	v.Post("/save/:i/:j", middleware.PermissionRequired(store, db, sl, "vhf_patients", "update"), func(c *fiber.Ctx) error {
+		return handlers.HandlerCasesSubmit(c, db, sl, store, config)
+	})
 }
 
 func RouteSymptoms(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
-	v.Get("/new/:i", func(c *fiber.Ctx) error { return handlers.HandlerSymptomsForm(c, db, sl, store, config) })
-	v.Post("/save", func(c *fiber.Ctx) error { return handlers.HandlerSymptomsSubmit(c, db, sl, store, config) })
-	v.Post("/filter", func(c *fiber.Ctx) error { return handlers.HandlerSymptomsList(c, db, sl, store, config) })
-	v.Get("/list", func(c *fiber.Ctx) error { return handlers.HandlerSymptomsList(c, db, sl, store, config) })
-	v.Get("/", func(c *fiber.Ctx) error { return handlers.HandlerSymptomsList(c, db, sl, store, config) })
+	// Add RBAC permission checks for symptoms management
+	v.Get("/new/:i", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerSymptomsForm(c, db, sl, store, config)
+	})
+	v.Post("/save", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerSymptomsSubmit(c, db, sl, store, config)
+	})
+	v.Post("/filter", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerSymptomsList(c, db, sl, store, config)
+	})
+	v.Get("/list", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerSymptomsList(c, db, sl, store, config)
+	})
+	v.Get("/", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerSymptomsList(c, db, sl, store, config)
+	})
 }
 
 func RouteMorbidity(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
-	v.Get("/new/:i", func(c *fiber.Ctx) error { return handlers.HandlerMorbidityForm(c, db, sl, store, config) })
-	v.Post("/save", func(c *fiber.Ctx) error { return handlers.HandlerMorbiditySubmit(c, db, sl, store, config) })
-	v.Post("/filter", func(c *fiber.Ctx) error { return handlers.HandlerMorbidityList(c, db, sl, store, config) })
-	v.Get("/list", func(c *fiber.Ctx) error { return handlers.HandlerMorbidityList(c, db, sl, store, config) })
-	v.Get("/", func(c *fiber.Ctx) error { return handlers.HandlerMorbidityList(c, db, sl, store, config) })
+	// Add RBAC permission checks for morbidity management
+	v.Get("/new/:i", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerMorbidityForm(c, db, sl, store, config)
+	})
+	v.Post("/save", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerMorbiditySubmit(c, db, sl, store, config)
+	})
+	v.Post("/filter", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerMorbidityList(c, db, sl, store, config)
+	})
+	v.Get("/list", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerMorbidityList(c, db, sl, store, config)
+	})
+	v.Get("/", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerMorbidityList(c, db, sl, store, config)
+	})
 }
 
 func RouteRush(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
-	v.Get("/new/:i", func(c *fiber.Ctx) error { return handlers.HandlerRushForm(c, db, sl, store, config) })
-	v.Post("/save", func(c *fiber.Ctx) error { return handlers.HandlerRushSubmit(c, db, sl, store, config) })
-	v.Post("/filter", func(c *fiber.Ctx) error { return handlers.HandlerRushList(c, db, sl, store, config) })
-	v.Get("/list", func(c *fiber.Ctx) error { return handlers.HandlerRushList(c, db, sl, store, config) })
-	v.Get("/", func(c *fiber.Ctx) error { return handlers.HandlerRushList(c, db, sl, store, config) })
+	// Add RBAC permission checks for rush management
+	v.Get("/new/:i", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerRushForm(c, db, sl, store, config)
+	})
+	v.Post("/save", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerRushSubmit(c, db, sl, store, config)
+	})
+	v.Post("/filter", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerRushList(c, db, sl, store, config)
+	})
+	v.Get("/list", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerRushList(c, db, sl, store, config)
+	})
+	v.Get("/", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerRushList(c, db, sl, store, config)
+	})
 }
 
 func RouteLab(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
-	v.Get("/new/:i", func(c *fiber.Ctx) error { return handlers.HandlerLabForm(c, db, sl, store, config) })
-	v.Post("/save", func(c *fiber.Ctx) error { return handlers.HandlerLabSubmit(c, db, sl, store, config) })
-	v.Post("/filter", func(c *fiber.Ctx) error { return handlers.HandlerLabList(c, db, sl, store, config) })
-	v.Get("/list", func(c *fiber.Ctx) error { return handlers.HandlerLabList(c, db, sl, store, config) })
-	v.Get("/", func(c *fiber.Ctx) error { return handlers.HandlerLabList(c, db, sl, store, config) })
+	// Add RBAC permission checks for laboratory management
+	v.Get("/new/:i", middleware.PermissionRequired(store, db, sl, "laboratory", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerLabForm(c, db, sl, store, config)
+	})
+	v.Post("/save", middleware.PermissionRequired(store, db, sl, "laboratory", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerLabSubmit(c, db, sl, store, config)
+	})
+	v.Post("/filter", middleware.PermissionRequired(store, db, sl, "laboratory", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerLabList(c, db, sl, store, config)
+	})
+	v.Get("/list", middleware.PermissionRequired(store, db, sl, "laboratory", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerLabList(c, db, sl, store, config)
+	})
+	v.Get("/", middleware.PermissionRequired(store, db, sl, "laboratory", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerLabList(c, db, sl, store, config)
+	})
 }
 
 func RouteReports(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) { //+
-	//+
-	v.Get("/view", func(c *fiber.Ctx) error { return reports.ReportView(c, db, sl, store, config) }) //+
-	v.Get("/", func(c *fiber.Ctx) error { return reports.ReportHome(c, db, sl, store, config) })
+	// Add RBAC permission checks for reports
+	v.Get("/view", middleware.PermissionRequired(store, db, sl, "reports", "read"), func(c *fiber.Ctx) error {
+		return reports.ReportView(c, db, sl, store, config)
+	}) //+
+	v.Get("/", middleware.PermissionRequired(store, db, sl, "reports", "read"), func(c *fiber.Ctx) error {
+		return reports.ReportHome(c, db, sl, store, config)
+	})
 }
 
 // Add this new function for outbreak routes
@@ -882,8 +1179,33 @@ func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logg
 		return handlers.HandlerGetVillagesBySubcounty(c, db, sl)
 	})
 
+	// Test routes (defined before protected group to avoid conflicts)
+	app.Get("/test-simple", func(c *fiber.Ctx) error {
+		return c.SendString("Simple route working!")
+	})
+
+	// Inventory routes (moved to top to avoid conflicts)
+	inventoryHandler := handlers.NewInventoryHandler(db, store)
+
+	// Inventory dashboard - test without middleware first
+	app.Get("/inventory-test", func(c *fiber.Ctx) error {
+		log.Printf("DEBUG: /inventory-test route accessed")
+		return inventoryHandler.HandlerInventoryDashboard(c)
+	})
+
 	// Protected routes
 	protected := app.Group("/", AuthRequired(store))
+
+	// Inventory dashboard - protected by authentication
+	protected.Get("/inventory", func(c *fiber.Ctx) error {
+		log.Printf("DEBUG: /inventory route accessed")
+		return inventoryHandler.HandlerInventoryDashboard(c)
+	})
+
+	// Test protected route
+	protected.Get("/test-protected", func(c *fiber.Ctx) error {
+		return c.SendString("Protected route working!")
+	})
 
 	// VHF CIF routes
 	protected.Get("/vhf-cif", func(c *fiber.Ctx) error {
@@ -951,27 +1273,14 @@ func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logg
 		return handlers.HandlerGetVillagesBySubcounty(c, db, sl)
 	})
 
-	// Inventory routes (moved to top to avoid conflicts)
-	inventoryHandler := handlers.NewInventoryHandler(db, store)
-
-	// Inventory dashboard
-	app.Get("/inventory", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryDashboard(c) })
-
-	// Test route
-	app.Get("/test-inventory", func(c *fiber.Ctx) error {
-		return c.SendString("Inventory test route working!")
-	})
-
-	// Test inventory handler
-	app.Get("/test-inventory-handler", func(c *fiber.Ctx) error {
-		return inventoryHandler.HandlerInventoryDashboard(c)
-	})
-
 	// VHF API routes
 	protected.Get("/api/vhf-cases", func(c *fiber.Ctx) error { return handlers.HandlerVHFList(c, db, sl, store, config) })
 	protected.Get("/api/vhf-cases/:id", func(c *fiber.Ctx) error { return handlers.HandlerVHFView(c, db, sl, store, config) })
 
 	// Inventory items
+	protected.Get("/inventory", func(c *fiber.Ctx) error {
+		return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "inventory_dashboard")
+	})
 	protected.Get("/inventory/items", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryItemsList(c) })
 	protected.Get("/inventory/items/new", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryItemForm(c) })
 	protected.Get("/inventory/items/edit/:id", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryItemForm(c) })

@@ -89,25 +89,15 @@ func HandlerMeaslesCIF(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
 			VaccinationReason:      c.FormValue("vaccination_reason"),
 			Diagnosis:              c.FormValue("diagnosis"),
 		}
-		// Patch for all MeaslesSpecimens date fields
-		parseDate := func(val string) sql.NullTime {
-			if val == "" {
-				return sql.NullTime{Valid: false}
-			}
-			t, err := time.Parse("2006-01-02", val)
-			if err != nil {
-				return sql.NullTime{Valid: false}
-			}
-			return sql.NullTime{Time: t, Valid: true}
-		}
-		var bloodCollectionDate = parseDate(c.FormValue("blood_collection_date"))
-		var bloodSentDate = parseDate(c.FormValue("blood_sent_date"))
-		var bloodReceivedDate = parseDate(c.FormValue("blood_received_date"))
-		var urineCollectionDate = parseDate(c.FormValue("urine_collection_date"))
-		var urineSentDate = parseDate(c.FormValue("urine_sent_date"))
-		var urineReceivedDate = parseDate(c.FormValue("urine_received_date"))
-		var formSentDate = parseDate(c.FormValue("form_sent_date"))
-		var formReceivedDate = parseDate(c.FormValue("form_received_date"))
+
+		var bloodCollectionDate = ParseNullTime(c.FormValue("blood_collection_date"))
+		var bloodSentDate = ParseNullTime(c.FormValue("blood_sent_date"))
+		var bloodReceivedDate = ParseNullTime(c.FormValue("blood_received_date"))
+		var urineCollectionDate = ParseNullTime(c.FormValue("urine_collection_date"))
+		var urineSentDate = ParseNullTime(c.FormValue("urine_sent_date"))
+		var urineReceivedDate = ParseNullTime(c.FormValue("urine_received_date"))
+		var formSentDate = ParseNullTime(c.FormValue("form_sent_date"))
+		var formReceivedDate = ParseNullTime(c.FormValue("form_received_date"))
 		// Save specimens
 		specimens := &models.MeaslesSpecimens{
 			PatientID:           pid,
@@ -123,7 +113,7 @@ func HandlerMeaslesCIF(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
 			FormReceivedDate:    formReceivedDate,
 		}
 		// Save investigators
-		var investigatorDate = parseDate(c.FormValue("investigator_date"))
+		var investigatorDate = ParseNullTime(c.FormValue("investigator_date"))
 		investigators := &models.MeaslesInvestigators{
 			PatientID:         pid,
 			InvestigatorName:  c.FormValue("investigator_name"),
@@ -131,10 +121,10 @@ func HandlerMeaslesCIF(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
 			InvestigatorDate:  investigatorDate,
 		}
 		// Save results
-		var serologyDate = parseDate(c.FormValue("serology_date"))
-		var serologyEpiSentDate = parseDate(c.FormValue("serology_epi_sent_date"))
-		var virusIsolationDate = parseDate(c.FormValue("virus_isolation_date"))
-		var resultsSentDate = parseDate(c.FormValue("results_sent_date"))
+		var serologyDate = ParseNullTime(c.FormValue("serology_date"))
+		var serologyEpiSentDate = ParseNullTime(c.FormValue("serology_epi_sent_date"))
+		var virusIsolationDate = ParseNullTime(c.FormValue("virus_isolation_date"))
+		var resultsSentDate = ParseNullTime(c.FormValue("results_sent_date"))
 		results := &models.MeaslesResults{
 			PatientID:           pid,
 			SerologyIgM:         c.FormValue("serology_igm"),
@@ -173,7 +163,7 @@ func HandlerMeaslesList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 	// Build the query to get measles cases
 	query := `
 		SELECT 
-			mp.id,
+			mp.patient_id,
 			mp.measles_code,
 			mp.patient_name,
 			mp.sex,
@@ -197,7 +187,7 @@ func HandlerMeaslesList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 	var cases []fiber.Map
 	for rows.Next() {
 		var (
-			id            int64
+			patientID     string
 			measlesCode   sql.NullString
 			patientName   string
 			sex           string
@@ -209,7 +199,7 @@ func HandlerMeaslesList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 		)
 
 		err := rows.Scan(
-			&id,
+			&patientID,
 			&measlesCode,
 			&patientName,
 			&sex,
@@ -237,7 +227,7 @@ func HandlerMeaslesList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 		}
 
 		cases = append(cases, fiber.Map{
-			"ID":            id,
+			"ID":            patientID,
 			"MeaslesCode":   measlesCode.String,
 			"Name":          patientName,
 			"Age":           ageDisplay,

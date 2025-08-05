@@ -21,7 +21,7 @@ func HandlerVHFPatientSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *s
 	patient := &models.VHFPatient{
 		Surname:                     c.FormValue("surname"),
 		OtherNames:                  c.FormValue("other_names"),
-		DateOfBirth:                 sql.NullTime{Time: parseDate(c.FormValue("dob")), Valid: true},
+		DateOfBirth:                 parseNullTime(c.FormValue("dob")),
 		AgeYears:                    sql.NullInt32{Int32: parseInt32(c.FormValue("age_years")), Valid: true},
 		AgeMonths:                   sql.NullInt32{Int32: parseInt32(c.FormValue("age_months")), Valid: true},
 		Gender:                      sql.NullString{String: c.FormValue("gender"), Valid: c.FormValue("gender") != ""},
@@ -472,10 +472,10 @@ func HandlerVHFPatientSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *s
 	hospitalization := &models.VHFHospitalization{
 		PatientID:          patient.ID,
 		Hospitalized:       parseBool(c.FormValue("hospitalized")),
-		AdmissionDate:      sql.NullTime{Time: parseDate(c.FormValue("admission_date")), Valid: true},
+		AdmissionDate:      parseNullTime(c.FormValue("admission_date")),
 		HealthFacilityName: c.FormValue("health_facility_name"),
 		InIsolation:        parseBool(c.FormValue("in_isolation")),
-		IsolationDate:      sql.NullTime{Time: parseDate(c.FormValue("isolation_date")), Valid: true},
+		IsolationDate:      parseNullTime(c.FormValue("isolation_date")),
 		CreatedAt:          time.Now(),
 	}
 
@@ -569,16 +569,6 @@ func HandlerVHFPatientSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *s
 }
 
 // Helper functions for parsing form values
-func parseDate(dateStr string) time.Time {
-	if dateStr == "" {
-		return time.Time{}
-	}
-	t, err := time.Parse("2006-01-02", dateStr)
-	if err != nil {
-		return time.Time{}
-	}
-	return t
-}
 
 func parseInt32(str string) int32 {
 	if str == "" {
@@ -622,18 +612,6 @@ func HandlerVHFClinicalSignsSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, st
 		}
 	}
 
-	// Parse dates
-	parseDate := func(dateStr string) sql.NullTime {
-		var result sql.NullTime
-		if dateStr != "" {
-			if t, err := time.Parse("2006-01-02", dateStr); err == nil {
-				result.Time = t
-				result.Valid = true
-			}
-		}
-		return result
-	}
-
 	// Parse durations
 	parseDuration := func(durationStr string) sql.NullInt32 {
 		var result sql.NullInt32
@@ -649,7 +627,7 @@ func HandlerVHFClinicalSignsSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, st
 	// Create clinical signs struct with proper null handling
 	signs := &models.VHFClinicalSigns{
 		PatientID:        patientID,
-		DateInitialOnset: parseDate(c.FormValue("date_initial_onset")),
+		DateInitialOnset: parseNullTime(c.FormValue("date_initial_onset")),
 		TempSource: sql.NullString{
 			String: c.FormValue("temp_source"),
 			Valid:  c.FormValue("temp_source") != "",
@@ -659,211 +637,211 @@ func HandlerVHFClinicalSignsSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, st
 			Bool:  c.FormValue("fever") == "true",
 			Valid: c.FormValue("fever") != "",
 		},
-		DateFever:     parseDate(c.FormValue("date_fever")),
+		DateFever:     parseNullTime(c.FormValue("date_fever")),
 		DurationFever: parseDuration(c.FormValue("duration_fever")),
 		Vomiting: sql.NullBool{
 			Bool:  c.FormValue("vomiting") == "true",
 			Valid: c.FormValue("vomiting") != "",
 		},
-		DateVomiting:     parseDate(c.FormValue("date_vomiting")),
+		DateVomiting:     parseNullTime(c.FormValue("date_vomiting")),
 		DurationVomiting: parseDuration(c.FormValue("duration_vomiting")),
 		Nausea: sql.NullBool{
 			Bool:  c.FormValue("nausea") == "true",
 			Valid: c.FormValue("nausea") != "",
 		},
-		DateNausea:     parseDate(c.FormValue("date_nausea")),
+		DateNausea:     parseNullTime(c.FormValue("date_nausea")),
 		DurationNausea: parseDuration(c.FormValue("duration_nausea")),
 		Diarrhea: sql.NullBool{
 			Bool:  c.FormValue("diarrhea") == "true",
 			Valid: c.FormValue("diarrhea") != "",
 		},
-		DateDiarrhea:     parseDate(c.FormValue("date_diarrhea")),
+		DateDiarrhea:     parseNullTime(c.FormValue("date_diarrhea")),
 		DurationDiarrhea: parseDuration(c.FormValue("duration_diarrhea")),
 		IntenseFatigueGeneralWeakness: sql.NullBool{
 			Bool:  c.FormValue("intense_fatigue_general_weakness") == "true",
 			Valid: c.FormValue("intense_fatigue_general_weakness") != "",
 		},
-		DateIntenseFatigueGeneralWeakness:     parseDate(c.FormValue("date_intense_fatigue_general_weakness")),
+		DateIntenseFatigueGeneralWeakness:     parseNullTime(c.FormValue("date_intense_fatigue_general_weakness")),
 		DurationIntenseFatigueGeneralWeakness: parseDuration(c.FormValue("duration_intense_fatigue_general_weakness")),
 		EpigastricPain: sql.NullBool{
 			Bool:  c.FormValue("epigastric_pain") == "true",
 			Valid: c.FormValue("epigastric_pain") != "",
 		},
-		DateEpigastricPain:     parseDate(c.FormValue("date_epigastric_pain")),
+		DateEpigastricPain:     parseNullTime(c.FormValue("date_epigastric_pain")),
 		DurationEpigastricPain: parseDuration(c.FormValue("duration_epigastric_pain")),
 		LowerAbdominalPain: sql.NullBool{
 			Bool:  c.FormValue("lower_abdominal_pain") == "true",
 			Valid: c.FormValue("lower_abdominal_pain") != "",
 		},
-		DateLowerAbdominalPain:     parseDate(c.FormValue("date_lower_abdominal_pain")),
+		DateLowerAbdominalPain:     parseNullTime(c.FormValue("date_lower_abdominal_pain")),
 		DurationLowerAbdominalPain: parseDuration(c.FormValue("duration_lower_abdominal_pain")),
 		ChestPain: sql.NullBool{
 			Bool:  c.FormValue("chest_pain") == "true",
 			Valid: c.FormValue("chest_pain") != "",
 		},
-		DateChestPain:     parseDate(c.FormValue("date_chest_pain")),
+		DateChestPain:     parseNullTime(c.FormValue("date_chest_pain")),
 		DurationChestPain: parseDuration(c.FormValue("duration_chest_pain")),
 		MusclePain: sql.NullBool{
 			Bool:  c.FormValue("muscle_pain") == "true",
 			Valid: c.FormValue("muscle_pain") != "",
 		},
-		DateMusclePain:     parseDate(c.FormValue("date_muscle_pain")),
+		DateMusclePain:     parseNullTime(c.FormValue("date_muscle_pain")),
 		DurationMusclePain: parseDuration(c.FormValue("duration_muscle_pain")),
 		JointPain: sql.NullBool{
 			Bool:  c.FormValue("joint_pain") == "true",
 			Valid: c.FormValue("joint_pain") != "",
 		},
-		DateJointPain:     parseDate(c.FormValue("date_joint_pain")),
+		DateJointPain:     parseNullTime(c.FormValue("date_joint_pain")),
 		DurationJointPain: parseDuration(c.FormValue("duration_joint_pain")),
 		Headache: sql.NullBool{
 			Bool:  c.FormValue("headache") == "true",
 			Valid: c.FormValue("headache") != "",
 		},
-		DateHeadache:     parseDate(c.FormValue("date_headache")),
+		DateHeadache:     parseNullTime(c.FormValue("date_headache")),
 		DurationHeadache: parseDuration(c.FormValue("duration_headache")),
 		Cough: sql.NullBool{
 			Bool:  c.FormValue("cough") == "true",
 			Valid: c.FormValue("cough") != "",
 		},
-		DateCough:     parseDate(c.FormValue("date_cough")),
+		DateCough:     parseNullTime(c.FormValue("date_cough")),
 		DurationCough: parseDuration(c.FormValue("duration_cough")),
 		DifficultyBreathing: sql.NullBool{
 			Bool:  c.FormValue("difficulty_breathing") == "true",
 			Valid: c.FormValue("difficulty_breathing") != "",
 		},
-		DateDifficultyBreathing:     parseDate(c.FormValue("date_difficulty_breathing")),
+		DateDifficultyBreathing:     parseNullTime(c.FormValue("date_difficulty_breathing")),
 		DurationDifficultyBreathing: parseDuration(c.FormValue("duration_difficulty_breathing")),
 		DifficultySwallowing: sql.NullBool{
 			Bool:  c.FormValue("difficulty_swallowing") == "true",
 			Valid: c.FormValue("difficulty_swallowing") != "",
 		},
-		DateDifficultySwallowing:     parseDate(c.FormValue("date_difficulty_swallowing")),
+		DateDifficultySwallowing:     parseNullTime(c.FormValue("date_difficulty_swallowing")),
 		DurationDifficultySwallowing: parseDuration(c.FormValue("duration_difficulty_swallowing")),
 		SoreThroat: sql.NullBool{
 			Bool:  c.FormValue("sore_throat") == "true",
 			Valid: c.FormValue("sore_throat") != "",
 		},
-		DateSoreThroat:     parseDate(c.FormValue("date_sore_throat")),
+		DateSoreThroat:     parseNullTime(c.FormValue("date_sore_throat")),
 		DurationSoreThroat: parseDuration(c.FormValue("duration_sore_throat")),
 		Jaundice: sql.NullBool{
 			Bool:  c.FormValue("jaundice") == "true",
 			Valid: c.FormValue("jaundice") != "",
 		},
-		DateJaundice:     parseDate(c.FormValue("date_jaundice")),
+		DateJaundice:     parseNullTime(c.FormValue("date_jaundice")),
 		DurationJaundice: parseDuration(c.FormValue("duration_jaundice")),
 		Conjunctivitis: sql.NullBool{
 			Bool:  c.FormValue("conjunctivitis") == "true",
 			Valid: c.FormValue("conjunctivitis") != "",
 		},
-		DateConjunctivitis:     parseDate(c.FormValue("date_conjunctivitis")),
+		DateConjunctivitis:     parseNullTime(c.FormValue("date_conjunctivitis")),
 		DurationConjunctivitis: parseDuration(c.FormValue("duration_conjunctivitis")),
 		SkinRash: sql.NullBool{
 			Bool:  c.FormValue("skin_rash") == "true",
 			Valid: c.FormValue("skin_rash") != "",
 		},
-		DateSkinRash:     parseDate(c.FormValue("date_skin_rash")),
+		DateSkinRash:     parseNullTime(c.FormValue("date_skin_rash")),
 		DurationSkinRash: parseDuration(c.FormValue("duration_skin_rash")),
 		Hiccups: sql.NullBool{
 			Bool:  c.FormValue("hiccups") == "true",
 			Valid: c.FormValue("hiccups") != "",
 		},
-		DateHiccups:     parseDate(c.FormValue("date_hiccups")),
+		DateHiccups:     parseNullTime(c.FormValue("date_hiccups")),
 		DurationHiccups: parseDuration(c.FormValue("duration_hiccups")),
 		PainBehindEyes: sql.NullBool{
 			Bool:  c.FormValue("pain_behind_eyes") == "true",
 			Valid: c.FormValue("pain_behind_eyes") != "",
 		},
-		DatePainBehindEyes:     parseDate(c.FormValue("date_pain_behind_eyes")),
+		DatePainBehindEyes:     parseNullTime(c.FormValue("date_pain_behind_eyes")),
 		DurationPainBehindEyes: parseDuration(c.FormValue("duration_pain_behind_eyes")),
 		SensitiveToLight: sql.NullBool{
 			Bool:  c.FormValue("sensitive_to_light") == "true",
 			Valid: c.FormValue("sensitive_to_light") != "",
 		},
-		DateSensitiveToLight:     parseDate(c.FormValue("date_sensitive_to_light")),
+		DateSensitiveToLight:     parseNullTime(c.FormValue("date_sensitive_to_light")),
 		DurationSensitiveToLight: parseDuration(c.FormValue("duration_sensitive_to_light")),
 		ComaUnconscious: sql.NullBool{
 			Bool:  c.FormValue("coma_unconscious") == "true",
 			Valid: c.FormValue("coma_unconscious") != "",
 		},
-		DateComaUnconscious:     parseDate(c.FormValue("date_coma_unconscious")),
+		DateComaUnconscious:     parseNullTime(c.FormValue("date_coma_unconscious")),
 		DurationComaUnconscious: parseDuration(c.FormValue("duration_coma_unconscious")),
 		ConfusedOrDisoriented: sql.NullBool{
 			Bool:  c.FormValue("confused_or_disoriented") == "true",
 			Valid: c.FormValue("confused_or_disoriented") != "",
 		},
-		DateConfusedOrDisoriented:     parseDate(c.FormValue("date_confused_or_disoriented")),
+		DateConfusedOrDisoriented:     parseNullTime(c.FormValue("date_confused_or_disoriented")),
 		DurationConfusedOrDisoriented: parseDuration(c.FormValue("duration_confused_or_disoriented")),
 		Convulsions: sql.NullBool{
 			Bool:  c.FormValue("convulsions") == "true",
 			Valid: c.FormValue("convulsions") != "",
 		},
-		DateConvulsions:     parseDate(c.FormValue("date_convulsions")),
+		DateConvulsions:     parseNullTime(c.FormValue("date_convulsions")),
 		DurationConvulsions: parseDuration(c.FormValue("duration_convulsions")),
 		UnexplainedBleeding: sql.NullBool{
 			Bool:  c.FormValue("unexplained_bleeding") == "true",
 			Valid: c.FormValue("unexplained_bleeding") != "",
 		},
-		DateUnexplainedBleeding:     parseDate(c.FormValue("date_unexplained_bleeding")),
+		DateUnexplainedBleeding:     parseNullTime(c.FormValue("date_unexplained_bleeding")),
 		DurationUnexplainedBleeding: parseDuration(c.FormValue("duration_unexplained_bleeding")),
 		BleedingOfTheGums: sql.NullBool{
 			Bool:  c.FormValue("bleeding_of_the_gums") == "true",
 			Valid: c.FormValue("bleeding_of_the_gums") != "",
 		},
-		DateBleedingOfTheGums:     parseDate(c.FormValue("date_bleeding_of_the_gums")),
+		DateBleedingOfTheGums:     parseNullTime(c.FormValue("date_bleeding_of_the_gums")),
 		DurationBleedingOfTheGums: parseDuration(c.FormValue("duration_bleeding_of_the_gums")),
 		BleedingFromInjectionSite: sql.NullBool{
 			Bool:  c.FormValue("bleeding_from_injection_site") == "true",
 			Valid: c.FormValue("bleeding_from_injection_site") != "",
 		},
-		DateBleedingFromInjectionSite:     parseDate(c.FormValue("date_bleeding_from_injection_site")),
+		DateBleedingFromInjectionSite:     parseNullTime(c.FormValue("date_bleeding_from_injection_site")),
 		DurationBleedingFromInjectionSite: parseDuration(c.FormValue("duration_bleeding_from_injection_site")),
 		NoseBleedEpistaxis: sql.NullBool{
 			Bool:  c.FormValue("nose_bleed_epistaxis") == "true",
 			Valid: c.FormValue("nose_bleed_epistaxis") != "",
 		},
-		DateNoseBleedEpistaxis:     parseDate(c.FormValue("date_nose_bleed_epistaxis")),
+		DateNoseBleedEpistaxis:     parseNullTime(c.FormValue("date_nose_bleed_epistaxis")),
 		DurationNoseBleedEpistaxis: parseDuration(c.FormValue("duration_nose_bleed_epistaxis")),
 		BloodyStool: sql.NullBool{
 			Bool:  c.FormValue("bloody_stool") == "true",
 			Valid: c.FormValue("bloody_stool") != "",
 		},
-		DateBloodyStool:     parseDate(c.FormValue("date_bloody_stool")),
+		DateBloodyStool:     parseNullTime(c.FormValue("date_bloody_stool")),
 		DurationBloodyStool: parseDuration(c.FormValue("duration_bloody_stool")),
 		BloodInVomit: sql.NullBool{
 			Bool:  c.FormValue("blood_in_vomit") == "true",
 			Valid: c.FormValue("blood_in_vomit") != "",
 		},
-		DateBloodInVomit:     parseDate(c.FormValue("date_blood_in_vomit")),
+		DateBloodInVomit:     parseNullTime(c.FormValue("date_blood_in_vomit")),
 		DurationBloodInVomit: parseDuration(c.FormValue("duration_blood_in_vomit")),
 		CoughingUpBloodHemoptysis: sql.NullBool{
 			Bool:  c.FormValue("coughing_up_blood_hemoptysis") == "true",
 			Valid: c.FormValue("coughing_up_blood_hemoptysis") != "",
 		},
-		DateCoughingUpBloodHemoptysis:     parseDate(c.FormValue("date_coughing_up_blood_hemoptysis")),
+		DateCoughingUpBloodHemoptysis:     parseNullTime(c.FormValue("date_coughing_up_blood_hemoptysis")),
 		DurationCoughingUpBloodHemoptysis: parseDuration(c.FormValue("duration_coughing_up_blood_hemoptysis")),
 		BleedingFromVagina: sql.NullBool{
 			Bool:  c.FormValue("bleeding_from_vagina") == "true",
 			Valid: c.FormValue("bleeding_from_vagina") != "",
 		},
-		DateBleedingFromVagina:     parseDate(c.FormValue("date_bleeding_from_vagina")),
+		DateBleedingFromVagina:     parseNullTime(c.FormValue("date_bleeding_from_vagina")),
 		DurationBleedingFromVagina: parseDuration(c.FormValue("duration_bleeding_from_vagina")),
 		BruisingOfTheSkin: sql.NullBool{
 			Bool:  c.FormValue("bruising_of_the_skin") == "true",
 			Valid: c.FormValue("bruising_of_the_skin") != "",
 		},
-		DateBruisingOfTheSkin:     parseDate(c.FormValue("date_bruising_of_the_skin")),
+		DateBruisingOfTheSkin:     parseNullTime(c.FormValue("date_bruising_of_the_skin")),
 		DurationBruisingOfTheSkin: parseDuration(c.FormValue("duration_bruising_of_the_skin")),
 		BloodInUrine: sql.NullBool{
 			Bool:  c.FormValue("blood_in_urine") == "true",
 			Valid: c.FormValue("blood_in_urine") != "",
 		},
-		DateBloodInUrine:     parseDate(c.FormValue("date_blood_in_urine")),
+		DateBloodInUrine:     parseNullTime(c.FormValue("date_blood_in_urine")),
 		DurationBloodInUrine: parseDuration(c.FormValue("duration_blood_in_urine")),
 		OtherHemorrhagicSymptoms: sql.NullBool{
 			Bool:  c.FormValue("other_hemorrhagic_symptoms") == "true",
 			Valid: c.FormValue("other_hemorrhagic_symptoms") != "",
 		},
-		DateOtherHemorrhagicSymptoms:     parseDate(c.FormValue("date_other_hemorrhagic_symptoms")),
+		DateOtherHemorrhagicSymptoms:     parseNullTime(c.FormValue("date_other_hemorrhagic_symptoms")),
 		DurationOtherHemorrhagicSymptoms: parseDuration(c.FormValue("duration_other_hemorrhagic_symptoms")),
 		CreatedAt:                        time.Now(),
 	}
@@ -997,7 +975,7 @@ func HandlerVHFLaboratorySubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 
 	laboratory := &models.VHFLaboratory{
 		PatientID:            patientID,
-		SampleCollectionDate: sql.NullTime{Time: parseDate(c.FormValue("sample_collection_date")), Valid: true},
+		SampleCollectionDate: parseNullTime(c.FormValue("sample_collection_date")),
 		SampleCollectionTime: sql.NullString{String: c.FormValue("sample_collection_time"), Valid: c.FormValue("sample_collection_time") != ""},
 		SampleType:           sql.NullString{String: c.FormValue("sample_type"), Valid: c.FormValue("sample_type") != ""},
 		OtherSampleType:      sql.NullString{String: c.FormValue("other_sample_type"), Valid: c.FormValue("other_sample_type") != ""},
@@ -1222,7 +1200,7 @@ func HandlerVHFList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 	// Load measles cases as well
 	measlesQuery := `
 		SELECT 
-			mp.id,
+			mp.patient_id,
 			mp.measles_code,
 			mp.patient_name,
 			mp.sex,
@@ -1247,7 +1225,7 @@ func HandlerVHFList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 		defer measlesRows.Close()
 		for measlesRows.Next() {
 			var (
-				id            int64
+				patientID     string
 				measlesCode   sql.NullString
 				patientName   string
 				sex           string
@@ -1259,7 +1237,7 @@ func HandlerVHFList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 			)
 
 			err := measlesRows.Scan(
-				&id,
+				&patientID,
 				&measlesCode,
 				&patientName,
 				&sex,
@@ -1287,7 +1265,7 @@ func HandlerVHFList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 			}
 
 			measlesCases = append(measlesCases, fiber.Map{
-				"ID":            id,
+				"ID":            patientID,
 				"MeaslesCode":   measlesCode.String,
 				"Name":          patientName,
 				"Age":           ageDisplay,
@@ -1421,9 +1399,9 @@ func HandlerVHFList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 		SELECT 
 			pci.id,
 			pci.case_id,
-			pci.case_status,
-			pci.case_classification,
-			pci.date,
+			pfe.final_classification as case_status,
+			pfe.final_classification as case_classification,
+			pci.created_at as date,
 			pi.patient_name,
 			pi.sex,
 			pi.age_years,
@@ -1431,7 +1409,8 @@ func HandlerVHFList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 			pi.district
 		FROM polio_case_investigation pci
 		LEFT JOIN polio_identification pi ON pci.case_id = pi.case_id
-		ORDER BY pci.date DESC`
+		LEFT JOIN polio_follow_up_examination pfe ON pci.case_id = pfe.case_id
+		ORDER BY pci.created_at DESC`
 
 	polioRows, err := db.QueryContext(c.Context(), polioQuery)
 	if err != nil {

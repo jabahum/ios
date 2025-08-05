@@ -418,6 +418,7 @@
                         <div class="mt-4">
                             <button type="submit" class="btn btn-primary">Submit</button>
                             <button type="reset" class="btn btn-secondary ms-2">Reset</button>
+                            <a href="/" class="btn btn-secondary btn-lg">Cancel</a>
                         </div>
                     </form>
                 </div>
@@ -431,7 +432,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const caseIdInput = document.getElementById('case_id');
     
-    // Generate a unique case ID with format: POLIO-YYYY-MM-DD-HHMMSS
+    // Generate a unique case ID with format: POLIO-YYYY-MM-DD-HHMMSS-mmm
     function generateCaseId() {
         const now = new Date();
         const year = now.getFullYear();
@@ -440,8 +441,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const hours = String(now.getHours()).padStart(2, '0');
         const minutes = String(now.getMinutes()).padStart(2, '0');
         const seconds = String(now.getSeconds()).padStart(2, '0');
+        const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
         
-        const caseId = `POLIO-${year}-${month}-${day}-${hours}${minutes}${seconds}`;
+        const caseId = `POLIO-${year}-${month}-${day}-${hours}${minutes}${seconds}-${milliseconds}`;
         return caseId;
     }
     

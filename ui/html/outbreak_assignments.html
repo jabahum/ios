@@ -38,7 +38,7 @@
                                                 {{range .Items}}
                                                 {{$assignment := .}}
                                                 <tr>
-                                                    <td>{{$assignment.User.UserName.String}}</td>
+                                                    <td>{{if $assignment.User}}{{if $assignment.User.UserName.Valid}}{{$assignment.User.UserName.String}}{{else}}Unknown User{{end}}{{else}}Unknown User{{end}}</td>
                                                     <td>{{$assignment.Outbreak.Name.String}}</td>
                                                     <td>{{$assignment.Outbreak.Description.String}}</td>
                                                     <td>

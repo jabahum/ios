@@ -12,8 +12,8 @@
     <div class="card-body">
       <h2 class="mb-4 text-center">Mpox Daily Review Form</h2>
       <form method="post" action="/cases/encounters/mpox-daily-follow-up/save">
-        <input type="hidden" name="client_id" value="{{.ClientID}}">
-        <input type="hidden" name="encounter_date" value="{{.EncounterDate}}">
+        <input type="hidden" name="client_id" value="{{.Form.ClientID}}">
+        <input type="hidden" name="encounter_date" value="{{.Form.EncounterDate}}">
         <div class="row mb-3">
           <div class="col-md-4">
             <label>Date of follow-up</label>
@@ -139,6 +139,7 @@
           <input type="text" name="data_entrant" class="form-control">
         </div>
         <button type="submit" class="btn btn-success">Save Follow-Up</button>
+        <a href="/cases/new/{{.Form.ClientID}}" class="btn btn-secondary btn-lg">Cancel</a>
       </form>
     </div>
   </div>

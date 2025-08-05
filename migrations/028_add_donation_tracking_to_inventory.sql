@@ -141,7 +141,7 @@ SELECT
     dr.donor_type,
     o.name as outbreak_name,
     ts.name as treatment_site_name,
-    u.username as received_by_user,
+    u.user_name as received_by_user,
     d.monetary_value,
     d.currency,
     COUNT(di.id) as item_count,
@@ -155,7 +155,7 @@ LEFT JOIN treatment_sites ts ON d.treatment_site_id = ts.id
 LEFT JOIN users u ON d.received_by = u.user_id
 LEFT JOIN inventory_donation_items di ON d.id = di.donation_id
 GROUP BY d.id, dt.name, dt.is_monetary, dr.name, dr.organization, dr.donor_type, 
-         o.name, ts.name, u.username;
+         o.name, ts.name, u.user_name;
 
 -- 12. Create function to update donation status
 CREATE OR REPLACE FUNCTION update_donation_status()

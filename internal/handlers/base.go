@@ -280,6 +280,7 @@ func CreateTemplateFunctions(c *fiber.Ctx, db *sql.DB) template.FuncMap {
 		"title":                Title,
 		"first":                First,
 		"safe":                 func(s string) template.HTML { return template.HTML(s) },
+		"mul":                  func(a, b float64) float64 { return a * b },
 		"GetDBOptions": func(table, cat, deflt, fld_name, fld_lab string, deflt_int int64) string {
 			return GetDBOptions(c, db, table, cat, deflt, fld_name, fld_lab, deflt_int)
 		},
@@ -370,6 +371,74 @@ func CreateTemplateFunctions(c *fiber.Ctx, db *sql.DB) template.FuncMap {
 				return template.HTML(fmt.Sprintf("Error rendering symptom row: %v", err))
 			}
 			return template.HTML(buf.String())
+		},
+		// Alerts template functions
+		"getSeverityColor": func(severity string) string {
+			switch strings.ToLower(severity) {
+			case "critical", "high":
+				return "danger"
+			case "medium":
+				return "warning"
+			case "low":
+				return "info"
+			default:
+				return "secondary"
+			}
+		},
+		"getSeverityIcon": func(severity string) string {
+			switch strings.ToLower(severity) {
+			case "critical":
+				return "fa-exclamation-triangle"
+			case "high":
+				return "fa-exclamation-circle"
+			case "medium":
+				return "fa-exclamation"
+			case "low":
+				return "fa-info-circle"
+			default:
+				return "fa-bell"
+			}
+		},
+		"getStatusColor": func(status string) string {
+			switch strings.ToLower(status) {
+			case "active":
+				return "danger"
+			case "resolved":
+				return "success"
+			case "pending":
+				return "warning"
+			default:
+				return "secondary"
+			}
+		},
+		"formatDate": func(t time.Time) string {
+			return t.Format("02 Jan 2006 15:04")
+		},
+		"formatDateOnly": func(t time.Time) string {
+			return t.Format("1/2/2006")
+		},
+		"formatTimeOnly": func(t time.Time) string {
+			return t.Format("3:04:05 PM")
+		},
+		"getSourceColor": func(source string) string {
+			switch strings.ToLower(source) {
+			case "community":
+				return "info"
+			case "facility":
+				return "primary"
+			default:
+				return "secondary"
+			}
+		},
+		"getResponseColor": func(response string) string {
+			switch strings.ToLower(response) {
+			case "mpox":
+				return "warning"
+			case "evd":
+				return "danger"
+			default:
+				return "secondary"
+			}
 		},
 	}
 }

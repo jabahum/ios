@@ -981,7 +981,7 @@ func (h *InventoryHandler) getInventoryStats() (*InventoryStats, error) {
 			COUNT(DISTINCT i.id) as total_items,
 			COUNT(DISTINCT sl.id) as total_stock_levels,
 			SUM(CASE WHEN sl.current_quantity <= i.minimum_stock_level THEN 1 ELSE 0 END) as low_stock_count,
-			SUM(sl.current_quantity * i.unit_cost) as total_value
+			COALESCE(SUM(sl.current_quantity * i.unit_cost), 0) as total_value
 		FROM inventory_items i
 		LEFT JOIN inventory_stock_levels sl ON i.id = sl.item_id
 		WHERE i.is_active = true
@@ -1074,8 +1074,8 @@ func (h *InventoryHandler) getRecentTransactions() ([]*InventoryTransaction, err
 func (h *InventoryHandler) getAllInventoryItems() ([]*InventoryItem, error) {
 	query := `
 		SELECT 
-			i.id, i.name, i.description, i.category_id, i.supplier_id, i.unit,
-			i.min_stock, i.max_stock, i.unit_cost, i.status, i.created_at,
+			i.id, i.name, i.description, i.category_id, i.supplier_id, i.unit_of_measure,
+			i.minimum_stock_level, i.maximum_stock_level, i.unit_cost, i.is_active, i.created_at,
 			c.name as category_name,
 			s.name as supplier_name
 		FROM inventory_items i
@@ -1093,13 +1093,19 @@ func (h *InventoryHandler) getAllInventoryItems() ([]*InventoryItem, error) {
 	var items []*InventoryItem
 	for rows.Next() {
 		var item InventoryItem
+		var isActive bool
 		err := rows.Scan(
 			&item.ID, &item.Name, &item.Description, &item.CategoryID, &item.SupplierID,
-			&item.Unit, &item.MinStock, &item.MaxStock, &item.UnitCost, &item.Status,
+			&item.Unit, &item.MinStock, &item.MaxStock, &item.UnitCost, &isActive,
 			&item.CreatedAt, &item.CategoryName, &item.SupplierName,
 		)
 		if err != nil {
 			return nil, err
+		}
+		if isActive {
+			item.Status = "active"
+		} else {
+			item.Status = "inactive"
 		}
 		items = append(items, &item)
 	}
@@ -1110,8 +1116,8 @@ func (h *InventoryHandler) getAllInventoryItems() ([]*InventoryItem, error) {
 func (h *InventoryHandler) getInventoryItemByID(id string) (*InventoryItem, error) {
 	query := `
 		SELECT 
-			i.id, i.name, i.description, i.category_id, i.supplier_id, i.unit,
-			i.min_stock, i.max_stock, i.unit_cost, i.status, i.created_at,
+			i.id, i.name, i.description, i.category_id, i.supplier_id, i.unit_of_measure,
+			i.minimum_stock_level, i.maximum_stock_level, i.unit_cost, i.is_active, i.created_at,
 			c.name as category_name,
 			s.name as supplier_name
 		FROM inventory_items i
@@ -1121,39 +1127,51 @@ func (h *InventoryHandler) getInventoryItemByID(id string) (*InventoryItem, erro
 	`
 
 	var item InventoryItem
+	var isActive bool
 	err := h.db.QueryRow(query, id).Scan(
 		&item.ID, &item.Name, &item.Description, &item.CategoryID, &item.SupplierID,
-		&item.Unit, &item.MinStock, &item.MaxStock, &item.UnitCost, &item.Status,
+		&item.Unit, &item.MinStock, &item.MaxStock, &item.UnitCost, &isActive,
 		&item.CreatedAt, &item.CategoryName, &item.SupplierName,
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	if isActive {
+		item.Status = "active"
+	} else {
+		item.Status = "inactive"
+	}
 
 	return &item, err
 }
 
 func (h *InventoryHandler) createInventoryItem(item *InventoryItem) error {
 	query := `
-		INSERT INTO inventory_items (name, description, category_id, supplier_id, unit, min_stock, max_stock, unit_cost, status, created_at)
+		INSERT INTO inventory_items (name, description, category_id, supplier_id, unit_of_measure, minimum_stock_level, maximum_stock_level, unit_cost, is_active, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
 		RETURNING id
 	`
 
+	isActive := item.Status == "active"
 	return h.db.QueryRow(query,
 		item.Name, item.Description, item.CategoryID, item.SupplierID,
-		item.Unit, item.MinStock, item.MaxStock, item.UnitCost, item.Status,
+		item.Unit, item.MinStock, item.MaxStock, item.UnitCost, isActive,
 	).Scan(&item.ID)
 }
 
 func (h *InventoryHandler) updateInventoryItem(item *InventoryItem) error {
 	query := `
 		UPDATE inventory_items 
-		SET name = $1, description = $2, category_id = $3, supplier_id = $4, unit = $5,
-			min_stock = $6, max_stock = $7, unit_cost = $8, status = $9
+		SET name = $1, description = $2, category_id = $3, supplier_id = $4, unit_of_measure = $5,
+			minimum_stock_level = $6, maximum_stock_level = $7, unit_cost = $8, is_active = $9
 		WHERE id = $10
 	`
 
+	isActive := item.Status == "active"
 	_, err := h.db.Exec(query,
 		item.Name, item.Description, item.CategoryID, item.SupplierID,
-		item.Unit, item.MinStock, item.MaxStock, item.UnitCost, item.Status, item.ID,
+		item.Unit, item.MinStock, item.MaxStock, item.UnitCost, isActive, item.ID,
 	)
 	return err
 }

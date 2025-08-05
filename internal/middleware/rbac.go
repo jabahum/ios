@@ -74,7 +74,7 @@ func PermissionRequired(store *session.Store, db *sql.DB, sl *slog.Logger, resou
 
 		// Add user info to context for handlers
 		c.Locals("current_user_id", userID)
-		c.Locals("current_user_permissions", getCachedPermissions(c, db, userID))
+		c.Locals("current_user_permissions", getCachedPermissions(c, db, store, userID))
 
 		return c.Next()
 	}
@@ -175,7 +175,7 @@ func EnhancedAuthRequired(store *session.Store, db *sql.DB) fiber.Handler {
 		// Check if user is active (you might want to add this check)
 		// For now, we'll just add user info to context
 		c.Locals("current_user_id", userID)
-		c.Locals("current_user_permissions", getCachedPermissions(c, db, userID))
+		c.Locals("current_user_permissions", getCachedPermissions(c, db, store, userID))
 
 		return c.Next()
 	}
@@ -223,9 +223,8 @@ func AuditMiddleware() fiber.Handler {
 }
 
 // Helper functions
-func getCachedPermissions(c *fiber.Ctx, db *sql.DB, userID int) []models.Permission {
+func getCachedPermissions(c *fiber.Ctx, db *sql.DB, store *session.Store, userID int) []models.Permission {
 	// Check if permissions are already cached in session
-	store := c.Locals("store").(*session.Store)
 	sess, err := store.Get(c)
 	if err != nil {
 		return nil
