@@ -289,6 +289,33 @@ func HandlerOutbreakSelect(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 	return c.JSON(fiber.Map{"message": "Outbreak selected successfully"})
 }
 
+// HandlerGetOutbreaksAPI handles the API endpoint for getting all outbreaks
+func HandlerGetOutbreaksAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
+	// Get all active outbreaks
+	outbreaks, err := models.GetActiveOutbreaks(c.Context(), db)
+	if err != nil {
+		sl.Error("Failed to get active outbreaks: " + err.Error())
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to get outbreaks"})
+	}
+
+	// Convert to JSON response
+	var response []fiber.Map
+	for _, outbreak := range outbreaks {
+		response = append(response, fiber.Map{
+			"id":                outbreak.ID,
+			"name":              outbreak.Name,
+			"description":       outbreak.Description,
+			"start_date":        outbreak.StartDate,
+			"end_date":          outbreak.EndDate,
+			"status":            outbreak.Status,
+			"outbreak_type":     outbreak.OutbreakType,
+			"outbreak_category": outbreak.OutbreakCategory,
+		})
+	}
+
+	return c.JSON(response)
+}
+
 // SetSelectedOutbreak sets the selected outbreak in the session
 func SetSelectedOutbreak(c *fiber.Ctx, store *session.Store, outbreakID int) error {
 	sess, err := store.Get(c)

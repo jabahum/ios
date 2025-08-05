@@ -133,6 +133,11 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		return handlers.HandlerGetFacilities(c, db, sl)
 	})
 
+	// Outbreaks API route
+	app.Get("/api/outbreaks", func(c *fiber.Ctx) error {
+		return handlers.HandlerGetOutbreaksAPI(c, db, sl)
+	})
+
 	// RBAC API endpoints - Admin only access
 	app.Get("/api/roles", middleware.PermissionRequired(store, db, sl, "admin", "read"), func(c *fiber.Ctx) error {
 		return handlers.HandlerGetRoles(c, db, sl)

@@ -108,15 +108,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (users && users.length > 0) {
                 users.forEach(user => {
                     const option = document.createElement('option');
-                    option.value = user.user_id;
+                    option.value = user.id; // Changed from user.user_id to user.id
                     // Handle the actual API response format
-                    let name = `User ${user.user_id}`;
+                    let name = `User ${user.id}`;
                     if (user.first_name && user.last_name) {
                         name = `${user.first_name} ${user.last_name}`;
                     } else if (user.first_name) {
                         name = user.first_name;
-                    } else if (user.user_name) {
-                        name = user.user_name;
+                    } else if (user.username) { // Changed from user.user_name to user.username
+                        name = user.username;
                     } else if (user.email) {
                         name = user.email;
                     }
