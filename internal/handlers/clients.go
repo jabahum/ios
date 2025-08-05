@@ -106,6 +106,33 @@ func HandlerCasesSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 		id = 0
 	}
 
+	// Get outbreak ID from session
+	sess, err := store.Get(c)
+	if err != nil {
+		return c.Status(500).SendString("Session error")
+	}
+
+	var outbreakID sql.NullInt64
+	outbreakIDFromSession := sess.Get("outbreak_id")
+	if outbreakIDFromSession != nil {
+		switch v := outbreakIDFromSession.(type) {
+		case int:
+			outbreakID.Int64 = int64(v)
+			outbreakID.Valid = true
+		case int64:
+			outbreakID.Int64 = v
+			outbreakID.Valid = true
+		case float64:
+			outbreakID.Int64 = int64(v)
+			outbreakID.Valid = true
+		case string:
+			if id, err := strconv.Atoi(v); err == nil {
+				outbreakID.Int64 = int64(id)
+				outbreakID.Valid = true
+			}
+		}
+	}
+
 	client := models.Client{
 		ID:               id,
 		Firstname:        ParseNullString(c.FormValue("firstname")),
@@ -144,8 +171,7 @@ func HandlerCasesSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 		Transfer:         ParseNullInt(c.FormValue("transfer")),
 		Site:             ParseNullInt(c.FormValue("site")),
 		Status:           ParseNullString(c.FormValue("status")),
-
-		//Status: ParseNullString(c.FormValue("status")),
+		OutbreakID:       outbreakID,
 	}
 
 	//visID, _ := utilities.GetSequentialVisitID()
