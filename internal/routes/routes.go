@@ -135,7 +135,7 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 
 	// Outbreaks API route
 	app.Get("/api/outbreaks", func(c *fiber.Ctx) error {
-		return handlers.HandlerGetOutbreaksAPI(c, db, sl)
+		return handlers.HandlerGetOutbreaksAPI(c, db, sl, store)
 	})
 
 	// RBAC API endpoints - Admin only access
@@ -204,7 +204,7 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 	})
 
 	app.Get("/api/rbac/users", middleware.PermissionRequired(store, db, sl, "users", "read"), func(c *fiber.Ctx) error {
-		return handlers.HandlerGetUsers(c, db, sl)
+		return handlers.HandlerGetUsers(c, db, sl, store)
 	})
 	app.Post("/api/rbac/user-roles", middleware.PermissionRequired(store, db, sl, "users", "update"), func(c *fiber.Ctx) error {
 		return handlers.HandlerAssignUserRole(c, db, sl, store, config)
@@ -220,7 +220,7 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 	})
 
 	app.Get("/api/users", middleware.PermissionRequired(store, db, sl, "users", "read"), func(c *fiber.Ctx) error {
-		return handlers.HandlerGetUsers(c, db, sl)
+		return handlers.HandlerGetUsers(c, db, sl, store)
 	})
 	app.Get("/api/users/:id/permissions", middleware.PermissionRequired(store, db, sl, "users", "read"), func(c *fiber.Ctx) error {
 		return handlers.HandlerGetUserPermissions(c, db, sl)

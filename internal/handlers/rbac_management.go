@@ -1034,25 +1034,74 @@ func HandlerGetMigrationStatus(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error 
 	return handler.GetMigrationStatus(c)
 }
 
-// HandlerGetUsers handles getting all users
-func HandlerGetUsers(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
-	// Query to get users with their roles and permissions
-	query := `
-		SELECT DISTINCT u.user_id, u.user_name, u.email, u.first_name, u.last_name, 
-		       u.is_active, u.is_locked, u.last_login_at, u.created_at,
-		       COALESCE(array_agg(DISTINCT r.name) FILTER (WHERE r.name IS NOT NULL), ARRAY[]::text[]) as roles,
-		       COALESCE(array_agg(DISTINCT p.name) FILTER (WHERE p.name IS NOT NULL), ARRAY[]::text[]) as permissions
-		FROM users u
-		LEFT JOIN user_roles ur ON u.user_id = ur.user_id
-		LEFT JOIN roles r ON ur.role_id = r.id
-		LEFT JOIN role_permissions rp ON r.id = rp.role_id
-		LEFT JOIN permissions p ON rp.permission_id = p.id
-		GROUP BY u.user_id, u.user_name, u.email, u.first_name, u.last_name, 
-		         u.is_active, u.is_locked, u.last_login_at, u.created_at
-		ORDER BY u.user_name
-	`
+// HandlerGetUsers handles getting users accessible to the current user
+func HandlerGetUsers(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store) error {
+	// Get current user ID
+	userID := GetCurrentUser(c, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
 
-	rows, err := db.QueryContext(c.Context(), query)
+	// Check if current user has admin or super_admin role (can see all users)
+	var hasAdminAccess bool
+	adminQuery := `
+		SELECT EXISTS(
+			SELECT 1 FROM users u
+			JOIN user_roles ur ON u.user_id = ur.user_id
+			JOIN roles r ON ur.role_id = r.id
+			WHERE u.user_id = $1 AND r.name IN ('admin', 'super_admin')
+		)
+	`
+	err := db.QueryRowContext(c.Context(), adminQuery, userID).Scan(&hasAdminAccess)
+	if err != nil {
+		sl.Error("Error checking admin access", "error", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to check permissions"})
+	}
+
+	var query string
+	var args []interface{}
+
+	if hasAdminAccess {
+		// Admin users can see all users
+		query = `
+			SELECT DISTINCT u.user_id, u.user_name, u.email, u.first_name, u.last_name, 
+			       u.is_active, u.is_locked, u.last_login_at, u.created_at,
+			       COALESCE(array_agg(DISTINCT r.name) FILTER (WHERE r.name IS NOT NULL), ARRAY[]::text[]) as roles,
+			       COALESCE(array_agg(DISTINCT p.name) FILTER (WHERE p.name IS NOT NULL), ARRAY[]::text[]) as permissions
+			FROM users u
+			LEFT JOIN user_roles ur ON u.user_id = ur.user_id
+			LEFT JOIN roles r ON ur.role_id = r.id
+			LEFT JOIN role_permissions rp ON r.id = rp.role_id
+			LEFT JOIN permissions p ON rp.permission_id = p.id
+			GROUP BY u.user_id, u.user_name, u.email, u.first_name, u.last_name, 
+			         u.is_active, u.is_locked, u.last_login_at, u.created_at
+			ORDER BY u.user_name
+		`
+	} else {
+		// Non-admin users can only see users in their same outbreak assignments
+		query = `
+			SELECT DISTINCT u.user_id, u.user_name, u.email, u.first_name, u.last_name, 
+			       u.is_active, u.is_locked, u.last_login_at, u.created_at,
+			       COALESCE(array_agg(DISTINCT r.name) FILTER (WHERE r.name IS NOT NULL), ARRAY[]::text[]) as roles,
+			       COALESCE(array_agg(DISTINCT p.name) FILTER (WHERE p.name IS NOT NULL), ARRAY[]::text[]) as permissions
+			FROM users u
+			LEFT JOIN user_roles ur ON u.user_id = ur.user_id
+			LEFT JOIN roles r ON ur.role_id = r.id
+			LEFT JOIN role_permissions rp ON r.id = rp.role_id
+			LEFT JOIN permissions p ON rp.permission_id = p.id
+			WHERE EXISTS(
+				SELECT 1 FROM user_outbreaks uo1
+				JOIN user_outbreaks uo2 ON uo1.outbreak_id = uo2.outbreak_id
+				WHERE uo1.user_id = $1 AND uo2.user_id = u.user_id
+			)
+			GROUP BY u.user_id, u.user_name, u.email, u.first_name, u.last_name, 
+			         u.is_active, u.is_locked, u.last_login_at, u.created_at
+			ORDER BY u.user_name
+		`
+		args = []interface{}{userID}
+	}
+
+	rows, err := db.QueryContext(c.Context(), query, args...)
 	if err != nil {
 		sl.Error("Error querying users", "error", err)
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to fetch users"})

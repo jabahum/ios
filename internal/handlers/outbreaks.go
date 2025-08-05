@@ -19,10 +19,10 @@ func HandlerOutbreakList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 		return c.Redirect("/login")
 	}
 
-	// Get all active outbreaks
-	outbreaks, err := models.GetActiveOutbreaks(c.Context(), db)
+	// Get outbreaks accessible to this user
+	outbreaks, err := models.GetUserAccessibleOutbreaks(c.Context(), db, userID)
 	if err != nil {
-		sl.Error("Failed to get active outbreaks: " + err.Error())
+		sl.Error("Failed to get user accessible outbreaks: " + err.Error())
 		return c.Status(500).SendString("Failed to get outbreaks")
 	}
 
@@ -289,12 +289,18 @@ func HandlerOutbreakSelect(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 	return c.JSON(fiber.Map{"message": "Outbreak selected successfully"})
 }
 
-// HandlerGetOutbreaksAPI handles the API endpoint for getting all outbreaks
-func HandlerGetOutbreaksAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
-	// Get all active outbreaks
-	outbreaks, err := models.GetActiveOutbreaks(c.Context(), db)
+// HandlerGetOutbreaksAPI handles the API endpoint for getting outbreaks accessible to the current user
+func HandlerGetOutbreaksAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store) error {
+	// Get current user ID
+	userID := GetCurrentUser(c, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	// Get outbreaks accessible to this user
+	outbreaks, err := models.GetUserAccessibleOutbreaks(c.Context(), db, userID)
 	if err != nil {
-		sl.Error("Failed to get active outbreaks: " + err.Error())
+		sl.Error("Failed to get user accessible outbreaks: " + err.Error())
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to get outbreaks"})
 	}
 
