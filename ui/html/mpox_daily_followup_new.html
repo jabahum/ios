@@ -1,0 +1,313 @@
+{{ define "content" }}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="mb-4 text-center">Mpox Daily Follow-Up Form</h2>
+                    
+                    <form method="post" action="/cases/encounters/mpox-daily-follow-up/save">
+                        <input type="hidden" name="client_id" value="{{.Form.ClientID}}">
+                        <input type="hidden" name="followup_date" value="{{.Form.EncounterDate}}">
+
+                        <!-- Basic Information -->
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Follow-up Date</label>
+                                <input type="date" class="form-control datetimepicker" name="followup_date" value="{{.Form.EncounterDate}}" data-options='{"disableMobile":true,"dateFormat":"Y-m-d"}'>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Encounter Type</label>
+                                <select name="encounter_type" class="form-control">
+                                    <option value="">Select</option>
+                                    <option value="In-person">In-person</option>
+                                    <option value="Phone call">Phone call</option>
+                                    <option value="Video call">Video call</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Other Site (if applicable)</label>
+                                <input type="text" class="form-control" name="other_site" placeholder="Specify other site">
+                            </div>
+                        </div>
+
+                        <!-- Vital Signs -->
+                        <div class="accordion" id="mpoxFollowUpAccordion">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingVitals">
+                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseVitals" aria-expanded="true" aria-controls="collapseVitals">
+                                        Vital Signs
+                                    </button>
+                                </h2>
+                                <div id="collapseVitals" class="accordion-collapse collapse show" aria-labelledby="headingVitals" data-bs-parent="#mpoxFollowUpAccordion">
+                                    <div class="accordion-body">
+                                        <div class="row">
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Temperature (°C)</label>
+                                                <input type="number" step="0.1" class="form-control" name="temperature">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Heart Rate (beats/min)</label>
+                                                <input type="number" class="form-control" name="heart_rate">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Blood Pressure (systolic)</label>
+                                                <input type="number" class="form-control" name="bp_systolic">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Blood Pressure (diastolic)</label>
+                                                <input type="number" class="form-control" name="bp_diastolic">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Respiratory Rate (breaths/min)</label>
+                                                <input type="number" class="form-control" name="respiratory_rate">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">SpO2 (%)</label>
+                                                <input type="number" min="0" max="100" class="form-control" name="spo2">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Weight (kg)</label>
+                                                <input type="number" step="0.1" class="form-control" name="weight_kg">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Height (cm)</label>
+                                                <input type="number" class="form-control" name="height_cm">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Disease Progression -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingProgression">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProgression" aria-expanded="false" aria-controls="collapseProgression">
+                                        Disease Progression
+                                    </button>
+                                </h2>
+                                <div id="collapseProgression" class="accordion-collapse collapse" aria-labelledby="headingProgression" data-bs-parent="#mpoxFollowUpAccordion">
+                                    <div class="accordion-body">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">New Lesions</label>
+                                                <select name="new_lesions" class="form-control">
+                                                    <option value="">Select</option>
+                                                    <option value="Yes">Yes</option>
+                                                    <option value="No">No</option>
+                                                    <option value="Unknown">Unknown</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">Disease Progression</label>
+                                                <select name="disease_progression" class="form-control">
+                                                    <option value="">Select</option>
+                                                    <option value="Improving">Improving</option>
+                                                    <option value="Stable">Stable</option>
+                                                    <option value="Worsening">Worsening</option>
+                                                    <option value="Unknown">Unknown</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-12 mb-3">
+                                                <label class="form-label">Progression Details (if other)</label>
+                                                <textarea class="form-control" name="progression_other" rows="2" placeholder="Describe progression details"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Lesion Assessment -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingLesions">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLesions" aria-expanded="false" aria-controls="collapseLesions">
+                                        Lesion Assessment
+                                    </button>
+                                </h2>
+                                <div id="collapseLesions" class="accordion-collapse collapse" aria-labelledby="headingLesions" data-bs-parent="#mpoxFollowUpAccordion">
+                                    <div class="accordion-body">
+                                        <div class="row">
+                                            <div class="col-md-12 mb-3">
+                                                <label class="form-label">Lesion Locations (check all that apply):</label>
+                                                <div class="table-responsive">
+                                                    <table class="table table-bordered table-sm">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Location</th>
+                                                                <th>Present</th>
+                                                                <th>Location</th>
+                                                                <th>Present</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <tr>
+                                                                <td>Face</td>
+                                                                <td><select name="lesion_face" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td>
+                                                                <td>Arms</td>
+                                                                <td><select name="lesion_arms" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Mouth</td>
+                                                                <td><select name="lesion_mouth" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td>
+                                                                <td>Palms</td>
+                                                                <td><select name="lesion_palms" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Chest</td>
+                                                                <td><select name="lesion_chest" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td>
+                                                                <td>Legs</td>
+                                                                <td><select name="lesion_legs" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Abdomen</td>
+                                                                <td><select name="lesion_abdomen" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td>
+                                                                <td>Soles</td>
+                                                                <td><select name="lesion_soles" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Back</td>
+                                                                <td><select name="lesion_back" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td>
+                                                                <td>Genitals</td>
+                                                                <td><select name="lesion_genitals" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Symptoms -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingSymptoms">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSymptoms" aria-expanded="false" aria-controls="collapseSymptoms">
+                                        Current Symptoms
+                                    </button>
+                                </h2>
+                                <div id="collapseSymptoms" class="accordion-collapse collapse" aria-labelledby="headingSymptoms" data-bs-parent="#mpoxFollowUpAccordion">
+                                    <div class="accordion-body">
+                                        <div class="row">
+                                            <div class="col-md-12 mb-3">
+                                                <label class="form-label">Current Symptoms (check all that apply):</label>
+                                                <div class="table-responsive">
+                                                    <table class="table table-bordered table-sm">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Symptom</th>
+                                                                <th>Present</th>
+                                                                <th>Symptom</th>
+                                                                <th>Present</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <tr>
+                                                                <td>Fever</td>
+                                                                <td><select name="fever" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td>
+                                                                <td>Fatigue</td>
+                                                                <td><select name="fatigue" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Headache</td>
+                                                                <td><select name="headache" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td>
+                                                                <td>Muscle aches</td>
+                                                                <td><select name="muscle_aches" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Sore throat</td>
+                                                                <td><select name="sore_throat" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td>
+                                                                <td>Cough</td>
+                                                                <td><select name="cough" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Nausea</td>
+                                                                <td><select name="nausea" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td>
+                                                                <td>Vomiting</td>
+                                                                <td><select name="vomiting" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Diarrhea</td>
+                                                                <td><select name="diarrhea" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td>
+                                                                <td>Lymphadenopathy</td>
+                                                                <td><select name="lymphadenopathy" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Treatment -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingTreatment">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTreatment" aria-expanded="false" aria-controls="collapseTreatment">
+                                        Treatment & Management
+                                    </button>
+                                </h2>
+                                <div id="collapseTreatment" class="accordion-collapse collapse" aria-labelledby="headingTreatment" data-bs-parent="#mpoxFollowUpAccordion">
+                                    <div class="accordion-body">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">Current Medications</label>
+                                                <textarea class="form-control" name="current_medications" rows="3" placeholder="List current medications"></textarea>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">Treatment Changes</label>
+                                                <textarea class="form-control" name="treatment_changes" rows="3" placeholder="Describe any treatment changes"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-12 mb-3">
+                                                <label class="form-label">Clinical Notes</label>
+                                                <textarea class="form-control" name="clinical_notes" rows="4" placeholder="Additional clinical observations"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Follow-Up
+                            </button>
+                            <a href="/cases/new/{{.Form.ClientID}}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Case
+                            </a>
+                            <a href="/cases/encounters/mpox-admission/new/{{.Form.ClientID}}/?dte=0000-00-00" class="btn btn-info">
+                                <i class="fas fa-file-medical"></i> Admission Form
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{ end }}
+
+{{ define "breadcrumb_items" }}
+<li class="breadcrumb-item"><a href="/cases">Cases</a></li>
+<li class="breadcrumb-item"><a href="/cases/new/{{.Form.ClientID}}">Case {{.Form.ClientID}}</a></li>
+<li class="breadcrumb-item active">Daily Follow-Up</li>
+{{ end }}
+
+{{ define "scripts" }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    flatpickr(".datetimepicker", {
+        dateFormat: "Y-m-d",
+        disableMobile: true
+    });
+});
+</script>
+{{ end }} 

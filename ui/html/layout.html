@@ -1,113 +1,277 @@
-{{define "layout"}}
+{{ define "layout" }}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ios - Integrated Outbreak System</title>
+    <title>{{.Title}}</title>
     <link href="/static/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="/static/app/cdn/css/flatpickr.min.css" type="text/css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
-            background-color: #ffffff;
+            background-color: #f8f9fa;
             color: #333;
             font-family: Arial, sans-serif;
         }
+        
         .top-ribbon {
-            background-color: #f8f9fa;
+            background-color: #fff;
             border-bottom: 1px solid #e9ecef;
-            padding: 10px;
+            padding: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+        
+        .breadcrumb-nav {
+            background-color: #fff;
+            border-bottom: 1px solid #e9ecef;
+            padding: 10px 0;
+            margin-bottom: 20px;
+        }
+        
+        .breadcrumb-item a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        
+        .breadcrumb-item a:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+        
         .side-menu {
-            background-color: #f8f9fa;
+            background-color: #fff;
             border-right: 1px solid #e9ecef;
-            height: 100vh;
-            padding-top: 20px;
+            min-height: calc(100vh - 120px);
+            padding: 20px 0;
+            box-shadow: 2px 0 4px rgba(0,0,0,0.1);
         }
+        
         .menu-item {
-            padding: 10px 20px;
+            padding: 12px 20px;
             display: block;
             color: #333;
             text-decoration: none;
+            border-bottom: 1px solid #f8f9fa;
+            transition: all 0.3s ease;
         }
+        
         .menu-item:hover {
             background-color: #e9ecef;
+            color: #007bff;
+            text-decoration: none;
         }
+        
+        .menu-item.active {
+            background-color: #007bff;
+            color: #fff;
+        }
+        
         .content {
             padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }
-        .col-md-3 {
-            max-width: 200px;
+        
+        .form-container {
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .section-title {
+            background-color: #e9ecef;
+            padding: 10px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        label { 
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+        }
+        
+        .form-control {
+            min-height: 32px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .form-control:focus {
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+        
+        .nav-tabs .nav-link {
+            font-size: 0.85rem;
+            padding: 0.4rem 0.6rem;
+        }
+        
+        .tab-content {
+            padding: 1rem;
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-top: none;
+            border-radius: 0 0 0.375rem 0.375rem;
+        }
+        
+        .form-check {
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+        }
+        
+        .form-check-input:checked {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+        
+        .row {
+            margin-bottom: 0.75rem;
+        }
+        
+        .mb-3 {
+            margin-bottom: 1rem !important;
+        }
+        
+        textarea.form-control {
+            min-height: 80px;
+        }
+        
+        .form-check-input {
+            margin-top: 0.2rem;
+        }
+        
+        /* Checkbox dropdown styles */
+        .checkbox-dropdown {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .checkbox-dropdown-button {
+            background: white;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            min-height: 38px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .checkbox-dropdown-button:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+        
+        .checkbox-dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ced4da;
+            border-top: none;
+            border-radius: 0 0 0.375rem 0.375rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 1000;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .checkbox-dropdown-content.show {
+            display: block;
+        }
+        
+        .checkbox-dropdown-item {
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .checkbox-dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .checkbox-dropdown-item input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        
+        .dropdown-arrow {
+            transition: transform 0.2s;
+        }
+        
+        .dropdown-arrow.rotated {
+            transform: rotate(180deg);
+        }
+        
+        @media (max-width: 768px) {
+            .nav-tabs .nav-link {
+                font-size: 0.75rem;
+                padding: 0.3rem 0.4rem;
+            }
+            .tab-content {
+                padding: 0.75rem;
+            }
         }
     </style>
+    {{template "head" .}}
 </head>
 <body>
     <!-- Top Ribbon -->
-    <div class="top-ribbon d-flex justify-content-between">
-        <div class="ms-3">
-            <a href="/home" class="me-3">Home</a>
-            <a href="/about" class="me-3">About</a>
-            <a href="#">Contact</a>
+    <div class="top-ribbon">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <a href="/" class="me-3 text-decoration-none">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                    {{if and .IsAuthenticated (ne .OutbreakID 0) (hasPermission .UserPermissions "cases" "read")}}
+                    <a href="/cases" class="me-3 text-decoration-none">
+                        <i class="fas fa-users"></i> Cases
+                    </a>
+                    {{end}}
+                    <a href="/outbreaks" class="me-3 text-decoration-none">
+                        <i class="fas fa-virus"></i> Outbreaks
+                    </a>
+                </div>
+                <div class="col-md-6 text-end">
+                    <span class="me-3">
+                        <i class="fas fa-user"></i> {{.User}}
+                    </span>
+                    <a href="/logout" class="me-3 text-decoration-none">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
         </div>
-        <div class="me-3">
-            <a href="/logout" class="me-3">Logout</a>
-            <a href="#">My Account</a>
+    </div>
+
+    <!-- Breadcrumb Navigation -->
+    <div class="breadcrumb-nav">
+        <div class="container-fluid">
+            {{template "breadcrumb" .}}
         </div>
     </div>
 
     <div class="container-fluid">
         <div class="row">
             <!-- Left-Hand Side Menu -->
-            <div class="col-md-3 side-menu">
-                {{if or (hasPermission .UserPermissions "polio_cif" "read") (not .IsAuthenticated)}}
-                <a href="/polio-cif" class="menu-item">Polio CIF</a>
-                {{end}}
-                
-                {{if hasPermission .UserPermissions "admin" "read"}}
-                <a href="/rbac-dashboard" class="menu-item">RBAC Dashboard</a>
-                {{end}}
-                
-                {{if or (hasPermission .UserPermissions "inventory" "read") (not .IsAuthenticated)}}
-                <a href="/inventory" class="menu-item">Inventory</a>
-                {{end}}
-                
-                {{if hasPermission .UserPermissions "facilities" "read"}}
-                <a href="/facilities" class="menu-item">Facilities</a>
-                {{end}}
-                
-                {{if hasPermission .UserPermissions "users" "read"}}
-                <a href="/users" class="menu-item">Users</a>
-                {{end}}
-                
-                {{if hasPermission .UserPermissions "alerts" "read"}}
-                <a href="/alerts" class="menu-item">Alerts</a>
-                {{end}}
-                
-                {{if hasPermission .UserPermissions "vhf_cases" "read"}}
-                <a href="/vhf-list" class="menu-item">View CIF Data</a>
-                {{end}}
-                
-                {{if hasPermission .UserPermissions "employees" "read"}}
-                <a href="/employees" class="menu-item">View Employee Data</a>
-                {{end}}
-                
-                {{if hasPermission .UserPermissions "outbreaks" "read"}}
-                <a href="/outbreaks" class="menu-item">Outbreaks</a>
-                {{end}}
-                
-                {{if hasPermission .UserPermissions "outbreak_assignment" "read"}}
-                <a href="/outbreaks/assign" class="menu-item">Assign Outbreaks</a>
-                {{end}}
-                
-                {{if hasPermission .UserPermissions "reports" "read"}}
-                <a href="/reports" class="menu-item">Generate Reports</a>
-                {{end}}
-                
-                {{.Menuz}}
-                <a href="/help" class="menu-item">Help</a>
+            <div class="col-md-3">
+                <div class="side-menu">
+                    {{template "sidebar" .}}
+                </div>
             </div>
-
+            
             <!-- Main Content -->
             <div class="col-md-9">
                 <div class="content">
@@ -117,7 +281,114 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/app/cdn/js/flatpickr.min.js"></script>
+    {{template "scripts" .}}
 </body>
 </html>
-{{end}} 
+{{ end }}
+
+{{ define "breadcrumb" }}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i> Home</a></li>
+        {{template "breadcrumb_items" .}}
+    </ol>
+</nav>
+{{ end }}
+
+{{ define "sidebar" }}
+<div class="d-flex flex-column">
+    <h6 class="px-3 mb-3 text-muted">Navigation</h6>
+    
+    <!-- Show case-related navigation only if we have an outbreak selected AND we're on a case-related page -->
+    {{if and .IsAuthenticated (ne .OutbreakID 0) (or (hasPrefix .CurrentPath "/cases") (hasPrefix .CurrentPath "/encounters"))}}
+        <a href="/cases" class="menu-item">
+            <i class="fas fa-list"></i> All Cases
+        </a>
+        <a href="/cases/new/0" class="menu-item">
+            <i class="fas fa-plus"></i> New Case
+        </a>
+        
+        <!-- Case-specific actions only if we have a valid case -->
+        {{if and .Form (ne .Form.ID 0)}}
+        <hr class="my-2">
+        <h6 class="px-3 mb-3 text-muted">Case Actions</h6>
+        <a href="/cases/new/{{.Form.ID}}" class="menu-item">
+            <i class="fas fa-edit"></i> Edit Case
+        </a>
+        {{if eq .OutbreakID 6}}
+        <a href="/cases/encounters/mpox-admission/new/{{.Form.ID}}/?dte=0000-00-00" class="menu-item">
+            <i class="fas fa-file-medical"></i> Admission Form
+        </a>
+        {{if .HasMpoxAdmission}}
+        <a href="/cases/encounters/mpox-daily-follow-up/new/{{.Form.ID}}/?dte=0000-00-00" class="menu-item">
+            <i class="fas fa-calendar-plus"></i> Add Follow Up
+        </a>
+        {{end}}
+        {{end}}
+        <a href="/cases/patientreport/{{.Form.ID}}" class="menu-item">
+            <i class="fas fa-chart-bar"></i> Case Report
+        </a>
+        {{end}}
+    {{else}}
+        <!-- Show general navigation for non-case pages -->
+        <a href="/" class="menu-item">
+            <i class="fas fa-home"></i> Home
+        </a>
+        <a href="/outbreaks" class="menu-item">
+            <i class="fas fa-virus"></i> Outbreaks
+        </a>
+        {{if .IsAuthenticated}}
+        {{if hasPermission .UserPermissions "employees" "read"}}
+        <a href="/employees" class="menu-item">
+            <i class="fas fa-users"></i> Employees
+        </a>
+        {{end}}
+        {{if hasPermission .UserPermissions "users" "read"}}
+        <a href="/users" class="menu-item">
+            <i class="fas fa-user-cog"></i> Users
+        </a>
+        {{end}}
+        {{if hasPermission .UserPermissions "facilities" "read"}}
+        <a href="/facilities" class="menu-item">
+            <i class="fas fa-hospital"></i> Facilities
+        </a>
+        {{end}}
+        {{if hasPermission .UserPermissions "rbac" "read"}}
+        <a href="/rbac-dashboard" class="menu-item">
+            <i class="fas fa-shield-alt"></i> RBAC Dashboard
+        </a>
+        {{end}}
+        {{if hasPermission .UserPermissions "inventory" "read"}}
+        <a href="/inventory" class="menu-item">
+            <i class="fas fa-boxes"></i> Inventory
+        </a>
+        {{end}}
+        {{if hasPermission .UserPermissions "alerts" "read"}}
+        <a href="/alerts" class="menu-item">
+            <i class="fas fa-bell"></i> Alerts
+        </a>
+        {{end}}
+        {{if hasPermission .UserPermissions "reports" "read"}}
+        <a href="/reports" class="menu-item">
+            <i class="fas fa-chart-bar"></i> Reports
+        </a>
+        {{end}}
+        {{end}}
+    {{end}}
+</div>
+{{ end }}
+
+{{ define "head" }}
+<!-- Additional head content can be overridden -->
+{{ end }}
+
+{{ define "scripts" }}
+<!-- Additional scripts can be overridden -->
+{{ end }}
+
+{{ define "breadcrumb_items" }}
+<!-- Default breadcrumb - can be overridden by specific templates -->
+{{ end }} 

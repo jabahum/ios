@@ -405,9 +405,9 @@ func HandlerLoginSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 			return c.Redirect("/outbreaks")
 		case "super_admin", "admin":
 			// Admin users go directly to home page (they can access everything)
-			fmt.Printf("DEBUG: Redirecting admin user (ID: %d, role: %s) to /\n", id, primaryRole)
+			fmt.Printf("DEBUG: Redirecting admin user (ID: %d, role: %s) to /home\n", id, primaryRole)
 			sl.Info("Redirecting admin user to home", "user_id", id, "role", primaryRole)
-			return c.Redirect("/")
+			return c.Redirect("/home")
 		default:
 			// Check if the role contains "case" (for any case-related roles)
 			if strings.Contains(strings.ToLower(primaryRole), "case") {

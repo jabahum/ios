@@ -1,0 +1,632 @@
+{{ define "content" }}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="mb-4 text-center">Mpox Admission Form</h2>
+                    
+                    <form method="post" action="/cases/encounters/mpox-admission/save">
+                        <input type="hidden" name="client_id" value="{{.Form.ClientID}}">
+                        <input type="hidden" name="encounter_date" value="{{.Form.EncounterDate}}">
+
+                        <!-- Site of first encounter, Date of Admission, Suspect or Confirmed Case -->
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Site of first encounter:</label>
+                                <div class="checkbox-dropdown">
+                                    <div class="checkbox-dropdown-button" tabindex="0">
+                                        <span class="selected-text">Select encounter sites...</span>
+                                        <span class="dropdown-arrow">▼</span>
+                                    </div>
+                                    <div class="checkbox-dropdown-content">
+                                        <div class="checkbox-dropdown-item">
+                                            <input type="checkbox" name="site_of_first_encounter" value="Outpatient" id="encounter_outpatient">
+                                            <label for="encounter_outpatient">Outpatient</label>
+                                        </div>
+                                        <div class="checkbox-dropdown-item">
+                                            <input type="checkbox" name="site_of_first_encounter" value="Emergency department" id="encounter_emergency">
+                                            <label for="encounter_emergency">Emergency department</label>
+                                        </div>
+                                        <div class="checkbox-dropdown-item">
+                                            <input type="checkbox" name="site_of_first_encounter" value="Inpatient wards" id="encounter_inpatient">
+                                            <label for="encounter_inpatient">Inpatient wards</label>
+                                        </div>
+                                        <div class="checkbox-dropdown-item">
+                                            <input type="checkbox" name="site_of_first_encounter" value="Other" id="encounter_other">
+                                            <label for="encounter_other">Other site</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="text" class="form-control mt-2" name="site_of_first_encounter_other" placeholder="If Other, specify">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Date of Admission</label>
+                                <input type="date" class="form-control datetimepicker" name="date_of_admission" data-options='{"disableMobile":true,"dateFormat":"Y-m-d"}'>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Suspect or Confirmed Case</label>
+                                <input type="text" class="form-control" name="suspect_confirmed_case">
+                            </div>
+                        </div>
+
+                        <!-- Bootstrap Accordions for all sections -->
+                        <div class="accordion" id="mpoxAdmissionAccordion">
+                            <!-- Demographics Accordion -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingDemographics">
+                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDemographics" aria-expanded="true" aria-controls="collapseDemographics">
+                                        1a. Demographics
+                                    </button>
+                                </h2>
+                                <div id="collapseDemographics" class="accordion-collapse collapse show" aria-labelledby="headingDemographics" data-bs-parent="#mpoxAdmissionAccordion">
+                                    <div class="accordion-body">
+                                        <div class="row">
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Sex</label>
+                                                <select name="sex" id="sex" class="form-control" onchange="hidePregnancy()">
+                                                    <option value="">Select</option>
+                                                    <option value="Male">Male</option>
+                                                    <option value="Female">Female</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Date of birth</label>
+                                                <input type="date" class="form-control datetimepicker" name="date_of_birth">
+                                            </div>
+                                            <div class="col-md-2 mb-3">
+                                                <label class="form-label">Age (years)</label>
+                                                <input type="number" class="form-control" name="age_years">
+                                            </div>
+                                            <div class="col-md-2 mb-3">
+                                                <label class="form-label">Age (months)</label>
+                                                <input type="number" class="form-control" name="age_months">
+                                            </div>
+                                            <div class="col-md-2 mb-3">
+                                                <label class="form-label">Age (days)</label>
+                                                <input type="number" class="form-control" name="age_days">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Health care worker?</label>
+                                                <select name="health_care_worker" class="form-control">
+                                                    <option value="">Select</option>
+                                                    <option value="Yes">Yes</option>
+                                                    <option value="No">No</option>
+                                                    <option value="Unknown">Unknown</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Tribe</label>
+                                                <input type="text" class="form-control" name="tribe">
+                                            </div>
+                                            <div class="col-md-3 mb-3" id="pregnant">
+                                                <label class="form-label">Pregnant?</label>
+                                                <select name="pregnant" id="pregnantSelect" class="form-control" onchange="hidePregnantFields()">
+                                                    <option value="">Select</option>
+                                                    <option value="Yes">Yes</option>
+                                                    <option value="No">No</option>
+                                                    <option value="Unknown">Unknown</option>
+                                                    <option value="N/A">N/A</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3 mb-3" id="gestationalWeeks">
+                                                <label class="form-label">Gestational weeks (if pregnant)</label>
+                                                <input type="number" class="form-control" name="gestational_weeks">
+                                            </div>
+                                        </div>
+                                        <div class="row" id="lnmp">
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">LMNP (Last Menstrual Period)</label>
+                                                <input type="text" class="form-control datetimepicker" name="lmnp">
+                                            </div>
+                                            <div class="col-md-3 mb-3" id="recentPregnancy">
+                                                <label class="form-label">Recently pregnant (≤21 days of symptom onset)?</label>
+                                                <select name="recently_pregnant" class="form-control">
+                                                    <option value="">Select</option>
+                                                    <option value="Yes">Yes</option>
+                                                    <option value="No">No</option>
+                                                    <option value="Unknown">Unknown</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3 mb-3" id="pregnant2242">
+                                                <label class="form-label">Pregnant 22-42 days from admission?</label>
+                                                <select name="pregnant_22_42" class="form-control">
+                                                    <option value="">Select</option>
+                                                    <option value="Yes">Yes</option>
+                                                    <option value="No">No</option>
+                                                    <option value="Unknown">Unknown</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">History of smallpox vaccination</label>
+                                                <select name="tetanus_vaccination" class="form-control">
+                                                    <option value="">Select</option>
+                                                    <option value="Yes">Yes</option>
+                                                    <option value="No">No</option>
+                                                    <option value="Unknown">Unknown</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label class="form-label">Occupation</label>
+                                                <input type="text" class="form-control" name="occupation">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Exposure & Social History Accordion -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingExposure">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExposure" aria-expanded="false" aria-controls="collapseExposure">
+                                        1b. Exposure and Social History
+                                    </button>
+                                </h2>
+                                <div id="collapseExposure" class="accordion-collapse collapse" aria-labelledby="headingExposure" data-bs-parent="#mpoxAdmissionAccordion">
+                                    <div class="accordion-body">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">Any known link to probable or confirmed case of MPX with ≤ 21 days prior to symptom onset?</label>
+                                                <select name="known_link" class="form-control">
+                                                    <option value="">Select</option>
+                                                    <option value="Yes">Yes</option>
+                                                    <option value="No">No</option>
+                                                    <option value="Unknown">Unknown</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">Sexually active within ≤ 21 days prior to symptom onset:</label>
+                                                <select name="sexually_active" class="form-control">
+                                                    <option value="">Select</option>
+                                                    <option value="Yes">Yes</option>
+                                                    <option value="No">No</option>
+                                                    <option value="Unknown">Unknown</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-12 mb-3">
+                                                <label class="form-label">If yes: select sex of sexual partner(s):</label>
+                                                <div class="checkbox-dropdown">
+                                                    <div class="checkbox-dropdown-button" tabindex="0">
+                                                        <span class="selected-text">Select options...</span>
+                                                        <span class="dropdown-arrow">▼</span>
+                                                    </div>
+                                                    <div class="checkbox-dropdown-content">
+                                                        <div class="checkbox-dropdown-item">
+                                                            <input type="checkbox" name="sex_of_partners" value="Female" id="sex_female">
+                                                            <label for="sex_female">Female</label>
+                                                        </div>
+                                                        <div class="checkbox-dropdown-item">
+                                                            <input type="checkbox" name="sex_of_partners" value="Male" id="sex_male">
+                                                            <label for="sex_male">Male</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-8 mb-3">
+                                                <label class="form-label">Recent travel to a high risk district for Mpox within ≤ 21 days prior to symptom onset?</label>
+                                                <select name="recent_travel" class="form-control">
+                                                    <option value="">Select</option>
+                                                    <option value="Yes">Yes</option>
+                                                    <option value="No">No</option>
+                                                    <option value="Unknown">Unknown</option>
+                                                </select>
+                                                <input type="text" class="form-control mt-2" name="recent_travel_details" placeholder="If yes, specify district">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-12 mb-3">
+                                                <label class="form-label">Additional notes</label>
+                                                <textarea class="form-control" name="exposure_notes" rows="2"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Onset & Vital Signs Accordion -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingOnsetVitals">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOnsetVitals" aria-expanded="false" aria-controls="collapseOnsetVitals">
+                                        1c. Date of Onset and Vital Signs
+                                    </button>
+                                </h2>
+                                <div id="collapseOnsetVitals" class="accordion-collapse collapse" aria-labelledby="headingOnsetVitals" data-bs-parent="#mpoxAdmissionAccordion">
+                                    <div class="accordion-body">
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label class="form-label">Symptom onset (date of first/earliest symptom)</label>
+                                                <input type="date" class="form-control datetimepicker" name="symptom_onset">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-12 mb-3">
+                                                <label class="form-label">Described symptoms:</label>
+                                                <div class="table-responsive">
+                                                    <table class="table table-bordered table-sm align-middle">
+                                                        <thead><tr><th>Symptom</th><th>Response</th><th>Date of Onset</th></tr></thead>
+                                                        <tbody>
+                                                            <tr>
+                                                                <td>Fever</td>
+                                                                <td><select name="fever" class="form-control form-control-sm" style="width: 120px;"><option value="">Select</option><option value="Y">Yes</option><option value="N">No</option><option value="U">Unknown</option></select></td>
+                                                                <td><input type="date" class="form-control form-control-sm" name="fever_onset_date" style="width: 120px;"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Sore throat</td>
+                                                                <td><select name="sore_throat" class="form-control form-control-sm" style="width: 120px;"><option value="">Select</option><option value="Y">Yes</option><option value="N">No</option><option value="U">Unknown</option></select></td>
+                                                                <td><input type="date" class="form-control form-control-sm" name="sore_throat_onset_date" style="width: 120px;"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Headache</td>
+                                                                <td><select name="headache" class="form-control form-control-sm" style="width: 120px;"><option value="">Select</option><option value="Y">Yes</option><option value="N">No</option><option value="U">Unknown</option></select></td>
+                                                                <td><input type="date" class="form-control form-control-sm" name="headache_onset_date" style="width: 120px;"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Muscle aches (myalgia)</td>
+                                                                <td><select name="muscle_aches" class="form-control form-control-sm" style="width: 120px;"><option value="">Select</option><option value="Y">Yes</option><option value="N">No</option><option value="U">Unknown</option></select></td>
+                                                                <td><input type="date" class="form-control form-control-sm" name="muscle_aches_onset_date" style="width: 120px;"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Cough</td>
+                                                                <td><select name="cough" class="form-control form-control-sm" style="width: 120px;"><option value="">Select</option><option value="Y">Yes</option><option value="N">No</option><option value="U">Unknown</option></select></td>
+                                                                <td><input type="date" class="form-control form-control-sm" name="cough_onset_date" style="width: 120px;"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Fatigue/malaise</td>
+                                                                <td><select name="fatigue" class="form-control form-control-sm" style="width: 120px;"><option value="">Select</option><option value="Y">Yes</option><option value="N">No</option><option value="U">Unknown</option></select></td>
+                                                                <td><input type="date" class="form-control form-control-sm" name="fatigue_onset_date" style="width: 120px;"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Oral pain</td>
+                                                                <td><select name="oral_pain" class="form-control form-control-sm" style="width: 120px;"><option value="">Select</option><option value="Y">Yes</option><option value="N">No</option><option value="U">Unknown</option></select></td>
+                                                                <td><input type="date" class="form-control form-control-sm" name="oral_pain_onset_date" style="width: 120px;"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Nausea</td>
+                                                                <td><select name="nausea" class="form-control form-control-sm" style="width: 120px;"><option value="">Select</option><option value="Y">Yes</option><option value="N">No</option><option value="U">Unknown</option></select></td>
+                                                                <td><input type="date" class="form-control form-control-sm" name="nausea_onset_date" style="width: 120px;"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Vomiting</td>
+                                                                <td><select name="vomiting" class="form-control form-control-sm" style="width: 120px;"><option value="">Select</option><option value="Y">Yes</option><option value="N">No</option><option value="U">Unknown</option></select></td>
+                                                                <td><input type="date" class="form-control form-control-sm" name="vomiting_onset_date" style="width: 120px;"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Diarrhoea</td>
+                                                                <td><select name="diarrhea" class="form-control form-control-sm" style="width: 120px;"><option value="">Select</option><option value="Y">Yes</option><option value="N">No</option><option value="U">Unknown</option></select></td>
+                                                                <td><input type="date" class="form-control form-control-sm" name="diarrhea_onset_date" style="width: 120px;"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Rectal pain</td>
+                                                                <td><select name="rectal_pain" class="form-control form-control-sm" style="width: 120px;"><option value="">Select</option><option value="Y">Yes</option><option value="N">No</option><option value="U">Unknown</option></select></td>
+                                                                <td><input type="date" class="form-control form-control-sm" name="rectal_pain_onset_date" style="width: 120px;"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Lesions</td>
+                                                                <td><select name="lesions" class="form-control form-control-sm" style="width: 120px;"><option value="">Select</option><option value="Y">Yes</option><option value="N">No</option><option value="U">Unknown</option></select></td>
+                                                                <td><input type="date" class="form-control form-control-sm" name="lesions_onset_date" style="width: 120px;"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Lymphadenopathy</td>
+                                                                <td><select name="lymphadenopathy" class="form-control form-control-sm" style="width: 120px;"><option value="">Select</option><option value="Y">Yes</option><option value="N">No</option><option value="U">Unknown</option></select></td>
+                                                                <td><input type="date" class="form-control form-control-sm" name="lymphadenopathy_onset_date" style="width: 120px;"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Pruritis</td>
+                                                                <td><select name="pruritis" class="form-control form-control-sm" style="width: 120px;"><option value="">Select</option><option value="Y">Yes</option><option value="N">No</option><option value="U">Unknown</option></select></td>
+                                                                <td><input type="date" class="form-control form-control-sm" name="pruritis_onset_date" style="width: 120px;"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Pain with swallowing</td>
+                                                                <td><select name="pain_swallowing" class="form-control form-control-sm" style="width: 120px;"><option value="">Select</option><option value="Y">Yes</option><option value="N">No</option><option value="U">Unknown</option></select></td>
+                                                                <td><input type="date" class="form-control form-control-sm" name="pain_swallowing_onset_date" style="width: 120px;"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Difficulty swallowing</td>
+                                                                <td><select name="difficulty_swallowing" class="form-control form-control-sm" style="width: 120px;"><option value="">Select</option><option value="Y">Yes</option><option value="N">No</option><option value="U">Unknown</option></select></td>
+                                                                <td><input type="date" class="form-control form-control-sm" name="difficulty_swallowing_onset_date" style="width: 120px;"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Urethritis</td>
+                                                                <td><select name="urethritis" class="form-control form-control-sm" style="width: 120px;"><option value="">Select</option><option value="Y">Yes</option><option value="N">No</option><option value="U">Unknown</option></select></td>
+                                                                <td><input type="date" class="form-control form-control-sm" name="urethritis_onset_date" style="width: 120px;"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Chest pain</td>
+                                                                <td><select name="chest_pain" class="form-control form-control-sm" style="width: 120px;"><option value="">Select</option><option value="Y">Yes</option><option value="N">No</option><option value="U">Unknown</option></select></td>
+                                                                <td><input type="date" class="form-control form-control-sm" name="chest_pain_onset_date" style="width: 120px;"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Decreased urine output</td>
+                                                                <td><select name="decreased_urine" class="form-control form-control-sm" style="width: 120px;"><option value="">Select</option><option value="Y">Yes</option><option value="N">No</option><option value="U">Unknown</option></select></td>
+                                                                <td><input type="date" class="form-control form-control-sm" name="decreased_urine_onset_date" style="width: 120px;"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Dizziness</td>
+                                                                <td><select name="dizziness" class="form-control form-control-sm" style="width: 120px;"><option value="">Select</option><option value="Y">Yes</option><option value="N">No</option><option value="U">Unknown</option></select></td>
+                                                                <td><input type="date" class="form-control form-control-sm" name="dizziness_onset_date" style="width: 120px;"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Joint pain (arthralgia)</td>
+                                                                <td><select name="joint_pain" class="form-control form-control-sm" style="width: 120px;"><option value="">Select</option><option value="Y">Yes</option><option value="N">No</option><option value="U">Unknown</option></select></td>
+                                                                <td><input type="date" class="form-control form-control-sm" name="joint_pain_onset_date" style="width: 120px;"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Psychological disturbance</td>
+                                                                <td><select name="psychological_disturbance" class="form-control form-control-sm" style="width: 120px;"><option value="">Select</option><option value="Y">Yes</option><option value="N">No</option><option value="U">Unknown</option></select></td>
+                                                                <td><input type="date" class="form-control form-control-sm" name="psychological_disturbance_onset_date" style="width: 120px;"></td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-12 mb-3">
+                                                <label class="form-label">Lymphadenopathy?</label>
+                                                <select name="lymphadenopathy" class="form-control">
+                                                    <option value="">Select</option>
+                                                    <option value="Yes">Yes</option>
+                                                    <option value="No">No</option>
+                                                    <option value="Unknown">Unknown</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-12 mb-3">
+                                                <label class="form-label">If yes, location (check all that apply):</label>
+                                                <div class="checkbox-dropdown">
+                                                    <div class="checkbox-dropdown-button" tabindex="0">
+                                                        <span class="selected-text">Select locations...</span>
+                                                        <span class="dropdown-arrow">▼</span>
+                                                    </div>
+                                                    <div class="checkbox-dropdown-content">
+                                                        <div class="checkbox-dropdown-item">
+                                                            <input type="checkbox" name="lymph_location" value="Axillary" id="lymph_axillary">
+                                                            <label for="lymph_axillary">Axillary</label>
+                                                        </div>
+                                                        <div class="checkbox-dropdown-item">
+                                                            <input type="checkbox" name="lymph_location" value="Cervical" id="lymph_cervical">
+                                                            <label for="lymph_cervical">Cervical</label>
+                                                        </div>
+                                                        <div class="checkbox-dropdown-item">
+                                                            <input type="checkbox" name="lymph_location" value="Inguinal" id="lymph_inguinal">
+                                                            <label for="lymph_inguinal">Inguinal</label>
+                                                        </div>
+                                                        <div class="checkbox-dropdown-item">
+                                                            <input type="checkbox" name="lymph_location" value="Other" id="lymph_other">
+                                                            <label for="lymph_other">Other</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <input type="text" class="form-control mt-2" name="lymph_other_detail" placeholder="If Other, specify">
+                                            </div>
+                                            <div class="col-md-12 mb-3">
+                                                <label class="form-label">If present and painful, check all that apply:</label>
+                                                <div class="checkbox-dropdown">
+                                                    <div class="checkbox-dropdown-button" tabindex="0">
+                                                        <span class="selected-text">Select pain locations...</span>
+                                                        <span class="dropdown-arrow">▼</span>
+                                                    </div>
+                                                    <div class="checkbox-dropdown-content">
+                                                        <div class="checkbox-dropdown-item">
+                                                            <input type="checkbox" name="lymph_pain_location" value="Axillary" id="lymph_pain_axillary">
+                                                            <label for="lymph_pain_axillary">Axillary</label>
+                                                        </div>
+                                                        <div class="checkbox-dropdown-item">
+                                                            <input type="checkbox" name="lymph_pain_location" value="Cervical" id="lymph_pain_cervical">
+                                                            <label for="lymph_pain_cervical">Cervical</label>
+                                                        </div>
+                                                        <div class="checkbox-dropdown-item">
+                                                            <input type="checkbox" name="lymph_pain_location" value="Inguinal" id="lymph_pain_inguinal">
+                                                            <label for="lymph_pain_inguinal">Inguinal</label>
+                                                        </div>
+                                                        <div class="checkbox-dropdown-item">
+                                                            <input type="checkbox" name="lymph_pain_location" value="Other" id="lymph_pain_other">
+                                                            <label for="lymph_pain_other">Other</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <input type="text" class="form-control mt-2" name="lymph_pain_other_detail" placeholder="If Other, specify">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-2 mb-3">
+                                                <label class="form-label">Temperature (°C)</label>
+                                                <input type="number" step="0.1" class="form-control" name="temperature">
+                                            </div>
+                                            <div class="col-md-2 mb-3">
+                                                <label class="form-label">Heart rate (beats/min)</label>
+                                                <input type="number" class="form-control" name="heart_rate">
+                                            </div>
+                                            <div class="col-md-2 mb-3">
+                                                <label class="form-label">Respiratory rate (breaths/min)</label>
+                                                <input type="number" class="form-control" name="respiratory_rate">
+                                            </div>
+                                            <div class="col-md-2 mb-3">
+                                                <label class="form-label">BP (systolic)</label>
+                                                <input type="number" class="form-control" name="bp_systolic">
+                                            </div>
+                                            <div class="col-md-2 mb-3">
+                                                <label class="form-label">BP (diastolic)</label>
+                                                <input type="number" class="form-control" name="bp_diastolic">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Severe dehydration</label>
+                                                <select name="severe_dehydration" class="form-control">
+                                                    <option value="">Select</option>
+                                                    <option value="Yes">Yes</option>
+                                                    <option value="No">No</option>
+                                                    <option value="Unknown">Unknown</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Consciousness</label>
+                                                <select name="consciousness" class="form-control">
+                                                    <option value="">Select</option>
+                                                    <option value="Alert">Responsive</option>
+                                                    <option value="Unresponsive">Unresponsive</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Height (cm)</label>
+                                                <input type="number" class="form-control" name="height_cm">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Weight (kg)</label>
+                                                <input type="number" class="form-control" name="weight_kg">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary">Save Admission</button>
+                            <a href="/cases/new/{{.Form.ClientID}}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{ end }}
+
+{{ define "breadcrumb_items" }}
+<li class="breadcrumb-item"><a href="/cases">Cases</a></li>
+<li class="breadcrumb-item"><a href="/cases/new/{{.Form.ClientID}}">Case {{.Form.ClientID}}</a></li>
+<li class="breadcrumb-item active">Mpox Admission Form</li>
+{{ end }}
+
+{{ define "scripts" }}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      flatpickr(".datetimepicker", {
+        dateFormat: "Y-m-d",
+        disableMobile: true
+      });
+      
+      // Initialize checkbox dropdowns
+      initializeCheckboxDropdowns();
+      
+      // Hide pregnancy fields on page load if sex is not Female
+      hidePregnancy();
+      
+      // Hide pregnancy-related fields on page load if pregnant is not Yes
+      hidePregnantFields();
+  });
+  
+  function initializeCheckboxDropdowns() {
+    const dropdowns = document.querySelectorAll('.checkbox-dropdown');
+    
+    dropdowns.forEach(dropdown => {
+      const button = dropdown.querySelector('.checkbox-dropdown-button');
+      const content = dropdown.querySelector('.checkbox-dropdown-content');
+      const arrow = dropdown.querySelector('.dropdown-arrow');
+      const selectedText = dropdown.querySelector('.selected-text');
+      const checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
+      
+      // Toggle dropdown
+      button.addEventListener('click', function() {
+        content.classList.toggle('show');
+        arrow.classList.toggle('rotated');
+      });
+      
+      // Handle checkbox changes
+      checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+          updateSelectedText(dropdown);
+        });
+      });
+      
+      // Close dropdown when clicking outside
+      document.addEventListener('click', function(event) {
+        if (!dropdown.contains(event.target)) {
+          content.classList.remove('show');
+          arrow.classList.remove('rotated');
+        }
+      });
+      
+      // Prevent dropdown from closing when clicking inside content
+      content.addEventListener('click', function(event) {
+        event.stopPropagation();
+      });
+      
+      // Initialize text
+      updateSelectedText(dropdown);
+    });
+  }
+  
+  function updateSelectedText(dropdown) {
+    const selectedText = dropdown.querySelector('.selected-text');
+    const checkboxes = dropdown.querySelectorAll('input[type="checkbox"]:checked');
+    const defaultText = selectedText.textContent.includes('Select') ? selectedText.textContent : 'Select options...';
+    
+    if (checkboxes.length === 0) {
+      selectedText.textContent = defaultText;
+    } else if (checkboxes.length === 1) {
+      selectedText.textContent = checkboxes[0].nextElementSibling.textContent;
+    } else {
+      selectedText.textContent = `${checkboxes.length} selected`;
+    }
+  }
+  
+  //Hide pregnancy, gestational weeks, lnmp, recent pregnancy, pregnant 22-42 days from admission divs if sex is male or if sex is null
+  function hidePregnancy() {
+    const sex = document.getElementById('sex');
+    const pregnant = document.getElementById('pregnant');
+    const gestationalWeeks = document.getElementById('gestationalWeeks');
+    const lnmp = document.getElementById('lnmp');
+    const recentPregnancy = document.getElementById('recentPregnancy');
+    const pregnant2242 = document.getElementById('pregnant2242');
+    
+    if (!sex.value || sex.value === 'Male') {
+      if (pregnant) pregnant.style.display = 'none';
+      if (gestationalWeeks) gestationalWeeks.style.display = 'none';
+      if (lnmp) lnmp.style.display = 'none';
+      if (recentPregnancy) recentPregnancy.style.display = 'none';
+      if (pregnant2242) pregnant2242.style.display = 'none';
+    } else {  
+      if (pregnant) pregnant.style.display = 'block';
+      if (gestationalWeeks) gestationalWeeks.style.display = 'block';
+      if (lnmp) lnmp.style.display = 'block';
+      if (recentPregnancy) recentPregnancy.style.display = 'block';
+      if (pregnant2242) pregnant2242.style.display = 'block';
+    } 
+  }
+  
+  //Hide gestational weeks, lnmp, recent pregnancy, pregnant 22-42 days from admission divs if pregnant is no
+  function hidePregnantFields() {
+    const pregnantSelect = document.getElementById('pregnantSelect');
+    const gestationalWeeks = document.getElementById('gestationalWeeks');
+    const lnmp = document.getElementById('lnmp');
+    const recentPregnancy = document.getElementById('recentPregnancy');
+    const pregnant2242 = document.getElementById('pregnant2242');
+    
+    // Only show pregnancy-related fields if pregnant is specifically "Yes"
+    if (!pregnantSelect.value || pregnantSelect.value === 'No' || pregnantSelect.value === 'N/A' || pregnantSelect.value === 'Unknown') {
+      if (gestationalWeeks) gestationalWeeks.style.display = 'none';
+      if (lnmp) lnmp.style.display = 'none';
+      if (recentPregnancy) recentPregnancy.style.display = 'none';
+      if (pregnant2242) pregnant2242.style.display = 'none';
+    } else {
+      // Hide for all other values: No, Unknown, N/A, or empty
+      if (gestationalWeeks) gestationalWeeks.style.display = 'block';
+      if (lnmp) lnmp.style.display = 'block';
+      if (recentPregnancy) recentPregnancy.style.display = 'block';
+      if (pregnant2242) pregnant2242.style.display = 'block';
+    }
+  }
+</script>
+{{ end }} 

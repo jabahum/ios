@@ -54,7 +54,9 @@ type TemplateData struct {
 	IsOutbreakID    bool
 	AdmissionID     int
 	IsAdmissionID   bool
-	ClientID        int // Add ClientID field for templates
+	ClientID        int    // Add ClientID field for templates
+	Title           string // Add Title field for page titles
+	CurrentPath     string // Add CurrentPath field for navigation context
 	Form            any
 	FormRef         any
 	FormChild1      any
@@ -256,9 +258,18 @@ func NewTemplateDataWithDB(c *fiber.Ctx, store *session.Store, db *sql.DB) *Temp
 	optionz["result1"] = map[string]string{"": " -- ", "1": "Pos", "2": "Neg", "3": "indeterminate"}
 	optionz["result2"] = map[string]string{"": " -- ", "1": "Pos", "2": "Neg", "3": "ND"}
 
+	// Get current outbreak ID from session
+	outbreakID := GetCurrentOutbreak(c, store)
+
+	// Get current page path for navigation context
+	currentPath := c.Path()
+
 	return &TemplateData{
 		CurrentYear:     time.Now().Year(),
 		IsAuthenticated: IzAuthenticated(c, store),
+		OutbreakID:      outbreakID,
+		IsOutbreakID:    outbreakID > 0,
+		CurrentPath:     currentPath, // Add current path for navigation context
 		Optionz:         optionz,
 		UserFacilityID:  userFacilityID,
 		UserPermissions: userPermissions,
@@ -291,6 +302,9 @@ func CreateTemplateFunctions(c *fiber.Ctx, db *sql.DB) template.FuncMap {
 		},
 		"GetDBLabel": func(table, namesFld, indexFld string, indexID int64) string {
 			return GetDBLabel(c, db, table, namesFld, indexFld, indexID)
+		},
+		"hasPrefix": func(s, prefix string) bool {
+			return strings.HasPrefix(s, prefix)
 		},
 		"hasPermission": func(permissions map[string][]string, resource, action string) bool {
 			if permissions == nil {
@@ -1331,7 +1345,12 @@ func GetCurrentFacility(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 
 	// Fallback to database query
 	var facilityID sql.NullInt64
-	err = db.QueryRowContext(c.Context(), "SELECT facility_id FROM employees WHERE user_id = $1 AND is_active = true", userID).Scan(&facilityID)
+	err = db.QueryRowContext(c.Context(), `
+		SELECT e.facility 
+		FROM employee e
+		JOIN users u ON e.employee_email = u.email
+		WHERE u.user_id = $1 AND e.employee_status = 'active'
+	`, userID).Scan(&facilityID)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			sl.Error("Error getting facility", "error", err)

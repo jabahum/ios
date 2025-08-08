@@ -3,13 +3,15 @@ package models
 import (
 	"database/sql"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 type MpoxDailyFollowUp struct {
 	ID                 int             `db:"id"`
 	ClientID           int             `db:"client_id"`
 	FollowUpDate       sql.NullTime    `db:"followup_date"`
-	EncounterType      sql.NullString  `db:"encounter_type"` // store as comma-separated string
+	EncounterType      pq.StringArray  `db:"encounter_type"` // use pq.StringArray for PostgreSQL array
 	OtherSite          sql.NullString  `db:"other_site"`
 	SpO2               sql.NullInt64   `db:"spo2"`
 	NewLesions         sql.NullBool    `db:"new_lesions"`
@@ -55,23 +57,25 @@ type MpoxDailyFollowUp struct {
 func (m *MpoxDailyFollowUp) Insert(db *sql.DB) error {
 	query := `
 		INSERT INTO mpox_daily_followup (
-			client_id, followup_date, encounter_type, other_site, spo2, new_lesions, disease_progression, progression_other,
-			lesion_face, lesion_mouth, lesion_chest, lesion_abdomen, lesion_back, lesion_arms, lesion_palms, lesion_forearms, lesion_thighs, lesion_legs, lesion_soles, lesion_genitalia, lesion_perianal, lesion_other, lesion_specify_where,
-			type_macule, type_papule, type_vesicle, type_pustule, type_umbilicated, type_ulcerated, type_crusting, type_partialscab, type_other,
-			pain_present, pain_score, pain_description,
-			temperature, heart_rate, respiratory_rate, bp_systolic, bp_diastolic, consciousness, data_entrant, created_at
+			client_id, followup_date, encounter_type, other_site, spo2, new_lesions, 
+			disease_progression, progression_other, lesion_face, lesion_mouth, lesion_chest, 
+			lesion_abdomen, lesion_back, lesion_arms, lesion_palms, lesion_forearms, 
+			lesion_thighs, lesion_legs, lesion_soles, lesion_genitalia, lesion_perianal, 
+			lesion_other, lesion_specify_where, type_macule, type_papule, type_vesicle, 
+			type_pustule, type_umbilicated, type_ulcerated, type_crusting, type_partialscab, 
+			type_other, pain_present, pain_score, pain_description, temperature, heart_rate, 
+			respiratory_rate, bp_systolic, bp_diastolic, consciousness, data_entrant, created_at
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8,
-			$9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22,
-			$23, $24, $25, $26, $27, $28, $29, $30, $31,
-			$32, $33, $34,
-			$35, $36, $37, $38, $39, $40, $41, NOW()
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, NOW()
 		) RETURNING id`
 	return db.QueryRow(query,
-		m.ClientID, m.FollowUpDate, m.EncounterType, m.OtherSite, m.SpO2, m.NewLesions, m.DiseaseProgression, m.ProgressionOther,
-		m.LesionFace, m.LesionMouth, m.LesionChest, m.LesionAbdomen, m.LesionBack, m.LesionArms, m.LesionPalms, m.LesionForearms, m.LesionThighs, m.LesionLegs, m.LesionSoles, m.LesionGenitalia, m.LesionPerianal, m.LesionOther, m.LesionSpecifyWhere,
-		m.TypeMacule, m.TypePapule, m.TypeVesicle, m.TypePustule, m.TypeUmbilicated, m.TypeUlcerated, m.TypeCrusting, m.TypePartialScab, m.TypeOther,
-		m.PainPresent, m.PainScore, m.PainDescription,
-		m.Temperature, m.HeartRate, m.RespiratoryRate, m.BpSystolic, m.BpDiastolic, m.Consciousness, m.DataEntrant,
+		m.ClientID, m.FollowUpDate, m.EncounterType, m.OtherSite, m.SpO2, m.NewLesions,
+		m.DiseaseProgression, m.ProgressionOther, m.LesionFace, m.LesionMouth, m.LesionChest,
+		m.LesionAbdomen, m.LesionBack, m.LesionArms, m.LesionPalms, m.LesionForearms,
+		m.LesionThighs, m.LesionLegs, m.LesionSoles, m.LesionGenitalia, m.LesionPerianal,
+		m.LesionOther, m.LesionSpecifyWhere, m.TypeMacule, m.TypePapule, m.TypeVesicle,
+		m.TypePustule, m.TypeUmbilicated, m.TypeUlcerated, m.TypeCrusting, m.TypePartialScab,
+		m.TypeOther, m.PainPresent, m.PainScore, m.PainDescription, m.Temperature, m.HeartRate,
+		m.RespiratoryRate, m.BpSystolic, m.BpDiastolic, m.Consciousness, m.DataEntrant,
 	).Scan(&m.ID)
 }

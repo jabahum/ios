@@ -7,11 +7,38 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
 )
+
+// Helper function to get multiple checkbox values
+func getCheckboxValues(c *fiber.Ctx, fieldName string) []string {
+	var values []string
+	form, err := c.MultipartForm()
+	if err == nil && form != nil {
+		if formValues, exists := form.Value[fieldName]; exists {
+			values = formValues
+		}
+	}
+	// Fallback to single value if multipart form fails
+	if len(values) == 0 {
+		if singleValue := c.FormValue(fieldName); singleValue != "" {
+			values = []string{singleValue}
+		}
+	}
+	return values
+}
+
+// Helper function to join checkbox values into a comma-separated string
+func joinCheckboxValues(values []string) string {
+	if len(values) == 0 {
+		return ""
+	}
+	return strings.Join(values, ", ")
+}
 
 // HandlerMpoxAdmissionForm renders the mpox admission form
 func HandlerMpoxAdmissionForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
@@ -102,24 +129,31 @@ func HandlerMpoxAdmissionSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 
 	// Create and insert demographics
 	demographics := models.MpoxDemographics{
-		ClientID:             sql.NullInt64{Int64: int64(clientID), Valid: true},
-		Sex:                  sql.NullString{String: c.FormValue("sex"), Valid: true},
-		DateOfBirth:          ParseNullTime(c.FormValue("date_of_birth")),
-		AgeYears:             sql.NullInt64{Int64: utils.ParseInt64(c.FormValue("age_years")), Valid: true},
-		AgeMonths:            sql.NullInt64{Int64: utils.ParseInt64(c.FormValue("age_months")), Valid: true},
-		AgeDays:              sql.NullInt64{Int64: utils.ParseInt64(c.FormValue("age_days")), Valid: true},
-		HealthCareWorker:     sql.NullString{String: c.FormValue("health_care_worker"), Valid: true},
-		LaboratoryWorker:     sql.NullString{String: c.FormValue("laboratory_worker"), Valid: true},
-		PPEStatus:            sql.NullString{String: c.FormValue("ppe_status"), Valid: true},
-		Tribe:                sql.NullString{String: c.FormValue("tribe"), Valid: true},
-		Pregnant:             sql.NullBool{Bool: c.FormValue("pregnant") == "Y", Valid: true},
-		GestationalWeeks:     sql.NullInt64{Int64: utils.ParseInt64(c.FormValue("gestational_weeks")), Valid: true},
-		LMNP:                 ParseNullTime(c.FormValue("lmnp")),
-		RecentlyPregnant:     sql.NullBool{Bool: c.FormValue("recently_pregnant") == "Y", Valid: true},
-		Pregnant22_42:        sql.NullBool{Bool: c.FormValue("pregnant_22_42") == "Y", Valid: true},
-		TetanusVaccination:   sql.NullBool{Bool: c.FormValue("tetanus_vaccination") == "Y", Valid: true},
-		Occupation:           sql.NullString{String: c.FormValue("occupation"), Valid: true},
-		SiteOfFirstEncounter: sql.NullString{String: c.FormValue("site_of_first_encounter"), Valid: true},
+		ClientID:                  sql.NullInt64{Int64: int64(clientID), Valid: true},
+		Sex:                       sql.NullString{String: c.FormValue("sex"), Valid: true},
+		DateOfBirth:               ParseNullTime(c.FormValue("date_of_birth")),
+		AgeYears:                  sql.NullInt64{Int64: utils.ParseInt64(c.FormValue("age_years")), Valid: true},
+		AgeMonths:                 sql.NullInt64{Int64: utils.ParseInt64(c.FormValue("age_months")), Valid: true},
+		AgeDays:                   sql.NullInt64{Int64: utils.ParseInt64(c.FormValue("age_days")), Valid: true},
+		HealthCareWorker:          sql.NullString{String: c.FormValue("health_care_worker"), Valid: true},
+		LaboratoryWorker:          sql.NullString{String: c.FormValue("laboratory_worker"), Valid: true},
+		PPEStatus:                 sql.NullString{String: c.FormValue("ppe_status"), Valid: true},
+		Tribe:                     sql.NullString{String: c.FormValue("tribe"), Valid: true},
+		Pregnant:                  sql.NullBool{Bool: c.FormValue("pregnant") == "Y", Valid: true},
+		GestationalWeeks:          sql.NullInt64{Int64: utils.ParseInt64(c.FormValue("gestational_weeks")), Valid: true},
+		LMNP:                      ParseNullTime(c.FormValue("lmnp")),
+		RecentlyPregnant:          sql.NullBool{Bool: c.FormValue("recently_pregnant") == "Y", Valid: true},
+		Pregnant22_42:             sql.NullBool{Bool: c.FormValue("pregnant_22_42") == "Y", Valid: true},
+		TetanusVaccination:        sql.NullBool{Bool: c.FormValue("tetanus_vaccination") == "Y", Valid: true},
+		Occupation:                sql.NullString{String: c.FormValue("occupation"), Valid: true},
+		SiteOfFirstEncounter:      sql.NullString{String: joinCheckboxValues(getCheckboxValues(c, "site_of_first_encounter")), Valid: true},
+		SiteOfFirstEncounterOther: sql.NullString{String: c.FormValue("site_of_first_encounter_other"), Valid: true},
+		SuspectConfirmedCase:      sql.NullString{String: c.FormValue("suspect_confirmed_case"), Valid: true},
+		LymphPainful:              sql.NullString{String: c.FormValue("lymph_painful"), Valid: true},
+		LymphLocation:             sql.NullString{String: joinCheckboxValues(getCheckboxValues(c, "lymph_location")), Valid: true},
+		LymphOtherDetail:          sql.NullString{String: c.FormValue("lymph_other_detail"), Valid: true},
+		LymphPainLocation:         sql.NullString{String: joinCheckboxValues(getCheckboxValues(c, "lymph_pain_location")), Valid: true},
+		LymphPainOtherDetail:      sql.NullString{String: c.FormValue("lymph_pain_other_detail"), Valid: true},
 	}
 
 	err = demographics.Insert(db)
@@ -133,7 +167,7 @@ func HandlerMpoxAdmissionSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 		DemographicsID: demographics.ID,
 		KnownLink:      sql.NullBool{Bool: c.FormValue("known_link") == "Y", Valid: true},
 		SexuallyActive: sql.NullBool{Bool: c.FormValue("sexually_active") == "Y", Valid: true},
-		SexOfPartners:  sql.NullString{String: c.FormValue("sex_of_partners"), Valid: true},
+		SexOfPartners:  sql.NullString{String: joinCheckboxValues(getCheckboxValues(c, "sex_of_partners")), Valid: true},
 		RecentTravel:   sql.NullBool{Bool: c.FormValue("recent_travel") == "Y", Valid: true},
 		TravelHighRisk: sql.NullBool{Bool: c.FormValue("travel_high_risk") == "Y", Valid: true},
 		TravelDetails:  sql.NullString{String: c.FormValue("travel_details"), Valid: true},
@@ -147,30 +181,61 @@ func HandlerMpoxAdmissionSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 
 	// Create and insert onset vitals
 	vitals := models.MpoxOnsetVitals{
-		DemographicsID:  demographics.ID,
-		SymptomOnset:    ParseNullTime(c.FormValue("symptom_onset")),
-		Fever:           sql.NullBool{Bool: c.FormValue("fever") == "Y", Valid: true},
-		SoreThroat:      sql.NullBool{Bool: c.FormValue("sore_throat") == "Y", Valid: true},
-		Headache:        sql.NullBool{Bool: c.FormValue("headache") == "Y", Valid: true},
-		MuscleAches:     sql.NullBool{Bool: c.FormValue("muscle_aches") == "Y", Valid: true},
-		Cough:           sql.NullBool{Bool: c.FormValue("cough") == "Y", Valid: true},
-		Fatigue:         sql.NullBool{Bool: c.FormValue("fatigue") == "Y", Valid: true},
-		OralPain:        sql.NullBool{Bool: c.FormValue("oral_pain") == "Y", Valid: true},
-		Nausea:          sql.NullBool{Bool: c.FormValue("nausea") == "Y", Valid: true},
-		Vomiting:        sql.NullBool{Bool: c.FormValue("vomiting") == "Y", Valid: true},
-		Diarrhea:        sql.NullBool{Bool: c.FormValue("diarrhea") == "Y", Valid: true},
-		RectalPain:      sql.NullBool{Bool: c.FormValue("rectal_pain") == "Y", Valid: true},
-		Lesions:         sql.NullBool{Bool: c.FormValue("lesions") == "Y", Valid: true},
-		Lymphadenopathy: sql.NullBool{Bool: c.FormValue("lymphadenopathy") == "Y", Valid: true},
-		Temperature:     sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("temperature")), Valid: true},
-		HeartRate:       sql.NullInt64{Int64: utils.ParseInt64(c.FormValue("heart_rate")), Valid: true},
-		RespiratoryRate: sql.NullInt64{Int64: utils.ParseInt64(c.FormValue("respiratory_rate")), Valid: true},
-		BpSystolic:      sql.NullInt64{Int64: utils.ParseInt64(c.FormValue("bp_systolic")), Valid: true},
-		BpDiastolic:     sql.NullInt64{Int64: utils.ParseInt64(c.FormValue("bp_diastolic")), Valid: true},
-		Dehydration:     sql.NullBool{Bool: c.FormValue("dehydration") == "Y", Valid: true},
-		AVPU:            sql.NullString{String: c.FormValue("avpu"), Valid: true},
-		HeightCm:        sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("height_cm")), Valid: true},
-		WeightKg:        sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("weight_kg")), Valid: true},
+		DemographicsID:                    demographics.ID,
+		SymptomOnset:                      ParseNullTime(c.FormValue("symptom_onset")),
+		Fever:                             sql.NullBool{Bool: c.FormValue("fever") == "Y", Valid: true},
+		FeverOnsetDate:                    ParseNullTime(c.FormValue("fever_onset_date")),
+		SoreThroat:                        sql.NullBool{Bool: c.FormValue("sore_throat") == "Y", Valid: true},
+		SoreThroatOnsetDate:               ParseNullTime(c.FormValue("sore_throat_onset_date")),
+		Headache:                          sql.NullBool{Bool: c.FormValue("headache") == "Y", Valid: true},
+		HeadacheOnsetDate:                 ParseNullTime(c.FormValue("headache_onset_date")),
+		MuscleAches:                       sql.NullBool{Bool: c.FormValue("muscle_aches") == "Y", Valid: true},
+		MuscleAchesOnsetDate:              ParseNullTime(c.FormValue("muscle_aches_onset_date")),
+		Cough:                             sql.NullBool{Bool: c.FormValue("cough") == "Y", Valid: true},
+		CoughOnsetDate:                    ParseNullTime(c.FormValue("cough_onset_date")),
+		Fatigue:                           sql.NullBool{Bool: c.FormValue("fatigue") == "Y", Valid: true},
+		FatigueOnsetDate:                  ParseNullTime(c.FormValue("fatigue_onset_date")),
+		OralPain:                          sql.NullBool{Bool: c.FormValue("oral_pain") == "Y", Valid: true},
+		OralPainOnsetDate:                 ParseNullTime(c.FormValue("oral_pain_onset_date")),
+		Nausea:                            sql.NullBool{Bool: c.FormValue("nausea") == "Y", Valid: true},
+		NauseaOnsetDate:                   ParseNullTime(c.FormValue("nausea_onset_date")),
+		Vomiting:                          sql.NullBool{Bool: c.FormValue("vomiting") == "Y", Valid: true},
+		VomitingOnsetDate:                 ParseNullTime(c.FormValue("vomiting_onset_date")),
+		Diarrhea:                          sql.NullBool{Bool: c.FormValue("diarrhea") == "Y", Valid: true},
+		DiarrheaOnsetDate:                 ParseNullTime(c.FormValue("diarrhea_onset_date")),
+		RectalPain:                        sql.NullBool{Bool: c.FormValue("rectal_pain") == "Y", Valid: true},
+		RectalPainOnsetDate:               ParseNullTime(c.FormValue("rectal_pain_onset_date")),
+		Lesions:                           sql.NullBool{Bool: c.FormValue("lesions") == "Y", Valid: true},
+		LesionsOnsetDate:                  ParseNullTime(c.FormValue("lesions_onset_date")),
+		Lymphadenopathy:                   sql.NullBool{Bool: c.FormValue("lymphadenopathy") == "Y", Valid: true},
+		LymphadenopathyOnsetDate:          ParseNullTime(c.FormValue("lymphadenopathy_onset_date")),
+		Pruritis:                          sql.NullBool{Bool: c.FormValue("pruritis") == "Y", Valid: true},
+		PruritisOnsetDate:                 ParseNullTime(c.FormValue("pruritis_onset_date")),
+		PainSwallowing:                    sql.NullBool{Bool: c.FormValue("pain_swallowing") == "Y", Valid: true},
+		PainSwallowingOnsetDate:           ParseNullTime(c.FormValue("pain_swallowing_onset_date")),
+		DifficultySwallowing:              sql.NullBool{Bool: c.FormValue("difficulty_swallowing") == "Y", Valid: true},
+		DifficultySwallowingOnsetDate:     ParseNullTime(c.FormValue("difficulty_swallowing_onset_date")),
+		Urethritis:                        sql.NullBool{Bool: c.FormValue("urethritis") == "Y", Valid: true},
+		UrethritisOnsetDate:               ParseNullTime(c.FormValue("urethritis_onset_date")),
+		ChestPain:                         sql.NullBool{Bool: c.FormValue("chest_pain") == "Y", Valid: true},
+		ChestPainOnsetDate:                ParseNullTime(c.FormValue("chest_pain_onset_date")),
+		DecreasedUrine:                    sql.NullBool{Bool: c.FormValue("decreased_urine") == "Y", Valid: true},
+		DecreasedUrineOnsetDate:           ParseNullTime(c.FormValue("decreased_urine_onset_date")),
+		Dizziness:                         sql.NullBool{Bool: c.FormValue("dizziness") == "Y", Valid: true},
+		DizzinessOnsetDate:                ParseNullTime(c.FormValue("dizziness_onset_date")),
+		JointPain:                         sql.NullBool{Bool: c.FormValue("joint_pain") == "Y", Valid: true},
+		JointPainOnsetDate:                ParseNullTime(c.FormValue("joint_pain_onset_date")),
+		PsychologicalDisturbance:          sql.NullBool{Bool: c.FormValue("psychological_disturbance") == "Y", Valid: true},
+		PsychologicalDisturbanceOnsetDate: ParseNullTime(c.FormValue("psychological_disturbance_onset_date")),
+		Temperature:                       sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("temperature")), Valid: true},
+		HeartRate:                         sql.NullInt64{Int64: utils.ParseInt64(c.FormValue("heart_rate")), Valid: true},
+		RespiratoryRate:                   sql.NullInt64{Int64: utils.ParseInt64(c.FormValue("respiratory_rate")), Valid: true},
+		BpSystolic:                        sql.NullInt64{Int64: utils.ParseInt64(c.FormValue("bp_systolic")), Valid: true},
+		BpDiastolic:                       sql.NullInt64{Int64: utils.ParseInt64(c.FormValue("bp_diastolic")), Valid: true},
+		Dehydration:                       sql.NullBool{Bool: c.FormValue("dehydration") == "Y", Valid: true},
+		AVPU:                              sql.NullString{String: c.FormValue("avpu"), Valid: true},
+		HeightCm:                          sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("height_cm")), Valid: true},
+		WeightKg:                          sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("weight_kg")), Valid: true},
 	}
 
 	err = vitals.Insert(db)
@@ -265,6 +330,7 @@ func HandlerMpoxAdmissionSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 		Platelets:       sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("platelets")), Valid: true},
 		ProthrombinTime: sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("prothrombin_time")), Valid: true},
 		APTT:            sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("aptt")), Valid: true},
+		Nutritionists:   sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_nutritionists")), Valid: true},
 		MalariaResult:   sql.NullString{String: c.FormValue("malaria_result"), Valid: true},
 		SyphilisResult:  sql.NullString{String: c.FormValue("syphilis_result"), Valid: true},
 		MpoxResult:      sql.NullString{String: c.FormValue("mpox_result"), Valid: true},

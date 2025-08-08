@@ -10,6 +10,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
+	"github.com/lib/pq"
 )
 
 func HandlerMpoxDailyFollowUpForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
@@ -18,6 +19,20 @@ func HandlerMpoxDailyFollowUpForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, sto
 	if err != nil {
 		return c.Status(http.StatusBadRequest).SendString("Invalid client ID")
 	}
+
+	// Validate that the client exists
+	var clientExists bool
+	err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM clients WHERE id = $1)", clientID).Scan(&clientExists)
+	if err != nil {
+		sl.Error("Failed to check client existence", "error", err, "client_id", clientID)
+		return c.Status(500).SendString("Failed to get client details")
+	}
+
+	if !clientExists {
+		sl.Error("Client not found", "client_id", clientID)
+		return c.Status(404).SendString("Client not found")
+	}
+
 	dateStr := c.Query("dte")
 	var encounterDate time.Time
 	if dateStr == "" || dateStr == "0000-00-00" {
@@ -27,15 +42,34 @@ func HandlerMpoxDailyFollowUpForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, sto
 	}
 
 	data := NewTemplateData(c, store)
+	data.Title = "Mpox Daily Follow-Up Form"
 	data.Form = fiber.Map{
 		"ClientID":      clientID,
 		"EncounterDate": encounterDate.Format("2006-01-02"),
 	}
-	return GenerateHTML(c, db, data, "mpox_daily_followup")
+	return GenerateHTML(c, db, data, "mpox_daily_followup_new")
 }
 
 func HandlerMpoxDailyFollowUpSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
-	clientID, _ := strconv.Atoi(c.FormValue("client_id"))
+	clientID, err := strconv.Atoi(c.FormValue("client_id"))
+	if err != nil {
+		sl.Error("Invalid client ID", "error", err, "client_id", c.FormValue("client_id"))
+		return c.Status(400).SendString("Invalid client ID")
+	}
+
+	// Validate that the client exists
+	var clientExists bool
+	err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM clients WHERE id = $1)", clientID).Scan(&clientExists)
+	if err != nil {
+		sl.Error("Failed to check client existence", "error", err, "client_id", clientID)
+		return c.Status(500).SendString("Failed to get client details")
+	}
+
+	if !clientExists {
+		sl.Error("Client not found", "client_id", clientID)
+		return c.Status(404).SendString("Client not found")
+	}
+
 	dateStr := c.FormValue("followup_date")
 	var followupDate sql.NullTime
 	if dateStr != "" {
@@ -44,13 +78,25 @@ func HandlerMpoxDailyFollowUpSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, s
 			followupDate = sql.NullTime{Time: dt, Valid: true}
 		}
 	}
-	// Handle encounter_type as comma-separated string
-	// Fiber v2 does not support FormValues, so only the first checked value will be received by default.
-	encounterTypeStr := c.FormValue("encounter_type")
+	// Handle encounter_type as array from multiple select
+	var encounterTypeArray pq.StringArray
+	// Get all form values for encounter_type (multiple select)
+	form, err := c.MultipartForm()
+	if err == nil && form != nil {
+		if values, exists := form.Value["encounter_type"]; exists {
+			encounterTypeArray = pq.StringArray(values)
+		}
+	}
+	// Fallback to single value if multipart form fails
+	if len(encounterTypeArray) == 0 {
+		if singleValue := c.FormValue("encounter_type"); singleValue != "" {
+			encounterTypeArray = pq.StringArray{singleValue}
+		}
+	}
 	followup := &models.MpoxDailyFollowUp{
 		ClientID:           clientID,
 		FollowUpDate:       followupDate,
-		EncounterType:      parseNullString(encounterTypeStr),
+		EncounterType:      encounterTypeArray,
 		OtherSite:          parseNullString(c.FormValue("other_site")),
 		SpO2:               parseNullInt64(c.FormValue("spo2")),
 		NewLesions:         parseNullBool(c.FormValue("new_lesions")),

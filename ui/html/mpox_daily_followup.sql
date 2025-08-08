@@ -1,7 +1,7 @@
 -- Mpox Daily Follow-Up Table
 CREATE TABLE IF NOT EXISTS mpox_daily_followup (
     id SERIAL PRIMARY KEY,
-    client_id INTEGER NOT NULL REFERENCES mpox_demographics(id) ON DELETE CASCADE,
+    client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
     followup_date DATE NOT NULL,
     encounter_type TEXT[],
     other_site TEXT,

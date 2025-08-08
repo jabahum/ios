@@ -255,7 +255,7 @@ func HandlerCasesList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 
 	sl.Info("Loading cases for outbreak", "user_id", userID, "outbreak_id", outbreakID)
 
-	// Get user's facility from session
+	// Get user's facility from database
 	userFacility := GetCurrentFacility(c, db, sl, store)
 
 	// Build filter based on outbreak and facility

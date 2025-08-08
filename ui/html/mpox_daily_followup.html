@@ -3,8 +3,77 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mpox Daily Follow-Up</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+      <title>Mpox Daily Follow-Up</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Checkbox dropdown styles */
+        .checkbox-dropdown {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .checkbox-dropdown-button {
+            background: white;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            min-height: 38px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .checkbox-dropdown-button:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+        
+        .checkbox-dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ced4da;
+            border-top: none;
+            border-radius: 0 0 0.375rem 0.375rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 1000;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .checkbox-dropdown-content.show {
+            display: block;
+        }
+        
+        .checkbox-dropdown-item {
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .checkbox-dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .checkbox-dropdown-item input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        
+        .dropdown-arrow {
+            transition: transform 0.2s;
+        }
+        
+        .dropdown-arrow.rotated {
+            transform: rotate(180deg);
+        }
+    </style>
 </head>
 <body class="bg-light">
 <div class="container mt-4 mb-5">
@@ -21,17 +90,25 @@
           </div>
           <div class="col-md-8">
             <label>Type of encounter</label>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="checkbox" name="encounter_type" value="Outpatient" id="outpatient">
-              <label class="form-check-label" for="outpatient">Outpatient</label>
-            </div>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="checkbox" name="encounter_type" value="Emergency" id="emergency">
-              <label class="form-check-label" for="emergency">Emergency department</label>
-            </div>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="checkbox" name="encounter_type" value="Inpatient" id="inpatient">
-              <label class="form-check-label" for="inpatient">Inpatient ward</label>
+            <div class="checkbox-dropdown">
+              <div class="checkbox-dropdown-button" tabindex="0">
+                <span class="selected-text">Select encounter types...</span>
+                <span class="dropdown-arrow">▼</span>
+              </div>
+              <div class="checkbox-dropdown-content">
+                <div class="checkbox-dropdown-item">
+                  <input type="checkbox" name="encounter_type" value="Outpatient" id="followup_outpatient">
+                  <label for="followup_outpatient">Outpatient</label>
+                </div>
+                <div class="checkbox-dropdown-item">
+                  <input type="checkbox" name="encounter_type" value="Emergency" id="followup_emergency">
+                  <label for="followup_emergency">Emergency department</label>
+                </div>
+                <div class="checkbox-dropdown-item">
+                  <input type="checkbox" name="encounter_type" value="Inpatient" id="followup_inpatient">
+                  <label for="followup_inpatient">Inpatient ward</label>
+                </div>
+              </div>
             </div>
             <input type="text" name="other_site" class="form-control mt-2" placeholder="Other site (specify)">
           </div>
@@ -145,5 +222,66 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      // Initialize checkbox dropdowns
+      initializeCheckboxDropdowns();
+  });
+  
+  function initializeCheckboxDropdowns() {
+    const dropdowns = document.querySelectorAll('.checkbox-dropdown');
+    
+    dropdowns.forEach(dropdown => {
+      const button = dropdown.querySelector('.checkbox-dropdown-button');
+      const content = dropdown.querySelector('.checkbox-dropdown-content');
+      const arrow = dropdown.querySelector('.dropdown-arrow');
+      const selectedText = dropdown.querySelector('.selected-text');
+      const checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
+      
+      // Toggle dropdown
+      button.addEventListener('click', function() {
+        content.classList.toggle('show');
+        arrow.classList.toggle('rotated');
+      });
+      
+      // Handle checkbox changes
+      checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+          updateSelectedText(dropdown);
+        });
+      });
+      
+      // Close dropdown when clicking outside
+      document.addEventListener('click', function(event) {
+        if (!dropdown.contains(event.target)) {
+          content.classList.remove('show');
+          arrow.classList.remove('rotated');
+        }
+      });
+      
+      // Prevent dropdown from closing when clicking inside content
+      content.addEventListener('click', function(event) {
+        event.stopPropagation();
+      });
+      
+      // Initialize text
+      updateSelectedText(dropdown);
+    });
+  }
+  
+  function updateSelectedText(dropdown) {
+    const selectedText = dropdown.querySelector('.selected-text');
+    const checkboxes = dropdown.querySelectorAll('input[type="checkbox"]:checked');
+    const defaultText = selectedText.textContent.includes('Select') ? selectedText.textContent : 'Select options...';
+    
+    if (checkboxes.length === 0) {
+      selectedText.textContent = defaultText;
+    } else if (checkboxes.length === 1) {
+      selectedText.textContent = checkboxes[0].nextElementSibling.textContent;
+    } else {
+      selectedText.textContent = `${checkboxes.length} selected`;
+    }
+  }
+</script>
 </body>
 </html> 

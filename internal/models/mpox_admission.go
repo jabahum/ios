@@ -7,27 +7,34 @@ import (
 
 // MpoxDemographics represents the demographics information
 type MpoxDemographics struct {
-	ID                   int
-	ClientID             sql.NullInt64
-	Sex                  sql.NullString
-	DateOfBirth          sql.NullTime
-	AgeYears             sql.NullInt64
-	AgeMonths            sql.NullInt64
-	AgeDays              sql.NullInt64
-	HealthCareWorker     sql.NullString
-	LaboratoryWorker     sql.NullString
-	PPEStatus            sql.NullString
-	Tribe                sql.NullString
-	Pregnant             sql.NullBool
-	GestationalWeeks     sql.NullInt64
-	LMNP                 sql.NullTime
-	RecentlyPregnant     sql.NullBool
-	Pregnant22_42        sql.NullBool
-	TetanusVaccination   sql.NullBool
-	Occupation           sql.NullString
-	SiteOfFirstEncounter sql.NullString
-	CreatedAt            time.Time
-	UpdatedAt            time.Time
+	ID                        int
+	ClientID                  sql.NullInt64
+	Sex                       sql.NullString
+	DateOfBirth               sql.NullTime
+	AgeYears                  sql.NullInt64
+	AgeMonths                 sql.NullInt64
+	AgeDays                   sql.NullInt64
+	HealthCareWorker          sql.NullString
+	LaboratoryWorker          sql.NullString
+	PPEStatus                 sql.NullString
+	Tribe                     sql.NullString
+	Pregnant                  sql.NullBool
+	GestationalWeeks          sql.NullInt64
+	LMNP                      sql.NullTime
+	RecentlyPregnant          sql.NullBool
+	Pregnant22_42             sql.NullBool
+	TetanusVaccination        sql.NullBool
+	Occupation                sql.NullString
+	SiteOfFirstEncounter      sql.NullString
+	SiteOfFirstEncounterOther sql.NullString
+	SuspectConfirmedCase      sql.NullString
+	LymphPainful              sql.NullString
+	LymphLocation             sql.NullString
+	LymphOtherDetail          sql.NullString
+	LymphPainLocation         sql.NullString
+	LymphPainOtherDetail      sql.NullString
+	CreatedAt                 time.Time
+	UpdatedAt                 time.Time
 }
 
 // MpoxExposureHistory represents exposure and social history
@@ -46,33 +53,64 @@ type MpoxExposureHistory struct {
 
 // MpoxOnsetVitals represents date of onset and vital signs
 type MpoxOnsetVitals struct {
-	ID              int
-	DemographicsID  int
-	SymptomOnset    sql.NullTime
-	Fever           sql.NullBool
-	SoreThroat      sql.NullBool
-	Headache        sql.NullBool
-	MuscleAches     sql.NullBool
-	Cough           sql.NullBool
-	Fatigue         sql.NullBool
-	OralPain        sql.NullBool
-	Nausea          sql.NullBool
-	Vomiting        sql.NullBool
-	Diarrhea        sql.NullBool
-	RectalPain      sql.NullBool
-	Lesions         sql.NullBool
-	Lymphadenopathy sql.NullBool
-	Temperature     sql.NullFloat64
-	HeartRate       sql.NullInt64
-	RespiratoryRate sql.NullInt64
-	BpSystolic      sql.NullInt64
-	BpDiastolic     sql.NullInt64
-	Dehydration     sql.NullBool
-	AVPU            sql.NullString
-	HeightCm        sql.NullFloat64
-	WeightKg        sql.NullFloat64
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	ID                                int
+	DemographicsID                    int
+	SymptomOnset                      sql.NullTime
+	Fever                             sql.NullBool
+	FeverOnsetDate                    sql.NullTime
+	SoreThroat                        sql.NullBool
+	SoreThroatOnsetDate               sql.NullTime
+	Headache                          sql.NullBool
+	HeadacheOnsetDate                 sql.NullTime
+	MuscleAches                       sql.NullBool
+	MuscleAchesOnsetDate              sql.NullTime
+	Cough                             sql.NullBool
+	CoughOnsetDate                    sql.NullTime
+	Fatigue                           sql.NullBool
+	FatigueOnsetDate                  sql.NullTime
+	OralPain                          sql.NullBool
+	OralPainOnsetDate                 sql.NullTime
+	Nausea                            sql.NullBool
+	NauseaOnsetDate                   sql.NullTime
+	Vomiting                          sql.NullBool
+	VomitingOnsetDate                 sql.NullTime
+	Diarrhea                          sql.NullBool
+	DiarrheaOnsetDate                 sql.NullTime
+	RectalPain                        sql.NullBool
+	RectalPainOnsetDate               sql.NullTime
+	Lesions                           sql.NullBool
+	LesionsOnsetDate                  sql.NullTime
+	Lymphadenopathy                   sql.NullBool
+	LymphadenopathyOnsetDate          sql.NullTime
+	Pruritis                          sql.NullBool
+	PruritisOnsetDate                 sql.NullTime
+	PainSwallowing                    sql.NullBool
+	PainSwallowingOnsetDate           sql.NullTime
+	DifficultySwallowing              sql.NullBool
+	DifficultySwallowingOnsetDate     sql.NullTime
+	Urethritis                        sql.NullBool
+	UrethritisOnsetDate               sql.NullTime
+	ChestPain                         sql.NullBool
+	ChestPainOnsetDate                sql.NullTime
+	DecreasedUrine                    sql.NullBool
+	DecreasedUrineOnsetDate           sql.NullTime
+	Dizziness                         sql.NullBool
+	DizzinessOnsetDate                sql.NullTime
+	JointPain                         sql.NullBool
+	JointPainOnsetDate                sql.NullTime
+	PsychologicalDisturbance          sql.NullBool
+	PsychologicalDisturbanceOnsetDate sql.NullTime
+	Temperature                       sql.NullFloat64
+	HeartRate                         sql.NullInt64
+	RespiratoryRate                   sql.NullInt64
+	BpSystolic                        sql.NullInt64
+	BpDiastolic                       sql.NullInt64
+	Dehydration                       sql.NullBool
+	AVPU                              sql.NullString
+	HeightCm                          sql.NullFloat64
+	WeightKg                          sql.NullFloat64
+	CreatedAt                         time.Time
+	UpdatedAt                         time.Time
 }
 
 // MpoxComorbidities represents co-morbidities
@@ -156,6 +194,7 @@ type MpoxLaboratoryInvestigations struct {
 	Platelets       sql.NullFloat64
 	ProthrombinTime sql.NullFloat64
 	APTT            sql.NullFloat64
+	Nutritionists   sql.NullFloat64
 	MalariaResult   sql.NullString
 	SyphilisResult  sql.NullString
 	MpoxResult      sql.NullString
@@ -180,16 +219,23 @@ func (d *MpoxDemographics) Insert(db *sql.DB) error {
 			health_care_worker, laboratory_worker, ppe_status, tribe, pregnant,
 			gestational_weeks, lmnp, recently_pregnant, pregnant_22_42,
 			tetanus_vaccination, occupation, site_of_first_encounter,
+			site_of_first_encounter_other, suspect_confirmed_case,
+			lymph_painful, lymph_location, lymph_other_detail,
+			lymph_pain_location, lymph_pain_other_detail,
 			created_at, updated_at
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
-			$16, $17, $18, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+			$16, $17, $18, $19, $20, $21, $22, $23, $24, $25,
+			CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
 		) RETURNING id`
 	return db.QueryRow(query,
 		d.ClientID, d.Sex, d.DateOfBirth, d.AgeYears, d.AgeMonths, d.AgeDays,
 		d.HealthCareWorker, d.LaboratoryWorker, d.PPEStatus, d.Tribe, d.Pregnant,
 		d.GestationalWeeks, d.LMNP, d.RecentlyPregnant, d.Pregnant22_42,
-		d.TetanusVaccination, d.Occupation, d.SiteOfFirstEncounter).Scan(&d.ID)
+		d.TetanusVaccination, d.Occupation, d.SiteOfFirstEncounter,
+		d.SiteOfFirstEncounterOther, d.SuspectConfirmedCase,
+		d.LymphPainful, d.LymphLocation, d.LymphOtherDetail,
+		d.LymphPainLocation, d.LymphPainOtherDetail).Scan(&d.ID)
 }
 
 func (e *MpoxExposureHistory) Insert(db *sql.DB) error {
@@ -210,23 +256,31 @@ func (e *MpoxExposureHistory) Insert(db *sql.DB) error {
 func (v *MpoxOnsetVitals) Insert(db *sql.DB) error {
 	query := `
 		INSERT INTO mpox_onset_vitals (
-			demographics_id, symptom_onset, fever, sore_throat, headache,
-			muscle_aches, cough, fatigue, oral_pain, nausea, vomiting,
-			diarrhea, rectal_pain, lesions, lymphadenopathy, temperature,
-			heart_rate, respiratory_rate, bp_systolic, bp_diastolic,
-			dehydration, avpu, height_cm, weight_kg,
-			created_at, updated_at
+			demographics_id, symptom_onset, fever, fever_onset_date, sore_throat, sore_throat_onset_date,
+			headache, headache_onset_date, muscle_aches, muscle_aches_onset_date, cough, cough_onset_date,
+			fatigue, fatigue_onset_date, oral_pain, oral_pain_onset_date, nausea, nausea_onset_date,
+			vomiting, vomiting_onset_date, diarrhea, diarrhea_onset_date, rectal_pain, rectal_pain_onset_date,
+			lesions, lesions_onset_date, lymphadenopathy, lymphadenopathy_onset_date, pruritis, pruritis_onset_date,
+			pain_swallowing, pain_swallowing_onset_date, difficulty_swallowing, difficulty_swallowing_onset_date,
+			urethritis, urethritis_onset_date, chest_pain, chest_pain_onset_date, decreased_urine, decreased_urine_onset_date,
+			dizziness, dizziness_onset_date, joint_pain, joint_pain_onset_date, psychological_disturbance, psychological_disturbance_onset_date,
+			temperature, heart_rate, respiratory_rate, bp_systolic, bp_diastolic, dehydration, avpu, height_cm, weight_kg
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
-			$16, $17, $18, $19, $20, $21, $22, $23, $24,
-			CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
+			$17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
+			$31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44,
+			$45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55
 		) RETURNING id`
 	return db.QueryRow(query,
-		v.DemographicsID, v.SymptomOnset, v.Fever, v.SoreThroat, v.Headache,
-		v.MuscleAches, v.Cough, v.Fatigue, v.OralPain, v.Nausea, v.Vomiting,
-		v.Diarrhea, v.RectalPain, v.Lesions, v.Lymphadenopathy, v.Temperature,
-		v.HeartRate, v.RespiratoryRate, v.BpSystolic, v.BpDiastolic,
-		v.Dehydration, v.AVPU, v.HeightCm, v.WeightKg).Scan(&v.ID)
+		v.DemographicsID, v.SymptomOnset, v.Fever, v.FeverOnsetDate, v.SoreThroat, v.SoreThroatOnsetDate,
+		v.Headache, v.HeadacheOnsetDate, v.MuscleAches, v.MuscleAchesOnsetDate, v.Cough, v.CoughOnsetDate,
+		v.Fatigue, v.FatigueOnsetDate, v.OralPain, v.OralPainOnsetDate, v.Nausea, v.NauseaOnsetDate,
+		v.Vomiting, v.VomitingOnsetDate, v.Diarrhea, v.DiarrheaOnsetDate, v.RectalPain, v.RectalPainOnsetDate,
+		v.Lesions, v.LesionsOnsetDate, v.Lymphadenopathy, v.LymphadenopathyOnsetDate, v.Pruritis, v.PruritisOnsetDate,
+		v.PainSwallowing, v.PainSwallowingOnsetDate, v.DifficultySwallowing, v.DifficultySwallowingOnsetDate,
+		v.Urethritis, v.UrethritisOnsetDate, v.ChestPain, v.ChestPainOnsetDate, v.DecreasedUrine, v.DecreasedUrineOnsetDate,
+		v.Dizziness, v.DizzinessOnsetDate, v.JointPain, v.JointPainOnsetDate, v.PsychologicalDisturbance, v.PsychologicalDisturbanceOnsetDate,
+		v.Temperature, v.HeartRate, v.RespiratoryRate, v.BpSystolic, v.BpDiastolic, v.Dehydration, v.AVPU, v.HeightCm, v.WeightKg).Scan(&v.ID)
 }
 
 func (c *MpoxComorbidities) Insert(db *sql.DB) error {
@@ -279,18 +333,18 @@ func (l *MpoxLaboratoryInvestigations) Insert(db *sql.DB) error {
 			demographics_id, alt, ast, creatinine, potassium, urea,
 			creatine_kinase, calcium, sodium, crp, glucose, lactate,
 			haemoglobin, total_bilirubin, wbc_count, platelets,
-			prothrombin_time, aptt, malaria_result, syphilis_result,
+			prothrombin_time, aptt, nutritionists, malaria_result, syphilis_result,
 			mpox_result, created_at, updated_at
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
-			$16, $17, $18, $19, $20, $21,
+			$16, $17, $18, $19, $20, $21, $22,
 			CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
 		) RETURNING id`
 	return db.QueryRow(query,
 		l.DemographicsID, l.ALT, l.AST, l.Creatinine, l.Potassium, l.Urea,
 		l.CreatineKinase, l.Calcium, l.Sodium, l.CRP, l.Glucose, l.Lactate,
 		l.Haemoglobin, l.TotalBilirubin, l.WBCCount, l.Platelets,
-		l.ProthrombinTime, l.APTT, l.MalariaResult, l.SyphilisResult,
+		l.ProthrombinTime, l.APTT, l.Nutritionists, l.MalariaResult, l.SyphilisResult,
 		l.MpoxResult).Scan(&l.ID)
 }
 
