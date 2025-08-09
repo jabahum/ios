@@ -428,11 +428,62 @@ func HandlerMpoxAdmissionSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 		DataEntrantName:       sql.NullString{String: c.FormValue("data_entrant_name"), Valid: true},
 	}
 
-	err = labs.Insert(db)
-	if err != nil {
-		sl.Error("Error inserting laboratory investigations", "error", err)
+	// Robust two-step save to avoid INSERT column/value mismatches
+	var mpoxLabID int
+	if err := db.QueryRowContext(c.Context(), "INSERT INTO mpox_laboratory_investigations (demographics_id) VALUES ($1) RETURNING id", demographics.ID).Scan(&mpoxLabID); err != nil {
+		sl.Error("Error creating mpox lab row", "error", err)
 		return c.Status(http.StatusInternalServerError).SendString("Error saving laboratory investigations")
 	}
+
+	updateSQL := `UPDATE mpox_laboratory_investigations SET
+		alt=$1, ast=$2, creatinine=$3, potassium=$4, urea=$5,
+		creatine_kinase=$6, calcium=$7, sodium=$8, crp=$9, glucose=$10, lactate=$11,
+		haemoglobin=$12, total_bilirubin=$13, wbc_count=$14, platelets=$15,
+		prothrombin_time=$16, aptt=$17, total_protein=$18, albumin=$19, bilirubin_d=$20,
+		lymphocytes=$21, monocytes=$22, eosinophils=$23, basophils=$24, neutrophils=$25,
+		hgb=$26, hct=$27, mcv=$28, mch=$29, mchc=$30, rdw=$31, rdw_sd=$32, rdw_cv=$33,
+		mpv=$34, pdw=$35, pct=$36, lab_other=$37,
+		lab_alt_notdone=$38, lab_ast_notdone=$39, lab_creatinine_notdone=$40,
+		lab_potassium_notdone=$41, total_protein_notdone=$42, albumin_notdone=$43,
+		lab_urea_notdone=$44, lab_ck_notdone=$45, lab_calcium_notdone=$46, lab_sodium_notdone=$47,
+		lab_lymphocytes_notdone=$48, lab_monocytes_notdone=$49, lab_eosinophils_notdone=$50,
+		lab_basophils_notdone=$51, lab_crp_notdone=$52, lab_neutrophils_notdone=$53,
+		lab_hgb_notdone=$54, lab_hct_notdone=$55, lab_mcv_notdone=$56, lab_mch_notdone=$57,
+		lab_mchc_notdone=$58, lab_rdw_notdone=$59, lab_rdw_sd_notdone=$60, lab_rdw_cv_notdone=$61,
+		lab_mpv_notdone=$62, lab_pdw_notdone=$63, lab_pct_notdone=$64, lab_other_notdone=$65,
+		lab_glucose_notdone=$66, lab_lactate_notdone=$67, lab_haemoglobin_notdone=$68,
+		lab_bilirubin_notdone=$69, lab_bilirubin_d_notdone=$70, lab_wbc_notdone=$71,
+		lab_platelets_notdone=$72, lab_prothrombin_notdone=$73, lab_aptt_notdone=$74,
+		other_malaria=$75, other_hiv=$76, other_syphilis=$77, other_mpox=$78, hepatitis_b=$79, hepatitis_c=$80,
+		data_entrant_name=$81, updated_at=CURRENT_TIMESTAMP
+		WHERE id=$82`
+
+	if _, err := db.ExecContext(c.Context(), updateSQL,
+		labs.ALT, labs.AST, labs.Creatinine, labs.Potassium, labs.Urea,
+		labs.CreatineKinase, labs.Calcium, labs.Sodium, labs.CRP, labs.Glucose, labs.Lactate,
+		labs.Haemoglobin, labs.TotalBilirubin, labs.WBCCount, labs.Platelets,
+		labs.ProthrombinTime, labs.APTT, labs.TotalProtein, labs.Albumin, labs.BilirubinD,
+		labs.Lymphocytes, labs.Monocytes, labs.Eosinophils, labs.Basophils, labs.Neutrophils,
+		labs.HGB, labs.HCT, labs.MCV, labs.MCH, labs.MCHC, labs.RDW, labs.RDWSD, labs.RDWCV,
+		labs.MPV, labs.PDW, labs.PCT, labs.LabOther,
+		labs.LabALTNotDone, labs.LabASTNotDone, labs.LabCreatinineNotDone,
+		labs.LabPotassiumNotDone, labs.TotalProteinNotDone, labs.AlbuminNotDone,
+		labs.LabUreaNotDone, labs.LabCKNotDone, labs.LabCalciumNotDone, labs.LabSodiumNotDone,
+		labs.LabLymphocytesNotDone, labs.LabMonocytesNotDone, labs.LabEosinophilsNotDone,
+		labs.LabBasophilsNotDone, labs.LabCRPNotDone, labs.LabNeutrophilsNotDone,
+		labs.LabHGBNotDone, labs.LabHCTNotDone, labs.LabMCVNotDone, labs.LabMCHNotDone,
+		labs.LabMCHCNotDone, labs.LabRDWNotDone, labs.LabRDWSDNotDone, labs.LabRDWCVNotDone,
+		labs.LabMPVNotDone, labs.LabPDWNotDone, labs.LabPCTNotDone, labs.LabOtherNotDone,
+		labs.LabGlucoseNotDone, labs.LabLactateNotDone, labs.LabHaemoglobinNotDone,
+		labs.LabBilirubinNotDone, labs.LabBilirubinDNotDone, labs.LabWBCNotDone,
+		labs.LabPlateletsNotDone, labs.LabProthrombinNotDone, labs.LabAPTTNotDone,
+		labs.OtherMalaria, labs.OtherHIV, labs.OtherSyphilis, labs.OtherMpox, labs.HepatitisB, labs.HepatitisC,
+		labs.DataEntrantName, mpoxLabID); err != nil {
+		sl.Error("Error updating mpox lab row", "error", err)
+		return c.Status(http.StatusInternalServerError).SendString("Error saving laboratory investigations")
+	}
+
+	// Success for lab section
 
 	// Create and insert data entrant
 	dataEntrant := models.MpoxDataEntrant{

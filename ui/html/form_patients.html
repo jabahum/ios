@@ -119,7 +119,7 @@
                 {{else if eq .OutbreakID 6}}
                     <a href="/cases/encounters/mpox-admission/new/{{.Form.ID}}/?dte=0000-00-00" class="menu-item">Admission Form</a>
                     {{if .HasMpoxAdmission}}
-                    <a href="/cases/encounters/mpox-daily-follow-up/new/{{.Form.ID}}/?dte=0000-00-00" class="menu-item">Add Follow Up</a>
+                    <!-- <a href="/cases/encounters/mpox-daily-follow-up/new/{{.Form.ID}}/?dte=0000-00-00" class="menu-item">Add Follow Up</a> -->
                     <a href="/cases/encounters/new/{{.Form.ID}}/?dte=0000-00-00&outbreak_id={{.OutbreakID}}" class="menu-item">New Encounter</a>
                     {{end}}
                 {{else if eq .OutbreakID 7}}

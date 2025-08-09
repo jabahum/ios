@@ -1244,7 +1244,7 @@ func GetDBOptions(c *fiber.Ctx, db *sql.DB, table, cat, deflt, fld_name, fld_lab
 // GetDBLabel returns the label for a database value
 func GetDBLabel(c *fiber.Ctx, db *sql.DB, table, namesFld, indexFld string, indexID int64) string {
 	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s = $1", namesFld, table, indexFld)
-	var label string
+	var label sql.NullString
 	err := db.QueryRowContext(c.Context(), query, indexID).Scan(&label)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -1254,7 +1254,10 @@ func GetDBLabel(c *fiber.Ctx, db *sql.DB, table, namesFld, indexFld string, inde
 		log.Println("Error executing query:", err)
 		return ""
 	}
-	return label
+	if !label.Valid {
+		return ""
+	}
+	return label.String
 }
 
 // Get_Client_Optionz returns a map of client options
