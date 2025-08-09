@@ -55,10 +55,22 @@ func HandlerMpoxAdmissionForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 
 	// Get client details
 	var client models.Client
-	err = db.QueryRow("SELECT id, firstname, lastname FROM clients WHERE id = $1", clientID).Scan(&client.ID, &client.Firstname, &client.Lastname)
+	err = db.QueryRow("SELECT id, firstname, lastname, site FROM clients WHERE id = $1", clientID).Scan(&client.ID, &client.Firstname, &client.Lastname, &client.Site)
 	if err != nil {
 		sl.Error("Error fetching client", "error", err)
 		return c.Status(http.StatusInternalServerError).SendString("Error fetching client details")
+	}
+
+	// Check facility-based access control
+	userID := GetCurrentUser(c, store)
+	userFacility := GetCurrentFacility(c, db, sl, store)
+	if userFacility > 0 {
+		// User has a facility assigned, check if they can access this case
+		if client.Site.Int64 != int64(userFacility) {
+			sl.Error("User attempted to access mpox admission for case from different facility",
+				"user_id", userID, "user_facility", userFacility, "case_site", client.Site.Int64, "case_id", clientID)
+			return c.Status(403).SendString("Access denied: You can only access cases from your assigned facility.")
+		}
 	}
 
 	// Check if an admission exists for this client
@@ -126,6 +138,26 @@ func HandlerMpoxAdmissionSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 
 	// Parse form data
 	clientID, _ := strconv.Atoi(c.FormValue("client_id"))
+
+	// Check facility-based access control
+	userID := GetCurrentUser(c, store)
+	userFacility := GetCurrentFacility(c, db, sl, store)
+	if userFacility > 0 {
+		// Get client details to check facility
+		var clientSite sql.NullInt64
+		err := db.QueryRow("SELECT site FROM clients WHERE id = $1", clientID).Scan(&clientSite)
+		if err != nil {
+			sl.Error("Failed to get client for facility check", "error", err, "clientID", clientID)
+			return c.Status(http.StatusInternalServerError).SendString("Failed to get client details")
+		}
+
+		// User has a facility assigned, check if they can access this case
+		if clientSite.Int64 != int64(userFacility) {
+			sl.Error("User attempted to submit mpox admission for case from different facility",
+				"user_id", userID, "user_facility", userFacility, "case_site", clientSite.Int64, "case_id", clientID)
+			return c.Status(403).SendString("Access denied: You can only access cases from your assigned facility.")
+		}
+	}
 
 	// Create and insert demographics
 	demographics := models.MpoxDemographics{
@@ -312,28 +344,88 @@ func HandlerMpoxAdmissionSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 
 	// Create and insert laboratory investigations
 	labs := models.MpoxLaboratoryInvestigations{
-		DemographicsID:  demographics.ID,
-		ALT:             sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("alt")), Valid: true},
-		AST:             sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("ast")), Valid: true},
-		Creatinine:      sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("creatinine")), Valid: true},
-		Potassium:       sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("potassium")), Valid: true},
-		Urea:            sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("urea")), Valid: true},
-		CreatineKinase:  sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("creatine_kinase")), Valid: true},
-		Calcium:         sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("calcium")), Valid: true},
-		Sodium:          sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("sodium")), Valid: true},
-		CRP:             sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("crp")), Valid: true},
-		Glucose:         sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("glucose")), Valid: true},
-		Lactate:         sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lactate")), Valid: true},
-		Haemoglobin:     sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("haemoglobin")), Valid: true},
-		TotalBilirubin:  sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("total_bilirubin")), Valid: true},
-		WBCCount:        sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("wbc_count")), Valid: true},
-		Platelets:       sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("platelets")), Valid: true},
-		ProthrombinTime: sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("prothrombin_time")), Valid: true},
-		APTT:            sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("aptt")), Valid: true},
-		Nutritionists:   sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_nutritionists")), Valid: true},
-		MalariaResult:   sql.NullString{String: c.FormValue("malaria_result"), Valid: true},
-		SyphilisResult:  sql.NullString{String: c.FormValue("syphilis_result"), Valid: true},
-		MpoxResult:      sql.NullString{String: c.FormValue("mpox_result"), Valid: true},
+		DemographicsID:        demographics.ID,
+		ALT:                   sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_alt")), Valid: true},
+		AST:                   sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_ast")), Valid: true},
+		Creatinine:            sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_creatinine")), Valid: true},
+		Potassium:             sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_potassium")), Valid: true},
+		Urea:                  sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_urea")), Valid: true},
+		CreatineKinase:        sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_ck")), Valid: true},
+		Calcium:               sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_calcium")), Valid: true},
+		Sodium:                sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_sodium")), Valid: true},
+		CRP:                   sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_crp")), Valid: true},
+		Glucose:               sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_glucose")), Valid: true},
+		Lactate:               sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_lactate")), Valid: true},
+		Haemoglobin:           sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_haemoglobin")), Valid: true},
+		TotalBilirubin:        sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_bilirubin")), Valid: true},
+		WBCCount:              sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_wbc")), Valid: true},
+		Platelets:             sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_platelets")), Valid: true},
+		ProthrombinTime:       sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_prothrombin")), Valid: true},
+		APTT:                  sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_aptt")), Valid: true},
+		TotalProtein:          sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("total_protein")), Valid: true},
+		Albumin:               sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("albumin")), Valid: true},
+		BilirubinD:            sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_bilirubin_d")), Valid: true},
+		Lymphocytes:           sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_lymphocytes")), Valid: true},
+		Monocytes:             sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_monocytes")), Valid: true},
+		Eosinophils:           sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_eosinophils")), Valid: true},
+		Basophils:             sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_basophils")), Valid: true},
+		Neutrophils:           sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_neutrophils")), Valid: true},
+		HGB:                   sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_hgb")), Valid: true},
+		HCT:                   sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_hct")), Valid: true},
+		MCV:                   sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_mcv")), Valid: true},
+		MCH:                   sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_mch")), Valid: true},
+		MCHC:                  sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_mchc")), Valid: true},
+		RDW:                   sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_rdw")), Valid: true},
+		RDWSD:                 sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_rdw_sd")), Valid: true},
+		RDWCV:                 sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_rdw_cv")), Valid: true},
+		MPV:                   sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_mpv")), Valid: true},
+		PDW:                   sql.NullString{String: c.FormValue("pdw"), Valid: true},
+		PCT:                   sql.NullFloat64{Float64: utils.ParseFloat64(c.FormValue("lab_pct")), Valid: true},
+		LabOther:              sql.NullString{String: c.FormValue("lab_other"), Valid: true},
+		LabALTNotDone:         sql.NullBool{Bool: c.FormValue("lab_alt_notdone") == "on", Valid: true},
+		LabASTNotDone:         sql.NullBool{Bool: c.FormValue("lab_ast_notdone") == "on", Valid: true},
+		LabCreatinineNotDone:  sql.NullBool{Bool: c.FormValue("lab_creatinine_notdone") == "on", Valid: true},
+		LabPotassiumNotDone:   sql.NullBool{Bool: c.FormValue("lab_potassium_notdone") == "on", Valid: true},
+		TotalProteinNotDone:   sql.NullBool{Bool: c.FormValue("total_protein_notdone") == "on", Valid: true},
+		AlbuminNotDone:        sql.NullBool{Bool: c.FormValue("albumin_notdone") == "on", Valid: true},
+		LabUreaNotDone:        sql.NullBool{Bool: c.FormValue("lab_urea_notdone") == "on", Valid: true},
+		LabCKNotDone:          sql.NullBool{Bool: c.FormValue("lab_ck_notdone") == "on", Valid: true},
+		LabCalciumNotDone:     sql.NullBool{Bool: c.FormValue("lab_calcium_notdone") == "on", Valid: true},
+		LabSodiumNotDone:      sql.NullBool{Bool: c.FormValue("lab_sodium_notdone") == "on", Valid: true},
+		LabLymphocytesNotDone: sql.NullBool{Bool: c.FormValue("lab_lymphocytes_notdone") == "on", Valid: true},
+		LabMonocytesNotDone:   sql.NullBool{Bool: c.FormValue("lab_monocytes_notdone") == "on", Valid: true},
+		LabEosinophilsNotDone: sql.NullBool{Bool: c.FormValue("lab_eosinophils_notdone") == "on", Valid: true},
+		LabBasophilsNotDone:   sql.NullBool{Bool: c.FormValue("lab_basophils_notdone") == "on", Valid: true},
+		LabCRPNotDone:         sql.NullBool{Bool: c.FormValue("lab_crp_notdone") == "on", Valid: true},
+		LabNeutrophilsNotDone: sql.NullBool{Bool: c.FormValue("lab_neutrophils_notdone") == "on", Valid: true},
+		LabHGBNotDone:         sql.NullBool{Bool: c.FormValue("lab_hgb_notdone") == "on", Valid: true},
+		LabHCTNotDone:         sql.NullBool{Bool: c.FormValue("lab_hct_notdone") == "on", Valid: true},
+		LabMCVNotDone:         sql.NullBool{Bool: c.FormValue("lab_mcv_notdone") == "on", Valid: true},
+		LabMCHNotDone:         sql.NullBool{Bool: c.FormValue("lab_mch_notdone") == "on", Valid: true},
+		LabMCHCNotDone:        sql.NullBool{Bool: c.FormValue("lab_mchc_notdone") == "on", Valid: true},
+		LabRDWNotDone:         sql.NullBool{Bool: c.FormValue("lab_rdw_notdone") == "on", Valid: true},
+		LabRDWSDNotDone:       sql.NullBool{Bool: c.FormValue("lab_rdw_sd_notdone") == "on", Valid: true},
+		LabRDWCVNotDone:       sql.NullBool{Bool: c.FormValue("lab_rdw_cv_notdone") == "on", Valid: true},
+		LabMPVNotDone:         sql.NullBool{Bool: c.FormValue("lab_mpv_notdone") == "on", Valid: true},
+		LabPDWNotDone:         sql.NullBool{Bool: c.FormValue("lab_pdw_notdone") == "on", Valid: true},
+		LabPCTNotDone:         sql.NullBool{Bool: c.FormValue("lab_pct_notdone") == "on", Valid: true},
+		LabOtherNotDone:       sql.NullBool{Bool: c.FormValue("lab_other_notdone") == "on", Valid: true},
+		LabGlucoseNotDone:     sql.NullBool{Bool: c.FormValue("lab_glucose_notdone") == "on", Valid: true},
+		LabLactateNotDone:     sql.NullBool{Bool: c.FormValue("lab_lactate_notdone") == "on", Valid: true},
+		LabHaemoglobinNotDone: sql.NullBool{Bool: c.FormValue("lab_haemoglobin_notdone") == "on", Valid: true},
+		LabBilirubinNotDone:   sql.NullBool{Bool: c.FormValue("lab_bilirubin_notdone") == "on", Valid: true},
+		LabBilirubinDNotDone:  sql.NullBool{Bool: c.FormValue("lab_bilirubin_d_notdone") == "on", Valid: true},
+		LabWBCNotDone:         sql.NullBool{Bool: c.FormValue("lab_wbc_notdone") == "on", Valid: true},
+		LabPlateletsNotDone:   sql.NullBool{Bool: c.FormValue("lab_platelets_notdone") == "on", Valid: true},
+		LabProthrombinNotDone: sql.NullBool{Bool: c.FormValue("lab_prothrombin_notdone") == "on", Valid: true},
+		LabAPTTNotDone:        sql.NullBool{Bool: c.FormValue("lab_aptt_notdone") == "on", Valid: true},
+		OtherMalaria:          sql.NullString{String: c.FormValue("other_malaria"), Valid: true},
+		OtherHIV:              sql.NullString{String: c.FormValue("other_hiv"), Valid: true},
+		OtherSyphilis:         sql.NullString{String: c.FormValue("other_syphilis"), Valid: true},
+		OtherMpox:             sql.NullString{String: c.FormValue("other_mpox"), Valid: true},
+		HepatitisB:            sql.NullString{String: c.FormValue("hepatitis_b"), Valid: true},
+		HepatitisC:            sql.NullString{String: c.FormValue("hepatitis_c"), Valid: true},
+		DataEntrantName:       sql.NullString{String: c.FormValue("data_entrant_name"), Valid: true},
 	}
 
 	err = labs.Insert(db)

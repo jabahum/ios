@@ -120,6 +120,7 @@
                     <a href="/cases/encounters/mpox-admission/new/{{.Form.ID}}/?dte=0000-00-00" class="menu-item">Admission Form</a>
                     {{if .HasMpoxAdmission}}
                     <a href="/cases/encounters/mpox-daily-follow-up/new/{{.Form.ID}}/?dte=0000-00-00" class="menu-item">Add Follow Up</a>
+                    <a href="/cases/encounters/new/{{.Form.ID}}/?dte=0000-00-00&outbreak_id={{.OutbreakID}}" class="menu-item">New Encounter</a>
                     {{end}}
                 {{else if eq .OutbreakID 7}}
                     <a href="/cases/encounters/vhf/new/{{.Form.ID}}/?dte=0000-00-00" class="menu-item">New Encounter</a>
@@ -140,6 +141,11 @@
                         <li class="nav-item">
                             <a class="nav-link" id="encounter-tab" data-toggle="tab" href="#encounter" role="tab" aria-controls="encounter" aria-selected="false">Encounters</a>
                         </li>
+                        {{ if eq .OutbreakID 6 }}
+                        <li class="nav-item">
+                            <a class="nav-link" id="admissions-tab" data-toggle="tab" href="#admissions" role="tab" aria-controls="admissions" aria-selected="false">Admissions</a>
+                        </li>
+                        {{ end }}
                         <li class="nav-item">
                             <a class="nav-link" id="labs-tab" data-toggle="tab" href="#labs" role="tab" aria-controls="labs" aria-selected="false">Status</a>
                         </li>
@@ -148,7 +154,52 @@
                         </li>
                     </ul>
                     <div class="tab-content" id="myTabContent">
-                        <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">                       
+                        {{ if eq .OutbreakID 6 }}
+                        <div class="tab-pane fade" id="admissions" role="tabpanel" aria-labelledby="admissions-tab">
+                            <div class="card">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="mb-0">Admission Details</h5>
+                                </div>
+                                <div class="card-body">
+                                    {{ if .HasMpoxAdmission }}
+                                    <table class="table table-sm table-bordered">
+                                        <tbody>
+                                            <tr>
+                                                <th style="width: 30%">Admission ID</th>
+                                                <td>{{ .MpoxAdmissionID }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Case Classification</th>
+                                                <td>{{ GetDBLabel "mpox_demographics" "suspect_confirmed_case" "id" (toInt64 .MpoxAdmissionID) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Pregnant</th>
+                                                <td>{{ GetDBLabel "mpox_demographics" "pregnant" "id" (toInt64 .MpoxAdmissionID) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Occupation</th>
+                                                <td>{{ GetDBLabel "mpox_demographics" "occupation" "id" (toInt64 .MpoxAdmissionID) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Site of first encounter</th>
+                                                <td>{{ GetDBLabel "mpox_demographics" "site_of_first_encounter_other" "id" (toInt64 .MpoxAdmissionID) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Data Entrant</th>
+                                                <td>{{ GetDBLabel "mpox_demographics" "data_entrant_name" "id" (toInt64 .MpoxAdmissionID) }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    {{ else }}
+                                    <div class="alert alert-warning mb-0">No admission record found for this patient.</div>
+                                    {{ end }}
+                                </div>
+                            </div>
+                        </div>
+                        {{ end }}
+                        <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
+                        
+
 
 
                             <div class="form-container">
@@ -176,7 +227,7 @@
                                             <div class="row">
                                                 <label class="col-sm-3 col-form-label col-form-label-sm" for="gender">Gender </label>
                                                 <div class="col-sm-7">
-                                                    <select class="form-control-sm patient-input form-select"  name="gender" id="gender" aria-label="Gender" required>
+                                                    <select class="form-control-sm patient-input form-select"  name="gender" id="gender" aria-label="Gender" required onchange="hidePregnantFields()">
                                                         {{ range $key, $value := index .Optionz "sex" }}  
                                                             <option value="{{ $key }}">{{ $value }}</option>
                                                         {{ end }}
@@ -254,7 +305,7 @@
                                             <div class="row">
                                                 <label class="col-sm-3 col-form-label col-form-label-sm" for="transfer">Transfered?</label>
                                                 <div class="col-sm-7">
-                                                    <select class="form-control-sm patient-input form-select" name="transfer" id="transfer" aria-label="Transfer">
+                                                    <select class="form-control-sm patient-input form-select" name="transfer" id="transfer" aria-label="Transfer" onchange="hideAdmFrom()">
                                                         {{ range $key, $value := index .Optionz "yn_extra" }}  
                                                             <option value="{{ $key }}">{{ $value }}</option>
                                                         {{ end }}
@@ -267,12 +318,15 @@
                                                     </script>
                                                 </div>
                                             </div>
-                                            <div class="row">
+                                            <div class="row d-none" id="adm_from_where">
                                                 <label class="col-sm-3 col-form-label col-form-label-sm" for="adm_from">From.</label>
                                                 <div class="col-sm-7">
-                                                    <input class="form-control form-control-sm patient-input" value="{{.Form.AdmFrom.String}}" id="adm_from" name="adm_from" type="text"/>
+                                                  <input class="form-control form-control-sm patient-input"
+                                                         value="{{.Form.AdmFrom.String}}"
+                                                         id="adm_from" name="adm_from" type="text"/>
                                                 </div>
-                                            </div>
+                                              </div>
+                                              
                                         </div>
                                     </div>
                                     <hr style="width: 100%;"/>
@@ -318,8 +372,13 @@
                                             <div class="row">
                                                 <label class="col-sm-4 col-form-label col-form-label-sm" for="adm_date">Treatment Site</label>
                                                 <div class="col-sm-6">
-                                                    <!-- {{ GetOptionField "facility" "site" "Treatment Site" "" .Form.Site.Int64 1 | safe }} -->
-                                                    {{ GetFacilityOptions .UserFacilityID "facility_id" "Facility" }}
+                                                    {{ if .Form.Site.Valid }}
+                                                        {{ GetFacilityOptions (printf "%d" .Form.Site.Int64) "site" "Treatment Site" }}
+                                                    {{ else if ne .UserFacilityID "" }}
+                                                        {{ GetFacilityOptions .UserFacilityID "site" "Treatment Site" }}
+                                                    {{ else }}
+                                                        {{ GetFacilityOptions "" "site" "Treatment Site" }}
+                                                    {{ end }}
                                                     
                                                 </div>
                                             </div>
@@ -1020,6 +1079,34 @@ function showError(message) {
     $("#error-message").text(message).show();
 }
 
+//Hide pregnancy-related fields if gender is not female
+function hidePregnantFields() {
+    const gender = document.getElementById('gender');
+    const pregnant = document.getElementById('pregnant');
+    if (!gender.value || gender.value === 'Male') {
+        pregnant.style.display = 'none';
+    } else {
+        pregnant.style.display = 'block';
+    }   
+}
+
+//Hide adm_from if transfer is not Yes
+document.addEventListener('DOMContentLoaded', function () {
+  const transfer = document.getElementById('transfer');
+  const admFromWhere = document.getElementById('adm_from_where');
+
+  if (!transfer || !admFromWhere) return;
+
+  function updateAdmFromWhere() {
+    const v = (transfer.value || '').trim().toLowerCase();
+    // show only when value is exactly "yes"
+    const shouldShow = v === 'yes';
+    admFromWhere.classList.toggle('d-none', !shouldShow);
+  }
+
+  updateAdmFromWhere();                 // on page load
+  transfer.addEventListener('change', updateAdmFromWhere); // on change
+});
 </script>
 
 

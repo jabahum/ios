@@ -17,16 +17,18 @@ import (
 
 // Define a struct for the encounter form page data
 type EncounterPageData struct {
-	FormRef       models.Client
-	Form          []models.ClientEncounter
-	Date          string
-	FormChild1    []models.Clinical
-	FormChild2    []models.Vital
-	FormChild3    []models.Lab
-	FormChild4    []models.Treatment
-	AllEncounters []models.ClientEncounter // Add field for all encounters
-	Optionz       map[string]map[string]string
-	OutbreakID    int // Add OutbreakID field for templates
+	FormRef          models.Client
+	Form             []models.ClientEncounter
+	Date             string
+	FormChild1       []models.Clinical
+	FormChild2       []models.Vital
+	FormChild3       []models.Lab
+	FormChild4       []models.Treatment
+	AllEncounters    []models.ClientEncounter // Add field for all encounters
+	Optionz          map[string]map[string]string
+	OutbreakID       int // Add OutbreakID field for templates
+	HasMpoxAdmission bool
+	MpoxAdmissionID  int
 }
 
 func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
@@ -43,9 +45,21 @@ func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 		client.ID = 0
 		data.IsIDPos = false
 	} else {
-		c, err := models.ClientByID(c.Context(), db, id)
+		// Get the client
+		clientModel, err := models.ClientByID(c.Context(), db, id)
 		if err == nil {
-			client = *c
+			client = *clientModel
+
+			// Check facility-based access control
+			userFacility := GetCurrentFacility(c, db, sl, store)
+			if userFacility > 0 {
+				// User has a facility assigned, check if they can access this case
+				if client.Site.Int64 != int64(userFacility) {
+					sl.Error("User attempted to access case from different facility",
+						"user_id", userID, "user_facility", userFacility, "case_site", client.Site.Int64, "case_id", id)
+					return c.Status(403).SendString("Access denied: You can only access cases from your assigned facility.")
+				}
+			}
 		}
 
 		data.IsIDPos = true
@@ -86,7 +100,7 @@ func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 		hasAdmission = true
 	}
 	data.HasMpoxAdmission = hasAdmission
-	data.MpoxAdmissionID = admissionID
+	data.MpoxAdmissionID = admissionID // int
 
 	data.User = userName
 	data.Role = role
@@ -94,6 +108,14 @@ func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 	data.Form = client
 	data.FormChild1 = cE
 	data.FormChild2 = st
+
+	// Set user's facility ID for auto-selection in dropdown
+	userFacility := GetCurrentFacility(c, db, sl, store)
+	if userFacility > 0 {
+		data.UserFacilityID = strconv.Itoa(userFacility)
+	} else {
+		data.UserFacilityID = ""
+	}
 
 	DoZaLogging("INFO", "Load Client form", err)
 	return GenerateHTML(c, db, data, "form_patients")
@@ -357,6 +379,18 @@ func HandlerCaseEncounterForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 		return c.Status(500).SendString("Failed to get client details")
 	}
 
+	// Check facility-based access control
+	userID := GetCurrentUser(c, store)
+	userFacility := GetCurrentFacility(c, db, sl, store)
+	if userFacility > 0 {
+		// User has a facility assigned, check if they can access this case
+		if client.Site.Int64 != int64(userFacility) {
+			sl.Error("User attempted to access case from different facility",
+				"user_id", userID, "user_facility", userFacility, "case_site", client.Site.Int64, "case_id", clientID)
+			return c.Status(403).SendString("Access denied: You can only access cases from your assigned facility.")
+		}
+	}
+
 	// Get all encounters for this client (not filtered by date)
 	sl.Info("Fetching all encounters", "clientID", clientID, "outbreakID", outbreakID.(int))
 	allEncounters, err := models.ClientEncounters(c.Context(), db, fmt.Sprintf("client_id = %d", clientID), outbreakID.(int))
@@ -564,18 +598,31 @@ func HandlerCaseEncounterForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 		})
 	}
 
+	// Determine Mpox admission presence for this client
+	hasAdmission := false
+	admissionID := 0
+	if client != nil {
+		var admID int
+		if err := db.QueryRowContext(c.Context(), "SELECT id FROM mpox_demographics WHERE client_id = $1 LIMIT 1", client.ID).Scan(&admID); err == nil {
+			hasAdmission = true
+			admissionID = admID
+		}
+	}
+
 	// Prepare strongly typed data for the template
 	data := EncounterPageData{
-		FormRef:       *client,
-		Form:          encounters,
-		Date:          encounterDate,
-		FormChild1:    clinical,
-		FormChild2:    vitals,
-		FormChild3:    labs,
-		FormChild4:    treatments,
-		AllEncounters: allEncounters, // Add all encounters
-		Optionz:       Get_Client_Optionz(),
-		OutbreakID:    outbreakID.(int), // Add OutbreakID for templates
+		FormRef:          *client,
+		Form:             encounters,
+		Date:             encounterDate,
+		FormChild1:       clinical,
+		FormChild2:       vitals,
+		FormChild3:       labs,
+		FormChild4:       treatments,
+		AllEncounters:    allEncounters, // Add all encounters
+		Optionz:          Get_Client_Optionz(),
+		OutbreakID:       outbreakID.(int), // Add OutbreakID for templates
+		HasMpoxAdmission: hasAdmission,
+		MpoxAdmissionID:  admissionID,
 	}
 
 	// Debug: Log the client data being passed to template
@@ -639,21 +686,11 @@ func HandlerCaseEncounterList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 	return GenerateHTML(c, db, data, "list_case_encounter")
 }
 
-func saveEncounter(c *fiber.Ctx, db *sql.DB, userID int, cid, dte string) (int, int, int, error) {
+func saveEncounter(c *fiber.Ctx, db *sql.DB, userID int, cid, dte string, outbreakID int) (int, int, int, error) {
 	// Convert client ID to int
 	clientID, err := strconv.Atoi(cid)
 	if err != nil {
 		return 0, 0, 0, fmt.Errorf("invalid client ID: %v", err)
-	}
-
-	// Get outbreak ID from session
-	sess, err := session.New().Get(c)
-	if err != nil {
-		return 0, 0, 0, fmt.Errorf("failed to get session: %v", err)
-	}
-	outbreakID := sess.Get("outbreak_id")
-	if outbreakID == nil {
-		return 0, 0, 0, fmt.Errorf("no outbreak selected")
 	}
 
 	// Create encounter
@@ -666,7 +703,7 @@ func saveEncounter(c *fiber.Ctx, db *sql.DB, userID int, cid, dte string) (int, 
 		ManagedBy:     sql.NullInt64{Int64: int64(userID), Valid: true},
 		EnterOn:       sql.NullTime{Time: time.Now(), Valid: true},
 		EnterBy:       sql.NullInt64{Int64: int64(userID), Valid: true},
-		OutbreakID:    sql.NullInt64{Int64: int64(outbreakID.(int)), Valid: true},
+		OutbreakID:    sql.NullInt64{Int64: int64(outbreakID), Valid: true},
 		ClinicalTeam:  sql.NullString{String: ClinicalTeam, Valid: true},
 	}
 
@@ -675,7 +712,7 @@ func saveEncounter(c *fiber.Ctx, db *sql.DB, userID int, cid, dte string) (int, 
 		return 0, 0, 0, fmt.Errorf("failed to save encounter: %v", err)
 	}
 
-	return encounter.EncounterID, clientID, outbreakID.(int), nil
+	return encounter.EncounterID, clientID, outbreakID, nil
 }
 
 func saveVitals(c *fiber.Ctx, db *sql.DB, id1, id2, id3 int) error {
@@ -833,6 +870,31 @@ func HandlerCaseEncounterSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 		return c.Status(400).SendString("Missing client ID")
 	}
 
+	// Convert client ID to int for facility check
+	clientID, err := strconv.Atoi(cid)
+	if err != nil {
+		sl.Error("Invalid client ID format", "error", err, "clientID", cid)
+		return c.Status(400).SendString("Invalid client ID format")
+	}
+
+	// Check facility-based access control
+	userFacility := GetCurrentFacility(c, db, sl, store)
+	if userFacility > 0 {
+		// Get client details to check facility
+		client, err := models.ClientByID(c.Context(), db, clientID)
+		if err != nil {
+			sl.Error("Failed to get client for facility check", "error", err, "clientID", clientID)
+			return c.Status(500).SendString("Failed to get client details")
+		}
+
+		// User has a facility assigned, check if they can access this case
+		if client.Site.Int64 != int64(userFacility) {
+			sl.Error("User attempted to submit encounter for case from different facility",
+				"user_id", userID, "user_facility", userFacility, "case_site", client.Site.Int64, "case_id", clientID)
+			return c.Status(403).SendString("Access denied: You can only access cases from your assigned facility.")
+		}
+	}
+
 	// Get encounter date and validate format
 	dte := c.FormValue("encounter_date")
 	if dte == "" {
@@ -844,15 +906,41 @@ func HandlerCaseEncounterSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 		return c.Status(400).SendString("Invalid encounter date format")
 	}
 
-	// Get outbreak ID from session
+	// Get outbreak ID from session (fallback to form/query if missing)
 	outbreakID := sess.Get("outbreak_id")
+	if outbreakID == nil {
+		formOutbreakID := c.FormValue("outbreak_id")
+		if formOutbreakID != "" {
+			if oid, err := strconv.Atoi(formOutbreakID); err == nil {
+				sess.Set("outbreak_id", oid)
+				sess.Set("selected_outbreak", oid)
+				if err := sess.Save(); err != nil {
+					sl.Error("Failed to persist outbreak_id to session", "error", err)
+				}
+				outbreakID = oid
+			}
+		}
+	}
+	if outbreakID == nil {
+		qOID := c.Query("outbreak_id")
+		if qOID != "" {
+			if oid, err := strconv.Atoi(qOID); err == nil {
+				sess.Set("outbreak_id", oid)
+				sess.Set("selected_outbreak", oid)
+				if err := sess.Save(); err != nil {
+					sl.Error("Failed to persist outbreak_id to session", "error", err)
+				}
+				outbreakID = oid
+			}
+		}
+	}
 	if outbreakID == nil {
 		sl.Error("No outbreak selected")
 		return c.Status(400).SendString("No outbreak selected")
 	}
 
 	// Save encounter and get IDs
-	id1, id2, id3, err := saveEncounter(c, db, userID.(int), cid, dte)
+	id1, id2, id3, err := saveEncounter(c, db, userID.(int), cid, dte, outbreakID.(int))
 	if err != nil {
 		sl.Error("Failed to save encounter", "error", err)
 		return c.Status(500).SendString("Failed to save encounter")
@@ -876,7 +964,7 @@ func HandlerCaseEncounterSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 		return c.Status(500).SendString("Failed to save treatment data")
 	}
 
-	return c.Redirect(fmt.Sprintf("/cases/encounters/%d", id2))
+	return c.Redirect(fmt.Sprintf("/cases/encounters/new/%d?dte=%s&outbreak_id=%d", id2, dte, outbreakID.(int)))
 }
 
 // Helper function to save lab data
@@ -952,10 +1040,67 @@ func saveLab(c *fiber.Ctx, db *sql.DB, encounterID int) error {
 		PlateletsNd:           ParseNullInt(c.FormValue("platelets_nd")),
 		PtNd:                  ParseNullInt(c.FormValue("pt_nd")),
 		ApttNd:                ParseNullInt(c.FormValue("aptt_nd")),
+		// New laboratory investigation fields
+		TotalProtein: ParseNullFloat(c.FormValue("total_protein")),
+		Albumin:      ParseNullFloat(c.FormValue("albumin")),
+		BilirubinD:   ParseNullFloat(c.FormValue("bilirubin_d")),
+		Lymphocytes:  ParseNullFloat(c.FormValue("lymphocytes")),
+		Monocytes:    ParseNullFloat(c.FormValue("monocytes")),
+		Eosinophils:  ParseNullFloat(c.FormValue("eosinophils")),
+		Basophils:    ParseNullFloat(c.FormValue("basophils")),
+		Neutrophils:  ParseNullFloat(c.FormValue("neutrophils")),
+		Hgb:          ParseNullFloat(c.FormValue("hgb")),
+		Hct:          ParseNullFloat(c.FormValue("hct")),
+		Mcv:          ParseNullFloat(c.FormValue("mcv")),
+		Mch:          ParseNullFloat(c.FormValue("mch")),
+		Mchc:         ParseNullFloat(c.FormValue("mchc")),
+		Rdw:          ParseNullFloat(c.FormValue("rdw")),
+		RdwSd:        ParseNullFloat(c.FormValue("rdw_sd")),
+		RdwCv:        ParseNullFloat(c.FormValue("rdw_cv")),
+		Mpv:          ParseNullFloat(c.FormValue("mpv")),
+		Pdw:          ParseNullString(c.FormValue("pdw")),
+		Pct:          ParseNullFloat(c.FormValue("pct")),
+		LabOther:     ParseNullString(c.FormValue("lab_other")),
+		// "Not done" fields for new lab tests
+		TotalProteinNd: sql.NullBool{Bool: c.FormValue("total_protein_nd") == "on", Valid: true},
+		AlbuminNd:      sql.NullBool{Bool: c.FormValue("albumin_nd") == "on", Valid: true},
+		BilirubinDNd:   sql.NullBool{Bool: c.FormValue("bilirubin_d_nd") == "on", Valid: true},
+		LymphocytesNd:  sql.NullBool{Bool: c.FormValue("lymphocytes_nd") == "on", Valid: true},
+		MonocytesNd:    sql.NullBool{Bool: c.FormValue("monocytes_nd") == "on", Valid: true},
+		EosinophilsNd:  sql.NullBool{Bool: c.FormValue("eosinophils_nd") == "on", Valid: true},
+		BasophilsNd:    sql.NullBool{Bool: c.FormValue("basophils_nd") == "on", Valid: true},
+		NeutrophilsNd:  sql.NullBool{Bool: c.FormValue("neutrophils_nd") == "on", Valid: true},
+		HgbNd:          sql.NullBool{Bool: c.FormValue("hgb_nd") == "on", Valid: true},
+		HctNd:          sql.NullBool{Bool: c.FormValue("hct_nd") == "on", Valid: true},
+		McvNd:          sql.NullBool{Bool: c.FormValue("mcv_nd") == "on", Valid: true},
+		MchNd:          sql.NullBool{Bool: c.FormValue("mch_nd") == "on", Valid: true},
+		MchcNd:         sql.NullBool{Bool: c.FormValue("mchc_nd") == "on", Valid: true},
+		RdwNd:          sql.NullBool{Bool: c.FormValue("rdw_nd") == "on", Valid: true},
+		RdwSdNd:        sql.NullBool{Bool: c.FormValue("rdw_sd_nd") == "on", Valid: true},
+		RdwCvNd:        sql.NullBool{Bool: c.FormValue("rdw_cv_nd") == "on", Valid: true},
+		MpvNd:          sql.NullBool{Bool: c.FormValue("mpv_nd") == "on", Valid: true},
+		PdwNd:          sql.NullBool{Bool: c.FormValue("pdw_nd") == "on", Valid: true},
+		PctNd:          sql.NullBool{Bool: c.FormValue("pct_nd") == "on", Valid: true},
+		LabOtherNd:     sql.NullBool{Bool: c.FormValue("lab_other_nd") == "on", Valid: true},
+		// Other test fields
+		OtherMalaria:    ParseNullString(c.FormValue("other_malaria")),
+		OtherHIV:        ParseNullString(c.FormValue("other_hiv")),
+		OtherSyphilis:   ParseNullString(c.FormValue("other_syphilis")),
+		OtherMpox:       ParseNullString(c.FormValue("other_mpox")),
+		HepatitisB:      ParseNullString(c.FormValue("hepatitis_b")),
+		HepatitisC:      ParseNullString(c.FormValue("hepatitis_c")),
+		DataEntrantName: ParseNullString(c.FormValue("data_entrant_name")),
 	}
 
 	if lab_id == 0 {
-		return lab.Insert(c.Context(), db)
+		// Create minimal row first to avoid INSERT column-mismatch issues, then update all fields
+		var newID int
+		if err := db.QueryRowContext(c.Context(), "INSERT INTO public.lab (encounter_id) VALUES ($1) RETURNING lab_id", encounterID).Scan(&newID); err != nil {
+			return err
+		}
+		lab.LabID = newID
+		lab.SetAsExists()
+		return lab.Update(c.Context(), db)
 	} else {
 		lab.SetAsExists()
 		return lab.Update(c.Context(), db)
@@ -976,6 +1121,18 @@ func saveTreatment(c *fiber.Ctx, db *sql.DB, encounterID int) error {
 		Amoxicillin:                 ParseNullInt2(c.FormValue("amoxicillin")),
 		Ceftriaxone:                 ParseNullInt2(c.FormValue("ceftriaxone")),
 		Cefixime:                    ParseNullInt2(c.FormValue("cefixime")),
+		Ampicillin:                  ParseNullInt2(c.FormValue("ampicillin")),
+		Chloramphenicol:             ParseNullInt2(c.FormValue("chloramphenicol")),
+		Amoxiclav:                   ParseNullInt2(c.FormValue("amoxiclav")),
+		Azithromycin:                ParseNullInt2(c.FormValue("azithromycin")),
+		Cefotaxime:                  ParseNullInt2(c.FormValue("cefotaxime")),
+		Ceftazidime:                 ParseNullInt2(c.FormValue("ceftazidime")),
+		Ciprofloxacin:               ParseNullInt2(c.FormValue("ciprofloxacin")),
+		Tetracycline:                ParseNullInt2(c.FormValue("tetracycline")),
+		Imipenem:                    ParseNullInt2(c.FormValue("imipenem")),
+		Cotrimoxazole:               ParseNullInt2(c.FormValue("cotrimoxazole")),
+		Gentamicin:                  ParseNullInt2(c.FormValue("gentamicin")),
+		Metronidazole:               ParseNullInt2(c.FormValue("metronidazole")),
 		AntibacterialOther:          ParseNullString2(c.FormValue("antibacterial_other")),
 		AntibacterialDose:           ParseNullString2(c.FormValue("antibacterial_dose")),
 		AntibacterialRoute:          ParseNullString2(c.FormValue("antibacterial_route")),

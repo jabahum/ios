@@ -166,7 +166,7 @@
             - Suspect or Confirmed Case (text or select)
           -->
           <div class="row">
-            <div class="col-md-12 mb-3">
+            <div class="col-md-3 mb-3">
               <label class="form-label">Site of first encounter:</label>
               <div class="checkbox-dropdown">
                 <div class="checkbox-dropdown-button" tabindex="0">
@@ -192,18 +192,23 @@
                   </div>
                 </div>
               </div>
-              <input type="text" class="form-control mt-2" name="site_of_first_encounter_other" placeholder="If Other, specify">
+              <!-- <input type="text" class="form-control mt-2" name="site_of_first_encounter_other" placeholder="If Other, specify"> -->
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-md-3 mb-3">
+              <label class="form-label">Specify Other</label>
+              <input type="text" class="form-control mt-1" name="site_of_first_encounter_other" placeholder="If Other, specify">
+            </div>
+            <!-- <div class="col-md-4 mb-3">
               <label class="form-label">Date of Admission</label>
               <input type="date" class="form-control datetimepicker" name="date_of_admission" data-options='{"disableMobile":true,"dateFormat":"Y-m-d"}'>
-            </div>
-            <div class="col-md-4 mb-3">
-              <label class="form-label">Suspect or Confirmed Case</label>
+            </div> -->
+            <div class="col-md-3 mb-3">
+              <label class="form-label">Case Classification</label>
               <select name="suspect_confirmed_case" class="form-control">
                 <option value="">Select</option>
                 <option value="Suspect">Suspect</option>
                 <option value="Confirmed">Confirmed</option>
+                <option value="Probable">Probable</option>
               </select>
             </div>
           </div>
@@ -220,7 +225,7 @@
               <div id="collapseDemographics" class="accordion-collapse collapse show" aria-labelledby="headingDemographics" data-bs-parent="#mpoxAdmissionAccordion">
                 <div class="accordion-body">
                   <div class="row">
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-2 mt-4">
                       <label class="form-label">Sex</label>
                       <select name="sex" id="sex" class="form-control" onchange="hidePregnancy()">
                         <option value="">Select</option>
@@ -228,38 +233,11 @@
                         <option value="Female">Female</option>
                       </select>
                     </div>
-                    <div class="col-md-3 mb-3">
-                      <label class="form-label">Date of birth</label>
-                      <input type="date" class="form-control datetimepicker" name="date_of_birth">
-                    </div>
-                    <div class="col-md-2 mb-3">
-                      <label class="form-label">Age (years)</label>
-                      <input type="number" class="form-control" name="age_years">
-                    </div>
-                    <div class="col-md-2 mb-3">
-                      <label class="form-label">Age (months)</label>
-                      <input type="number" class="form-control" name="age_months">
-                    </div>
-                    <div class="col-md-2 mb-3">
-                      <label class="form-label">Age (days)</label>
-                      <input type="number" class="form-control" name="age_days">
-                    </div>
-                  </div>
-                  <div class="row">
-                    <div class="col-md-3 mb-3">
-                      <label class="form-label">Health care worker?</label>
-                      <select name="health_care_worker" class="form-control">
-                        <option value="">Select</option>
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
-                        <option value="Unknown">Unknown</option>
-                      </select>
-                    </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-2 mt-4">
                       <label class="form-label">Tribe</label>
                       <input type="text" class="form-control" name="tribe">
                     </div>
-                    <div class="col-md-3 mb-3" id="pregnant">
+                    <div class="col-md-2 mt-4" id="pregnant">
                       <label class="form-label">Pregnant?</label>
                       <select name="pregnant" id="pregnantSelect" class="form-control" onchange="hidePregnantFields()">
                         <option value="">Select</option>
@@ -269,49 +247,83 @@
                         <option value="N/A">N/A</option>
                       </select>
                     </div>
-                    <div class="col-md-3 mb-3" id="gestationalWeeks">
-                      <label class="form-label">Gestational weeks (if pregnant)</label>
-                      <input type="number" class="form-control" name="gestational_weeks">
-                    </div>
+                  
+                      <div class="col-md-2 mt-2" id="gestationalWeeks">
+                        <label class="form-label">Gestational weeks (if pregnant)</label>
+                        <input type="number" class="form-control" name="gestational_weeks">
+                      </div>
+                      <div class="col-md-2 mt-2" id="lnmp">
+                        <label class="form-label">LMNP (Last Menstrual Period)</label>
+                        <input type="text" class="form-control datetimepicker" name="lmnp">
+                      </div>
+                      <div class="col-md-2 mt-2" id="recentPregnancy">
+                        <label class="form-label">Recently pregnant (≤21 days of symptom onset)?</label>
+                        <select name="recently_pregnant" class="form-control">
+                          <option value="">Select</option>
+                          <option value="Yes">Yes</option>
+                          <option value="No">No</option>
+                          <option value="Unknown">Unknown</option>
+                        </select>
+                      </div>
+                      <div class="col-md-3 mb-3" id="pregnant2242">
+                        <label class="form-label">Pregnant 22-42 days from admission?</label>
+                        <select name="pregnant_22_42" class="form-control">
+                          <option value="">Select</option>
+                          <option value="Yes">Yes</option>
+                          <option value="No">No</option>
+                          <option value="Unknown">Unknown</option>
+                        </select>
+                      </div>
+                      <div class="col-md-3 mt-4">
+                        <label class="form-label">History of smallpox vaccination</label>
+                        <select name="tetanus_vaccination" class="form-control">
+                          <option value="">Select</option>
+                          <option value="Yes">Yes</option>
+                          <option value="No">No</option>
+                          <option value="Unknown">Unknown</option>
+                        </select>
+                      </div>
+                      <div class="col-md-4 mt-4">
+                        <label class="form-label">Occupation</label>
+                        <input type="text" class="form-control" name="occupation">
+                      </div>
+                    <!-- <div class="col-md-3 mb-3">
+                      <label class="form-label">Date of birth</label>
+                      <input type="date" class="form-control datetimepicker" name="date_of_birth">
+                    </div> -->
+                    <!-- <div class="col-md-2 mb-3">
+                      <label class="form-label">Age (years)</label>
+                      <input type="number" class="form-control" name="age_years">
+                    </div> -->
+                    <!-- <div class="col-md-2 mb-3">
+                      <label class="form-label">Age (months)</label>
+                      <input type="number" class="form-control" name="age_months">
+                    </div> -->
+                    <!-- <div class="col-md-2 mb-3">
+                      <label class="form-label">Age (days)</label>
+                      <input type="number" class="form-control" name="age_days">
+                    </div> -->
+                  
+                  <!-- <div class="row"> -->
+                    <!-- <div class="col-md-3 mb-3">
+                      <label class="form-label">Health care worker?</label>
+                      <select name="health_care_worker" class="form-control">
+                        <option value="">Select</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                        <option value="Unknown">Unknown</option>
+                      </select>
+                    </div> -->
+
+                    
                   </div>
-                  <div class="row" id="lnmp">
-                    <div class="col-md-3 mb-3">
-                      <label class="form-label">LMNP (Last Menstrual Period)</label>
-                      <input type="text" class="form-control datetimepicker" name="lmnp">
-                    </div>
-                    <div class="col-md-3 mb-3" id="recentPregnancy">
-                      <label class="form-label">Recently pregnant (≤21 days of symptom onset)?</label>
-                      <select name="recently_pregnant" class="form-control">
-                        <option value="">Select</option>
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
-                        <option value="Unknown">Unknown</option>
-                      </select>
-                    </div>
-                    <div class="col-md-3 mb-3" id="pregnant2242">
-                      <label class="form-label">Pregnant 22-42 days from admission?</label>
-                      <select name="pregnant_22_42" class="form-control">
-                        <option value="">Select</option>
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
-                        <option value="Unknown">Unknown</option>
-                      </select>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                      <label class="form-label">History of smallpox vaccination</label>
-                      <select name="tetanus_vaccination" class="form-control">
-                        <option value="">Select</option>
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
-                        <option value="Unknown">Unknown</option>
-                      </select>
-                    </div>
+                  <div class="row">
+                    
+                    
+
           </div>
           <div class="row">
-                    <div class="col-md-4 mb-3">
-                      <label class="form-label">Occupation</label>
-                      <input type="text" class="form-control" name="occupation">
-                    </div>
+                    
                   </div>
                 </div>
               </div>
@@ -327,7 +339,7 @@
                 <div class="accordion-body">
                   <!-- Exposure & Social History fields here (all checkboxes, radios, text fields as per screenshots) -->
                   <div class="row">
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-4 mt-2">
                       <label class="form-label">Any known link to probable or confirmed case of MPX with ≤ 21 days prior to symptom onset?</label>
                       <select name="known_link" class="form-control">
                         <option value="">Select</option>
@@ -336,7 +348,7 @@
                         <option value="Unknown">Unknown</option>
                       </select>
                     </div>
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-4 mt-4">
                       <label class="form-label">Sexually active within ≤ 21 days prior to symptom onset:</label>
                       <select name="sexually_active" id="sexually_active" class="form-control" onchange="toggleSexOfPartners()">
                         <option value="">Select</option>
@@ -345,9 +357,7 @@
                         <option value="Unknown">Unknown</option>
                       </select>
                     </div>
-                  </div>
-                  <div class="row" id="sex_of_partners_section" style="display: none;">
-                    <div class="col-md-12 mb-3">
+                    <div class="col-md-4 mt-4" id="sex_of_partners_section" style="display: none;">
                       <label class="form-label">If yes: select sex of sexual partner(s):</label>
                       <div class="checkbox-dropdown">
                         <div class="checkbox-dropdown-button" tabindex="0">
@@ -368,7 +378,7 @@
                     </div>
                   </div>
                   <div class="row">
-                    <div class="col-md-8 mb-3">
+                    <div class="col-md-4 mb-3">
                       <label class="form-label">Recent travel to a high risk district for Mpox within ≤ 21 days prior to symptom onset?</label>
                       <select name="recent_travel" class="form-control">
                         <option value="">Select</option>
@@ -441,7 +451,7 @@
                               <td><input type="date" class="form-control form-control-sm" name="fatigue_onset_date" style="width: 120px;"></td>
                             </tr>
                             <tr>
-                              <td>Oral pain</td>
+                              <td>Oral Rash</td>
                               <td><select name="oral_pain" class="form-control form-control-sm" style="width: 120px;"><option value="">Select</option><option value="Y">Yes</option><option value="N">No</option><option value="U">Unknown</option></select></td>
                               <td><input type="date" class="form-control form-control-sm" name="oral_pain_onset_date" style="width: 120px;"></td>
                             </tr>
@@ -886,11 +896,11 @@
                       <label class="form-label">ART regimen</label>
                       <input type="text" class="form-control" name="art_regimen">
                     </div>
-                    <div class="col-md-2 mb-3">
+                    <div class="col-md-2 mb-3" id="cd4">
                       <label class="form-label">Most recent CD4</label>
                       <input type="number" class="form-control" name="cd4">
                     </div>
-                    <div class="col-md-2 mb-3">
+                    <div class="col-md-2 mb-3" id="viral_load">
                       <label class="form-label">Viral load</label>
                       <input type="text" class="form-control" name="viral_load">
                     </div>
@@ -935,7 +945,7 @@
                             <tr><td>Genitals</td><td><select name="lesion_genitals" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td></tr>
                             <tr><td>Palms of hands</td><td><select name="lesion_palms" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td></tr>
                             <tr><td>Arms</td><td><select name="lesion_arms" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td></tr>
-                            <tr><td>Forearms</td><td><select name="lesion_forearms" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td></tr>
+                            <!-- <tr><td>Forearms</td><td><select name="lesion_forearms" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td></tr> -->
                             <tr><td>Thighs</td><td><select name="lesion_thighs" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td></tr>
                             <tr><td>Legs</td><td><select name="lesion_legs" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td></tr>
                             <tr><td>Soles of feet</td><td><select name="lesion_soles" class="form-control form-control-sm"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td></tr>
@@ -999,12 +1009,22 @@
                             <tr><td>AST (U/L)</td><td><input type="number" step="0.1" class="form-control" name="lab_ast"></td><td><input type="checkbox" name="lab_ast_notdone"></td><td>Lactate (mmol/L)</td><td><input type="number" step="0.1" class="form-control" name="lab_lactate"></td><td><input type="checkbox" name="lab_lactate_notdone"></td></tr>
                             <tr><td>Creatinine (µmol/L)</td><td><input type="number" step="0.1" class="form-control" name="lab_creatinine"></td><td><input type="checkbox" name="lab_creatinine_notdone"></td><td>Haemoglobin (g/dL)</td><td><input type="number" step="0.1" class="form-control" name="lab_haemoglobin"></td><td><input type="checkbox" name="lab_haemoglobin_notdone"></td></tr>
                             <tr><td>Potassium (mmol/L)</td><td><input type="number" step="0.1" class="form-control" name="lab_potassium"></td><td><input type="checkbox" name="lab_potassium_notdone"></td><td>Total bilirubin (mg/dL)</td><td><input type="number" step="0.1" class="form-control" name="lab_bilirubin"></td><td><input type="checkbox" name="lab_bilirubin_notdone"></td></tr>
+                            <tr><td>Total Protein (mmol/L)</td><td><input type="number" step="0.1" class="form-control" name="total_protein"></td><td><input type="checkbox" name="total_protein_notdone"></td><td>Bilirubin D(mg/dL)</td><td><input type="number" step="0.1" class="form-control" name="lab_bilirubin_d"></td><td><input type="checkbox" name="lab_bilirubin_d_notdone"></td></tr>
+                            <tr><td>Albumin (g/dL)</td><td><input type="number" step="0.1" class="form-control" name="albumin"></td><td><input type="checkbox" name="albumin_notdone"></td><td>CRP (mg/dL)</td><td><input type="number" step="0.1" class="form-control" name="lab_crp"></td><td><input type="checkbox" name="lab_crp_notdone"></td></tr>
                             <tr><td>Urea (mmol/L)</td><td><input type="number" step="0.1" class="form-control" name="lab_urea"></td><td><input type="checkbox" name="lab_urea_notdone"></td><td>WBC count (cells × 10^9/L)</td><td><input type="number" step="0.1" class="form-control" name="lab_wbc"></td><td><input type="checkbox" name="lab_wbc_notdone"></td></tr>
                             <tr><td>Creatine kinase (U/L)</td><td><input type="number" step="0.1" class="form-control" name="lab_ck"></td><td><input type="checkbox" name="lab_ck_notdone"></td><td>Platelets (×10^9/L)</td><td><input type="number" step="0.1" class="form-control" name="lab_platelets"></td><td><input type="checkbox" name="lab_platelets_notdone"></td></tr>
                             <tr><td>Calcium (mg/dL)</td><td><input type="number" step="0.1" class="form-control" name="lab_calcium"></td><td><input type="checkbox" name="lab_calcium_notdone"></td><td>Prothrombin time (secs)</td><td><input type="number" step="0.1" class="form-control" name="lab_prothrombin"></td><td><input type="checkbox" name="lab_prothrombin_notdone"></td></tr>
                             <tr><td>Sodium (mmol/L)</td><td><input type="number" step="0.1" class="form-control" name="lab_sodium"></td><td><input type="checkbox" name="lab_sodium_notdone"></td><td>Activated partial thromboplastin time (APTT)</td><td><input type="number" step="0.1" class="form-control" name="lab_aptt"></td><td><input type="checkbox" name="lab_aptt_notdone"></td></tr>
-                            <tr><td>CRP (mg/dL)</td><td><input type="number" step="0.1" class="form-control" name="lab_crp"></td><td><input type="checkbox" name="lab_crp_notdone"></td><td>Nutritionists</td><td><input type="number" step="0.1" class="form-control" name="lab_nutritionists"></td><td><input type="checkbox" name="lab_nutritionists_notdone"></td></tr>
-                            <tr><td></td><td></td><td></td><td>Other specify</td><td><input type="text" class="form-control" name="lab_other"></td><td><input type="checkbox" name="lab_other_notdone"></td></tr>
+                            <tr><td>Lymphocytes (LYM)</td><td><input type="number" step="0.1" class="form-control" name="lab_lymphocytes"></td><td><input type="checkbox" name="lab_lymphocytes_notdone"></td><td>Neutrophils (NEUT)</td><td><input type="number" step="0.1" class="form-control" name="lab_neutrophils"></td><td><input type="checkbox" name="lab_neutrophils_notdone"></td></tr>
+                            <tr><td>Monocytes (MONO)</td><td><input type="number" step="0.1" class="form-control" name="lab_monocytes"></td><td><input type="checkbox" name="lab_monocytes_notdone"></td><td>Eosinophils (EOS)</td><td><input type="number" step="0.1" class="form-control" name="lab_eosinophils"></td><td><input type="checkbox" name="lab_eosinophils_notdone"></td></tr>
+                            <tr><td>Basophils (BASO)</td><td><input type="number" step="0.1" class="form-control" name="lab_basophils"></td><td><input type="checkbox" name="lab_basophils_notdone"></td><td>Lymphocytes (LYM)</td><td><input type="number" step="0.1" class="form-control" name="lab_lymphocytes"></td><td><input type="checkbox" name="lab_lymphocytes_notdone"></td></tr>
+                            <tr><td>CRP (mg/dL)</td><td><input type="number" step="0.1" class="form-control" name="lab_crp"></td><td><input type="checkbox" name="lab_crp_notdone"></td><td>Neutrophils (NEUT)</td><td><input type="number" step="0.1" class="form-control" name="lab_neutrophils"></td><td><input type="checkbox" name="lab_neutrophils_notdone"></td></tr>
+                            <tr><td>HGB (mg/dL)</td><td><input type="number" step="0.1" class="form-control" name="lab_hgb"></td><td><input type="checkbox" name="lab_hgb_notdone"></td><td>HCT (RPR)</td><td><input type="number" step="0.1" class="form-control" name="lab_hct"></td><td><input type="checkbox" name="lab_hct_notdone"></td></tr>
+                            <tr><td>MCV (fL)</td><td><input type="number" step="0.1" class="form-control" name="lab_mcv"></td><td><input type="checkbox" name="lab_mcv_notdone"></td><td>MCH (pg)</td><td><input type="number" step="0.1" class="form-control" name="lab_mch"></td><td><input type="checkbox" name="lab_mch_notdone"></td></tr>
+                            <tr><td>MCHC (g/dL)</td><td><input type="number" step="0.1" class="form-control" name="lab_mchc"></td><td><input type="checkbox" name="lab_mchc_notdone"></td><td>RDW (%) (SD)</td><td><input type="number" step="0.1" class="form-control" name="lab_rdw"></td><td><input type="checkbox" name="lab_rdw_notdone"></td></tr>
+                            <tr><td>RDW-SD (fL)</td><td><input type="number" step="0.1" class="form-control" name="lab_rdw_sd"></td><td><input type="checkbox" name="lab_rdw_sd_notdone"></td><td>RDW-CV (%) (SD)</td><td><input type="number" step="0.1" class="form-control" name="lab_rdw_cv"></td><td><input type="checkbox" name="lab_rdw_cv_notdone"></td></tr>
+                            <tr><td>MPV</td><td><input type="number" step="0.1" class="form-control" name="lab_mpv"></td><td><input type="checkbox" name="lab_mpv_notdone"></td><td>PDW</td><td><input type="text" class="form-control" name="pdw"></td><td><input type="checkbox" name="lab_pdw_notdone"></td></tr>
+                            <tr><td>PCT</td><td><input type="number" step="0.1" class="form-control" name="lab_pct"></td><td><input type="checkbox" name="lab_pct_notdone"></td><td>Other</td><td><input type="text" class="form-control" name="lab_other"></td><td><input type="checkbox" name="lab_other_notdone"></td></tr>
                           </tbody>
                         </table>
                       </div>
@@ -1237,17 +1257,23 @@
       if (pregnant2242) pregnant2242.style.display = 'block';
     }
   }
-//Hide hiv_art_status, art_regimen if hiv_status is not positive
+//Hide hiv_art_status, art_regimen, cd4, viral_load if hiv_status is not positive or if hiv_status is null
   function hideHivArtStatus() {
     const hivStatus = document.getElementById('hiv_status');
     const hivArtStatus = document.getElementById('hiv_art_status');
     const artRegimen = document.getElementById('art_regimen');
-    if (hivStatus.value !== 'Positive') {
+    const cd4 = document.getElementById('cd4');
+    const viral_load = document.getElementById('viral_load');
+    if (hivStatus.value === '' || hivStatus.value === "Unknown" || hivStatus.value === "Negative") {
       hivArtStatus.style.display = 'none';
       artRegimen.style.display = 'none';
+      cd4.style.display = 'none';
+      viral_load.style.display = 'none';
     } else {
       hivArtStatus.style.display = 'block';
       artRegimen.style.display = 'block';
+      cd4.style.display = 'block';
+      viral_load.style.display = 'block';
     }
   }
   //Hide art_regimen if hiv_art_status is not on ART

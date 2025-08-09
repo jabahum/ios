@@ -254,7 +254,7 @@ func NewTemplateDataWithDB(c *fiber.Ctx, store *session.Store, db *sql.DB) *Temp
 	optionz["nationality"] = map[string]string{"": " -- ", "1": "Ugandan", "2": "EAC", "3": "Other"}
 	optionz["mental"] = map[string]string{"": " -- ", "a": "A", "v": "V", "p": "P", "u": "U"}
 	optionz["preg"] = map[string]string{"": " -- ", "1": "Yes", "2": "No", "3": "ND"}
-	optionz["ward"] = map[string]string{"": " -- ", "1": "Ward", "2": "ICU"}
+	optionz["ward"] = map[string]string{"": " -- ", "1": "Ward", "2": "IDU"}
 	optionz["result1"] = map[string]string{"": " -- ", "1": "Pos", "2": "Neg", "3": "indeterminate"}
 	optionz["result2"] = map[string]string{"": " -- ", "1": "Pos", "2": "Neg", "3": "ND"}
 
@@ -292,6 +292,24 @@ func CreateTemplateFunctions(c *fiber.Ctx, db *sql.DB) template.FuncMap {
 		"first":                First,
 		"safe":                 func(s string) template.HTML { return template.HTML(s) },
 		"mul":                  func(a, b float64) float64 { return a * b },
+		// Convert values to int64 for templates
+		"toInt64": func(v interface{}) int64 {
+			switch t := v.(type) {
+			case int:
+				return int64(t)
+			case int64:
+				return t
+			case float64:
+				return int64(t)
+			case string:
+				if n, err := strconv.ParseInt(t, 10, 64); err == nil {
+					return n
+				}
+				return 0
+			default:
+				return 0
+			}
+		},
 		"GetDBOptions": func(table, cat, deflt, fld_name, fld_lab string, deflt_int int64) string {
 			return GetDBOptions(c, db, table, cat, deflt, fld_name, fld_lab, deflt_int)
 		},
@@ -1348,7 +1366,7 @@ func GetCurrentFacility(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 	err = db.QueryRowContext(c.Context(), `
 		SELECT e.facility 
 		FROM employee e
-		JOIN users u ON e.employee_email = u.email
+		JOIN users u ON e.employee_id = u.user_employee
 		WHERE u.user_id = $1 AND e.employee_status = 'active'
 	`, userID).Scan(&facilityID)
 	if err != nil {

@@ -155,6 +155,9 @@ func main() {
 	db := getDB(config, mlogger)
 	defer db.Close()
 
+	// Enable SQL logging for generated models
+	models.SetLogger(log.Printf)
+
 	// Initialize SMS service
 	smsConfig := services.SMSConfig{
 		BaseURL:  config.SMSBaseURL,

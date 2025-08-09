@@ -8258,3 +8258,33 @@ time=2025-08-08T13:19:54.554+03:00 level=INFO msg="Connecting to database" host=
 time=2025-08-08T13:19:54.632+03:00 level=INFO msg="Successfully connected to database"
 time=2025-08-08T13:19:54.632+03:00 level=INFO msg="Initializing SMS service" base_url=https://dispatcher2-mtracpro.health.go.ug username=case_management
 time=2025-08-08T13:19:54.634+03:00 level=INFO msg="starting server..."
+time=2025-08-08T15:49:07.258+03:00 level=INFO msg="Connecting to database" host=localhost user=postgres database=ios
+time=2025-08-08T15:49:07.337+03:00 level=INFO msg="Successfully connected to database"
+time=2025-08-08T15:49:07.338+03:00 level=INFO msg="Initializing SMS service" base_url=https://dispatcher2-mtracpro.health.go.ug username=case_management
+time=2025-08-08T15:49:07.341+03:00 level=INFO msg="starting server..."
+time=2025-08-08T16:05:08.281+03:00 level=INFO msg="Connecting to database" host=localhost user=postgres database=ios
+time=2025-08-08T16:05:08.333+03:00 level=INFO msg="Successfully connected to database"
+time=2025-08-08T16:05:08.333+03:00 level=INFO msg="Initializing SMS service" base_url=https://dispatcher2-mtracpro.health.go.ug username=case_management
+time=2025-08-08T16:05:08.335+03:00 level=INFO msg="starting server..."
+time=2025-08-08T16:06:57.035+03:00 level=INFO msg="Connecting to database" host=localhost user=postgres database=ios
+time=2025-08-08T16:06:57.247+03:00 level=INFO msg="Successfully connected to database"
+time=2025-08-08T16:06:57.247+03:00 level=INFO msg="Initializing SMS service" base_url=https://dispatcher2-mtracpro.health.go.ug username=case_management
+time=2025-08-08T16:06:57.273+03:00 level=INFO msg="starting server..."
+time=2025-08-08T16:30:24.684+03:00 level=INFO msg="Connecting to database" host=localhost user=postgres database=ios
+time=2025-08-08T16:30:24.750+03:00 level=INFO msg="Successfully connected to database"
+time=2025-08-08T16:30:24.751+03:00 level=INFO msg="Initializing SMS service" base_url=https://dispatcher2-mtracpro.health.go.ug username=case_management
+time=2025-08-08T16:30:24.752+03:00 level=INFO msg="starting server..."
+time=2025-08-08T16:37:28.076+03:00 level=INFO msg="Connecting to database" host=localhost user=postgres database=ios
+time=2025-08-08T16:37:28.154+03:00 level=INFO msg="Successfully connected to database"
+time=2025-08-08T16:37:28.154+03:00 level=INFO msg="Initializing SMS service" base_url=https://dispatcher2-mtracpro.health.go.ug username=case_management
+time=2025-08-08T16:37:28.155+03:00 level=INFO msg="starting server..."
+time=2025-08-08T16:37:28.156+03:00 level=ERROR msg="Failed to start server" error="failed to listen: listen tcp4 :3000: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted."
+time=2025-08-08T17:54:42.124+03:00 level=INFO msg="Connecting to database" host=localhost user=postgres database=ios
+time=2025-08-08T17:54:42.207+03:00 level=INFO msg="Successfully connected to database"
+time=2025-08-08T17:54:42.207+03:00 level=INFO msg="Initializing SMS service" base_url=https://dispatcher2-mtracpro.health.go.ug username=case_management
+time=2025-08-08T17:54:42.210+03:00 level=INFO msg="starting server..."
+time=2025-08-08T23:15:41.549+03:00 level=INFO msg="Connecting to database" host=localhost user=postgres database=ios
+time=2025-08-08T23:15:41.609+03:00 level=INFO msg="Successfully connected to database"
+time=2025-08-08T23:15:41.609+03:00 level=INFO msg="Initializing SMS service" base_url=https://dispatcher2-mtracpro.health.go.ug username=case_management
+time=2025-08-08T23:15:41.610+03:00 level=INFO msg="starting server..."
+time=2025-08-08T23:15:41.610+03:00 level=ERROR msg="Failed to start server" error="failed to listen: listen tcp4 :3000: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted."

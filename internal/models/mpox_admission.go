@@ -175,31 +175,91 @@ type MpoxRashEvaluation struct {
 
 // MpoxLaboratoryInvestigations represents laboratory investigations
 type MpoxLaboratoryInvestigations struct {
-	ID              int
-	DemographicsID  int
-	ALT             sql.NullFloat64
-	AST             sql.NullFloat64
-	Creatinine      sql.NullFloat64
-	Potassium       sql.NullFloat64
-	Urea            sql.NullFloat64
-	CreatineKinase  sql.NullFloat64
-	Calcium         sql.NullFloat64
-	Sodium          sql.NullFloat64
-	CRP             sql.NullFloat64
-	Glucose         sql.NullFloat64
-	Lactate         sql.NullFloat64
-	Haemoglobin     sql.NullFloat64
-	TotalBilirubin  sql.NullFloat64
-	WBCCount        sql.NullFloat64
-	Platelets       sql.NullFloat64
-	ProthrombinTime sql.NullFloat64
-	APTT            sql.NullFloat64
-	Nutritionists   sql.NullFloat64
-	MalariaResult   sql.NullString
-	SyphilisResult  sql.NullString
-	MpoxResult      sql.NullString
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	ID                    int
+	DemographicsID        int
+	ALT                   sql.NullFloat64
+	AST                   sql.NullFloat64
+	Creatinine            sql.NullFloat64
+	Potassium             sql.NullFloat64
+	Urea                  sql.NullFloat64
+	CreatineKinase        sql.NullFloat64
+	Calcium               sql.NullFloat64
+	Sodium                sql.NullFloat64
+	CRP                   sql.NullFloat64
+	Glucose               sql.NullFloat64
+	Lactate               sql.NullFloat64
+	Haemoglobin           sql.NullFloat64
+	TotalBilirubin        sql.NullFloat64
+	WBCCount              sql.NullFloat64
+	Platelets             sql.NullFloat64
+	ProthrombinTime       sql.NullFloat64
+	APTT                  sql.NullFloat64
+	TotalProtein          sql.NullFloat64
+	Albumin               sql.NullFloat64
+	BilirubinD            sql.NullFloat64
+	Lymphocytes           sql.NullFloat64
+	Monocytes             sql.NullFloat64
+	Eosinophils           sql.NullFloat64
+	Basophils             sql.NullFloat64
+	Neutrophils           sql.NullFloat64
+	HGB                   sql.NullFloat64
+	HCT                   sql.NullFloat64
+	MCV                   sql.NullFloat64
+	MCH                   sql.NullFloat64
+	MCHC                  sql.NullFloat64
+	RDW                   sql.NullFloat64
+	RDWSD                 sql.NullFloat64
+	RDWCV                 sql.NullFloat64
+	MPV                   sql.NullFloat64
+	PDW                   sql.NullString
+	PCT                   sql.NullFloat64
+	LabOther              sql.NullString
+	LabALTNotDone         sql.NullBool
+	LabASTNotDone         sql.NullBool
+	LabCreatinineNotDone  sql.NullBool
+	LabPotassiumNotDone   sql.NullBool
+	TotalProteinNotDone   sql.NullBool
+	AlbuminNotDone        sql.NullBool
+	LabUreaNotDone        sql.NullBool
+	LabCKNotDone          sql.NullBool
+	LabCalciumNotDone     sql.NullBool
+	LabSodiumNotDone      sql.NullBool
+	LabLymphocytesNotDone sql.NullBool
+	LabMonocytesNotDone   sql.NullBool
+	LabEosinophilsNotDone sql.NullBool
+	LabBasophilsNotDone   sql.NullBool
+	LabCRPNotDone         sql.NullBool
+	LabNeutrophilsNotDone sql.NullBool
+	LabHGBNotDone         sql.NullBool
+	LabHCTNotDone         sql.NullBool
+	LabMCVNotDone         sql.NullBool
+	LabMCHNotDone         sql.NullBool
+	LabMCHCNotDone        sql.NullBool
+	LabRDWNotDone         sql.NullBool
+	LabRDWSDNotDone       sql.NullBool
+	LabRDWCVNotDone       sql.NullBool
+	LabMPVNotDone         sql.NullBool
+	LabPDWNotDone         sql.NullBool
+	LabPCTNotDone         sql.NullBool
+	LabOtherNotDone       sql.NullBool
+	LabGlucoseNotDone     sql.NullBool
+	LabLactateNotDone     sql.NullBool
+	LabHaemoglobinNotDone sql.NullBool
+	LabBilirubinNotDone   sql.NullBool
+	LabBilirubinDNotDone  sql.NullBool
+	LabWBCNotDone         sql.NullBool
+	LabPlateletsNotDone   sql.NullBool
+	LabProthrombinNotDone sql.NullBool
+	LabAPTTNotDone        sql.NullBool
+	OtherMalaria          sql.NullString
+	OtherHIV              sql.NullString
+	OtherSyphilis         sql.NullString
+	OtherMpox             sql.NullString
+	HepatitisB            sql.NullString
+	HepatitisC            sql.NullString
+	DataEntrantName       sql.NullString
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
 }
 
 // MpoxDataEntrant represents the data entrant information
@@ -333,19 +393,51 @@ func (l *MpoxLaboratoryInvestigations) Insert(db *sql.DB) error {
 			demographics_id, alt, ast, creatinine, potassium, urea,
 			creatine_kinase, calcium, sodium, crp, glucose, lactate,
 			haemoglobin, total_bilirubin, wbc_count, platelets,
-			prothrombin_time, aptt, nutritionists, malaria_result, syphilis_result,
-			mpox_result, created_at, updated_at
+			prothrombin_time, aptt, total_protein, albumin, bilirubin_d,
+			lymphocytes, monocytes, eosinophils, basophils, neutrophils,
+			hgb, hct, mcv, mch, mchc, rdw, rdw_sd, rdw_cv, mpv, pdw, pct,
+			lab_other, lab_alt_notdone, lab_ast_notdone, lab_creatinine_notdone,
+			lab_potassium_notdone, total_protein_notdone, albumin_notdone,
+			lab_urea_notdone, lab_ck_notdone, lab_calcium_notdone, lab_sodium_notdone,
+			lab_lymphocytes_notdone, lab_monocytes_notdone, lab_eosinophils_notdone,
+			lab_basophils_notdone, lab_crp_notdone, lab_neutrophils_notdone,
+			lab_hgb_notdone, lab_hct_notdone, lab_mcv_notdone, lab_mch_notdone,
+			lab_mchc_notdone, lab_rdw_notdone, lab_rdw_sd_notdone, lab_rdw_cv_notdone,
+			lab_mpv_notdone, lab_pdw_notdone, lab_pct_notdone, lab_other_notdone,
+			lab_glucose_notdone, lab_lactate_notdone, lab_haemoglobin_notdone,
+			lab_bilirubin_notdone, lab_bilirubin_d_notdone, lab_wbc_notdone,
+			lab_platelets_notdone, lab_prothrombin_notdone, lab_aptt_notdone,
+			other_malaria, other_hiv, other_syphilis, other_mpox, hepatitis_b, hepatitis_c,
+			data_entrant_name, created_at, updated_at
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
-			$16, $17, $18, $19, $20, $21, $22,
+			$16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29,
+			$30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43,
+			$44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55, $56, $57,
+			$58, $59, $60, $61, $62, $63, $64, $65, $66, $67, $68, $69, $70, $71,
+			$72, $73, $74, $75, $76, $77, $78, $79, $80, $81, $82, $83, $84, $85,
 			CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
 		) RETURNING id`
 	return db.QueryRow(query,
 		l.DemographicsID, l.ALT, l.AST, l.Creatinine, l.Potassium, l.Urea,
 		l.CreatineKinase, l.Calcium, l.Sodium, l.CRP, l.Glucose, l.Lactate,
 		l.Haemoglobin, l.TotalBilirubin, l.WBCCount, l.Platelets,
-		l.ProthrombinTime, l.APTT, l.Nutritionists, l.MalariaResult, l.SyphilisResult,
-		l.MpoxResult).Scan(&l.ID)
+		l.ProthrombinTime, l.APTT, l.TotalProtein, l.Albumin, l.BilirubinD,
+		l.Lymphocytes, l.Monocytes, l.Eosinophils, l.Basophils, l.Neutrophils,
+		l.HGB, l.HCT, l.MCV, l.MCH, l.MCHC, l.RDW, l.RDWSD, l.RDWCV, l.MPV, l.PDW, l.PCT,
+		l.LabOther, l.LabALTNotDone, l.LabASTNotDone, l.LabCreatinineNotDone,
+		l.LabPotassiumNotDone, l.TotalProteinNotDone, l.AlbuminNotDone,
+		l.LabUreaNotDone, l.LabCKNotDone, l.LabCalciumNotDone, l.LabSodiumNotDone,
+		l.LabLymphocytesNotDone, l.LabMonocytesNotDone, l.LabEosinophilsNotDone,
+		l.LabBasophilsNotDone, l.LabCRPNotDone, l.LabNeutrophilsNotDone,
+		l.LabHGBNotDone, l.LabHCTNotDone, l.LabMCVNotDone, l.LabMCHNotDone,
+		l.LabMCHCNotDone, l.LabRDWNotDone, l.LabRDWSDNotDone, l.LabRDWCVNotDone,
+		l.LabMPVNotDone, l.LabPDWNotDone, l.LabPCTNotDone, l.LabOtherNotDone,
+		l.LabGlucoseNotDone, l.LabLactateNotDone, l.LabHaemoglobinNotDone,
+		l.LabBilirubinNotDone, l.LabBilirubinDNotDone, l.LabWBCNotDone,
+		l.LabPlateletsNotDone, l.LabProthrombinNotDone, l.LabAPTTNotDone,
+		l.OtherMalaria, l.OtherHIV, l.OtherSyphilis, l.OtherMpox, l.HepatitisB, l.HepatitisC,
+		l.DataEntrantName).Scan(&l.ID)
 }
 
 func (d *MpoxDataEntrant) Insert(db *sql.DB) error {

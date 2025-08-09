@@ -112,6 +112,8 @@
             <!-- Main Content -->
             <div class="col-md-9">
                 <form method="post" action="/cases/encounters/save" name="encounterForm" id="encounterForm">
+                <input type="hidden" name="client_id" value="{{.FormRef.ID}}">
+                <input type="hidden" name="outbreak_id" value="{{.OutbreakID}}">
                 <div class="container-fluid">
                     
                     <h1>Encounter Form</h1>
@@ -199,6 +201,11 @@
                         <li class="nav-item">
                             <a class="nav-link active" id="vitals-tab" data-toggle="tab" href="#vitals" role="tab" aria-controls="vitals" aria-selected="true">Vitals</a>
                         </li>
+                        {{ if eq .OutbreakID 6 }}
+                        <li class="nav-item">
+                            <a class="nav-link" id="admissions-tab" data-toggle="tab" href="#admissions" role="tab" aria-controls="admissions" aria-selected="false">Admissions</a>
+                        </li>
+                        {{ end }}
                         <li class="nav-item">
                             <a class="nav-link" id="symptoms-tab" data-toggle="tab" href="#symptoms" role="tab" aria-controls="symptoms" aria-selected="false">Symptoms</a>
                         </li>
@@ -217,7 +224,51 @@
                     </ul>
                     <div class="tab-content" id="myTabContent">
                         
-                        <div class="tab-pane fade show active" id="vitals" role="tabpanel" aria-labelledby="vitals-tab"> 
+                        <div class="tab-pane fade show active" id="vitals" role="tabpanel" aria-labelledby="vitals-tab">
+                        
+                        {{ if eq .OutbreakID 6 }}
+                        <div class="tab-pane fade" id="admissions" role="tabpanel" aria-labelledby="admissions-tab">
+                            <div class="card">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="mb-0">Admission Details</h5>
+                                </div>
+                                <div class="card-body">
+                                    {{ if .HasMpoxAdmission }}
+                                    <table class="table table-sm table-bordered">
+                                        <tbody>
+                                            <tr>
+                                                <th style="width: 30%">Admission ID</th>
+                                                <td>{{ .MpoxAdmissionID }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Case Classification</th>
+                                                <td>{{ GetDBLabel "mpox_demographics" "suspect_confirmed_case" "id" (toInt64 .MpoxAdmissionID) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Pregnant</th>
+                                                <td>{{ GetDBLabel "mpox_demographics" "pregnant" "id" (toInt64 .MpoxAdmissionID) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Occupation</th>
+                                                <td>{{ GetDBLabel "mpox_demographics" "occupation" "id" (toInt64 .MpoxAdmissionID) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Site of first encounter</th>
+                                                <td>{{ GetDBLabel "mpox_demographics" "site_of_first_encounter_other" "id" (toInt64 .MpoxAdmissionID) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Data Entrant</th>
+                                                <td>{{ GetDBLabel "mpox_demographics" "data_entrant_name" "id" (toInt64 .MpoxAdmissionID) }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    {{ else }}
+                                    <div class="alert alert-warning mb-0">No admission record found for this patient.</div>
+                                    {{ end }}
+                                </div>
+                            </div>
+                        </div>
+                        {{ end }} 
                             <p>.</p> 
                             <div class="row registration-input-row">    
                                 <div class="col-lg-12">
@@ -1252,7 +1303,7 @@
                                             <div class="row">
                                         <div class="col-lg-6">
                                             <div class="form-group">
-                                                <label class="form-label fw-bold">Specimen collection done for EVD patients?</label> 
+                                                <label class="form-label fw-bold">Specimen collection done for patients?</label> 
                                                 <div class="mt-2">
                                                     {{ GetOptionField "yn" "specimen" "Specimen" "" (index .FormChild3 0).Specimen.Int64 1 | safe }}
                                                 </div>
@@ -1284,6 +1335,7 @@
                                     </div>
                                     </td> 
                                 </tr>
+                                {{ if ne .OutbreakID 6 }}
                                 <tr class="section-header">
                                     <th colspan="2"><i class="fas fa-virus"></i> Ebola Testing</th> 
                                     <th>Collection Date</th>
@@ -1370,6 +1422,7 @@
                                         </div>
                                     </td> 
                                 </tr>
+                                {{ end }}
                                 <tr>
                                     <td colspan="2" class="test-name">Blood culture</td> 
                                     <td><input type="date" name="blood_culture_date" id="blood_culture_date" value="{{ (index .FormChild3 0).BloodCultureDate.String }}" class="form-control"></td>
@@ -1618,6 +1671,278 @@
                                         </div>
                                     </td>
                                 </tr>
+                                {{ if eq .OutbreakID 6 }}
+                                <tr class="section-header">
+                                    <td colspan="6" class="text-center">
+                                        <h6 class="mb-0"><i class="fas fa-flask"></i> Additional Laboratory Investigations (Outbreak 6)</h6>
+                                    </td> 
+                                </tr>
+                                <tr>
+                                    <th class="text-center">Additional Tests</th>
+                                    <th class="text-center">Values</th>
+                                    <th class="text-center">Not Done</th>
+                                    <th class="text-center">Additional Tests</th>
+                                    <th class="text-center">Values</th>
+                                    <th class="text-center">Not Done</th>
+                                </tr>
+                                <tr>
+                                    <td class="test-name">Total Protein (g/dL)</td>
+                                    <td><input type="text" name="total_protein" id="total_protein" value="{{ (index .FormChild3 0).TotalProtein.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="total_protein_nd" id="total_protein_nd" {{ if eq (index .FormChild3 0).TotalProteinNd.Bool true }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="total_protein_nd">ND</label>
+                                        </div>
+                                    </td>
+                                    <td class="test-name">Albumin (g/dL)</td>
+                                    <td><input type="text" name="albumin" id="albumin" value="{{ (index .FormChild3 0).Albumin.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="albumin_nd" id="albumin_nd" {{ if eq (index .FormChild3 0).AlbuminNd.Bool true }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="albumin_nd">ND</label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="test-name">Bilirubin D (mg/dL)</td>
+                                    <td><input type="text" name="bilirubin_d" id="bilirubin_d" value="{{ (index .FormChild3 0).BilirubinD.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="bilirubin_d_nd" id="bilirubin_d_nd" {{ if eq (index .FormChild3 0).BilirubinDNd.Bool true }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="bilirubin_d_nd">ND</label>
+                                        </div>
+                                    </td>
+                                    <td class="test-name">Lymphocytes (%)</td>
+                                    <td><input type="text" name="lymphocytes" id="lymphocytes" value="{{ (index .FormChild3 0).Lymphocytes.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="lymphocytes_nd" id="lymphocytes_nd" {{ if eq (index .FormChild3 0).LymphocytesNd.Bool true }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="lymphocytes_nd">ND</label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="test-name">Monocytes (%)</td>
+                                    <td><input type="text" name="monocytes" id="monocytes" value="{{ (index .FormChild3 0).Monocytes.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="monocytes_nd" id="monocytes_nd" {{ if eq (index .FormChild3 0).MonocytesNd.Bool true }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="monocytes_nd">ND</label>
+                                        </div>
+                                    </td>
+                                    <td class="test-name">Eosinophils (%)</td>
+                                    <td><input type="text" name="eosinophils" id="eosinophils" value="{{ (index .FormChild3 0).Eosinophils.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="eosinophils_nd" id="eosinophils_nd" {{ if eq (index .FormChild3 0).EosinophilsNd.Bool true }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="eosinophils_nd">ND</label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="test-name">Basophils (%)</td>
+                                    <td><input type="text" name="basophils" id="basophils" value="{{ (index .FormChild3 0).Basophils.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="basophils_nd" id="basophils_nd" {{ if eq (index .FormChild3 0).BasophilsNd.Bool true }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="basophils_nd">ND</label>
+                                        </div>
+                                    </td>
+                                    <td class="test-name">Neutrophils (%)</td>
+                                    <td><input type="text" name="neutrophils" id="neutrophils" value="{{ (index .FormChild3 0).Neutrophils.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="neutrophils_nd" id="neutrophils_nd" {{ if eq (index .FormChild3 0).NeutrophilsNd.Bool true }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="neutrophils_nd">ND</label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="test-name">HGB (g/dL)</td>
+                                    <td><input type="text" name="hgb" id="hgb" value="{{ (index .FormChild3 0).Hgb.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="hgb_nd" id="hgb_nd" {{ if eq (index .FormChild3 0).HgbNd.Bool true }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="hgb_nd">ND</label>
+                                        </div>
+                                    </td>
+                                    <td class="test-name">HCT (%)</td>
+                                    <td><input type="text" name="hct" id="hct" value="{{ (index .FormChild3 0).Hct.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="hct_nd" id="hct_nd" {{ if eq (index .FormChild3 0).HctNd.Bool true }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="hct_nd">ND</label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="test-name">MCV (fL)</td>
+                                    <td><input type="text" name="mcv" id="mcv" value="{{ (index .FormChild3 0).Mcv.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="mcv_nd" id="mcv_nd" {{ if eq (index .FormChild3 0).McvNd.Bool true }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="mcv_nd">ND</label>
+                                        </div>
+                                    </td>
+                                    <td class="test-name">MCH (pg)</td>
+                                    <td><input type="text" name="mch" id="mch" value="{{ (index .FormChild3 0).Mch.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="mch_nd" id="mch_nd" {{ if eq (index .FormChild3 0).MchNd.Bool true }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="mch_nd">ND</label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="test-name">MCHC (g/dL)</td>
+                                    <td><input type="text" name="mchc" id="mchc" value="{{ (index .FormChild3 0).Mchc.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="mchc_nd" id="mchc_nd" {{ if eq (index .FormChild3 0).MchcNd.Bool true }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="mchc_nd">ND</label>
+                                        </div>
+                                    </td>
+                                    <td class="test-name">RDW (%)</td>
+                                    <td><input type="text" name="rdw" id="rdw" value="{{ (index .FormChild3 0).Rdw.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="rdw_nd" id="rdw_nd" {{ if eq (index .FormChild3 0).RdwNd.Bool true }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="rdw_nd">ND</label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="test-name">RDW-SD (fL)</td>
+                                    <td><input type="text" name="rdw_sd" id="rdw_sd" value="{{ (index .FormChild3 0).RdwSd.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="rdw_sd_nd" id="rdw_sd_nd" {{ if eq (index .FormChild3 0).RdwSdNd.Bool true }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="rdw_sd_nd">ND</label>
+                                        </div>
+                                    </td>
+                                    <td class="test-name">RDW-CV (%)</td>
+                                    <td><input type="text" name="rdw_cv" id="rdw_cv" value="{{ (index .FormChild3 0).RdwCv.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="rdw_cv_nd" id="rdw_cv_nd" {{ if eq (index .FormChild3 0).RdwCvNd.Bool true }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="rdw_cv_nd">ND</label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="test-name">MPV (fL)</td>
+                                    <td><input type="text" name="mpv" id="mpv" value="{{ (index .FormChild3 0).Mpv.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="mpv_nd" id="mpv_nd" {{ if eq (index .FormChild3 0).MpvNd.Bool true }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="mpv_nd">ND</label>
+                                        </div>
+                                    </td>
+                                    <td class="test-name">PDW</td>
+                                    <td><input type="text" name="pdw" id="pdw" value="{{ (index .FormChild3 0).Pdw.String }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="pdw_nd" id="pdw_nd" {{ if eq (index .FormChild3 0).PdwNd.Bool true }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="pdw_nd">ND</label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="test-name">PCT (%)</td>
+                                    <td><input type="text" name="pct" id="pct" value="{{ (index .FormChild3 0).Pct.Float64 }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="pct_nd" id="pct_nd" {{ if eq (index .FormChild3 0).PctNd.Bool true }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="pct_nd">ND</label>
+                                        </div>
+                                    </td>
+                                    <td class="test-name">Other</td>
+                                    <td><input type="text" name="lab_other" id="lab_other" value="{{ (index .FormChild3 0).LabOther.String }}" class="form-control"></td>
+                                    <td class="text-center">
+                                        <div class="form-check">
+                                            <input type="checkbox" value="1" name="lab_other_nd" id="lab_other_nd" {{ if eq (index .FormChild3 0).LabOtherNd.Bool true }}checked{{ end }} class="form-check-input">
+                                            <label class="form-check-label checkbox-label" for="lab_other_nd">ND</label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="section-header">
+                                    <td colspan="6" class="text-center">
+                                        <h6 class="mb-0"><i class="fas fa-vial"></i> Other Tests</h6>
+                                    </td> 
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="test-name">Malaria</td>
+                                    <td colspan="4">
+                                        <select name="other_malaria" id="other_malaria" class="form-control">
+                                            <option value="">Select</option>
+                                            <option value="Positive" {{ if eq (index .FormChild3 0).OtherMalaria.String "Positive" }}selected{{ end }}>Positive</option>
+                                            <option value="Negative" {{ if eq (index .FormChild3 0).OtherMalaria.String "Negative" }}selected{{ end }}>Negative</option>
+                                            <option value="Not done" {{ if eq (index .FormChild3 0).OtherMalaria.String "Not done" }}selected{{ end }}>Not done</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="test-name">HIV</td>
+                                    <td colspan="4">
+                                        <select name="other_hiv" id="other_hiv" class="form-control">
+                                            <option value="">Select</option>
+                                            <option value="Positive" {{ if eq (index .FormChild3 0).OtherHIV.String "Positive" }}selected{{ end }}>Positive</option>
+                                            <option value="Negative" {{ if eq (index .FormChild3 0).OtherHIV.String "Negative" }}selected{{ end }}>Negative</option>
+                                            <option value="Not done" {{ if eq (index .FormChild3 0).OtherHIV.String "Not done" }}selected{{ end }}>Not done</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="test-name">Syphilis</td>
+                                    <td colspan="4">
+                                        <select name="other_syphilis" id="other_syphilis" class="form-control">
+                                            <option value="">Select</option>
+                                            <option value="Positive" {{ if eq (index .FormChild3 0).OtherSyphilis.String "Positive" }}selected{{ end }}>Positive</option>
+                                            <option value="Negative" {{ if eq (index .FormChild3 0).OtherSyphilis.String "Negative" }}selected{{ end }}>Negative</option>
+                                            <option value="Not done" {{ if eq (index .FormChild3 0).OtherSyphilis.String "Not done" }}selected{{ end }}>Not done</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="test-name">Mpox</td>
+                                    <td colspan="4">
+                                        <select name="other_mpox" id="other_mpox" class="form-control">
+                                            <option value="">Select</option>
+                                            <option value="Positive" {{ if eq (index .FormChild3 0).OtherMpox.String "Positive" }}selected{{ end }}>Positive</option>
+                                            <option value="Negative" {{ if eq (index .FormChild3 0).OtherMpox.String "Negative" }}selected{{ end }}>Negative</option>
+                                            <option value="Not done" {{ if eq (index .FormChild3 0).OtherMpox.String "Not done" }}selected{{ end }}>Not done</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="test-name">Hepatitis B</td>
+                                    <td colspan="4">
+                                        <select name="hepatitis_b" id="hepatitis_b" class="form-control">
+                                            <option value="">Select</option>
+                                            <option value="Positive" {{ if eq (index .FormChild3 0).HepatitisB.String "Positive" }}selected{{ end }}>Positive</option>
+                                            <option value="Negative" {{ if eq (index .FormChild3 0).HepatitisB.String "Negative" }}selected{{ end }}>Negative</option>
+                                            <option value="Not done" {{ if eq (index .FormChild3 0).HepatitisB.String "Not done" }}selected{{ end }}>Not done</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="test-name">Hepatitis C</td>
+                                    <td colspan="4">
+                                        <select name="hepatitis_c" id="hepatitis_c" class="form-control">
+                                            <option value="">Select</option>
+                                            <option value="Positive" {{ if eq (index .FormChild3 0).HepatitisC.String "Positive" }}selected{{ end }}>Positive</option>
+                                            <option value="Negative" {{ if eq (index .FormChild3 0).HepatitisC.String "Negative" }}selected{{ end }}>Negative</option>
+                                            <option value="Not done" {{ if eq (index .FormChild3 0).HepatitisC.String "Not done" }}selected{{ end }}>Not done</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="test-name">Data Entrant Name</td>
+                                    <td colspan="4">
+                                        <input type="text" name="data_entrant_name" id="data_entrant_name" value="{{ (index .FormChild3 0).DataEntrantName.String }}" class="form-control">
+                                    </td>
+                                </tr>
+                                {{ end }}
                             </table>
                                 </div>
                             </div>
@@ -1754,31 +2079,173 @@
                                                             <label class="form-check-label radio-label">No</label>
                                                         </div>
                                                     </div>
-                                                    <div class="medication-options">
-                                                        <div class="checkbox-item">
-                                                            <input type="checkbox" name="amoxicillin" value="1" {{ if eq (index .FormChild4 0).Amoxicillin.Int64 1 }}checked{{ end }} class="form-check-input">
-                                                            <span class="checkbox-label">Amoxicillin</span>
-                                                        </div>
-                                                        <div class="checkbox-item">
-                                                            <input type="checkbox" name="ceftriaxone" value="1" {{ if eq (index .FormChild4 0).Ceftriaxone.Int64 1 }}checked{{ end }} class="form-check-input">
-                                                            <span class="checkbox-label">Ceftriaxone</span>
-                                                        </div>
-                                                        <div class="checkbox-item">
-                                                            <input type="checkbox" name="cefixime" value="1" {{ if eq (index .FormChild4 0).Cefixime.Int64 1 }}checked{{ end }} class="form-check-input">
-                                                            <span class="checkbox-label">Cefixime</span>
-                                                        </div>
-                                                        <div class="checkbox-item">
-                                                            <input type="checkbox" name="antibacterial_aza" value="1" {{ if eq (index .FormChild4 0).AntibacterialAza.Int64 1 }}checked{{ end }} class="form-check-input">
-                                                            <span class="checkbox-label">Other:</span>
-                                                            <input type="text" name="antibacterial_other" id="antibacterial_other" value="{{ (index .FormChild4 0).AntibacterialOther.String }}" placeholder="Specify">
-                                                        </div>
-                                                    </div>
                                                 </div>
                                             </td>
-                                            <td><input value="{{ (index .FormChild4 0).AntibacterialDose.String }}" type="text" name="antibacterial_dose" id="antibacterial_dose" class="form-control" placeholder="Dose"></td>
-                                            <td><input value="{{ (index .FormChild4 0).AntibacterialRoute.String }}" type="text" name="antibacterial_route" id="antibacterial_route" class="form-control" placeholder="Route"></td>
-                                            <td><input value="{{ (index .FormChild4 0).AntibacterialFreq.String }}" type="text" name="antibacterial_freq" id="antibacterial_freq" class="form-control" placeholder="Frequency"></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
                                         </tr>
+                                        <tr>
+                                            <td class="treatment-type">
+                                                <div class="form-check">
+                                                    <input type="checkbox" name="amoxicillin" value="1" {{ if eq (index .FormChild4 0).Amoxicillin.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                    <label class="form-check-label checkbox-label">Amoxicillin</label>
+                                                </div>
+                                            </td>
+                                            <td><input value="{{ (index .FormChild4 0).AmoxicillinDose.String }}" type="text" name="amoxicillin_dose" class="form-control" placeholder="Dose"></td>
+                                            <td>
+                                                <select name="amoxicillin_route" class="form-control">
+                                                    <option value="">Select</option>
+                                                    <option value="Oral" {{ if eq (index .FormChild4 0).AmoxicillinRoute.String "Oral" }}selected{{ end }}>Oral</option>
+                                                    <option value="IV" {{ if eq (index .FormChild4 0).AmoxicillinRoute.String "IV" }}selected{{ end }}>IV</option>
+                                                    <option value="IM" {{ if eq (index .FormChild4 0).AmoxicillinRoute.String "IM" }}selected{{ end }}>IM</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <select name="amoxicillin_freq" class="form-control">
+                                                    <option value="">Select</option>
+                                                    <option value="OD" {{ if eq (index .FormChild4 0).AmoxicillinFreq.String "OD" }}selected{{ end }}>OD</option>
+                                                    <option value="TDS" {{ if eq (index .FormChild4 0).AmoxicillinFreq.String "TDS" }}selected{{ end }}>TDS</option>
+                                                    <option value="QID" {{ if eq (index .FormChild4 0).AmoxicillinFreq.String "QID" }}selected{{ end }}>QID</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="treatment-type">
+                                                <div class="form-check">
+                                                    <input type="checkbox" name="ceftriaxone" value="1" {{ if eq (index .FormChild4 0).Ceftriaxone.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                    <label class="form-check-label checkbox-label">Ceftriaxone</label>
+                                                </div>
+                                            </td>
+                                            <td><input value="{{ (index .FormChild4 0).CeftriaxoneDose.String }}" type="text" name="ceftriaxone_dose" class="form-control" placeholder="Dose"></td>
+                                            <td>
+                                                <select name="ceftriaxone_route" class="form-control">
+                                                    <option value="">Select</option>
+                                                    <option value="Oral" {{ if eq (index .FormChild4 0).CeftriaxoneRoute.String "Oral" }}selected{{ end }}>Oral</option>
+                                                    <option value="IV" {{ if eq (index .FormChild4 0).CeftriaxoneRoute.String "IV" }}selected{{ end }}>IV</option>
+                                                    <option value="IM" {{ if eq (index .FormChild4 0).CeftriaxoneRoute.String "IM" }}selected{{ end }}>IM</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <select name="ceftriaxone_freq" class="form-control">
+                                                    <option value="">Select</option>
+                                                    <option value="OD" {{ if eq (index .FormChild4 0).CeftriaxoneFreq.String "OD" }}selected{{ end }}>OD</option>
+                                                    <option value="TDS" {{ if eq (index .FormChild4 0).CeftriaxoneFreq.String "TDS" }}selected{{ end }}>TDS</option>
+                                                    <option value="QID" {{ if eq (index .FormChild4 0).CeftriaxoneFreq.String "QID" }}selected{{ end }}>QID</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="treatment-type">
+                                                <div class="form-check">
+                                                    <input type="checkbox" name="cefixime" value="1" {{ if eq (index .FormChild4 0).Cefixime.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                    <label class="form-check-label checkbox-label">Cefixime</label>
+                                                </div>
+                                            </td>
+                                            <td><input value="{{ (index .FormChild4 0).CefiximeDose.String }}" type="text" name="cefixime_dose" class="form-control" placeholder="Dose"></td>
+                                            <td>
+                                                <select name="cefixime_route" class="form-control">
+                                                    <option value="">Select</option>
+                                                    <option value="Oral" {{ if eq (index .FormChild4 0).CefiximeRoute.String "Oral" }}selected{{ end }}>Oral</option>
+                                                    <option value="IV" {{ if eq (index .FormChild4 0).CefiximeRoute.String "IV" }}selected{{ end }}>IV</option>
+                                                    <option value="IM" {{ if eq (index .FormChild4 0).CefiximeRoute.String "IM" }}selected{{ end }}>IM</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <select name="cefixime_freq" class="form-control">
+                                                    <option value="">Select</option>
+                                                    <option value="OD" {{ if eq (index .FormChild4 0).CefiximeFreq.String "OD" }}selected{{ end }}>OD</option>
+                                                    <option value="TDS" {{ if eq (index .FormChild4 0).CefiximeFreq.String "TDS" }}selected{{ end }}>TDS</option>
+                                                    <option value="QID" {{ if eq (index .FormChild4 0).CefiximeFreq.String "QID" }}selected{{ end }}>QID</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <!-- Newly added antibacterials per-line -->
+                                        <tr>
+                                            <td class="treatment-type"><div class="form-check"><input type="checkbox" name="ampicillin" value="1" {{ if eq (index .FormChild4 0).Ampicillin.Int64 1 }}checked{{ end }} class="form-check-input"><label class="form-check-label checkbox-label">Ampicillin</label></div></td>
+                                            <td><input value="{{ (index .FormChild4 0).AmpicillinDose.String }}" type="text" name="ampicillin_dose" class="form-control" placeholder="Dose"></td>
+                                            <td><select name="ampicillin_route" class="form-control"><option value="">Select</option><option value="Oral" {{ if eq (index .FormChild4 0).AmpicillinRoute.String "Oral" }}selected{{ end }}>Oral</option><option value="IV" {{ if eq (index .FormChild4 0).AmpicillinRoute.String "IV" }}selected{{ end }}>IV</option><option value="IM" {{ if eq (index .FormChild4 0).AmpicillinRoute.String "IM" }}selected{{ end }}>IM</option></select></td>
+                                            <td><select name="ampicillin_freq" class="form-control"><option value="">Select</option><option value="OD" {{ if eq (index .FormChild4 0).AmpicillinFreq.String "OD" }}selected{{ end }}>OD</option><option value="TDS" {{ if eq (index .FormChild4 0).AmpicillinFreq.String "TDS" }}selected{{ end }}>TDS</option><option value="QID" {{ if eq (index .FormChild4 0).AmpicillinFreq.String "QID" }}selected{{ end }}>QID</option></select></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="treatment-type"><div class="form-check"><input type="checkbox" name="chloramphenicol" value="1" {{ if eq (index .FormChild4 0).Chloramphenicol.Int64 1 }}checked{{ end }} class="form-check-input"><label class="form-check-label checkbox-label">Chloramphenicol</label></div></td>
+                                            <td><input value="{{ (index .FormChild4 0).ChloramphenicolDose.String }}" type="text" name="chloramphenicol_dose" class="form-control" placeholder="Dose"></td>
+                                            <td><select name="chloramphenicol_route" class="form-control"><option value="">Select</option><option value="Oral" {{ if eq (index .FormChild4 0).ChloramphenicolRoute.String "Oral" }}selected{{ end }}>Oral</option><option value="IV" {{ if eq (index .FormChild4 0).ChloramphenicolRoute.String "IV" }}selected{{ end }}>IV</option><option value="IM" {{ if eq (index .FormChild4 0).ChloramphenicolRoute.String "IM" }}selected{{ end }}>IM</option></select></td>
+                                            <td><select name="chloramphenicol_freq" class="form-control"><option value="">Select</option><option value="OD" {{ if eq (index .FormChild4 0).ChloramphenicolFreq.String "OD" }}selected{{ end }}>OD</option><option value="TDS" {{ if eq (index .FormChild4 0).ChloramphenicolFreq.String "TDS" }}selected{{ end }}>TDS</option><option value="QID" {{ if eq (index .FormChild4 0).ChloramphenicolFreq.String "QID" }}selected{{ end }}>QID</option></select></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="treatment-type"><div class="form-check"><input type="checkbox" name="amoxiclav" value="1" {{ if eq (index .FormChild4 0).Amoxiclav.Int64 1 }}checked{{ end }} class="form-check-input"><label class="form-check-label checkbox-label">Augmentin (Amoxiclav)</label></div></td>
+                                            <td><input value="{{ (index .FormChild4 0).AmoxiclavDose.String }}" type="text" name="amoxiclav_dose" class="form-control" placeholder="Dose"></td>
+                                            <td><select name="amoxiclav_route" class="form-control"><option value="">Select</option><option value="Oral" {{ if eq (index .FormChild4 0).AmoxiclavRoute.String "Oral" }}selected{{ end }}>Oral</option><option value="IV" {{ if eq (index .FormChild4 0).AmoxiclavRoute.String "IV" }}selected{{ end }}>IV</option><option value="IM" {{ if eq (index .FormChild4 0).AmoxiclavRoute.String "IM" }}selected{{ end }}>IM</option></select></td>
+                                            <td><select name="amoxiclav_freq" class="form-control"><option value="">Select</option><option value="OD" {{ if eq (index .FormChild4 0).AmoxiclavFreq.String "OD" }}selected{{ end }}>OD</option><option value="TDS" {{ if eq (index .FormChild4 0).AmoxiclavFreq.String "TDS" }}selected{{ end }}>TDS</option><option value="QID" {{ if eq (index .FormChild4 0).AmoxiclavFreq.String "QID" }}selected{{ end }}>QID</option></select></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="treatment-type"><div class="form-check"><input type="checkbox" name="azithromycin" value="1" {{ if eq (index .FormChild4 0).Azithromycin.Int64 1 }}checked{{ end }} class="form-check-input"><label class="form-check-label checkbox-label">Azithromycin</label></div></td>
+                                            <td><input value="{{ (index .FormChild4 0).AzithromycinDose.String }}" type="text" name="azithromycin_dose" class="form-control" placeholder="Dose"></td>
+                                            <td><select name="azithromycin_route" class="form-control"><option value="">Select</option><option value="Oral" {{ if eq (index .FormChild4 0).AzithromycinRoute.String "Oral" }}selected{{ end }}>Oral</option><option value="IV" {{ if eq (index .FormChild4 0).AzithromycinRoute.String "IV" }}selected{{ end }}>IV</option><option value="IM" {{ if eq (index .FormChild4 0).AzithromycinRoute.String "IM" }}selected{{ end }}>IM</option></select></td>
+                                            <td><select name="azithromycin_freq" class="form-control"><option value="">Select</option><option value="OD" {{ if eq (index .FormChild4 0).AzithromycinFreq.String "OD" }}selected{{ end }}>OD</option><option value="TDS" {{ if eq (index .FormChild4 0).AzithromycinFreq.String "TDS" }}selected{{ end }}>TDS</option><option value="QID" {{ if eq (index .FormChild4 0).AzithromycinFreq.String "QID" }}selected{{ end }}>QID</option></select></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="treatment-type"><div class="form-check"><input type="checkbox" name="cefotaxime" value="1" {{ if eq (index .FormChild4 0).Cefotaxime.Int64 1 }}checked{{ end }} class="form-check-input"><label class="form-check-label checkbox-label">Cefotaxime</label></div></td>
+                                            <td><input value="{{ (index .FormChild4 0).CefotaximeDose.String }}" type="text" name="cefotaxime_dose" class="form-control" placeholder="Dose"></td>
+                                            <td><select name="cefotaxime_route" class="form-control"><option value="">Select</option><option value="Oral" {{ if eq (index .FormChild4 0).CefotaximeRoute.String "Oral" }}selected{{ end }}>Oral</option><option value="IV" {{ if eq (index .FormChild4 0).CefotaximeRoute.String "IV" }}selected{{ end }}>IV</option><option value="IM" {{ if eq (index .FormChild4 0).CefotaximeRoute.String "IM" }}selected{{ end }}>IM</option></select></td>
+                                            <td><select name="cefotaxime_freq" class="form-control"><option value="">Select</option><option value="OD" {{ if eq (index .FormChild4 0).CefotaximeFreq.String "OD" }}selected{{ end }}>OD</option><option value="TDS" {{ if eq (index .FormChild4 0).CefotaximeFreq.String "TDS" }}selected{{ end }}>TDS</option><option value="QID" {{ if eq (index .FormChild4 0).CefotaximeFreq.String "QID" }}selected{{ end }}>QID</option></select></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="treatment-type"><div class="form-check"><input type="checkbox" name="ceftazidime" value="1" {{ if eq (index .FormChild4 0).Ceftazidime.Int64 1 }}checked{{ end }} class="form-check-input"><label class="form-check-label checkbox-label">Ceftazidime</label></div></td>
+                                            <td><input value="{{ (index .FormChild4 0).CeftazidimeDose.String }}" type="text" name="ceftazidime_dose" class="form-control" placeholder="Dose"></td>
+                                            <td><select name="ceftazidime_route" class="form-control"><option value="">Select</option><option value="Oral" {{ if eq (index .FormChild4 0).CeftazidimeRoute.String "Oral" }}selected{{ end }}>Oral</option><option value="IV" {{ if eq (index .FormChild4 0).CeftazidimeRoute.String "IV" }}selected{{ end }}>IV</option><option value="IM" {{ if eq (index .FormChild4 0).CeftazidimeRoute.String "IM" }}selected{{ end }}>IM</option></select></td>
+                                            <td><select name="ceftazidime_freq" class="form-control"><option value="">Select</option><option value="OD" {{ if eq (index .FormChild4 0).CeftazidimeFreq.String "OD" }}selected{{ end }}>OD</option><option value="TDS" {{ if eq (index .FormChild4 0).CeftazidimeFreq.String "TDS" }}selected{{ end }}>TDS</option><option value="QID" {{ if eq (index .FormChild4 0).CeftazidimeFreq.String "QID" }}selected{{ end }}>QID</option></select></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="treatment-type"><div class="form-check"><input type="checkbox" name="ciprofloxacin" value="1" {{ if eq (index .FormChild4 0).Ciprofloxacin.Int64 1 }}checked{{ end }} class="form-check-input"><label class="form-check-label checkbox-label">Ciprofloxacin</label></div></td>
+                                            <td><input value="{{ (index .FormChild4 0).CiprofloxacinDose.String }}" type="text" name="ciprofloxacin_dose" class="form-control" placeholder="Dose"></td>
+                                            <td><select name="ciprofloxacin_route" class="form-control"><option value="">Select</option><option value="Oral" {{ if eq (index .FormChild4 0).CiprofloxacinRoute.String "Oral" }}selected{{ end }}>Oral</option><option value="IV" {{ if eq (index .FormChild4 0).CiprofloxacinRoute.String "IV" }}selected{{ end }}>IV</option><option value="IM" {{ if eq (index .FormChild4 0).CiprofloxacinRoute.String "IM" }}selected{{ end }}>IM</option></select></td>
+                                            <td><select name="ciprofloxacin_freq" class="form-control"><option value="">Select</option><option value="OD" {{ if eq (index .FormChild4 0).CiprofloxacinFreq.String "OD" }}selected{{ end }}>OD</option><option value="TDS" {{ if eq (index .FormChild4 0).CiprofloxacinFreq.String "TDS" }}selected{{ end }}>TDS</option><option value="QID" {{ if eq (index .FormChild4 0).CiprofloxacinFreq.String "QID" }}selected{{ end }}>QID</option></select></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="treatment-type"><div class="form-check"><input type="checkbox" name="tetracycline" value="1" {{ if eq (index .FormChild4 0).Tetracycline.Int64 1 }}checked{{ end }} class="form-check-input"><label class="form-check-label checkbox-label">Tetracycline</label></div></td>
+                                            <td><input value="{{ (index .FormChild4 0).TetracyclineDose.String }}" type="text" name="tetracycline_dose" class="form-control" placeholder="Dose"></td>
+                                            <td><select name="tetracycline_route" class="form-control"><option value="">Select</option><option value="Oral" {{ if eq (index .FormChild4 0).TetracyclineRoute.String "Oral" }}selected{{ end }}>Oral</option><option value="IV" {{ if eq (index .FormChild4 0).TetracyclineRoute.String "IV" }}selected{{ end }}>IV</option><option value="IM" {{ if eq (index .FormChild4 0).TetracyclineRoute.String "IM" }}selected{{ end }}>IM</option></select></td>
+                                            <td><select name="tetracycline_freq" class="form-control"><option value="">Select</option><option value="OD" {{ if eq (index .FormChild4 0).TetracyclineFreq.String "OD" }}selected{{ end }}>OD</option><option value="TDS" {{ if eq (index .FormChild4 0).TetracyclineFreq.String "TDS" }}selected{{ end }}>TDS</option><option value="QID" {{ if eq (index .FormChild4 0).TetracyclineFreq.String "QID" }}selected{{ end }}>QID</option></select></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="treatment-type"><div class="form-check"><input type="checkbox" name="imipenem" value="1" {{ if eq (index .FormChild4 0).Imipenem.Int64 1 }}checked{{ end }} class="form-check-input"><label class="form-check-label checkbox-label">Imipenem</label></div></td>
+                                            <td><input value="{{ (index .FormChild4 0).ImipenemDose.String }}" type="text" name="imipenem_dose" class="form-control" placeholder="Dose"></td>
+                                            <td><select name="imipenem_route" class="form-control"><option value="">Select</option><option value="Oral" {{ if eq (index .FormChild4 0).ImipenemRoute.String "Oral" }}selected{{ end }}>Oral</option><option value="IV" {{ if eq (index .FormChild4 0).ImipenemRoute.String "IV" }}selected{{ end }}>IV</option><option value="IM" {{ if eq (index .FormChild4 0).ImipenemRoute.String "IM" }}selected{{ end }}>IM</option></select></td>
+                                            <td><select name="imipenem_freq" class="form-control"><option value="">Select</option><option value="OD" {{ if eq (index .FormChild4 0).ImipenemFreq.String "OD" }}selected{{ end }}>OD</option><option value="TDS" {{ if eq (index .FormChild4 0).ImipenemFreq.String "TDS" }}selected{{ end }}>TDS</option><option value="QID" {{ if eq (index .FormChild4 0).ImipenemFreq.String "QID" }}selected{{ end }}>QID</option></select></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="treatment-type"><div class="form-check"><input type="checkbox" name="cotrimoxazole" value="1" {{ if eq (index .FormChild4 0).Cotrimoxazole.Int64 1 }}checked{{ end }} class="form-check-input"><label class="form-check-label checkbox-label">Cotrimoxazole</label></div></td>
+                                            <td><input value="{{ (index .FormChild4 0).CotrimoxazoleDose.String }}" type="text" name="cotrimoxazole_dose" class="form-control" placeholder="Dose"></td>
+                                            <td><select name="cotrimoxazole_route" class="form-control"><option value="">Select</option><option value="Oral" {{ if eq (index .FormChild4 0).CotrimoxazoleRoute.String "Oral" }}selected{{ end }}>Oral</option><option value="IV" {{ if eq (index .FormChild4 0).CotrimoxazoleRoute.String "IV" }}selected{{ end }}>IV</option><option value="IM" {{ if eq (index .FormChild4 0).CotrimoxazoleRoute.String "IM" }}selected{{ end }}>IM</option></select></td>
+                                            <td><select name="cotrimoxazole_freq" class="form-control"><option value="">Select</option><option value="OD" {{ if eq (index .FormChild4 0).CotrimoxazoleFreq.String "OD" }}selected{{ end }}>OD</option><option value="TDS" {{ if eq (index .FormChild4 0).CotrimoxazoleFreq.String "TDS" }}selected{{ end }}>TDS</option><option value="QID" {{ if eq (index .FormChild4 0).CotrimoxazoleFreq.String "QID" }}selected{{ end }}>QID</option></select></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="treatment-type"><div class="form-check"><input type="checkbox" name="gentamicin" value="1" {{ if eq (index .FormChild4 0).Gentamicin.Int64 1 }}checked{{ end }} class="form-check-input"><label class="form-check-label checkbox-label">Gentamicin</label></div></td>
+                                            <td><input value="{{ (index .FormChild4 0).GentamicinDose.String }}" type="text" name="gentamicin_dose" class="form-control" placeholder="Dose"></td>
+                                            <td><select name="gentamicin_route" class="form-control"><option value="">Select</option><option value="Oral" {{ if eq (index .FormChild4 0).GentamicinRoute.String "Oral" }}selected{{ end }}>Oral</option><option value="IV" {{ if eq (index .FormChild4 0).GentamicinRoute.String "IV" }}selected{{ end }}>IV</option><option value="IM" {{ if eq (index .FormChild4 0).GentamicinRoute.String "IM" }}selected{{ end }}>IM</option></select></td>
+                                            <td><select name="gentamicin_freq" class="form-control"><option value="">Select</option><option value="OD" {{ if eq (index .FormChild4 0).GentamicinFreq.String "OD" }}selected{{ end }}>OD</option><option value="TDS" {{ if eq (index .FormChild4 0).GentamicinFreq.String "TDS" }}selected{{ end }}>TDS</option><option value="QID" {{ if eq (index .FormChild4 0).GentamicinFreq.String "QID" }}selected{{ end }}>QID</option></select></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="treatment-type"><div class="form-check"><input type="checkbox" name="metronidazole" value="1" {{ if eq (index .FormChild4 0).Metronidazole.Int64 1 }}checked{{ end }} class="form-check-input"><label class="form-check-label checkbox-label">Metronidazole</label></div></td>
+                                            <td><input value="{{ (index .FormChild4 0).MetronidazoleDose.String }}" type="text" name="metronidazole_dose" class="form-control" placeholder="Dose"></td>
+                                            <td><select name="metronidazole_route" class="form-control"><option value="">Select</option><option value="Oral" {{ if eq (index .FormChild4 0).MetronidazoleRoute.String "Oral" }}selected{{ end }}>Oral</option><option value="IV" {{ if eq (index .FormChild4 0).MetronidazoleRoute.String "IV" }}selected{{ end }}>IV</option><option value="IM" {{ if eq (index .FormChild4 0).MetronidazoleRoute.String "IM" }}selected{{ end }}>IM</option></select></td>
+                                            <td><select name="metronidazole_freq" class="form-control"><option value="">Select</option><option value="OD" {{ if eq (index .FormChild4 0).MetronidazoleFreq.String "OD" }}selected{{ end }}>OD</option><option value="TDS" {{ if eq (index .FormChild4 0).MetronidazoleFreq.String "TDS" }}selected{{ end }}>TDS</option><option value="QID" {{ if eq (index .FormChild4 0).MetronidazoleFreq.String "QID" }}selected{{ end }}>QID</option></select></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="treatment-type">
+                                                <div class="form-check">
+                                                    <input type="checkbox" name="antibacterial_aza" value="1" {{ if eq (index .FormChild4 0).AntibacterialAza.Int64 1 }}checked{{ end }} class="form-check-input">
+                                                    <label class="form-check-label checkbox-label">Other:</label>
+                                                    <input type="text" name="antibacterial_other" id="antibacterial_other" value="{{ (index .FormChild4 0).AntibacterialOther.String }}" placeholder="Specify">
+                                                </div>
+                                            </td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                        <!-- Antimalarial block (restored) -->
                                         <tr>
                                             <td class="treatment-type">
                                                 <div class="form-group">
@@ -1842,20 +2309,6 @@
                                             <td><input value="{{ (index .FormChild4 0).AntimalarialAaDose.String }}" type="text" name="antimalarial_aa_dose" id="antimalarial_aa_dose" class="form-control" placeholder="Dose"></td>
                                             <td><input value="{{ (index .FormChild4 0).AntimalarialAaRoute.String }}" type="text" name="antimalarial_aa_route" id="antimalarial_aa_route" class="form-control" placeholder="Route"></td>
                                             <td><input value="{{ (index .FormChild4 0).AntimalarialAaFreq.String }}" type="text" name="antimalarial_aa_freq" id="antimalarial_aa_freq" class="form-control" placeholder="Frequency"></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="treatment-type">
-                                                <div class="form-group">
-                                                    <label class="form-label fw-bold">Other Medications:</label>
-                                                    <div class="mt-2">
-                                                        <label class="form-label">Specify:</label>
-                                                        <input type="text" name="other_meds_specify" value="{{ (index .FormChild4 0).OtherMedsSpecify.String }}" class="form-control" placeholder="Specify other medications">
-                                </div>
-                                </div>
-                                            </td>
-                                            <td><input value="{{ (index .FormChild4 0).OtherMedsDose.String }}" type="text" name="other_meds_dose" id="other_meds_dose" class="form-control" placeholder="Dose"></td>
-                                            <td><input value="{{ (index .FormChild4 0).OtherMedsRoute.String }}" type="text" name="other_meds_route" id="other_meds_route" class="form-control" placeholder="Route"></td>
-                                            <td><input value="{{ (index .FormChild4 0).OtherMedsFreq.String }}" type="text" name="other_meds_freq" id="other_meds_freq" class="form-control" placeholder="Frequency"></td>
                                         </tr>
                                     </table>
                                 </div>

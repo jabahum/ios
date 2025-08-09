@@ -20,17 +20,29 @@ func HandlerMpoxDailyFollowUpForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, sto
 		return c.Status(http.StatusBadRequest).SendString("Invalid client ID")
 	}
 
-	// Validate that the client exists
-	var clientExists bool
-	err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM clients WHERE id = $1)", clientID).Scan(&clientExists)
+	// Validate that the client exists and check facility access
+	var clientSite sql.NullInt64
+	err = db.QueryRow("SELECT site FROM clients WHERE id = $1", clientID).Scan(&clientSite)
 	if err != nil {
 		sl.Error("Failed to check client existence", "error", err, "client_id", clientID)
 		return c.Status(500).SendString("Failed to get client details")
 	}
 
-	if !clientExists {
+	if !clientSite.Valid {
 		sl.Error("Client not found", "client_id", clientID)
 		return c.Status(404).SendString("Client not found")
+	}
+
+	// Check facility-based access control
+	userID := GetCurrentUser(c, store)
+	userFacility := GetCurrentFacility(c, db, sl, store)
+	if userFacility > 0 {
+		// User has a facility assigned, check if they can access this case
+		if clientSite.Int64 != int64(userFacility) {
+			sl.Error("User attempted to access mpox daily follow-up for case from different facility",
+				"user_id", userID, "user_facility", userFacility, "case_site", clientSite.Int64, "case_id", clientID)
+			return c.Status(403).SendString("Access denied: You can only access cases from your assigned facility.")
+		}
 	}
 
 	dateStr := c.Query("dte")
@@ -57,17 +69,29 @@ func HandlerMpoxDailyFollowUpSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, s
 		return c.Status(400).SendString("Invalid client ID")
 	}
 
-	// Validate that the client exists
-	var clientExists bool
-	err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM clients WHERE id = $1)", clientID).Scan(&clientExists)
+	// Validate that the client exists and check facility access
+	var clientSite sql.NullInt64
+	err = db.QueryRow("SELECT site FROM clients WHERE id = $1", clientID).Scan(&clientSite)
 	if err != nil {
 		sl.Error("Failed to check client existence", "error", err, "client_id", clientID)
 		return c.Status(500).SendString("Failed to get client details")
 	}
 
-	if !clientExists {
+	if !clientSite.Valid {
 		sl.Error("Client not found", "client_id", clientID)
 		return c.Status(404).SendString("Client not found")
+	}
+
+	// Check facility-based access control
+	userID := GetCurrentUser(c, store)
+	userFacility := GetCurrentFacility(c, db, sl, store)
+	if userFacility > 0 {
+		// User has a facility assigned, check if they can access this case
+		if clientSite.Int64 != int64(userFacility) {
+			sl.Error("User attempted to submit mpox daily follow-up for case from different facility",
+				"user_id", userID, "user_facility", userFacility, "case_site", clientSite.Int64, "case_id", clientID)
+			return c.Status(403).SendString("Access denied: You can only access cases from your assigned facility.")
+		}
 	}
 
 	dateStr := c.FormValue("followup_date")
