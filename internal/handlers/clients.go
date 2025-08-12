@@ -35,7 +35,7 @@ func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 	DoZaLogging("INFO", "Starting Client form", nil)
 
 	userID, userName := GetUser(c, sl, store)
-	role := security.GetRoles(userID, "admin")
+	role := security.GetRoleID(db, userID, "admin")
 	id, err := strconv.Atoi(c.Params("i"))
 	data := NewTemplateData(c, store)
 
@@ -243,7 +243,7 @@ func HandlerCasesList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 	fmt.Println("starting case list")
 
 	userID, userName := GetUser(c, sl, store)
-	role := security.GetRoles(userID, "admin")
+	role := security.GetRoleID(db, userID, "admin")
 
 	data := NewTemplateData(c, store)
 	data.User = userName

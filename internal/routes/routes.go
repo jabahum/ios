@@ -206,6 +206,12 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 	app.Get("/api/rbac/users", middleware.PermissionRequired(store, db, sl, "users", "read"), func(c *fiber.Ctx) error {
 		return handlers.HandlerGetUsers(c, db, sl, store)
 	})
+	app.Get("/api/rbac/users/:user_id/roles", middleware.PermissionRequired(store, db, sl, "users", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerGetUserRoles(c, db, sl)
+	})
+	app.Put("/api/rbac/users/:user_id/roles", middleware.PermissionRequired(store, db, sl, "users", "update"), func(c *fiber.Ctx) error {
+		return handlers.HandlerUpdateUserRoles(c, db, sl, store, config)
+	})
 	app.Post("/api/rbac/user-roles", middleware.PermissionRequired(store, db, sl, "users", "update"), func(c *fiber.Ctx) error {
 		return handlers.HandlerAssignUserRole(c, db, sl, store, config)
 	})
@@ -616,6 +622,7 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 
 		// Migration status
 		protected.Get("/rbac/migration-status", rbacHandler.GetMigrationStatus)
+
 	}
 
 	// MPOX CIF routes (public)
@@ -696,6 +703,31 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 			return c.JSON(users)
 		})
 	}
+
+	// Add missing routes to prevent broken links
+	app.Get("/about", func(c *fiber.Ctx) error {
+		return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "about")
+	})
+	app.Get("/contact", func(c *fiber.Ctx) error {
+		return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "contact")
+	})
+	app.Get("/patienthelp", func(c *fiber.Ctx) error {
+		return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "patienthelp")
+	})
+
+	// Reports AJAX routes (public for authenticated users)
+	app.Get("/reports/quick-stats", func(c *fiber.Ctx) error {
+		return reports.GetQuickStats(c, db, sl, store, config)
+	})
+	app.Get("/reports/chart-data/:type", func(c *fiber.Ctx) error {
+		return reports.GetChartData(c, db, sl, store, config)
+	})
+	app.Get("/reports/table-data", func(c *fiber.Ctx) error {
+		return reports.GetTableData(c, db, sl, store, config)
+	})
+	app.Post("/reports/export", func(c *fiber.Ctx) error {
+		return reports.ExportReport(c, db, sl, store, config)
+	})
 }
 
 // AuthRequired middleware checks if user is authenticated and has required role
@@ -1069,10 +1101,38 @@ func RouteLab(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store,
 func RouteReports(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) { //+
 	// Add RBAC permission checks for reports
 	v.Get("/view", middleware.PermissionRequired(store, db, sl, "reports", "read"), func(c *fiber.Ctx) error {
-		return reports.ReportView(c, db, sl, store, config)
+		return reports.GenerateReport(c, db, sl, store, config)
 	}) //+
 	v.Get("/", middleware.PermissionRequired(store, db, sl, "reports", "read"), func(c *fiber.Ctx) error {
-		return reports.ReportHome(c, db, sl, store, config)
+		return reports.ReportsHome(c, db, sl, store, config)
+	})
+
+	// New comprehensive reports routes
+	v.Post("/generate", middleware.PermissionRequired(store, db, sl, "reports", "read"), func(c *fiber.Ctx) error {
+		return reports.GenerateReport(c, db, sl, store, config)
+	})
+
+	// CIF-specific reports
+	v.Get("/cif/:type", middleware.PermissionRequired(store, db, sl, "reports", "read"), func(c *fiber.Ctx) error {
+		return reports.CIFReports(c, db, sl, store, config)
+	})
+
+	// API endpoints for AJAX data loading
+	v.Get("/api/stats", middleware.PermissionRequired(store, db, sl, "reports", "read"), func(c *fiber.Ctx) error {
+		return reports.GetQuickStats(c, db, sl, store, config)
+	})
+
+	v.Get("/api/chart-data", middleware.PermissionRequired(store, db, sl, "reports", "read"), func(c *fiber.Ctx) error {
+		return reports.GetChartData(c, db, sl, store, config)
+	})
+
+	v.Get("/api/table-data", middleware.PermissionRequired(store, db, sl, "reports", "read"), func(c *fiber.Ctx) error {
+		return reports.GetTableData(c, db, sl, store, config)
+	})
+
+	// Export functionality
+	v.Post("/export", middleware.PermissionRequired(store, db, sl, "reports", "read"), func(c *fiber.Ctx) error {
+		return reports.ExportReport(c, db, sl, store, config)
 	})
 }
 
@@ -1319,4 +1379,24 @@ func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logg
 	protected.Get("/api/inventory/items", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryAPIItems(c) })
 	protected.Get("/api/inventory/stock-levels", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryAPIStockLevels(c) })
 	protected.Get("/api/inventory/low-stock", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryAPILowStock(c) })
+
+	// Reports routes
+	protected.Get("/reports", func(c *fiber.Ctx) error {
+		return reports.ReportsHome(c, db, sl, store, config)
+	})
+	protected.Post("/reports/generate", func(c *fiber.Ctx) error {
+		return reports.GenerateReport(c, db, sl, store, config)
+	})
+	protected.Get("/reports/quick-stats", func(c *fiber.Ctx) error {
+		return reports.GetQuickStats(c, db, sl, store, config)
+	})
+	protected.Get("/reports/chart-data/:type", func(c *fiber.Ctx) error {
+		return reports.GetChartData(c, db, sl, store, config)
+	})
+	protected.Get("/reports/table-data", func(c *fiber.Ctx) error {
+		return reports.GetTableData(c, db, sl, store, config)
+	})
+	protected.Post("/reports/export", func(c *fiber.Ctx) error {
+		return reports.ExportReport(c, db, sl, store, config)
+	})
 }

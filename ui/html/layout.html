@@ -232,8 +232,8 @@
         <div class="container-fluid">
             <div class="row align-items-center">
                 <div class="col-md-6">
-                    <a href="/" class="me-3 text-decoration-none">
-                        <i class="fas fa-home"></i> Home
+                    <a href="/home" class="me-3 text-decoration-none">
+                        <span class="text-white fw-bold fs-4">Case Management System</span>
                     </a>
                     {{if and .IsAuthenticated (ne .OutbreakID 0) (hasPermission .UserPermissions "cases" "read")}}
                     <a href="/cases" class="me-3 text-decoration-none">
@@ -245,6 +245,9 @@
                     </a>
                 </div>
                 <div class="col-md-6 text-end">
+                    <button class="btn btn-outline-light btn-sm me-2" onclick="window.history.back()">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
                     <span class="me-3">
                         <i class="fas fa-user"></i> {{.User}}
                     </span>
@@ -292,7 +295,7 @@
 {{ define "breadcrumb" }}
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb mb-0">
-        <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i> Home</a></li>
+        <li class="breadcrumb-item"><a href="/home"><i class="fas fa-home"></i> Home</a></li>
         {{template "breadcrumb_items" .}}
     </ol>
 </nav>
@@ -334,7 +337,7 @@
         {{end}}
     {{else}}
         <!-- Show general navigation for non-case pages -->
-        <a href="/" class="menu-item">
+        <a href="/home" class="menu-item">
             <i class="fas fa-home"></i> Home
         </a>
         <a href="/outbreaks" class="menu-item">

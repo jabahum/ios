@@ -16,7 +16,7 @@ import (
 // HandlerEmployeeForm handles the employee form display
 func HandlerEmployeeForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
 	userID, userName := GetUser(c, sl, store)
-	role := security.GetRoles(userID, "admin")
+	role := security.GetRoleID(db, userID, "admin")
 
 	id, err := strconv.Atoi(c.Params("i"))
 	if err != nil {
@@ -151,7 +151,7 @@ func HandlerEmployeeSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 // HandlerEmployeeList handles the employee list display
 func HandlerEmployeeList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
 	userID, userName := GetUser(c, sl, store)
-	role := security.GetRoles(userID, "admin")
+	role := security.GetRoleID(db, userID, "admin")
 
 	data := NewTemplateDataWithDB(c, store, db)
 	data.User = userName

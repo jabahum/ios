@@ -9,7 +9,6 @@ import (
 	_ "github.com/lib/pq"
 
 	"case/internal/handlers"
-	"case/internal/reports"
 	"case/internal/routes"
 	"case/internal/services"
 )
@@ -44,7 +43,7 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 
 		//enc := app.Group("/encounter")
 		dis := app.Group("/discharge")
-		rpt := app.Group("/reports")
+		// rpt := app.Group("/reports") // Comment out old reports
 
 		// Additional routes
 		RouteFacilities(hfs, db, sl, store, config)
@@ -58,7 +57,9 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		RouteEmployees(emp, db, sl, store, config)
 		RouteDischarge(dis, db, sl, store, config)
 
-		RouteReports(rpt, db, sl, store, config)
+		// RouteReports(rpt, db, sl, store, config) // Comment out old reports
+		// Use the new comprehensive reports system from internal/routes/routes.go
+		routes.RouteReports(app.Group("/reports"), db, sl, store, config)
 
 		RouteAPIEncounter(enk, db, sl, store, config)
 		RouteAPIStatus(sta, db, sl, store, config)
@@ -183,10 +184,4 @@ func RouteLab(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store,
 	v.Post("/filter", func(c *fiber.Ctx) error { return handlers.HandlerLabList(c, db, sl, store, config) })
 	v.Get("/list", func(c *fiber.Ctx) error { return handlers.HandlerLabList(c, db, sl, store, config) })
 	v.Get("/", func(c *fiber.Ctx) error { return handlers.HandlerLabList(c, db, sl, store, config) })
-}
-
-func RouteReports(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) { //+
-	//+
-	v.Get("/view", func(c *fiber.Ctx) error { return reports.ReportView(c, db, sl, store, config) }) //+
-	v.Get("/", func(c *fiber.Ctx) error { return reports.ReportHome(c, db, sl, store, config) })
 }

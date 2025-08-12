@@ -201,7 +201,10 @@ func (h *RBACManagementHandler) UpdateRole(c *fiber.Ctx) error {
 	userID := GetCurrentUser(c, h.store)
 	h.logger.Info("Role updated", "user_id", userID, "role_id", roleID)
 
-	return c.JSON(fiber.Map{"message": "Role updated successfully"})
+	return c.JSON(fiber.Map{
+		"success": true,
+		"message": "Role updated successfully",
+	})
 }
 
 // DeleteRole handles deleting a role
@@ -265,7 +268,10 @@ func (h *RBACManagementHandler) DeleteRole(c *fiber.Ctx) error {
 	userID := GetCurrentUser(c, h.store)
 	h.logger.Info("Role deleted", "user_id", userID, "role_id", roleID)
 
-	return c.JSON(fiber.Map{"message": "Role deleted successfully"})
+	return c.JSON(fiber.Map{
+		"success": true,
+		"message": "Role deleted successfully",
+	})
 }
 
 // ==================== PERMISSION MANAGEMENT ====================
@@ -508,7 +514,10 @@ func (h *RBACManagementHandler) AssignUserRole(c *fiber.Ctx) error {
 	}
 
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid request body"})
+		return c.Status(400).JSON(fiber.Map{
+			"success": false,
+			"message": "Invalid request body",
+		})
 	}
 
 	// Check if assignment already exists
@@ -519,11 +528,17 @@ func (h *RBACManagementHandler) AssignUserRole(c *fiber.Ctx) error {
 
 	if err != nil {
 		h.logger.Error("Error checking user role assignment", "error", err)
-		return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
+		return c.Status(500).JSON(fiber.Map{
+			"success": false,
+			"message": "Internal server error",
+		})
 	}
 
 	if exists {
-		return c.Status(409).JSON(fiber.Map{"error": "User already has this role"})
+		return c.Status(409).JSON(fiber.Map{
+			"success": false,
+			"message": "User already has this role",
+		})
 	}
 
 	// Insert the assignment
@@ -534,7 +549,10 @@ func (h *RBACManagementHandler) AssignUserRole(c *fiber.Ctx) error {
 
 	if err != nil {
 		h.logger.Error("Error assigning role to user", "error", err)
-		return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
+		return c.Status(500).JSON(fiber.Map{
+			"success": false,
+			"message": "Internal server error",
+		})
 	}
 
 	// Log the action
@@ -544,7 +562,10 @@ func (h *RBACManagementHandler) AssignUserRole(c *fiber.Ctx) error {
 		"user_id", req.UserID,
 		"role_id", req.RoleID)
 
-	return c.JSON(fiber.Map{"message": "Role assigned to user successfully"})
+	return c.JSON(fiber.Map{
+		"success": true,
+		"message": "Role assigned to user successfully",
+	})
 }
 
 // GetUserRoles handles getting all roles for a specific user
@@ -599,7 +620,10 @@ func (h *RBACManagementHandler) GetUserRoles(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(fiber.Map{"roles": roles})
+	return c.JSON(fiber.Map{
+		"success": true,
+		"roles":   roles,
+	})
 }
 
 // RemoveUserRole handles removing a role from a user
@@ -646,7 +670,61 @@ func (h *RBACManagementHandler) RemoveUserRole(c *fiber.Ctx) error {
 		"user_id", userID,
 		"role_id", roleID)
 
-	return c.JSON(fiber.Map{"message": "Role removed from user successfully"})
+	return c.JSON(fiber.Map{
+		"success": true,
+		"message": "Role removed from user successfully",
+	})
+}
+
+// UpdateUserRoles handles updating all roles for a user
+func (h *RBACManagementHandler) UpdateUserRoles(c *fiber.Ctx) error {
+	// Check permission
+	if !middleware.UserHasPermission(c, models.ResourceUsers, models.ActionUpdate) {
+		return c.Status(403).JSON(fiber.Map{"error": "Access denied"})
+	}
+
+	userID, err := strconv.Atoi(c.Params("user_id"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid user ID"})
+	}
+
+	var req struct {
+		Roles []int `json:"roles"`
+	}
+
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+
+	// Clear existing user roles
+	_, err = h.db.ExecContext(c.Context(), `
+		DELETE FROM user_roles WHERE user_id = $1
+	`, userID)
+	if err != nil {
+		h.logger.Error("Error clearing user roles", "error", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
+	}
+
+	// Assign new roles
+	for _, roleID := range req.Roles {
+		_, err = h.db.ExecContext(c.Context(), `
+			INSERT INTO user_roles (user_id, role_id, created_at)
+			VALUES ($1, $2, NOW())
+		`, userID, roleID)
+		if err != nil {
+			h.logger.Error("Error assigning role to user", "error", err)
+			return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
+		}
+	}
+
+	// Log the action
+	adminUserID := GetCurrentUser(c, h.store)
+	h.logger.Info("User roles updated", "user_id", userID, "admin_user_id", adminUserID, "new_roles", req.Roles)
+
+	return c.JSON(fiber.Map{
+		"success": true,
+		"message": "User roles updated successfully",
+	})
 }
 
 // ==================== ROLE PERMISSION MANAGEMENT ====================
@@ -752,12 +830,15 @@ func (h *RBACManagementHandler) AssignRolePermission(c *fiber.Ctx) error {
 
 	// Log the action
 	userID := GetCurrentUser(c, h.store)
-	h.logger.Info("Role permission assigned",
-		"user_id", userID,
+	h.logger.Info("Permission assigned to role",
+		"admin_user_id", userID,
 		"role_id", req.RoleID,
 		"permission_id", req.PermissionID)
 
-	return c.JSON(fiber.Map{"message": "Permission assigned to role successfully"})
+	return c.JSON(fiber.Map{
+		"success": true,
+		"message": "Permission assigned to role successfully",
+	})
 }
 
 // RemoveRolePermission handles removing a permission from a role
@@ -804,7 +885,10 @@ func (h *RBACManagementHandler) RemoveRolePermission(c *fiber.Ctx) error {
 		"role_id", roleID,
 		"permission_id", permissionID)
 
-	return c.JSON(fiber.Map{"message": "Permission removed from role successfully"})
+	return c.JSON(fiber.Map{
+		"success": true,
+		"message": "Permission removed from role successfully",
+	})
 }
 
 // ==================== MIGRATION STATUS ====================
@@ -1010,6 +1094,12 @@ func HandlerRemoveUserRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 	return handler.RemoveUserRole(c)
 }
 
+// HandlerUpdateUserRoles handles updating all roles for a user
+func HandlerUpdateUserRoles(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	handler := NewRBACManagementHandler(db, sl, store, config)
+	return handler.UpdateUserRoles(c)
+}
+
 // HandlerGetRolePermissions handles getting role permissions
 func HandlerGetRolePermissions(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 	handler := NewRBACManagementHandler(db, sl, nil, Config{})
@@ -1184,12 +1274,15 @@ func (h *RBACManagementHandler) GetRole(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
 	}
 	return c.JSON(fiber.Map{
-		"id":          role.ID,
-		"name":        role.Name,
-		"description": role.Description.String,
-		"is_active":   role.IsActive,
-		"created_at":  role.CreatedAt,
-		"updated_at":  role.UpdatedAt,
+		"success": true,
+		"role": fiber.Map{
+			"id":          role.ID,
+			"name":        role.Name,
+			"description": role.Description.String,
+			"is_active":   role.IsActive,
+			"created_at":  role.CreatedAt,
+			"updated_at":  role.UpdatedAt,
+		},
 	})
 }
 
@@ -1222,14 +1315,17 @@ func (h *RBACManagementHandler) GetPermission(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
 	}
 	return c.JSON(fiber.Map{
-		"id":          perm.ID,
-		"name":        perm.Name,
-		"description": perm.Description.String,
-		"resource":    perm.Resource,
-		"action":      perm.Action,
-		"is_active":   perm.IsActive,
-		"created_at":  perm.CreatedAt,
-		"updated_at":  perm.UpdatedAt,
+		"success": true,
+		"permission": fiber.Map{
+			"id":          perm.ID,
+			"name":        perm.Name,
+			"description": perm.Description.String,
+			"resource":    perm.Resource,
+			"action":      perm.Action,
+			"is_active":   perm.IsActive,
+			"created_at":  perm.CreatedAt,
+			"updated_at":  perm.UpdatedAt,
+		},
 	})
 }
 

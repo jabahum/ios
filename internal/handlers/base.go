@@ -452,6 +452,12 @@ func CreateTemplateFunctions(c *fiber.Ctx, db *sql.DB) template.FuncMap {
 		"formatTimeOnly": func(t time.Time) string {
 			return t.Format("3:04:05 PM")
 		},
+		"now": func() time.Time {
+			return time.Now()
+		},
+		"date": func(format string, t time.Time) string {
+			return t.Format(format)
+		},
 		"getSourceColor": func(source string) string {
 			switch strings.ToLower(source) {
 			case "community":
@@ -860,8 +866,7 @@ func GetCurrentOutbreak(c *fiber.Ctx, store *session.Store) int {
 			return i
 		}
 	}
-	fmt.Println("Outbreak ID not found or not an int")
-	log.Println("Outbreak ID not found or not an int")
+	// No outbreak selected - this is normal, not an error
 	return 0
 }
 
@@ -1280,7 +1285,7 @@ func Get_Client_Optionz() map[string]map[string]string {
 	opt["ethnicity"] = map[string]string{"": " -- ", "1": "Black", "2": "Other"}
 	opt["mental"] = map[string]string{"": " -- ", "a": "A", "v": "V", "p": "P", "u": "U"}
 	opt["preg"] = map[string]string{"": " -- ", "1": "Yes", "2": "No", "3": "ND"}
-	opt["ward"] = map[string]string{"": " -- ", "1": "Ward", "2": "ICU"}
+	opt["ward"] = map[string]string{"": " -- ", "1": "Ward", "2": "Infectious Diseases Unit", "3": "Home Based Care"}
 	opt["result1"] = map[string]string{"": " -- ", "1": "Pos", "2": "Neg", "3": "indeterminate"}
 	opt["result2"] = map[string]string{"": " -- ", "1": "Pos", "2": "Neg", "3": "ND"}
 	return opt

@@ -396,11 +396,18 @@
     <script>
         $(document).ready(function() {
             // Initialize Select2 for roles
-            $('#roles').select2({
-                placeholder: 'Select roles...',
-                allowClear: true,
-                width: '100%'
-            });
+            try {
+                $('#roles').select2({
+                    placeholder: 'Select roles...',
+                    allowClear: true,
+                    width: '100%'
+                });
+                console.log('Select2 initialized successfully');
+            } catch (error) {
+                console.error('Select2 initialization failed:', error);
+                // Fallback: show a message that Select2 failed
+                $('#roles').after('<div class="alert alert-warning">Select2 failed to load. Using standard dropdown.</div>');
+            }
 
             // Initialize date picker
             flatpickr("#password_expires_at", {
