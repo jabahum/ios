@@ -6,6 +6,8 @@ import (
 	"log"
 	"log/slog"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
@@ -409,7 +411,6 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		RouteMorbidity(mob, db, sl, store, config)
 		RouteSymptoms(sym, db, sl, store, config)
 		RouteRush(rus, db, sl, store, config)
-		RouteLab(lab, db, sl, store, config)
 
 		RouteEmployees(emp, db, sl, store, config)
 		RouteDischarge(dis, db, sl, store, config)
@@ -756,14 +757,24 @@ func AuthRequired(store *session.Store) fiber.Handler {
 			"/api/locations/villages/:parish_id",
 			"/api/locations/villages/district/:district_id",
 			"/api/locations/villages/subcounty/:subcounty_id",
+			"/api/lab/blood-types",
+			"/api/lab/blood-types/category/:category",
+			"/api/lab/swab-types",
+			"/api/lab/urine-types",
+			"/api/test-lab",
 		}
 
 		path := c.Path()
+		log.Printf("DEBUG: AuthRequired checking path: %s", path)
+
 		for _, route := range publicRoutes {
-			if path == route {
+			if matchesRoute(path, route) {
+				log.Printf("DEBUG: Path %s matches public route %s", path, route)
 				return c.Next()
 			}
 		}
+
+		log.Printf("DEBUG: Path %s requires authentication", path)
 
 		// Check if user is authenticated
 		sess, err := store.Get(c)
@@ -782,6 +793,40 @@ func AuthRequired(store *session.Store) fiber.Handler {
 
 		return c.Next()
 	}
+}
+
+// matchesRoute checks if a path matches a route pattern with parameters
+func matchesRoute(path, pattern string) bool {
+	// Exact match
+	if path == pattern {
+		return true
+	}
+
+	// Split both path and pattern into segments
+	pathSegments := strings.Split(path, "/")
+	patternSegments := strings.Split(pattern, "/")
+
+	// Different number of segments means no match
+	if len(pathSegments) != len(patternSegments) {
+		return false
+	}
+
+	// Check each segment
+	for i, patternSeg := range patternSegments {
+		pathSeg := pathSegments[i]
+
+		// If pattern segment starts with ":", it's a parameter - always match
+		if strings.HasPrefix(patternSeg, ":") {
+			continue
+		}
+
+		// Otherwise, segments must match exactly
+		if pathSeg != patternSeg {
+			return false
+		}
+	}
+
+	return true
 }
 
 func RouteAPIEncounter(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
@@ -1258,6 +1303,15 @@ func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logg
 		return inventoryHandler.HandlerInventoryDashboard(c)
 	})
 
+	// Test endpoint to verify the route is working
+	app.Get("/api/test-lab", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"status":    "success",
+			"message":   "Lab API test endpoint working",
+			"timestamp": time.Now(),
+		})
+	})
+
 	// Protected routes
 	protected := app.Group("/", AuthRequired(store))
 
@@ -1270,6 +1324,28 @@ func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logg
 	// Test protected route
 	protected.Get("/test-protected", func(c *fiber.Ctx) error {
 		return c.SendString("Protected route working!")
+	})
+
+	// Lab Sample Types API routes (protected - require authentication)
+	protected.Get("/api/lab/swab-types", func(c *fiber.Ctx) error {
+		return handlers.HandlerAPIGetLabSwabTypes(c, db, sl)
+	})
+	protected.Get("/api/lab/urine-types", func(c *fiber.Ctx) error {
+		return handlers.HandlerAPIGetLabUrineTypes(c, db, sl)
+	})
+	protected.Get("/api/lab/blood-types", func(c *fiber.Ctx) error {
+		return handlers.HandlerAPIGetLabBloodTypes(c, db, sl)
+	})
+	protected.Get("/api/lab/blood-types/category/:category", func(c *fiber.Ctx) error {
+		return handlers.HandlerAPIGetLabBloodTypesByCategory(c, db, sl)
+	})
+
+	// Lab sample selections routes (protected - require authentication)
+	protected.Post("/api/lab/sample-selections", func(c *fiber.Ctx) error {
+		return handlers.HandlerAPISaveLabSampleSelections(c, db, sl)
+	})
+	protected.Get("/api/lab/sample-selections/:lab_id", func(c *fiber.Ctx) error {
+		return handlers.HandlerAPIGetLabSampleSelections(c, db, sl)
 	})
 
 	// VHF CIF routes
@@ -1399,4 +1475,5 @@ func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logg
 	protected.Post("/reports/export", func(c *fiber.Ctx) error {
 		return reports.ExportReport(c, db, sl, store, config)
 	})
+
 }

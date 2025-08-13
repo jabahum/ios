@@ -238,57 +238,6 @@ func main() {
 	// Set up routes
 	routes.SetRoute(app, db, store, mlogger, config, smsService)
 
-	// VHF CIF routes
-	app.Get("/vhf-cif", func(c *fiber.Ctx) error {
-		return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "vhf_cif")
-	})
-	app.Post("/vhf-cif/save", func(c *fiber.Ctx) error {
-		return handlers.HandlerVHFPatientSubmit(c, db, mlogger, store, config, smsService)
-	})
-	app.Get("/vhf-cif/clinical-signs/:id", func(c *fiber.Ctx) error {
-		data := handlers.NewTemplateData(c, store)
-		data.Form = fiber.Map{"PatientID": c.Params("id")}
-		return handlers.GenerateHTML(c, db, data, "vhf_clinical_signs")
-	})
-	app.Post("/vhf-cif/clinical-signs/:id", func(c *fiber.Ctx) error {
-		return handlers.HandlerVHFClinicalSignsSubmit(c, db, mlogger, store, config)
-	})
-	app.Get("/vhf-cif/hospitalization/:id", func(c *fiber.Ctx) error {
-		data := handlers.NewTemplateData(c, store)
-		data.Form = fiber.Map{"PatientID": c.Params("id")}
-		return handlers.GenerateHTML(c, db, data, "vhf_hospitalization")
-	})
-	app.Post("/vhf-cif/hospitalization/:id", func(c *fiber.Ctx) error {
-		return handlers.HandlerVHFHospitalizationSubmit(c, db, mlogger, store, config)
-	})
-	app.Get("/vhf-cif/risk-factors/:id", func(c *fiber.Ctx) error {
-		data := handlers.NewTemplateData(c, store)
-		data.Form = fiber.Map{"PatientID": c.Params("id")}
-		return handlers.GenerateHTML(c, db, data, "vhf_risk_factors")
-	})
-	app.Post("/vhf-cif/risk-factors/:id", func(c *fiber.Ctx) error {
-		return handlers.HandlerVHFRiskFactorsSubmit(c, db, mlogger, store, config)
-	})
-	app.Get("/vhf-cif/laboratory/:id", func(c *fiber.Ctx) error {
-		data := handlers.NewTemplateData(c, store)
-		data.Form = fiber.Map{"PatientID": c.Params("id")}
-		return handlers.GenerateHTML(c, db, data, "vhf_laboratory")
-	})
-	app.Post("/vhf-cif/laboratory/:id", func(c *fiber.Ctx) error {
-		return handlers.HandlerVHFLaboratorySubmit(c, db, mlogger, store, config, smsService)
-	})
-	app.Get("/vhf-cif/investigator/:id", func(c *fiber.Ctx) error {
-		data := handlers.NewTemplateData(c, store)
-		data.Form = fiber.Map{"PatientID": c.Params("id")}
-		return handlers.GenerateHTML(c, db, data, "vhf_investigator")
-	})
-	app.Post("/vhf-cif/investigator/:id", func(c *fiber.Ctx) error {
-		return handlers.HandlerVHFInvestigatorSubmit(c, db, mlogger, store, config)
-	})
-	app.Get("/vhf-cif/success", func(c *fiber.Ctx) error {
-		return handlers.HandlerVHFSuccess(c, db, mlogger, store, config)
-	})
-
 	mlogger.Info("starting server...")
 	// Start the app
 

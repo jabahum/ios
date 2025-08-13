@@ -320,16 +320,13 @@ func LabByEncounterID(ctx context.Context, db DB, encounterID int) (*Lab, error)
 
 func TreatmentByEncounterID(ctx context.Context, db DB, encounterID int) (*Treatment, error) {
 	// query
-	const sqlstr = `SELECT ` +
-		`treatment_id, encounter_id, antibacterial, amoxicillin, ceftriaxone, cefixime, antibacterial_other, antibacterial_dose, antibacterial_route, antibacterial_freq, antimalarial, antimalarial_artesunate, antimalarial_arthemeter, antimalarial_al, antimalarial_aa, antimalarial_dose, antimalarial_route, antimalarial_freq, other_meds_specify, other_meds_dose, other_meds_route, other_meds_freq, ebola_experimental, ebola_experimental_if, oral, oral_ors, oral_ors_qty, oral_water, oral_water_qty, oral_other, oral_other_qty, iv, iv_qty, iv_using, iv_aza, access_type, blood_trans, oxygen_therapy, oxygen_qty, oxygen_with, vasopressors, renal, invasive, ebola_experimental_if_zmap, ebola_experimental_if_remd, ebola_experimental_if_regn, ebola_experimental_if_favi, ebola_experimental_if_mab, oral_other_aza, antibacterial_aza, antimalarial_artesunate_dose, antimalarial_artesunate_route, antimalarial_artesunate_freq, antimalarial_arthemeter_dose, antimalarial_arthemeter_route, antimalarial_arthemeter_freq, antimalarial_al_dose, antimalarial_al_route, antimalarial_al_freq, antimalarial_aa_dose, antimalarial_aa_route, antimalarial_aa_freq ` +
-		`FROM public.treatment ` +
-		`WHERE encounter_id = $1`
+	const sqlstr = `SELECT treatment_id FROM public.treatment WHERE encounter_id = $1`
 	// run
 	logf(sqlstr, encounterID)
 	t := Treatment{
 		_exists: true,
 	}
-	if err := db.QueryRowContext(ctx, sqlstr, encounterID).Scan(&t.TreatmentID, &t.EncounterID, &t.Antibacterial, &t.Amoxicillin, &t.Ceftriaxone, &t.Cefixime, &t.AntibacterialOther, &t.AntibacterialDose, &t.AntibacterialRoute, &t.AntibacterialFreq, &t.Antimalarial, &t.AntimalarialArtesunate, &t.AntimalarialArthemeter, &t.AntimalarialAl, &t.AntimalarialAa, &t.AntimalarialDose, &t.AntimalarialRoute, &t.AntimalarialFreq, &t.OtherMedsSpecify, &t.OtherMedsDose, &t.OtherMedsRoute, &t.OtherMedsFreq, &t.EbolaExperimental, &t.EbolaExperimentalIf, &t.Oral, &t.OralOrs, &t.OralOrsQty, &t.OralWater, &t.OralWaterQty, &t.OralOther, &t.OralOtherQty, &t.Iv, &t.IvQty, &t.IvUsing, &t.IvAza, &t.AccessType, &t.BloodTrans, &t.OxygenTherapy, &t.OxygenQty, &t.OxygenWith, &t.Vasopressors, &t.Renal, &t.Invasive, &t.EbolaExperimentalIfZmap, &t.EbolaExperimentalIfRemd, &t.EbolaExperimentalIfRegn, &t.EbolaExperimentalIfFavi, &t.EbolaExperimentalIfMab, &t.OralOtherAza, &t.AntibacterialAza, &t.AntimalarialArtesunateDose, &t.AntimalarialArtesunateRoute, &t.AntimalarialArtesunateFreq, &t.AntimalarialArthemeterDose, &t.AntimalarialArthemeterRoute, &t.AntimalarialArthemeterFreq, &t.AntimalarialAlDose, &t.AntimalarialAlRoute, &t.AntimalarialAlFreq, &t.AntimalarialAaDose, &t.AntimalarialAaRoute, &t.AntimalarialAaFreq); err != nil {
+	if err := db.QueryRowContext(ctx, sqlstr, encounterID).Scan(&t.TreatmentID); err != nil {
 		return nil, logerror(err)
 	}
 	return &t, nil

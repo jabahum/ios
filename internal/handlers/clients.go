@@ -3,6 +3,7 @@ package handlers
 import (
 	"case/internal/models"
 	"case/internal/security"
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -23,12 +24,137 @@ type EncounterPageData struct {
 	FormChild1       []models.Clinical
 	FormChild2       []models.Vital
 	FormChild3       []models.Lab
-	FormChild4       []models.Treatment
-	AllEncounters    []models.ClientEncounter // Add field for all encounters
+	FormChild4       []FullTreatmentData
+	AllEncounters    []models.ClientEncounter
 	Optionz          map[string]map[string]string
-	OutbreakID       int // Add OutbreakID field for templates
+	OutbreakID       int
 	HasMpoxAdmission bool
 	MpoxAdmissionID  int
+}
+
+// FullTreatmentData represents complete treatment data for templates
+type FullTreatmentData struct {
+	TreatmentID                 int             `json:"treatment_id"`
+	EncounterID                 sql.NullInt64   `json:"encounter_id"`
+	OutbreakID                  sql.NullInt64   `json:"outbreak_id"`
+	Antibacterial               sql.NullInt64   `json:"antibacterial"`
+	Amoxicillin                 sql.NullInt64   `json:"amoxicillin"`
+	Ceftriaxone                 sql.NullInt64   `json:"ceftriaxone"`
+	Cefixime                    sql.NullInt64   `json:"cefixime"`
+	Ampicillin                  sql.NullInt64   `json:"ampicillin"`
+	Chloramphenicol             sql.NullInt64   `json:"chloramphenicol"`
+	Amoxiclav                   sql.NullInt64   `json:"amoxiclav"`
+	Azithromycin                sql.NullInt64   `json:"azithromycin"`
+	Cefotaxime                  sql.NullInt64   `json:"cefotaxime"`
+	Ceftazidime                 sql.NullInt64   `json:"ceftazidime"`
+	Ciprofloxacin               sql.NullInt64   `json:"ciprofloxacin"`
+	Tetracycline                sql.NullInt64   `json:"tetracycline"`
+	Imipenem                    sql.NullInt64   `json:"imipenem"`
+	Cotrimoxazole               sql.NullInt64   `json:"cotrimoxazole"`
+	Gentamicin                  sql.NullInt64   `json:"gentamicin"`
+	Metronidazole               sql.NullInt64   `json:"metronidazole"`
+	AntibacterialOther          sql.NullString  `json:"antibacterial_other"`
+	AntibacterialDose           sql.NullString  `json:"antibacterial_dose"`
+	AntibacterialRoute          sql.NullString  `json:"antibacterial_route"`
+	AntibacterialFreq           sql.NullString  `json:"antibacterial_freq"`
+	Antimalarial                sql.NullInt64   `json:"antimalarial"`
+	AntimalarialArtesunate      sql.NullInt64   `json:"antimalarial_artesunate"`
+	AntimalarialArthemeter      sql.NullInt64   `json:"antimalarial_arthemeter"`
+	AntimalarialAl              sql.NullInt64   `json:"antimalarial_al"`
+	AntimalarialAa              sql.NullInt64   `json:"antimalarial_aa"`
+	AntimalarialDose            sql.NullString  `json:"antimalarial_dose"`
+	AntimalarialRoute           sql.NullString  `json:"antimalarial_route"`
+	AntimalarialFreq            sql.NullString  `json:"antimalarial_freq"`
+	OtherMedsSpecify            sql.NullString  `json:"other_meds_specify"`
+	OtherMedsDose               sql.NullString  `json:"other_meds_dose"`
+	OtherMedsRoute              sql.NullString  `json:"other_meds_route"`
+	OtherMedsFreq               sql.NullString  `json:"other_meds_freq"`
+	EbolaExperimental           sql.NullInt64   `json:"ebola_experimental"`
+	EbolaExperimentalIf         sql.NullString  `json:"ebola_experimental_if"`
+	Oral                        sql.NullInt64   `json:"oral"`
+	OralOrs                     sql.NullInt64   `json:"oral_ors"`
+	OralOrsQty                  sql.NullFloat64 `json:"oral_ors_qty"`
+	OralWater                   sql.NullInt64   `json:"oral_water"`
+	OralWaterQty                sql.NullFloat64 `json:"oral_water_qty"`
+	OralOther                   sql.NullInt64   `json:"oral_other"`
+	OralOtherQty                sql.NullFloat64 `json:"oral_other_qty"`
+	Iv                          sql.NullInt64   `json:"iv"`
+	IvQty                       sql.NullString  `json:"iv_qty"`
+	IvUsing                     sql.NullString  `json:"iv_using"`
+	IvAza                       sql.NullString  `json:"iv_aza"`
+	AccessType                  sql.NullInt64   `json:"access_type"`
+	BloodTrans                  sql.NullInt64   `json:"blood_trans"`
+	OxygenTherapy               sql.NullInt64   `json:"oxygen_therapy"`
+	OxygenQty                   sql.NullFloat64 `json:"oxygen_qty"`
+	OxygenWith                  sql.NullString  `json:"oxygen_with"`
+	Vasopressors                sql.NullInt64   `json:"vasopressors"`
+	Renal                       sql.NullInt64   `json:"renal"`
+	Invasive                    sql.NullInt64   `json:"invasive"`
+	EbolaRdtAza                 sql.NullInt64   `json:"ebola_rdt_aza"`
+	EbolaExperimentalIfZmap     sql.NullInt64   `json:"ebola_experimental_if_zmap"`
+	EbolaExperimentalIfRemd     sql.NullInt64   `json:"ebola_experimental_if_remd"`
+	EbolaExperimentalIfRegn     sql.NullInt64   `json:"ebola_experimental_if_regn"`
+	EbolaExperimentalIfFavi     sql.NullInt64   `json:"ebola_experimental_if_favi"`
+	EbolaExperimentalIfMab      sql.NullInt64   `json:"ebola_experimental_if_mab"`
+	OralOtherAza                sql.NullString  `json:"oral_other_aza"`
+	AntibacterialAza            sql.NullInt64   `json:"antibacterial_aza"`
+	AntimalarialArtesunateDose  sql.NullString  `json:"antimalarial_artesunate_dose"`
+	AntimalarialArtesunateRoute sql.NullString  `json:"antimalarial_artesunate_route"`
+	AntimalarialArtesunateFreq  sql.NullString  `json:"antimalarial_artesunate_freq"`
+	AntimalarialArthemeterDose  sql.NullString  `json:"antimalarial_arthemeter_dose"`
+	AntimalarialArthemeterRoute sql.NullString  `json:"antimalarial_arthemeter_route"`
+	AntimalarialArthemeterFreq  sql.NullString  `json:"antimalarial_arthemeter_freq"`
+	AntimalarialAlDose          sql.NullString  `json:"antimalarial_al_dose"`
+	AntimalarialAlRoute         sql.NullString  `json:"antimalarial_al_route"`
+	AntimalarialAlFreq          sql.NullString  `json:"antimalarial_al_freq"`
+	AntimalarialAaDose          sql.NullString  `json:"antimalarial_aa_dose"`
+	AntimalarialAaRoute         sql.NullString  `json:"antimalarial_aa_route"`
+	AntimalarialAaFreq          sql.NullString  `json:"antimalarial_aa_freq"`
+	AmoxicillinDose             sql.NullString  `json:"amoxicillin_dose"`
+	AmoxicillinRoute            sql.NullString  `json:"amoxicillin_route"`
+	AmoxicillinFreq             sql.NullString  `json:"amoxicillin_freq"`
+	CeftriaxoneDose             sql.NullString  `json:"ceftriaxone_dose"`
+	CeftriaxoneRoute            sql.NullString  `json:"ceftriaxone_route"`
+	CeftriaxoneFreq             sql.NullString  `json:"ceftriaxone_freq"`
+	CefiximeDose                sql.NullString  `json:"cefixime_dose"`
+	CefiximeRoute               sql.NullString  `json:"cefixime_route"`
+	CefiximeFreq                sql.NullString  `json:"cefixime_freq"`
+	AmpicillinDose              sql.NullString  `json:"ampicillin_dose"`
+	AmpicillinRoute             sql.NullString  `json:"ampicillin_route"`
+	AmpicillinFreq              sql.NullString  `json:"ampicillin_freq"`
+	ChloramphenicolDose         sql.NullString  `json:"chloramphenicol_dose"`
+	ChloramphenicolRoute        sql.NullString  `json:"chloramphenicol_route"`
+	ChloramphenicolFreq         sql.NullString  `json:"chloramphenicol_freq"`
+	AmoxiclavDose               sql.NullString  `json:"amoxiclav_dose"`
+	AmoxiclavRoute              sql.NullString  `json:"amoxiclav_route"`
+	AmoxiclavFreq               sql.NullString  `json:"amoxiclav_freq"`
+	AzithromycinDose            sql.NullString  `json:"azithromycin_dose"`
+	AzithromycinRoute           sql.NullString  `json:"azithromycin_route"`
+	AzithromycinFreq            sql.NullString  `json:"azithromycin_freq"`
+	CefotaximeDose              sql.NullString  `json:"cefotaxime_dose"`
+	CefotaximeRoute             sql.NullString  `json:"cefotaxime_route"`
+	CefotaximeFreq              sql.NullString  `json:"cefotaxime_freq"`
+	CeftazidimeDose             sql.NullString  `json:"ceftazidime_dose"`
+	CeftazidimeRoute            sql.NullString  `json:"ceftazidime_route"`
+	CeftazidimeFreq             sql.NullString  `json:"ceftazidime_freq"`
+	CiprofloxacinDose           sql.NullString  `json:"ciprofloxacin_dose"`
+	CiprofloxacinRoute          sql.NullString  `json:"ciprofloxacin_route"`
+	CiprofloxacinFreq           sql.NullString  `json:"ciprofloxacin_freq"`
+	TetracyclineDose            sql.NullString  `json:"tetracycline_dose"`
+	TetracyclineRoute           sql.NullString  `json:"tetracycline_route"`
+	TetracyclineFreq            sql.NullString  `json:"tetracycline_freq"`
+	ImipenemDose                sql.NullString  `json:"imipenem_dose"`
+	ImipenemRoute               sql.NullString  `json:"imipenem_route"`
+	ImipenemFreq                sql.NullString  `json:"imipenem_freq"`
+	CotrimoxazoleDose           sql.NullString  `json:"cotrimoxazole_dose"`
+	CotrimoxazoleRoute          sql.NullString  `json:"cotrimoxazole_route"`
+	CotrimoxazoleFreq           sql.NullString  `json:"cotrimoxazole_freq"`
+	GentamicinDose              sql.NullString  `json:"gentamicin_dose"`
+	GentamicinRoute             sql.NullString  `json:"gentamicin_route"`
+	GentamicinFreq              sql.NullString  `json:"gentamicin_freq"`
+	MetronidazoleDose           sql.NullString  `json:"metronidazole_dose"`
+	MetronidazoleRoute          sql.NullString  `json:"metronidazole_route"`
+	MetronidazoleFreq           sql.NullString  `json:"metronidazole_freq"`
 }
 
 func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
@@ -530,12 +656,12 @@ func HandlerCaseEncounterForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 			HeartRate:       sql.NullFloat64{Float64: 0, Valid: true},
 			BpSystolic:      sql.NullFloat64{Float64: 0, Valid: true},
 			BpDiastolic:     sql.NullFloat64{Float64: 0, Valid: true},
+			CapillaryRefill: sql.NullInt64{Int64: 0, Valid: true},
 			RespiratoryRate: sql.NullFloat64{Float64: 0, Valid: true},
 			Saturation:      sql.NullFloat64{Float64: 0, Valid: true},
 			Weight:          sql.NullFloat64{Float64: 0, Valid: true},
 			Height:          sql.NullFloat64{Float64: 0, Valid: true},
 			Temperature:     sql.NullFloat64{Float64: 0, Valid: true},
-			MentalStatus:    sql.NullString{String: "", Valid: true},
 			Muac:            sql.NullFloat64{Float64: 0, Valid: true},
 		})
 	}
@@ -546,12 +672,12 @@ func HandlerCaseEncounterForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 			HeartRate:       sql.NullFloat64{Float64: 0, Valid: true},
 			BpSystolic:      sql.NullFloat64{Float64: 0, Valid: true},
 			BpDiastolic:     sql.NullFloat64{Float64: 0, Valid: true},
+			CapillaryRefill: sql.NullInt64{Int64: 0, Valid: true},
 			RespiratoryRate: sql.NullFloat64{Float64: 0, Valid: true},
 			Saturation:      sql.NullFloat64{Float64: 0, Valid: true},
 			Weight:          sql.NullFloat64{Float64: 0, Valid: true},
 			Height:          sql.NullFloat64{Float64: 0, Valid: true},
 			Temperature:     sql.NullFloat64{Float64: 0, Valid: true},
-			MentalStatus:    sql.NullString{String: "", Valid: true},
 			Muac:            sql.NullFloat64{Float64: 0, Valid: true},
 		})
 	}
@@ -578,22 +704,22 @@ func HandlerCaseEncounterForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 	}
 
 	// Get treatment data for the first encounter
-	var treatments []models.Treatment
+	var treatments []FullTreatmentData
 	if len(encounters) > 0 && encounters[0].EncounterID > 0 {
-		treatmentData, err := models.TreatmentByEncounterID(c.Context(), db, encounters[0].EncounterID)
+		treatmentData, err := loadFullTreatmentData(c.Context(), db, encounters[0].EncounterID)
 		if err == nil && treatmentData != nil {
 			treatments = append(treatments, *treatmentData)
 		}
 	}
 	if len(treatments) == 0 {
 		// Add empty treatment data
-		treatments = append(treatments, models.Treatment{
+		treatments = append(treatments, FullTreatmentData{
 			TreatmentID: 0,
 		})
 	}
 	// Ensure we have at least 1 treatment record
 	for len(treatments) < 1 {
-		treatments = append(treatments, models.Treatment{
+		treatments = append(treatments, FullTreatmentData{
 			TreatmentID: 0,
 		})
 	}
@@ -1095,7 +1221,7 @@ func saveLab(c *fiber.Ctx, db *sql.DB, encounterID int) error {
 	if lab_id == 0 {
 		// Create minimal row first to avoid INSERT column-mismatch issues, then update all fields
 		var newID int
-		if err := db.QueryRowContext(c.Context(), "INSERT INTO public.lab (encounter_id) VALUES ($1) RETURNING lab_id", encounterID).Scan(&newID); err != nil {
+		if err := db.QueryRowContext(c.Context(), "INSERT INTO public.lab (encounter_id) VALUES ($1) RETURNING labs_id", encounterID).Scan(&newID); err != nil {
 			return err
 		}
 		lab.LabID = newID
@@ -1114,89 +1240,186 @@ func saveTreatment(c *fiber.Ctx, db *sql.DB, encounterID int) error {
 		treat_id = 0
 	}
 
-	treat := &models.Treatment{
-		TreatmentID:                 treat_id,
-		EncounterID:                 sql.NullInt64{Int64: int64(encounterID), Valid: true},
-		Antibacterial:               ParseNullInt2(c.FormValue("antibacterial")),
-		Amoxicillin:                 ParseNullInt2(c.FormValue("amoxicillin")),
-		Ceftriaxone:                 ParseNullInt2(c.FormValue("ceftriaxone")),
-		Cefixime:                    ParseNullInt2(c.FormValue("cefixime")),
-		Ampicillin:                  ParseNullInt2(c.FormValue("ampicillin")),
-		Chloramphenicol:             ParseNullInt2(c.FormValue("chloramphenicol")),
-		Amoxiclav:                   ParseNullInt2(c.FormValue("amoxiclav")),
-		Azithromycin:                ParseNullInt2(c.FormValue("azithromycin")),
-		Cefotaxime:                  ParseNullInt2(c.FormValue("cefotaxime")),
-		Ceftazidime:                 ParseNullInt2(c.FormValue("ceftazidime")),
-		Ciprofloxacin:               ParseNullInt2(c.FormValue("ciprofloxacin")),
-		Tetracycline:                ParseNullInt2(c.FormValue("tetracycline")),
-		Imipenem:                    ParseNullInt2(c.FormValue("imipenem")),
-		Cotrimoxazole:               ParseNullInt2(c.FormValue("cotrimoxazole")),
-		Gentamicin:                  ParseNullInt2(c.FormValue("gentamicin")),
-		Metronidazole:               ParseNullInt2(c.FormValue("metronidazole")),
-		AntibacterialOther:          ParseNullString2(c.FormValue("antibacterial_other")),
-		AntibacterialDose:           ParseNullString2(c.FormValue("antibacterial_dose")),
-		AntibacterialRoute:          ParseNullString2(c.FormValue("antibacterial_route")),
-		AntibacterialFreq:           ParseNullString2(c.FormValue("antibacterial_freq")),
-		Antimalarial:                ParseNullInt2(c.FormValue("antimalarial")),
-		AntimalarialArtesunate:      ParseNullInt2(c.FormValue("antimalarial_artesunate")),
-		AntimalarialArthemeter:      ParseNullInt2(c.FormValue("antimalarial_arthemeter")),
-		AntimalarialAl:              ParseNullInt2(c.FormValue("antimalarial_al")),
-		AntimalarialAa:              ParseNullInt2(c.FormValue("antimalarial_aa")),
-		AntimalarialDose:            ParseNullString2(c.FormValue("antimalarial_dose")),
-		AntimalarialRoute:           ParseNullString2(c.FormValue("antimalarial_route")),
-		AntimalarialFreq:            ParseNullString2(c.FormValue("antimalarial_freq")),
-		OtherMedsSpecify:            ParseNullString2(c.FormValue("other_meds_specify")),
-		OtherMedsDose:               ParseNullString2(c.FormValue("other_meds_dose")),
-		OtherMedsRoute:              ParseNullString2(c.FormValue("other_meds_route")),
-		OtherMedsFreq:               ParseNullString2(c.FormValue("other_meds_freq")),
-		EbolaExperimental:           ParseNullInt2(c.FormValue("ebola_experimental")),
-		EbolaExperimentalIf:         ParseNullString2(c.FormValue("ebola_experimental_if")),
-		Oral:                        ParseNullInt2(c.FormValue("oral")),
-		OralOrs:                     ParseNullInt2(c.FormValue("oral_ors")),
-		OralOrsQty:                  ParseNullFloat(c.FormValue("oral_ors_qty")),
-		OralWater:                   ParseNullInt2(c.FormValue("oral_water")),
-		OralWaterQty:                ParseNullFloat(c.FormValue("oral_water_qty")),
-		OralOther:                   ParseNullInt2(c.FormValue("oral_other")),
-		OralOtherQty:                ParseNullFloat(c.FormValue("oral_other_qty")),
-		Iv:                          ParseNullInt2(c.FormValue("iv")),
-		IvQty:                       ParseNullString2(c.FormValue("iv_qty")),
-		IvUsing:                     ParseNullString2(c.FormValue("iv_using")),
-		IvAza:                       ParseNullString2(c.FormValue("iv_aza")),
-		AccessType:                  ParseNullInt2(c.FormValue("access_type")),
-		BloodTrans:                  ParseNullInt2(c.FormValue("blood_trans")),
-		OxygenTherapy:               ParseNullInt2(c.FormValue("oxygen_therapy")),
-		OxygenQty:                   ParseNullFloat(c.FormValue("oxygen_qty")),
-		OxygenWith:                  ParseNullString2(c.FormValue("oxygen_with")),
-		Vasopressors:                ParseNullInt2(c.FormValue("vasopressors")),
-		Renal:                       ParseNullInt2(c.FormValue("renal")),
-		Invasive:                    ParseNullInt2(c.FormValue("invasive")),
-		EbolaExperimentalIfZmap:     ParseNullInt2(c.FormValue("ebola_experimental_if_zmap")),
-		EbolaExperimentalIfRemd:     ParseNullInt2(c.FormValue("ebola_experimental_if_remd")),
-		EbolaExperimentalIfRegn:     ParseNullInt2(c.FormValue("ebola_experimental_if_regn")),
-		EbolaExperimentalIfFavi:     ParseNullInt2(c.FormValue("ebola_experimental_if_favi")),
-		EbolaExperimentalIfMab:      ParseNullInt2(c.FormValue("ebola_experimental_if_mab")),
-		OralOtherAza:                ParseNullString2(c.FormValue("oral_other_aza")),
-		AntibacterialAza:            ParseNullInt2(c.FormValue("antibacterial_aza")),
-		AntimalarialArtesunateDose:  ParseNullString2(c.FormValue("antimalarial_artesunate_dose")),
-		AntimalarialArtesunateRoute: ParseNullString2(c.FormValue("antimalarial_artesunate_route")),
-		AntimalarialArtesunateFreq:  ParseNullString2(c.FormValue("antimalarial_artesunate_freq")),
-		AntimalarialArthemeterDose:  ParseNullString2(c.FormValue("antimalarial_arthemeter_dose")),
-		AntimalarialArthemeterRoute: ParseNullString2(c.FormValue("antimalarial_arthemeter_route")),
-		AntimalarialArthemeterFreq:  ParseNullString2(c.FormValue("antimalarial_arthemeter_freq")),
-		AntimalarialAlDose:          ParseNullString2(c.FormValue("antimalarial_al_dose")),
-		AntimalarialAlRoute:         ParseNullString2(c.FormValue("antimalarial_al_route")),
-		AntimalarialAlFreq:          ParseNullString2(c.FormValue("antimalarial_al_freq")),
-		AntimalarialAaDose:          ParseNullString2(c.FormValue("antimalarial_aa_dose")),
-		AntimalarialAaRoute:         ParseNullString2(c.FormValue("antimalarial_aa_route")),
-		AntimalarialAaFreq:          ParseNullString2(c.FormValue("antimalarial_aa_freq")),
+	// Use a simpler approach: create minimal row first, then update
+	if treat_id == 0 {
+		// Insert new treatment with just encounter_id and outbreak_id
+		var newID int
+		if err := db.QueryRowContext(c.Context(),
+			"INSERT INTO public.treatment (encounter_id, outbreak_id) VALUES ($1, $2) RETURNING treatment_id",
+			encounterID, 6).Scan(&newID); err != nil {
+			return fmt.Errorf("failed to insert treatment: %v", err)
+		}
+		treat_id = newID
 	}
 
-	if treat_id == 0 {
-		return treat.Insert(c.Context(), db)
-	} else {
-		treat.SetAsExists()
-		return treat.Update(c.Context(), db)
+	// Now update with all the form data
+	query := `UPDATE public.treatment SET 
+		antibacterial = $1, amoxicillin = $2, ceftriaxone = $3, cefixime = $4, 
+		ampicillin = $5, chloramphenicol = $6, amoxiclav = $7, azithromycin = $8,
+		cefotaxime = $9, ceftazidime = $10, ciprofloxacin = $11, tetracycline = $12,
+		imipenem = $13, cotrimoxazole = $14, gentamicin = $15, metronidazole = $16,
+		antibacterial_other = $17, antibacterial_dose = $18, antibacterial_route = $19, 
+		antibacterial_freq = $20, antimalarial = $21, antimalarial_artesunate = $22,
+		antimalarial_arthemeter = $23, antimalarial_al = $24, antimalarial_aa = $25,
+		antimalarial_dose = $26, antimalarial_route = $27, antimalarial_freq = $28,
+		other_meds_specify = $29, other_meds_dose = $30, other_meds_route = $31,
+		other_meds_freq = $32, ebola_experimental = $33, ebola_experimental_if = $34,
+		oral = $35, oral_ors = $36, oral_ors_qty = $37, oral_water = $38,
+		oral_water_qty = $39, oral_other = $40, oral_other_qty = $41, iv = $42,
+		iv_qty = $43, iv_using = $44, iv_aza = $45, access_type = $46,
+		blood_trans = $47, oxygen_therapy = $48, oxygen_qty = $49, oxygen_with = $50,
+		vasopressors = $51, renal = $52, invasive = $53, ebola_rdt_aza = $54,
+		ebola_experimental_if_zmap = $55, ebola_experimental_if_remd = $56,
+		ebola_experimental_if_regn = $57, ebola_experimental_if_favi = $58,
+		ebola_experimental_if_mab = $59, oral_other_aza = $60, antibacterial_aza = $61,
+		antimalarial_artesunate_dose = $62, antimalarial_artesunate_route = $63,
+		antimalarial_artesunate_freq = $64, antimalarial_arthemeter_dose = $65,
+		antimalarial_arthemeter_route = $66, antimalarial_arthemeter_freq = $67,
+		antimalarial_al_dose = $68, antimalarial_al_route = $69, antimalarial_al_freq = $70,
+		antimalarial_aa_dose = $71, antimalarial_aa_route = $72, antimalarial_aa_freq = $73,
+		amoxicillin_dose = $74, amoxicillin_route = $75, amoxicillin_freq = $76,
+		ceftriaxone_dose = $77, ceftriaxone_route = $78, ceftriaxone_freq = $79,
+		cefixime_dose = $80, cefixime_route = $81, cefixime_freq = $82,
+		ampicillin_dose = $83, ampicillin_route = $84, ampicillin_freq = $85,
+		chloramphenicol_dose = $86, chloramphenicol_route = $87, chloramphenicol_freq = $88,
+		amoxiclav_dose = $89, amoxiclav_route = $90, amoxiclav_freq = $91,
+		azithromycin_dose = $92, azithromycin_route = $93, azithromycin_freq = $94,
+		cefotaxime_dose = $95, cefotaxime_route = $96, cefotaxime_freq = $97,
+		ceftazidime_dose = $98, ceftazidime_route = $99, ceftazidime_freq = $100,
+		ciprofloxacin_dose = $101, ciprofloxacin_route = $102, ciprofloxacin_freq = $103,
+		tetracycline_dose = $104, tetracycline_route = $105, tetracycline_freq = $106,
+		imipenem_dose = $107, imipenem_route = $108, imipenem_freq = $109,
+		cotrimoxazole_dose = $110, cotrimoxazole_route = $111, cotrimoxazole_freq = $112,
+		gentamicin_dose = $113, gentamicin_route = $114, gentamicin_freq = $115,
+		metronidazole_dose = $116, metronidazole_route = $117, metronidazole_freq = $118
+		WHERE treatment_id = $119`
+
+	args := []interface{}{
+		ParseNullInt2(c.FormValue("antibacterial")),
+		ParseNullInt2(c.FormValue("amoxicillin")),
+		ParseNullInt2(c.FormValue("ceftriaxone")),
+		ParseNullInt2(c.FormValue("cefixime")),
+		ParseNullInt2(c.FormValue("ampicillin")),
+		ParseNullInt2(c.FormValue("chloramphenicol")),
+		ParseNullInt2(c.FormValue("amoxiclav")),
+		ParseNullInt2(c.FormValue("azithromycin")),
+		ParseNullInt2(c.FormValue("cefotaxime")),
+		ParseNullInt2(c.FormValue("ceftazidime")),
+		ParseNullInt2(c.FormValue("ciprofloxacin")),
+		ParseNullInt2(c.FormValue("tetracycline")),
+		ParseNullInt2(c.FormValue("imipenem")),
+		ParseNullInt2(c.FormValue("cotrimoxazole")),
+		ParseNullInt2(c.FormValue("gentamicin")),
+		ParseNullInt2(c.FormValue("metronidazole")),
+		ParseNullString2(c.FormValue("antibacterial_other")),
+		ParseNullString2(c.FormValue("antibacterial_dose")),
+		ParseNullString2(c.FormValue("antibacterial_route")),
+		ParseNullString2(c.FormValue("antibacterial_freq")),
+		ParseNullInt2(c.FormValue("antimalarial")),
+		ParseNullInt2(c.FormValue("antimalarial_artesunate")),
+		ParseNullInt2(c.FormValue("antimalarial_arthemeter")),
+		ParseNullInt2(c.FormValue("antimalarial_al")),
+		ParseNullInt2(c.FormValue("antimalarial_aa")),
+		ParseNullString2(c.FormValue("antimalarial_dose")),
+		ParseNullString2(c.FormValue("antimalarial_route")),
+		ParseNullString2(c.FormValue("antimalarial_freq")),
+		ParseNullString2(c.FormValue("other_meds_specify")),
+		ParseNullString2(c.FormValue("other_meds_dose")),
+		ParseNullString2(c.FormValue("other_meds_route")),
+		ParseNullString2(c.FormValue("other_meds_freq")),
+		ParseNullInt2(c.FormValue("ebola_experimental")),
+		ParseNullString2(c.FormValue("ebola_experimental_if")),
+		ParseNullInt2(c.FormValue("oral")),
+		ParseNullInt2(c.FormValue("oral_ors")),
+		ParseNullFloat(c.FormValue("oral_ors_qty")),
+		ParseNullInt2(c.FormValue("oral_water")),
+		ParseNullFloat(c.FormValue("oral_water_qty")),
+		ParseNullInt2(c.FormValue("oral_other")),
+		ParseNullFloat(c.FormValue("oral_other_qty")),
+		ParseNullInt2(c.FormValue("iv")),
+		ParseNullString2(c.FormValue("iv_qty")),
+		ParseNullString2(c.FormValue("iv_using")),
+		ParseNullString2(c.FormValue("iv_aza")),
+		ParseNullInt2(c.FormValue("access_type")),
+		ParseNullInt2(c.FormValue("blood_trans")),
+		ParseNullInt2(c.FormValue("oxygen_therapy")),
+		ParseNullFloat(c.FormValue("oxygen_qty")),
+		ParseNullString2(c.FormValue("oxygen_with")),
+		ParseNullInt2(c.FormValue("vasopressors")),
+		ParseNullInt2(c.FormValue("renal")),
+		ParseNullInt2(c.FormValue("invasive")),
+		ParseNullInt2(c.FormValue("ebola_rdt_aza")),
+		ParseNullInt2(c.FormValue("ebola_experimental_if_zmap")),
+		ParseNullInt2(c.FormValue("ebola_experimental_if_remd")),
+		ParseNullInt2(c.FormValue("ebola_experimental_if_regn")),
+		ParseNullInt2(c.FormValue("ebola_experimental_if_favi")),
+		ParseNullInt2(c.FormValue("ebola_experimental_if_mab")),
+		ParseNullString2(c.FormValue("oral_other_aza")),
+		ParseNullInt2(c.FormValue("antibacterial_aza")),
+		ParseNullString2(c.FormValue("antimalarial_artesunate_dose")),
+		ParseNullString2(c.FormValue("antimalarial_artesunate_route")),
+		ParseNullString2(c.FormValue("antimalarial_artesunate_freq")),
+		ParseNullString2(c.FormValue("antimalarial_arthemeter_dose")),
+		ParseNullString2(c.FormValue("antimalarial_arthemeter_route")),
+		ParseNullString2(c.FormValue("antimalarial_arthemeter_freq")),
+		ParseNullString2(c.FormValue("antimalarial_al_dose")),
+		ParseNullString2(c.FormValue("antimalarial_al_route")),
+		ParseNullString2(c.FormValue("antimalarial_al_freq")),
+		ParseNullString2(c.FormValue("antimalarial_aa_dose")),
+		ParseNullString2(c.FormValue("antimalarial_aa_route")),
+		ParseNullString2(c.FormValue("antimalarial_aa_freq")),
+		ParseNullString2(c.FormValue("amoxicillin_dose")),
+		ParseNullString2(c.FormValue("amoxicillin_route")),
+		ParseNullString2(c.FormValue("amoxicillin_freq")),
+		ParseNullString2(c.FormValue("ceftriaxone_dose")),
+		ParseNullString2(c.FormValue("ceftriaxone_route")),
+		ParseNullString2(c.FormValue("ceftriaxone_freq")),
+		ParseNullString2(c.FormValue("cefixime_dose")),
+		ParseNullString2(c.FormValue("cefixime_route")),
+		ParseNullString2(c.FormValue("cefixime_freq")),
+		ParseNullString2(c.FormValue("ampicillin_dose")),
+		ParseNullString2(c.FormValue("ampicillin_route")),
+		ParseNullString2(c.FormValue("ampicillin_freq")),
+		ParseNullString2(c.FormValue("chloramphenicol_dose")),
+		ParseNullString2(c.FormValue("chloramphenicol_route")),
+		ParseNullString2(c.FormValue("chloramphenicol_freq")),
+		ParseNullString2(c.FormValue("amoxiclav_dose")),
+		ParseNullString2(c.FormValue("amoxiclav_route")),
+		ParseNullString2(c.FormValue("amoxiclav_freq")),
+		ParseNullString2(c.FormValue("azithromycin_dose")),
+		ParseNullString2(c.FormValue("azithromycin_route")),
+		ParseNullString2(c.FormValue("azithromycin_freq")),
+		ParseNullString2(c.FormValue("cefotaxime_dose")),
+		ParseNullString2(c.FormValue("cefotaxime_route")),
+		ParseNullString2(c.FormValue("cefotaxime_freq")),
+		ParseNullString2(c.FormValue("ceftazidime_dose")),
+		ParseNullString2(c.FormValue("ceftazidime_route")),
+		ParseNullString2(c.FormValue("ceftazidime_freq")),
+		ParseNullString2(c.FormValue("ciprofloxacin_dose")),
+		ParseNullString2(c.FormValue("ciprofloxacin_route")),
+		ParseNullString2(c.FormValue("ciprofloxacin_freq")),
+		ParseNullString2(c.FormValue("tetracycline_dose")),
+		ParseNullString2(c.FormValue("tetracycline_route")),
+		ParseNullString2(c.FormValue("tetracycline_freq")),
+		ParseNullString2(c.FormValue("imipenem_dose")),
+		ParseNullString2(c.FormValue("imipenem_route")),
+		ParseNullString2(c.FormValue("imipenem_freq")),
+		ParseNullString2(c.FormValue("cotrimoxazole_dose")),
+		ParseNullString2(c.FormValue("cotrimoxazole_route")),
+		ParseNullString2(c.FormValue("cotrimoxazole_freq")),
+		ParseNullString2(c.FormValue("gentamicin_dose")),
+		ParseNullString2(c.FormValue("gentamicin_route")),
+		ParseNullString2(c.FormValue("gentamicin_freq")),
+		ParseNullString2(c.FormValue("metronidazole_dose")),
+		ParseNullString2(c.FormValue("metronidazole_route")),
+		ParseNullString2(c.FormValue("metronidazole_freq")),
+		treat_id,
 	}
+
+	if _, err := db.ExecContext(c.Context(), query, args...); err != nil {
+		return fmt.Errorf("failed to update treatment: %v", err)
+	}
+	return nil
 }
 
 func HandlerAPIGetEncounter(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
@@ -1397,4 +1620,24 @@ func HandlerAPIPostStatus(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "success",
 	})
+}
+
+// Helper function to load full treatment data from database
+func loadFullTreatmentData(ctx context.Context, db *sql.DB, encounterID int) (*FullTreatmentData, error) {
+	query := `SELECT 
+		treatment_id, encounter_id, outbreak_id, antibacterial, amoxicillin, ceftriaxone, cefixime, ampicillin, chloramphenicol, amoxiclav, azithromycin, cefotaxime, ceftazidime, ciprofloxacin, tetracycline, imipenem, cotrimoxazole, gentamicin, metronidazole, antibacterial_other, antibacterial_dose, antibacterial_route, antibacterial_freq, antimalarial, antimalarial_artesunate, antimalarial_arthemeter, antimalarial_al, antimalarial_aa, antimalarial_dose, antimalarial_route, antimalarial_freq, other_meds_specify, other_meds_dose, other_meds_route, other_meds_freq, ebola_experimental, ebola_experimental_if, oral, oral_ors, oral_ors_qty, oral_water, oral_water_qty, oral_other, oral_other_qty, iv, iv_qty, iv_using, iv_aza, access_type, blood_trans, oxygen_therapy, oxygen_qty, oxygen_with, vasopressors, renal, invasive, ebola_rdt_aza, ebola_experimental_if_zmap, ebola_experimental_if_remd, ebola_experimental_if_regn, ebola_experimental_if_favi, ebola_experimental_if_mab, oral_other_aza, antibacterial_aza, antimalarial_artesunate_dose, antimalarial_artesunate_route, antimalarial_artesunate_freq, antimalarial_arthemeter_dose, antimalarial_arthemeter_route, antimalarial_arthemeter_freq, antimalarial_al_dose, antimalarial_al_route, antimalarial_al_freq, antimalarial_aa_dose, antimalarial_aa_route, antimalarial_aa_freq, amoxicillin_dose, amoxicillin_route, amoxicillin_freq, ceftriaxone_dose, ceftriaxone_route, ceftriaxone_freq, cefixime_dose, cefixime_route, cefixime_freq, ampicillin_dose, ampicillin_route, ampicillin_freq, chloramphenicol_dose, chloramphenicol_route, chloramphenicol_freq, amoxiclav_dose, amoxiclav_route, amoxiclav_freq, azithromycin_dose, azithromycin_route, azithromycin_freq, cefotaxime_dose, cefotaxime_route, cefotaxime_freq, ceftazidime_dose, ceftazidime_route, ceftazidime_freq, ciprofloxacin_dose, ciprofloxacin_route, ciprofloxacin_freq, tetracycline_dose, tetracycline_route, tetracycline_freq, imipenem_dose, imipenem_route, imipenem_freq, cotrimoxazole_dose, cotrimoxazole_route, cotrimoxazole_freq, gentamicin_dose, gentamicin_route, gentamicin_freq, metronidazole_dose, metronidazole_route, metronidazole_freq
+		FROM public.treatment 
+		WHERE encounter_id = $1`
+
+	var treatment FullTreatmentData
+
+	err := db.QueryRowContext(ctx, query, encounterID).Scan(
+		&treatment.TreatmentID, &treatment.EncounterID, &treatment.OutbreakID, &treatment.Antibacterial, &treatment.Amoxicillin, &treatment.Ceftriaxone, &treatment.Cefixime, &treatment.Ampicillin, &treatment.Chloramphenicol, &treatment.Amoxiclav, &treatment.Azithromycin, &treatment.Cefotaxime, &treatment.Ceftazidime, &treatment.Ciprofloxacin, &treatment.Tetracycline, &treatment.Imipenem, &treatment.Cotrimoxazole, &treatment.Gentamicin, &treatment.Metronidazole, &treatment.AntibacterialOther, &treatment.AntibacterialDose, &treatment.AntibacterialRoute, &treatment.AntibacterialFreq, &treatment.Antimalarial, &treatment.AntimalarialArtesunate, &treatment.AntimalarialArthemeter, &treatment.AntimalarialAl, &treatment.AntimalarialAa, &treatment.AntimalarialDose, &treatment.AntimalarialRoute, &treatment.AntimalarialFreq, &treatment.OtherMedsSpecify, &treatment.OtherMedsDose, &treatment.OtherMedsRoute, &treatment.OtherMedsFreq, &treatment.EbolaExperimental, &treatment.EbolaExperimentalIf, &treatment.Oral, &treatment.OralOrs, &treatment.OralOrsQty, &treatment.OralWater, &treatment.OralWaterQty, &treatment.OralOther, &treatment.OralOtherQty, &treatment.Iv, &treatment.IvQty, &treatment.IvUsing, &treatment.IvAza, &treatment.AccessType, &treatment.BloodTrans, &treatment.OxygenTherapy, &treatment.OxygenQty, &treatment.OxygenWith, &treatment.Vasopressors, &treatment.Renal, &treatment.Invasive, &treatment.EbolaRdtAza, &treatment.EbolaExperimentalIfZmap, &treatment.EbolaExperimentalIfRemd, &treatment.EbolaExperimentalIfRegn, &treatment.EbolaExperimentalIfFavi, &treatment.EbolaExperimentalIfMab, &treatment.OralOtherAza, &treatment.AntibacterialAza, &treatment.AntimalarialArtesunateDose, &treatment.AntimalarialArtesunateRoute, &treatment.AntimalarialArtesunateFreq, &treatment.AntimalarialArthemeterDose, &treatment.AntimalarialArthemeterRoute, &treatment.AntimalarialArthemeterFreq, &treatment.AntimalarialAlDose, &treatment.AntimalarialAlRoute, &treatment.AntimalarialAlFreq, &treatment.AntimalarialAaDose, &treatment.AntimalarialAaRoute, &treatment.AntimalarialAaFreq, &treatment.AmoxicillinDose, &treatment.AmoxicillinRoute, &treatment.AmoxicillinFreq, &treatment.CeftriaxoneDose, &treatment.CeftriaxoneRoute, &treatment.CeftriaxoneFreq, &treatment.CefiximeDose, &treatment.CefiximeRoute, &treatment.CefiximeFreq, &treatment.AmpicillinDose, &treatment.AmpicillinRoute, &treatment.AmpicillinFreq, &treatment.ChloramphenicolDose, &treatment.ChloramphenicolRoute, &treatment.ChloramphenicolFreq, &treatment.AmoxiclavDose, &treatment.AmoxiclavRoute, &treatment.AmoxiclavFreq, &treatment.AzithromycinDose, &treatment.AzithromycinRoute, &treatment.AzithromycinFreq, &treatment.CefotaximeDose, &treatment.CefotaximeRoute, &treatment.CefotaximeFreq, &treatment.CeftazidimeDose, &treatment.CeftazidimeRoute, &treatment.CeftazidimeFreq, &treatment.CiprofloxacinDose, &treatment.CiprofloxacinRoute, &treatment.CiprofloxacinFreq, &treatment.TetracyclineDose, &treatment.TetracyclineRoute, &treatment.TetracyclineFreq, &treatment.ImipenemDose, &treatment.ImipenemRoute, &treatment.ImipenemFreq, &treatment.CotrimoxazoleDose, &treatment.CotrimoxazoleRoute, &treatment.CotrimoxazoleFreq, &treatment.GentamicinDose, &treatment.GentamicinRoute, &treatment.GentamicinFreq, &treatment.MetronidazoleDose, &treatment.MetronidazoleRoute, &treatment.MetronidazoleFreq,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &treatment, nil
 }
