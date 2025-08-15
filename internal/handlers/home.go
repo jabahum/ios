@@ -86,6 +86,16 @@ func HandlerHome(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store
 		permissions = make(map[string][]string)
 	}
 
+	// Get user's facility for facility-based restrictions
+	userFacility := GetCurrentFacility(c, db, sl, store)
+
+	// Get user's roles for role-based access
+	userRoles, err := getUserRoles(c, db, userID)
+	if err != nil {
+		sl.Error("Failed to get user roles: " + err.Error())
+		userRoles = []string{}
+	}
+
 	// Check if user has case-related roles
 	hasCaseRole, err := hasCaseRole(c, db, userID)
 	if err != nil {
@@ -107,8 +117,41 @@ func HandlerHome(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store
 
 	data.Optionz["has_case_role"]["value"] = strconv.FormatBool(hasCaseRole)
 
+	// Add user roles and facility to template data
+	data.UserRoles = userRoles
+	data.UserFacility = userFacility
+
 	// Instead of redirecting, render the home page with the selected outbreak
 	return GenerateHTML(c, db, data, "home")
+}
+
+// getUserRoles gets the roles for a specific user
+func getUserRoles(c *fiber.Ctx, db *sql.DB, userID int) ([]string, error) {
+	query := `
+		SELECT DISTINCT r.name
+		FROM roles r
+		JOIN user_roles ur ON r.id = ur.role_id
+		WHERE ur.user_id = $1 AND r.is_active = true
+		ORDER BY r.name
+	`
+
+	rows, err := db.QueryContext(c.Context(), query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var roles []string
+	for rows.Next() {
+		var roleName string
+		err := rows.Scan(&roleName)
+		if err != nil {
+			continue
+		}
+		roles = append(roles, roleName)
+	}
+
+	return roles, nil
 }
 
 // getUserPermissions gets the permissions for a specific user

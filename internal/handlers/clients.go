@@ -18,18 +18,22 @@ import (
 
 // Define a struct for the encounter form page data
 type EncounterPageData struct {
-	FormRef          models.Client
-	Form             []models.ClientEncounter
-	Date             string
-	FormChild1       []models.Clinical
-	FormChild2       []models.Vital
-	FormChild3       []models.Lab
-	FormChild4       []FullTreatmentData
-	AllEncounters    []models.ClientEncounter
-	Optionz          map[string]map[string]string
-	OutbreakID       int
-	HasMpoxAdmission bool
-	MpoxAdmissionID  int
+	FormRef           models.Client
+	Form              []models.ClientEncounter
+	Date              string
+	FormChild1        []models.Clinical
+	FormChild2        []models.Vital
+	FormChild3        []models.Lab
+	FormChild4        []FullTreatmentData
+	AllEncounters     []models.ClientEncounter
+	Optionz           map[string]map[string]string
+	OutbreakID        int
+	HasMpoxAdmission  bool
+	MpoxAdmissionID   int
+	FilteredEmployees []struct {
+		ID   int64  `json:"id"`
+		Name string `json:"name"`
+	}
 }
 
 // FullTreatmentData represents complete treatment data for templates
@@ -751,6 +755,61 @@ func HandlerCaseEncounterForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 		MpoxAdmissionID:  admissionID,
 	}
 
+	// Get filtered employees based on user's facility
+	var filteredEmployees []struct {
+		ID   int64  `json:"id"`
+		Name string `json:"name"`
+	}
+
+	if userFacility > 0 {
+		// Query employees from the same facility
+		rows, err := db.QueryContext(c.Context(), `
+			SELECT employee_id, CONCAT(employee_fname, ' ', employee_lname) as full_name 
+			FROM employee 
+			WHERE facility = $1 AND employee_status = 'active'
+			ORDER BY employee_fname, employee_lname
+		`, userFacility)
+		if err != nil {
+			sl.Error("Failed to get employees for facility", "error", err, "facility", userFacility)
+		} else {
+			defer rows.Close()
+			for rows.Next() {
+				var emp struct {
+					ID   int64  `json:"id"`
+					Name string `json:"name"`
+				}
+				if err := rows.Scan(&emp.ID, &emp.Name); err == nil {
+					filteredEmployees = append(filteredEmployees, emp)
+				}
+			}
+		}
+	} else {
+		// If no facility assigned, get all active employees
+		rows, err := db.QueryContext(c.Context(), `
+			SELECT employee_id, CONCAT(employee_fname, ' ', employee_lname) as full_name 
+			FROM employee 
+			WHERE employee_status = 'active'
+			ORDER BY employee_fname, employee_lname
+		`)
+		if err != nil {
+			sl.Error("Failed to get all employees", "error", err)
+		} else {
+			defer rows.Close()
+			for rows.Next() {
+				var emp struct {
+					ID   int64  `json:"id"`
+					Name string `json:"name"`
+				}
+				if err := rows.Scan(&emp.ID, &emp.Name); err == nil {
+					filteredEmployees = append(filteredEmployees, emp)
+				}
+			}
+		}
+	}
+
+	// Add filtered employees to the data
+	data.FilteredEmployees = filteredEmployees
+
 	// Debug: Log the client data being passed to template
 	sl.Info("Client data for template",
 		"clientID", client.ID,
@@ -760,6 +819,7 @@ func HandlerCaseEncounterForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 		"genderValue", client.Gender.Int64,
 		"outbreakIDValid", client.OutbreakID.Valid,
 		"outbreakIDValue", client.OutbreakID.Int64,
+		"filteredEmployeesCount", len(filteredEmployees),
 	)
 
 	return GenerateHTML(c, db, data, "form_encounters")
@@ -1221,7 +1281,7 @@ func saveLab(c *fiber.Ctx, db *sql.DB, encounterID int) error {
 	if lab_id == 0 {
 		// Create minimal row first to avoid INSERT column-mismatch issues, then update all fields
 		var newID int
-		if err := db.QueryRowContext(c.Context(), "INSERT INTO public.lab (encounter_id) VALUES ($1) RETURNING labs_id", encounterID).Scan(&newID); err != nil {
+		if err := db.QueryRowContext(c.Context(), "INSERT INTO public.lab (encounter_id) VALUES ($1) RETURNING lab_id", encounterID).Scan(&newID); err != nil {
 			return err
 		}
 		lab.LabID = newID

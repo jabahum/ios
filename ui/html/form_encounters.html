@@ -184,7 +184,12 @@
                             <div class="row">
                                 <label class="col-sm-4 col-form-label col-form-label-sm" for="managed_by">Clinician</label>
                                 <div class="col-sm-8">
-                                    {{ GetDBOptions "Employee" "" "" "managed_by" "Employee" (index .Form 0).ManagedBy.Int64 | safe }}
+                                    <select class="form-control-sm patient-input form-select" name="managed_by" id="managed_by" aria-label="Employee">
+                                        <option value=""> -- </option>
+                                        {{range .FilteredEmployees}}
+                                            <option value="{{.ID}}" {{if eq (index $.Form 0).ManagedBy.Int64 .ID}}selected{{end}}>{{.Name}}</option>
+                                        {{end}}
+                                    </select>
                                 </div>
                             </div>
                         </div>

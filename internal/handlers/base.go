@@ -80,6 +80,8 @@ type TemplateData struct {
 	Roles           []Role              // Add Roles field for RBAC
 	Permissions     []Permission        // Add Permissions field for RBAC
 	UserPermissions map[string][]string // Add UserPermissions field for access control
+	UserRoles       []string            // Add UserRoles field for role-based access
+	UserFacility    int                 // Add UserFacility field for facility-based restrictions
 	Outbreaks       []*models.Outbreak  // Correct type for outbreaks
 	Users           []*models.User      // Correct type for users
 	Employee        *EmployeeForm       // Add Employee field for employee forms
