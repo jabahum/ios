@@ -1,120 +1,23 @@
-{{ define "layout" }}
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reports Dashboard - Integrated Outbreak System</title>
-    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .dashboard-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 2rem 0;
-            margin-bottom: 2rem;
-        }
-        .filter-panel {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .report-card {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            transition: transform 0.2s;
-        }
-        .report-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-        }
-        .report-icon {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-        }
-        .stats-card {
-            background: white;
-            border-radius: 10px;
-            padding: 1.5rem;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .stats-number {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #667eea;
-        }
-        .chart-container {
-            background: white;
-            border-radius: 10px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 1.5rem;
-        }
-        .btn-report {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 25px;
-            transition: all 0.3s;
-        }
-        .btn-report:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-            color: white;
-        }
-        .access-badge {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            padding: 0.25rem 0.75rem;
-            border-radius: 15px;
-            font-size: 0.8rem;
-            font-weight: bold;
-        }
-        .access-full { background: #28a745; color: white; }
-        .access-facility { background: #ffc107; color: black; }
-        .access-district { background: #17a2b8; color: white; }
-        .access-limited { background: #6c757d; color: white; }
-    </style>
-</head>
-<body>
-    <!-- Dashboard Header -->
-    <div class="dashboard-header">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <h1><i class="fas fa-chart-line me-3"></i>Reports Dashboard</h1>
-                    <p class="mb-0">Comprehensive analytics and reporting for outbreak management</p>
+{{define "content"}}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Reports Dashboard</h5>
+                    <a href="/home" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Back to Home
+                    </a>
                 </div>
-                <div class="col-md-4 text-end">
-                    <div class="d-flex align-items-center justify-content-end">
-                        <div class="me-3">
-                            <small>Welcome, {{ .User }}</small>
-                        </div>
-                        <a href="/home" class="btn btn-outline-light btn-sm me-2">
-                            <i class="fas fa-arrow-left"></i> Back to Home
-                        </a>
-                        <button class="btn btn-outline-light btn-sm" onclick="window.history.back()">
-                            <i class="fas fa-arrow-left"></i> Back
-                        </button>
+                <div class="card-body">
+                    <p class="text-muted mb-4">Comprehensive analytics and reporting for outbreak management</p>
+                    
+                    <!-- Access Level Badge -->
+                    <div class="text-end mb-3">
+                        <span class="badge bg-{{if eq .Form.AccessLevel "full"}}success{{else if eq .Form.AccessLevel "facility"}}warning{{else if eq .Form.AccessLevel "district"}}info{{else}}secondary{{end}}">
+                            {{ .Form.AccessLevel | title }} Access
+                        </span>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <div class="container">
         <!-- Access Level Badge -->
@@ -124,256 +27,559 @@
             </span>
         </div>
 
-        <!-- Filter Panel -->
-        <div class="filter-panel">
-            <h4><i class="fas fa-filter me-2"></i>Report Filters</h4>
-            <form id="reportFilters" method="POST" action="/reports/generate">
-                <div class="row">
-                    <div class="col-md-3">
-                        <label class="form-label">Date Range</label>
-                        <input type="date" class="form-control" name="start_date" id="start_date" value="{{ .Form.Filters.StartDate }}">
+                    <!-- Filter Panel -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Report Filters</h6>
+                        </div>
+                        <div class="card-body">
+                            <form id="reportFilters" method="POST" onsubmit="return false;">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Date Range</label>
+                                        <input type="date" class="form-control" name="start_date" id="start_date">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">&nbsp;</label>
+                                        <input type="date" class="form-control" name="end_date" id="end_date">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Outbreak</label>
+                                        <select class="form-select" name="outbreak_id" id="outbreak_id">
+                                            <option value="">All Outbreaks</option>
+                                            {{ range .Form.Outbreaks }}
+                                            <option value="{{ .id }}" {{ if eq .id $.Form.Filters.OutbreakID }}selected{{ end }}>{{ .name }}</option>
+                                            {{ else }}
+                                            <option value="" disabled>No outbreaks available</option>
+                                            {{ end }}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Facility</label>
+                                        <select class="form-select" name="facility_id" id="facility_id">
+                                            <option value="">All Facilities</option>
+                                            {{ range .Form.Facilities }}
+                                            <option value="{{ .id }}" {{ if eq .id $.Form.Filters.FacilityID }}selected{{ end }}>{{ .name }}</option>
+                                            {{ end }}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label">District</label>
+                                        <select class="form-select" name="district_id" id="district_id">
+                                            <option value="">All Districts</option>
+                                            {{ range .Form.Districts }}
+                                            <option value="{{ .id }}" {{ if eq .id $.Form.Filters.DistrictID }}selected{{ end }}>{{ .name }}</option>
+                                            {{ end }}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Report Type</label>
+                                        <select class="form-select" name="report_type" id="report_type">
+                                            <option value="general" {{ if eq $.Form.Filters.ReportType "general" }}selected{{ end }}>General Report</option>
+                                            <option value="indicators" {{ if eq $.Form.Filters.ReportType "indicators" }}selected{{ end }}>Health Indicators Report</option>
+                                            <option value="vhf" {{ if eq $.Form.Filters.ReportType "vhf" }}selected{{ end }}>VHF Report</option>
+                                            <option value="measles" {{ if eq $.Form.Filters.ReportType "measles" }}selected{{ end }}>Measles Report</option>
+                                            <option value="polio" {{ if eq $.Form.Filters.ReportType "polio" }}selected{{ end }}>Polio Report</option>
+                                            <option value="mpox" {{ if eq $.Form.Filters.ReportType "mpox" }}selected{{ end }}>Mpox Report</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Patient Type</label>
+                                        <select class="form-select" name="patient_type" id="patient_type">
+                                            <option value="">All Types</option>
+                                            <option value="Case" {{ if eq $.Form.Filters.PatientType "Case" }}selected{{ end }}>Case</option>
+                                            <option value="Suspect" {{ if eq $.Form.Filters.PatientType "Suspect" }}selected{{ end }}>Suspect</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Outcome</label>
+                                        <select class="form-select" name="outcome" id="outcome">
+                                            <option value="">All Outcomes</option>
+                                            <option value="active" {{ if eq $.Form.Filters.Outcome "active" }}selected{{ end }}>Active</option>
+                                            <option value="recovered" {{ if eq $.Form.Filters.Outcome "recovered" }}selected{{ end }}>Recovered</option>
+                                            <option value="died" {{ if eq $.Form.Filters.Outcome "died" }}selected{{ end }}>Died</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label">&nbsp;</label>
+                                        <button type="button" class="btn btn-primary w-100" onclick="applyFilters()">
+                                            <i class="fas fa-filter me-2"></i>Apply Filters
+                                        </button>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">&nbsp;</label>
+                                        <button type="button" class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                                            <i class="fas fa-times me-2"></i>Clear Filters
+                                        </button>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">&nbsp;</label>
+                                        <button type="button" class="btn btn-success w-100" onclick="generateReportFromForm()">
+                                            <i class="fas fa-file-alt me-2"></i>Generate Report
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">&nbsp;</label>
-                        <input type="date" class="form-control" name="end_date" id="end_date" value="{{ .Form.Filters.EndDate }}">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Outbreak</label>
-                        <select class="form-select" name="outbreak_id" id="outbreak_id">
-                            <option value="">All Outbreaks</option>
-                            {{ range .Form.Outbreaks }}
-                            <option value="{{ .id }}" {{ if eq .id $.Form.Filters.OutbreakID }}selected{{ end }}>{{ .name }}</option>
-                            {{ else }}
-                            <option value="" disabled>No outbreaks available</option>
-                            {{ end }}
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Facility</label>
-                        <select class="form-select" name="facility_id" id="facility_id">
-                            <option value="">All Facilities</option>
-                            {{ range .Form.Facilities }}
-                            <option value="{{ .id }}" {{ if eq .id $.Form.Filters.FacilityID }}selected{{ end }}>{{ .name }}</option>
-                            {{ end }}
-                        </select>
-                    </div>
-                </div>
-                <div class="row mt-3">
-                    <div class="col-md-3">
-                        <label class="form-label">District</label>
-                        <select class="form-select" name="district_id" id="district_id">
-                            <option value="">All Districts</option>
-                            {{ range .Form.Districts }}
-                            <option value="{{ .id }}" {{ if eq .id $.Form.Filters.DistrictID }}selected{{ end }}>{{ .name }}</option>
-                            {{ end }}
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Report Type</label>
-                        <select class="form-select" name="report_type" id="report_type">
-                            <option value="general" {{ if eq $.Form.Filters.ReportType "general" }}selected{{ end }}>General Report</option>
-                            <option value="vhf" {{ if eq $.Form.Filters.ReportType "vhf" }}selected{{ end }}>VHF Report</option>
-                            <option value="measles" {{ if eq $.Form.Filters.ReportType "measles" }}selected{{ end }}>Measles Report</option>
-                            <option value="polio" {{ if eq $.Form.Filters.ReportType "polio" }}selected{{ end }}>Polio Report</option>
-                            <option value="mpox" {{ if eq $.Form.Filters.ReportType "mpox" }}selected{{ end }}>Mpox Report</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Patient Type</label>
-                        <select class="form-select" name="patient_type" id="patient_type">
-                            <option value="">All Types</option>
-                            <option value="Case" {{ if eq $.Form.Filters.PatientType "Case" }}selected{{ end }}>Case</option>
-                            <option value="Suspect" {{ if eq $.Form.Filters.PatientType "Suspect" }}selected{{ end }}>Suspect</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Outcome</label>
-                        <select class="form-select" name="outcome" id="outcome">
-                            <option value="">All Outcomes</option>
-                            <option value="active" {{ if eq $.Form.Filters.Outcome "active" }}selected{{ end }}>Active</option>
-                            <option value="recovered" {{ if eq $.Form.Filters.Outcome "recovered" }}selected{{ end }}>Recovered</option>
-                            <option value="died" {{ if eq $.Form.Filters.Outcome "died" }}selected{{ end }}>Died</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="row mt-3">
-                    <div class="col-md-3">
-                        <label class="form-label">&nbsp;</label>
-                        <button type="submit" class="btn btn-report w-100">
-                            <i class="fas fa-search me-2"></i>Generate Report
-                        </button>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">&nbsp;</label>
-                        <button type="button" class="btn btn-outline-secondary w-100" onclick="clearFilters()">
-                            <i class="fas fa-times me-2"></i>Clear Filters
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
 
-        <!-- Quick Stats -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="stats-card">
-                    <i class="fas fa-users text-primary mb-2" style="font-size: 2rem;"></i>
-                    <div class="stats-number" id="totalCases">-</div>
-                    <div class="text-muted">Total Cases</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stats-card">
-                    <i class="fas fa-hospital text-success mb-2" style="font-size: 2rem;"></i>
-                    <div class="stats-number" id="activeCases">-</div>
-                    <div class="text-muted">Active Cases</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stats-card">
-                    <i class="fas fa-heartbeat text-warning mb-2" style="font-size: 2rem;"></i>
-                    <div class="stats-number" id="recoveredCases">-</div>
-                    <div class="text-muted">Recovered</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stats-card">
-                    <i class="fas fa-cross text-danger mb-2" style="font-size: 2rem;"></i>
-                    <div class="stats-number" id="deaths">-</div>
-                    <div class="text-muted">Deaths</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Report Categories -->
-        <div class="row">
-            <!-- General Reports -->
-            <div class="col-md-6">
-                <div class="report-card">
-                    <h4><i class="fas fa-chart-bar text-primary report-icon"></i>General Reports</h4>
-                    <p class="text-muted">Comprehensive overview of all outbreak data</p>
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-report" onclick="generateReport('general', 'overview')">
-                            <i class="fas fa-eye me-2"></i>Overview Dashboard
-                        </button>
-                        <button class="btn btn-report" onclick="generateReport('general', 'trends')">
-                            <i class="fas fa-chart-line me-2"></i>Trend Analysis
-                        </button>
-                        <button class="btn btn-report" onclick="generateReport('general', 'demographics')">
-                            <i class="fas fa-user-friends me-2"></i>Demographics
-                        </button>
+                    <!-- Dashboard Overview - Health Indicators -->
+                    {{if not .Form.CIFOnlyAccess}}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-tachometer-alt me-2"></i>Dashboard Overview - Health Indicators</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <!-- New admissions (daily) -->
+                                <div class="col-md-3 mb-3">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <div class="text-primary mb-2">
+                                                <i class="fas fa-calendar-plus" style="font-size: 2rem;"></i>
+                                            </div>
+                                            <h4 class="text-primary" id="newAdmissions">-</h4>
+                                            <div class="text-muted">New Admissions (Daily)</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Cumulative confirmed cases -->
+                                <div class="col-md-3 mb-3">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <div class="text-success mb-2">
+                                                <i class="fas fa-virus" style="font-size: 2rem;"></i>
+                                            </div>
+                                            <h4 class="text-success" id="confirmedCases">-</h4>
+                                            <div class="text-muted">Cumulative Confirmed Cases</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Cumulative suspected cases -->
+                                <div class="col-md-3 mb-3">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <div class="text-warning mb-2">
+                                                <i class="fas fa-question-circle" style="font-size: 2rem;"></i>
+                                            </div>
+                                            <h4 class="text-warning" id="suspectedCases">-</h4>
+                                            <div class="text-muted">Cumulative Suspected Cases</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Cumulative deaths -->
+                                <div class="col-md-3 mb-3">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <div class="text-danger mb-2">
+                                                <i class="fas fa-cross" style="font-size: 2rem;"></i>
+                                            </div>
+                                            <h4 class="text-danger" id="cumulativeDeaths">-</h4>
+                                            <div class="text-muted">Cumulative Deaths</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Case Fatality Rate (CFR) -->
+                                <div class="col-md-3 mb-3">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <div class="text-info mb-2">
+                                                <i class="fas fa-percentage" style="font-size: 2rem;"></i>
+                                            </div>
+                                            <h4 class="text-info" id="cfr">-</h4>
+                                            <div class="text-muted">Case Fatality Rate (CFR)</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Current admissions -->
+                                <div class="col-md-3 mb-3">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <div class="text-primary mb-2">
+                                                <i class="fas fa-hospital" style="font-size: 2rem;"></i>
+                                            </div>
+                                            <h4 class="text-primary" id="currentAdmissions">-</h4>
+                                            <div class="text-muted">Current Admissions</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Discharges (cumulative) -->
+                                <div class="col-md-3 mb-3">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <div class="text-success mb-2">
+                                                <i class="fas fa-door-open" style="font-size: 2rem;"></i>
+                                            </div>
+                                            <h4 class="text-success" id="discharges">-</h4>
+                                            <div class="text-muted">Discharges (Cumulative)</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Severe cases admitted -->
+                                <div class="col-md-3 mb-3">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <div class="text-warning mb-2">
+                                                <i class="fas fa-exclamation-triangle" style="font-size: 2rem;"></i>
+                                            </div>
+                                            <h4 class="text-warning" id="severeCases">-</h4>
+                                            <div class="text-muted">Severe Cases Admitted</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Critical cases admitted -->
+                                <div class="col-md-3 mb-3">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <div class="text-danger mb-2">
+                                                <i class="fas fa-skull-crossbones" style="font-size: 2rem;"></i>
+                                            </div>
+                                            <h4 class="text-danger" id="criticalCases">-</h4>
+                                            <div class="text-muted">Critical Cases Admitted</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Cases by sex -->
+                                <div class="col-md-3 mb-3">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <div class="text-info mb-2">
+                                                <i class="fas fa-venus-mars" style="font-size: 2rem;"></i>
+                                            </div>
+                                            <h4 class="text-info" id="casesBySex">-</h4>
+                                            <div class="text-muted">Cases by Sex</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Cases by age group -->
+                                <div class="col-md-3 mb-3">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <div class="text-secondary mb-2">
+                                                <i class="fas fa-users" style="font-size: 2rem;"></i>
+                                            </div>
+                                            <h4 class="text-secondary" id="casesByAge">-</h4>
+                                            <div class="text-muted">Cases by Age Group</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Cases by district/facility -->
+                                <div class="col-md-3 mb-3">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <div class="text-dark mb-2">
+                                                <i class="fas fa-map-marker-alt" style="font-size: 2rem;"></i>
+                                            </div>
+                                            <h4 class="text-dark" id="casesByLocation">-</h4>
+                                            <div class="text-muted">Cases by District/Facility</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Healthcare worker (HCW) infections -->
+                                <div class="col-md-3 mb-3">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <div class="text-warning mb-2">
+                                                <i class="fas fa-user-md" style="font-size: 2rem;"></i>
+                                            </div>
+                                            <h4 class="text-warning" id="hcwInfections">-</h4>
+                                            <div class="text-muted">HCW Infections</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
+                    {{end}}
 
-            <!-- CIF Reports -->
-            <div class="col-md-6">
-                <div class="report-card">
-                    <h4><i class="fas fa-file-medical text-success report-icon"></i>CIF Reports</h4>
-                    <p class="text-muted">Case Investigation Forms for specific diseases</p>
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-report" onclick="generateReport('vhf', 'cif')">
-                            <i class="fas fa-virus me-2"></i>VHF CIF Data
-                        </button>
-                        <button class="btn btn-report" onclick="generateReport('measles', 'cif')">
-                            <i class="fas fa-measles me-2"></i>Measles CIF Data
-                        </button>
-                        <button class="btn btn-report" onclick="generateReport('polio', 'cif')">
-                            <i class="fas fa-wheelchair me-2"></i>Polio CIF Data
-                        </button>
-                        <button class="btn btn-report" onclick="generateReport('mpox', 'cif')">
-                            <i class="fas fa-monkey me-2"></i>Mpox CIF Data
-                        </button>
+                    <!-- Quick Stats -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <i class="fas fa-users text-primary mb-2" style="font-size: 2rem;"></i>
+                                    <div class="h3 text-primary" id="totalCases">-</div>
+                                    <div class="text-muted">Total Cases</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <i class="fas fa-hospital text-success mb-2" style="font-size: 2rem;"></i>
+                                    <div class="h3 text-success" id="activeCases">-</div>
+                                    <div class="text-muted">Active Cases</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <i class="fas fa-heartbeat text-warning mb-2" style="font-size: 2rem;"></i>
+                                    <div class="h3 text-warning" id="recoveredCases">-</div>
+                                    <div class="text-muted">Recovered</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <i class="fas fa-cross text-danger mb-2" style="font-size: 2rem;"></i>
+                                    <div class="h3 text-danger" id="deaths">-</div>
+                                    <div class="text-muted">Deaths</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Specialized Reports -->
-        <div class="row">
-            <!-- Treatment Reports -->
-            <div class="col-md-4">
-                <div class="report-card">
-                    <h4><i class="fas fa-pills text-info report-icon"></i>Treatment Reports</h4>
-                    <p class="text-muted">Analysis of treatment protocols and outcomes</p>
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-report" onclick="generateReport('treatment', 'protocols')">
-                            <i class="fas fa-clipboard-list me-2"></i>Treatment Protocols
-                        </button>
-                        <button class="btn btn-report" onclick="generateReport('treatment', 'outcomes')">
-                            <i class="fas fa-chart-pie me-2"></i>Outcome Analysis
-                        </button>
+                    <!-- Report Categories -->
+                    <div class="row">
+                        <!-- General Reports -->
+                        {{if not .Form.CIFOnlyAccess}}
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-chart-bar text-primary me-2"></i>General Reports</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">Comprehensive overview of all outbreak data</p>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-primary" onclick="generateReport('general', 'overview')">
+                                            <i class="fas fa-eye me-2"></i>Overview Dashboard
+                                        </button>
+                                        <button class="btn btn-primary" onclick="generateReport('general', 'trends')">
+                                            <i class="fas fa-chart-line me-2"></i>Trend Analysis
+                                        </button>
+                                        <button class="btn btn-primary" onclick="generateReport('general', 'demographics')">
+                                            <i class="fas fa-user-friends me-2"></i>Demographics
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {{end}}
+
+                        <!-- CIF Reports -->
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-file-medical text-success me-2"></i>CIF Reports</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">Case Investigation Forms for specific diseases</p>
+                                    <div class="d-grid gap-2">
+                                        <a href="/reports/cif-dashboard" class="btn btn-success">
+                                            <i class="fas fa-tachometer-alt me-2"></i>CIF Dashboard
+                                        </a>
+                                        <button class="btn btn-success" onclick="generateReport('vhf', 'cif')">
+                                            <i class="fas fa-virus me-2"></i>VHF CIF Data
+                                        </button>
+                                        <button class="btn btn-success" onclick="generateReport('measles', 'cif')">
+                                            <i class="fas fa-measles me-2"></i>Measles CIF Data
+                                        </button>
+                                        <button class="btn btn-success" onclick="generateReport('polio', 'cif')">
+                                            <i class="fas fa-wheelchair me-2"></i>Polio CIF Data
+                                        </button>
+                                        <button class="btn btn-success" onclick="generateReport('mpox', 'cif')">
+                                            <i class="fas fa-monkey me-2"></i>Mpox CIF Data
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Laboratory Reports -->
-            <div class="col-md-4">
-                <div class="report-card">
-                    <h4><i class="fas fa-flask text-warning report-icon"></i>Laboratory Reports</h4>
-                    <p class="text-muted">Lab test results and specimen analysis</p>
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-report" onclick="generateReport('lab', 'results')">
-                            <i class="fas fa-microscope me-2"></i>Test Results
-                        </button>
-                        <button class="btn btn-report" onclick="generateReport('lab', 'specimens')">
-                            <i class="fas fa-vial me-2"></i>Specimen Analysis
-                        </button>
+                    <!-- Specialized Reports -->
+                    {{if not .Form.CIFOnlyAccess}}
+                    <div class="row">
+                        <!-- Treatment Reports -->
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-pills text-info me-2"></i>Treatment Reports</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">Analysis of treatment protocols and outcomes</p>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-info" onclick="generateReport('treatment', 'protocols')">
+                                            <i class="fas fa-clipboard-list me-2"></i>Treatment Protocols
+                                        </button>
+                                        <button class="btn btn-info" onclick="generateReport('treatment', 'outcomes')">
+                                            <i class="fas fa-chart-pie me-2"></i>Outcome Analysis
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Laboratory Reports -->
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-flask text-warning me-2"></i>Laboratory Reports</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">Lab test results and specimen analysis</p>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-warning" onclick="generateReport('lab', 'results')">
+                                            <i class="fas fa-microscope me-2"></i>Test Results
+                                        </button>
+                                        <button class="btn btn-warning" onclick="generateReport('lab', 'specimens')">
+                                            <i class="fas fa-vial me-2"></i>Specimen Analysis
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Geographic Reports -->
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-map-marker-alt text-danger me-2"></i>Geographic Reports</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">Spatial analysis and location-based data</p>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-danger" onclick="generateReport('geographic', 'distribution')">
+                                            <i class="fas fa-map me-2"></i>Case Distribution
+                                        </button>
+                                        <button class="btn btn-danger" onclick="generateReport('geographic', 'hotspots')">
+                                            <i class="fas fa-fire me-2"></i>Hotspot Analysis
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
+                    {{end}}
 
-            <!-- Geographic Reports -->
-            <div class="col-md-4">
-                <div class="report-card">
-                    <h4><i class="fas fa-map-marker-alt text-danger report-icon"></i>Geographic Reports</h4>
-                    <p class="text-muted">Spatial analysis and location-based data</p>
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-report" onclick="generateReport('geographic', 'distribution')">
-                            <i class="fas fa-map me-2"></i>Case Distribution
-                        </button>
-                        <button class="btn btn-report" onclick="generateReport('geographic', 'hotspots')">
-                            <i class="fas fa-fire me-2"></i>Hotspot Analysis
-                        </button>
+                    <!-- Charts Section -->
+                    {{if not .Form.CIFOnlyAccess}}
+                    <div class="row mt-4">
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Case Trends</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="caseTrendsChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Outcome Distribution</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="outcomeChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Charts Section -->
-        <div class="row mt-4">
-            <div class="col-md-6">
-                <div class="chart-container">
-                    <h5><i class="fas fa-chart-line me-2"></i>Case Trends</h5>
-                    <canvas id="caseTrendsChart"></canvas>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="chart-container">
-                    <h5><i class="fas fa-chart-pie me-2"></i>Outcome Distribution</h5>
-                    <canvas id="outcomeChart"></canvas>
+                    {{end}}
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Set default dates
+        // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
-            const today = new Date();
-            const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
-            
-            document.getElementById('end_date').value = today.toISOString().split('T')[0];
-            document.getElementById('start_date').value = thirtyDaysAgo.toISOString().split('T')[0];
-            
             // Load initial stats
             loadQuickStats();
+            loadHealthIndicators();
             initializeCharts();
+            
+            // No automatic updates - users must click "Apply Filters" button
         });
 
         function generateReport(type, subtype) {
+            console.log('generateReport called with:', type, subtype);
+            
+            // Special handling for CIF Dashboard
+            if (type === 'cif' && subtype === 'dashboard') {
+                console.log('Redirecting to CIF Dashboard');
+                window.location.href = '/reports/cif-dashboard';
+                return;
+            }
+            
+            // Special handling for CIF-specific reports
+            if (['vhf', 'measles', 'polio', 'mpox'].includes(type) && subtype === 'cif') {
+                console.log('Generating CIF report for:', type);
+                const form = document.getElementById('reportFilters');
+                
+                // Remove any existing report_type and report_subtype inputs
+                const existingReportType = form.querySelector('input[name="report_type"]');
+                if (existingReportType) {
+                    existingReportType.remove();
+                }
+                
+                const existingSubtype = form.querySelector('input[name="report_subtype"]');
+                if (existingSubtype) {
+                    existingSubtype.remove();
+                }
+                
+                // Create new inputs
+                const reportTypeInput = document.createElement('input');
+                reportTypeInput.type = 'hidden';
+                reportTypeInput.name = 'report_type';
+                reportTypeInput.value = type;
+                form.appendChild(reportTypeInput);
+                
+                const subtypeInput = document.createElement('input');
+                subtypeInput.type = 'hidden';
+                subtypeInput.name = 'report_subtype';
+                subtypeInput.value = subtype;
+                form.appendChild(subtypeInput);
+                
+                // Also update the visible report_type dropdown
+                const reportTypeDropdown = document.getElementById('report_type');
+                if (reportTypeDropdown) {
+                    reportTypeDropdown.value = type;
+                }
+                
+                console.log('Submitting form to /reports/generate with type:', type);
+                // Submit the form to /reports/generate
+                form.action = '/reports/generate';
+                form.submit();
+                return;
+            }
+            
+            // For all other reports, use the original logic
+            console.log('Generating general report for:', type, subtype);
             const form = document.getElementById('reportFilters');
+            
+            // Remove any existing report_type and report_subtype inputs
+            const existingReportType = form.querySelector('input[name="report_type"]');
+            if (existingReportType) {
+                existingReportType.remove();
+            }
+            
+            const existingSubtype = form.querySelector('input[name="report_subtype"]');
+            if (existingSubtype) {
+                existingSubtype.remove();
+            }
+            
+            // Create new inputs
             const reportTypeInput = document.createElement('input');
             reportTypeInput.type = 'hidden';
             reportTypeInput.name = 'report_type';
@@ -386,60 +592,206 @@
             subtypeInput.value = subtype;
             form.appendChild(subtypeInput);
             
+            // Also update the visible report_type dropdown
+            const reportTypeDropdown = document.getElementById('report_type');
+            if (reportTypeDropdown) {
+                reportTypeDropdown.value = type;
+            }
+            
+            console.log('Submitting form to /reports/generate with type:', type, 'subtype:', subtype);
+            // Submit the form to /reports/generate
+            form.action = '/reports/generate';
+            form.submit();
+        }
+
+        function generateReportFromForm() {
+            const form = document.getElementById('reportFilters');
+            form.action = '/reports/generate';
             form.submit();
         }
 
         function loadQuickStats() {
-            // TODO: Implement AJAX call to load quick stats
-            document.getElementById('totalCases').textContent = '1,234';
-            document.getElementById('activeCases').textContent = '89';
-            document.getElementById('recoveredCases').textContent = '1,120';
-            document.getElementById('deaths').textContent = '25';
+            // Get current filter values
+            const form = document.getElementById('reportFilters');
+            const formData = new FormData(form);
+            
+            // Build query string from form data
+            const params = new URLSearchParams();
+            for (let [key, value] of formData.entries()) {
+                if (value) {
+                    params.append(key, value);
+                }
+            }
+            
+            // Fetch real data from the API with filters
+            fetch(`/reports/quick-stats?${params.toString()}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('totalCases').textContent = data.total_cases || 0;
+                    document.getElementById('activeCases').textContent = data.active_cases || 0;
+                    document.getElementById('recoveredCases').textContent = data.recovered || 0;
+                    document.getElementById('deaths').textContent = data.died || 0;
+                })
+                .catch(error => {
+                    console.error('Error loading quick stats:', error);
+                    // Fallback to 0 values
+                    document.getElementById('totalCases').textContent = '0';
+                    document.getElementById('activeCases').textContent = '0';
+                    document.getElementById('recoveredCases').textContent = '0';
+                    document.getElementById('deaths').textContent = '0';
+                });
+        }
+
+        function loadHealthIndicators() {
+            // Get current filter values
+            const form = document.getElementById('reportFilters');
+            const formData = new FormData(form);
+            
+            // Build query string from form data
+            const params = new URLSearchParams();
+            for (let [key, value] of formData.entries()) {
+                if (value) {
+                    params.append(key, value);
+                }
+            }
+            
+            // Load all 14 health indicators with filters
+            fetch(`/reports/health-indicators?${params.toString()}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Update each indicator
+                    document.getElementById('newAdmissions').textContent = data.new_admissions || 0;
+                    document.getElementById('confirmedCases').textContent = data.confirmed_cases || 0;
+                    document.getElementById('suspectedCases').textContent = data.suspected_cases || 0;
+                    document.getElementById('cumulativeDeaths').textContent = data.cumulative_deaths || 0;
+                    document.getElementById('cfr').textContent = (data.cfr || 0) + '%';
+                    document.getElementById('currentAdmissions').textContent = data.current_admissions || 0;
+                    document.getElementById('discharges').textContent = data.discharges || 0;
+                    document.getElementById('severeCases').textContent = data.severe_cases || 0;
+                    document.getElementById('criticalCases').textContent = data.critical_cases || 0;
+                    document.getElementById('casesBySex').textContent = data.cases_by_sex || 0;
+                    document.getElementById('casesByAge').textContent = data.cases_by_age || 0;
+                    document.getElementById('casesByLocation').textContent = data.cases_by_location || 0;
+                    document.getElementById('hcwInfections').textContent = data.hcw_infections || 0;
+                })
+                .catch(error => {
+                    console.error('Error loading health indicators:', error);
+                    // Fallback to 0 values for all indicators
+                    const indicators = ['newAdmissions', 'confirmedCases', 'suspectedCases', 'cumulativeDeaths', 
+                                     'cfr', 'currentAdmissions', 'discharges', 'severeCases', 'criticalCases', 
+                                     'casesBySex', 'casesByAge', 'casesByLocation', 'hcwInfections'];
+                    indicators.forEach(id => {
+                        const element = document.getElementById(id);
+                        if (element) {
+                            element.textContent = id === 'cfr' ? '0%' : '0';
+                        }
+                    });
+                });
         }
 
         function initializeCharts() {
-            // Case Trends Chart
-            const trendsCtx = document.getElementById('caseTrendsChart').getContext('2d');
-            new Chart(trendsCtx, {
-                type: 'line',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    datasets: [{
-                        label: 'New Cases',
-                        data: [12, 19, 3, 5, 2, 3],
-                        borderColor: 'rgb(75, 192, 192)',
-                        tension: 0.1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true
+            // Load trends data
+            fetch('/reports/chart-data/trends')
+                .then(response => response.json())
+                .then(data => {
+                    const trendsCtx = document.getElementById('caseTrendsChart').getContext('2d');
+                    new Chart(trendsCtx, {
+                        type: 'line',
+                        data: {
+                            labels: data.labels || [],
+                            datasets: [{
+                                label: 'New Cases',
+                                data: data.data || [],
+                                borderColor: 'rgb(75, 192, 192)',
+                                backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                                tension: 0.1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
                         }
-                    }
-                }
-            });
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading trends data:', error);
+                    // Fallback chart
+                    const trendsCtx = document.getElementById('caseTrendsChart').getContext('2d');
+                    new Chart(trendsCtx, {
+                        type: 'line',
+                        data: {
+                            labels: ['No Data'],
+                            datasets: [{
+                                label: 'New Cases',
+                                data: [0],
+                                borderColor: 'rgb(75, 192, 192)',
+                                tension: 0.1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                });
 
-            // Outcome Chart
-            const outcomeCtx = document.getElementById('outcomeChart').getContext('2d');
-            new Chart(outcomeCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Recovered', 'In Treatment', 'Died'],
-                    datasets: [{
-                        data: [70, 20, 10],
-                        backgroundColor: [
-                            'rgb(75, 192, 192)',
-                            'rgb(255, 205, 86)',
-                            'rgb(255, 99, 132)'
-                        ]
-                    }]
-                },
-                options: {
-                    responsive: true
-                }
-            });
+            // Load outcomes data
+            fetch('/reports/chart-data/outcomes')
+                .then(response => response.json())
+                .then(data => {
+                    const outcomeCtx = document.getElementById('outcomeChart').getContext('2d');
+                    new Chart(outcomeCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: data.labels || ['No Data'],
+                            datasets: [{
+                                data: data.data || [0],
+                                backgroundColor: [
+                                    'rgb(75, 192, 192)',
+                                    'rgb(255, 205, 86)',
+                                    'rgb(255, 99, 132)',
+                                    'rgb(54, 162, 235)',
+                                    'rgb(153, 102, 255)'
+                                ]
+                            }]
+                        },
+                        options: {
+                            responsive: true
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading outcomes data:', error);
+                    // Fallback chart
+                    const outcomeCtx = document.getElementById('outcomeChart').getContext('2d');
+                    new Chart(outcomeCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['No Data'],
+                            datasets: [{
+                                data: [1],
+                                backgroundColor: ['rgb(200, 200, 200)']
+                            }]
+                        },
+                        options: {
+                            responsive: true
+                        }
+                    });
+                });
+        }
+
+        function applyFilters() {
+            // Update the indicators with current filter values
+            loadQuickStats();
+            loadHealthIndicators();
         }
 
         function clearFilters() {
@@ -453,11 +805,9 @@
             document.getElementById('patient_type').value = '';
             document.getElementById('outcome').value = '';
             
-            // Submit the form to update the session
-            document.getElementById('reportFilters').submit();
+            // Update the indicators with cleared filters
+            loadQuickStats();
+            loadHealthIndicators();
         }
     </script>
-</body>
-</html>
-
-{{ end }} 
+{{end}} 

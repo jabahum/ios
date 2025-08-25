@@ -10,10 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"html/template"
-	"os"
-	"path/filepath"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
 )
@@ -54,7 +50,7 @@ func ReportsHome(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store
 	}
 
 	// Check if user has reports access using proper database query
-	allowedRoles := []string{"admin", "reports", "vhf_lab_technician", "case_manager", "data_analyst"}
+	allowedRoles := []string{"admin", "reports", "vhf_lab_technician", "case_manager", "data_analyst", "cases_viewer", "cif_viewer"}
 	if !security.HasAnyRole(db, userID, allowedRoles) {
 		return c.Status(403).SendString("Access denied: Reports permission required")
 	}
@@ -81,15 +77,19 @@ func ReportsHome(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store
 	// Get accessible data based on user permissions
 	outbreaks, facilities, districts := getAccessibleData(c, db, userID, userRole, userFacility, userDistrict)
 
+	// Check if user has CIF-only access
+	hasCIFOnlyAccess := security.HasRole(db, userID, "cif_viewer") && !security.HasAnyRole(db, userID, []string{"admin", "reports", "data_analyst"})
+
 	data := handlers.NewTemplateData(c, store)
 	data.Form = map[string]interface{}{
-		"Title":       "Reports Dashboard",
-		"UserID":      userName,
-		"Outbreaks":   outbreaks,
-		"Facilities":  facilities,
-		"Districts":   districts,
-		"AccessLevel": getAccessLevel(userRole, userFacility, userDistrict),
-		"Filters":     filterState, // Add current filter state
+		"Title":         "Reports Dashboard",
+		"UserID":        userName,
+		"Outbreaks":     outbreaks,
+		"Facilities":    facilities,
+		"Districts":     districts,
+		"AccessLevel":   getAccessLevel(userRole, userFacility, userDistrict),
+		"Filters":       filterState, // Add current filter state
+		"CIFOnlyAccess": hasCIFOnlyAccess,
 	}
 
 	return handlers.GenerateHTML(c, db, data, "reports_dashboard")
@@ -102,8 +102,24 @@ func GenerateReport(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 		return c.Redirect("/login")
 	}
 
+	// Log the form data for debugging
+	sl.Info("Report generation request",
+		"method", c.Method(),
+		"content_type", c.Get("Content-Type"),
+		"form_values", c.FormValue("report_type"),
+		"query_values", c.Query("report_type"),
+	)
+
 	// Parse filters from form
 	filters := parseReportFilters(c)
+
+	// Log the parsed filters
+	sl.Info("Parsed report filters",
+		"report_type", filters.ReportType,
+		"start_date", filters.StartDate,
+		"end_date", filters.EndDate,
+		"outbreak_id", filters.OutbreakID,
+	)
 
 	// Store filter state in session for persistence
 	sess, _ := store.Get(c)
@@ -130,6 +146,8 @@ func GenerateReport(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 		reportData = generatePolioReport(c, db, filters)
 	case "mpox":
 		reportData = generateMpoxReport(c, db, filters)
+	case "indicators":
+		reportData = generateIndicatorsReport(c, db, filters)
 	case "general":
 		reportData = generateGeneralReport(c, db, filters)
 	default:
@@ -866,6 +884,799 @@ func generateGeneralReport(c *fiber.Ctx, db *sql.DB, filters ReportFilters) Repo
 	}
 }
 
+// generateIndicatorsReport generates comprehensive health indicators report
+func generateIndicatorsReport(c *fiber.Ctx, db *sql.DB, filters ReportFilters) ReportData {
+	indicators := make(map[string]interface{})
+
+	// 1. New admissions (daily)
+	newAdmissions, err := GetNewAdmissionsDaily(db, filters)
+	if err == nil {
+		indicators["new_admissions_daily"] = newAdmissions
+	}
+
+	// 2. Cumulative confirmed cases
+	cumulativeConfirmed, err := GetCumulativeConfirmedCases(db, filters)
+	if err == nil {
+		indicators["cumulative_confirmed"] = cumulativeConfirmed
+	}
+
+	// 3. Cumulative suspected cases
+	cumulativeSuspected, err := GetCumulativeSuspectedCases(db, filters)
+	if err == nil {
+		indicators["cumulative_suspected"] = cumulativeSuspected
+	}
+
+	// 4. Cumulative deaths
+	cumulativeDeaths, err := GetCumulativeDeaths(db, filters)
+	if err == nil {
+		indicators["cumulative_deaths"] = cumulativeDeaths
+	}
+
+	// 5. Case Fatality Rate (CFR)
+	cfr, err := GetCaseFatalityRate(db, filters)
+	if err == nil {
+		indicators["case_fatality_rate"] = cfr
+	}
+
+	// 6. Current admissions (active cases in hospital)
+	currentAdmissions, err := GetCurrentAdmissions(db, filters)
+	if err == nil {
+		indicators["current_admissions"] = currentAdmissions
+	}
+
+	// 7. Discharges (cumulative)
+	cumulativeDischarges, err := GetCumulativeDischarges(db, filters)
+	if err == nil {
+		indicators["cumulative_discharges"] = cumulativeDischarges
+	}
+
+	// 8. Severe cases admitted
+	severeCases, err := GetSevereCasesAdmitted(db, filters)
+	if err == nil {
+		indicators["severe_cases"] = severeCases
+	}
+
+	// 9. Critical cases admitted
+	criticalCases, err := GetCriticalCasesAdmitted(db, filters)
+	if err == nil {
+		indicators["critical_cases"] = criticalCases
+	}
+
+	// 10. Cases by sex
+	casesBySex, err := GetCasesBySex(db, filters)
+	if err == nil {
+		indicators["cases_by_sex"] = casesBySex
+	}
+
+	// 11. Cases by age group
+	casesByAge, err := GetCasesByAgeGroup(db, filters)
+	if err == nil {
+		indicators["cases_by_age"] = casesByAge
+	}
+
+	// 12. Cases by district/facility
+	casesByLocation, err := GetCasesByLocation(db, filters)
+	if err == nil {
+		indicators["cases_by_location"] = casesByLocation
+	}
+
+	// 13. Healthcare worker (HCW) infections
+	hcwInfections, err := GetHCWInfections(db, filters)
+	if err == nil {
+		indicators["hcw_infections"] = hcwInfections
+	}
+
+	return ReportData{
+		Filters: filters,
+		Summary: indicators,
+		Tables: map[string]interface{}{
+			"indicators": indicators,
+		},
+	}
+}
+
+// GetNewAdmissionsDaily returns daily new admissions count
+func GetNewAdmissionsDaily(db *sql.DB, filters ReportFilters) (map[string]interface{}, error) {
+	query := `
+		SELECT 
+			DATE(c.adm_date) as admission_date,
+			COUNT(*) as daily_admissions
+		FROM clients c
+		WHERE c.adm_date IS NOT NULL
+	`
+
+	var args []interface{}
+	argCount := 1
+
+	if filters.StartDate != "" {
+		query += fmt.Sprintf(" AND c.adm_date >= $%d", argCount)
+		args = append(args, filters.StartDate)
+		argCount++
+	}
+
+	if filters.EndDate != "" {
+		query += fmt.Sprintf(" AND c.adm_date <= $%d", argCount)
+		args = append(args, filters.EndDate)
+		argCount++
+	}
+
+	if filters.OutbreakID > 0 {
+		query += fmt.Sprintf(" AND c.outbreak_id = $%d", argCount)
+		args = append(args, filters.OutbreakID)
+		argCount++
+	}
+
+	query += " GROUP BY DATE(c.adm_date) ORDER BY admission_date"
+
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var dates []string
+	var counts []int
+
+	for rows.Next() {
+		var date sql.NullString
+		var count int
+
+		err := rows.Scan(&date, &count)
+		if err != nil {
+			continue
+		}
+
+		dates = append(dates, date.String)
+		counts = append(counts, count)
+	}
+
+	return map[string]interface{}{
+		"dates":  dates,
+		"counts": counts,
+		"total":  len(counts),
+	}, nil
+}
+
+// GetCumulativeConfirmedCases returns cumulative confirmed cases
+func GetCumulativeConfirmedCases(db *sql.DB, filters ReportFilters) (map[string]interface{}, error) {
+	query := `
+		SELECT COUNT(*) as confirmed_count
+		FROM clients c
+		LEFT JOIN discharge d ON c.id = d.client_id
+		WHERE c.status = 'confirmed' OR d.final_diagnosis = 'Mpox Positive'
+	`
+
+	var args []interface{}
+	argCount := 1
+
+	if filters.StartDate != "" {
+		query += fmt.Sprintf(" AND c.adm_date >= $%d", argCount)
+		args = append(args, filters.StartDate)
+		argCount++
+	}
+
+	if filters.EndDate != "" {
+		query += fmt.Sprintf(" AND c.adm_date <= $%d", argCount)
+		args = append(args, filters.EndDate)
+		argCount++
+	}
+
+	if filters.OutbreakID > 0 {
+		query += fmt.Sprintf(" AND c.outbreak_id = $%d", argCount)
+		args = append(args, filters.OutbreakID)
+		argCount++
+	}
+
+	var count int
+	err := db.QueryRow(query, args...).Scan(&count)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"confirmed_cases": count,
+	}, nil
+}
+
+// GetCumulativeSuspectedCases returns cumulative suspected cases
+func GetCumulativeSuspectedCases(db *sql.DB, filters ReportFilters) (map[string]interface{}, error) {
+	query := `
+		SELECT COUNT(*) as suspected_count
+		FROM clients c
+		WHERE c.status = 'suspected' OR c.status = 'probable'
+	`
+
+	var args []interface{}
+	argCount := 1
+
+	if filters.StartDate != "" {
+		query += fmt.Sprintf(" AND c.adm_date >= $%d", argCount)
+		args = append(args, filters.StartDate)
+		argCount++
+	}
+
+	if filters.EndDate != "" {
+		query += fmt.Sprintf(" AND c.adm_date <= $%d", argCount)
+		args = append(args, filters.EndDate)
+		argCount++
+	}
+
+	if filters.OutbreakID > 0 {
+		query += fmt.Sprintf(" AND c.outbreak_id = $%d", argCount)
+		args = append(args, filters.OutbreakID)
+		argCount++
+	}
+
+	var count int
+	err := db.QueryRow(query, args...).Scan(&count)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"suspected_cases": count,
+	}, nil
+}
+
+// GetCumulativeDeaths returns cumulative deaths
+func GetCumulativeDeaths(db *sql.DB, filters ReportFilters) (map[string]interface{}, error) {
+	query := `
+		SELECT COUNT(*) as death_count
+		FROM discharge d
+		LEFT JOIN clients c ON d.client_id = c.id
+		WHERE d.discharge_outcome = 'Death'
+	`
+
+	var args []interface{}
+	argCount := 1
+
+	if filters.StartDate != "" {
+		query += fmt.Sprintf(" AND d.discharge_date >= $%d", argCount)
+		args = append(args, filters.StartDate)
+		argCount++
+	}
+
+	if filters.EndDate != "" {
+		query += fmt.Sprintf(" AND d.discharge_date <= $%d", argCount)
+		args = append(args, filters.EndDate)
+		argCount++
+	}
+
+	if filters.OutbreakID > 0 {
+		query += fmt.Sprintf(" AND c.outbreak_id = $%d", argCount)
+		args = append(args, filters.OutbreakID)
+		argCount++
+	}
+
+	var count int
+	err := db.QueryRow(query, args...).Scan(&count)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"deaths": count,
+	}, nil
+}
+
+// GetCaseFatalityRate returns case fatality rate
+func GetCaseFatalityRate(db *sql.DB, filters ReportFilters) (map[string]interface{}, error) {
+	// Get deaths among confirmed cases
+	deathsQuery := `
+		SELECT COUNT(*) as death_count
+		FROM discharge d
+		LEFT JOIN clients c ON d.client_id = c.id
+		WHERE d.discharge_outcome = 'Death' 
+		AND (c.status = 'confirmed' OR d.final_diagnosis = 'Mpox Positive')
+	`
+
+	// Get total confirmed cases
+	confirmedQuery := `
+		SELECT COUNT(*) as confirmed_count
+		FROM clients c
+		LEFT JOIN discharge d ON c.id = d.client_id
+		WHERE c.status = 'confirmed' OR d.final_diagnosis = 'Mpox Positive'
+	`
+
+	var args []interface{}
+	argCount := 1
+
+	if filters.StartDate != "" {
+		deathsQuery += fmt.Sprintf(" AND d.discharge_date >= $%d", argCount)
+		confirmedQuery += fmt.Sprintf(" AND c.adm_date >= $%d", argCount)
+		args = append(args, filters.StartDate)
+		argCount++
+	}
+
+	if filters.EndDate != "" {
+		deathsQuery += fmt.Sprintf(" AND d.discharge_date <= $%d", argCount)
+		confirmedQuery += fmt.Sprintf(" AND c.adm_date <= $%d", argCount)
+		args = append(args, filters.EndDate)
+		argCount++
+	}
+
+	if filters.OutbreakID > 0 {
+		deathsQuery += fmt.Sprintf(" AND c.outbreak_id = $%d", argCount)
+		confirmedQuery += fmt.Sprintf(" AND c.outbreak_id = $%d", argCount)
+		args = append(args, filters.OutbreakID)
+		argCount++
+	}
+
+	var deaths int
+	var confirmed int
+
+	err := db.QueryRow(deathsQuery, args...).Scan(&deaths)
+	if err != nil {
+		return nil, err
+	}
+
+	err = db.QueryRow(confirmedQuery, args...).Scan(&confirmed)
+	if err != nil {
+		return nil, err
+	}
+
+	var cfr float64
+	if confirmed > 0 {
+		cfr = float64(deaths) / float64(confirmed) * 100
+	}
+
+	return map[string]interface{}{
+		"deaths":      deaths,
+		"confirmed":   confirmed,
+		"cfr":         cfr,
+		"cfr_percent": fmt.Sprintf("%.2f%%", cfr),
+	}, nil
+}
+
+// GetCurrentAdmissions returns current active admissions
+func GetCurrentAdmissions(db *sql.DB, filters ReportFilters) (map[string]interface{}, error) {
+	query := `
+		SELECT COUNT(*) as current_admissions
+		FROM clients c
+		LEFT JOIN discharge d ON c.id = d.client_id
+		WHERE c.adm_date IS NOT NULL 
+		AND d.discharge_date IS NULL
+		AND d.discharge_outcome != 'Death'
+	`
+
+	var args []interface{}
+	argCount := 1
+
+	if filters.StartDate != "" {
+		query += fmt.Sprintf(" AND c.adm_date >= $%d", argCount)
+		args = append(args, filters.StartDate)
+		argCount++
+	}
+
+	if filters.EndDate != "" {
+		query += fmt.Sprintf(" AND c.adm_date <= $%d", argCount)
+		args = append(args, filters.EndDate)
+		argCount++
+	}
+
+	if filters.OutbreakID > 0 {
+		query += fmt.Sprintf(" AND c.outbreak_id = $%d", argCount)
+		args = append(args, filters.OutbreakID)
+		argCount++
+	}
+
+	var count int
+	err := db.QueryRow(query, args...).Scan(&count)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"current_admissions": count,
+	}, nil
+}
+
+// GetCumulativeDischarges returns cumulative discharges
+func GetCumulativeDischarges(db *sql.DB, filters ReportFilters) (map[string]interface{}, error) {
+	query := `
+		SELECT COUNT(*) as discharge_count
+		FROM discharge d
+		LEFT JOIN clients c ON d.client_id = c.id
+		WHERE d.discharge_outcome = 'Discharged alive'
+	`
+
+	var args []interface{}
+	argCount := 1
+
+	if filters.StartDate != "" {
+		query += fmt.Sprintf(" AND d.discharge_date >= $%d", argCount)
+		args = append(args, filters.StartDate)
+		argCount++
+	}
+
+	if filters.EndDate != "" {
+		query += fmt.Sprintf(" AND d.discharge_date <= $%d", argCount)
+		args = append(args, filters.EndDate)
+		argCount++
+	}
+
+	if filters.OutbreakID > 0 {
+		query += fmt.Sprintf(" AND c.outbreak_id = $%d", argCount)
+		args = append(args, filters.OutbreakID)
+		argCount++
+	}
+
+	var count int
+	err := db.QueryRow(query, args...).Scan(&count)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"discharges": count,
+	}, nil
+}
+
+// GetSevereCasesAdmitted returns severe cases percentage
+func GetSevereCasesAdmitted(db *sql.DB, filters ReportFilters) (map[string]interface{}, error) {
+	// This would need to be adapted based on your specific severity classification system
+	// For now, using a placeholder query
+	query := `
+		SELECT 
+			COUNT(*) as total_admitted,
+			COUNT(CASE WHEN c.status = 'severe' THEN 1 END) as severe_cases
+		FROM clients c
+		WHERE c.adm_date IS NOT NULL
+	`
+
+	var args []interface{}
+	argCount := 1
+
+	if filters.StartDate != "" {
+		query += fmt.Sprintf(" AND c.adm_date >= $%d", argCount)
+		args = append(args, filters.StartDate)
+		argCount++
+	}
+
+	if filters.EndDate != "" {
+		query += fmt.Sprintf(" AND c.adm_date <= $%d", argCount)
+		args = append(args, filters.EndDate)
+		argCount++
+	}
+
+	if filters.OutbreakID > 0 {
+		query += fmt.Sprintf(" AND c.outbreak_id = $%d", argCount)
+		args = append(args, filters.OutbreakID)
+		argCount++
+	}
+
+	var total, severe int
+	err := db.QueryRow(query, args...).Scan(&total, &severe)
+	if err != nil {
+		return nil, err
+	}
+
+	var percentage float64
+	if total > 0 {
+		percentage = float64(severe) / float64(total) * 100
+	}
+
+	return map[string]interface{}{
+		"total_admitted": total,
+		"severe_cases":   severe,
+		"percentage":     percentage,
+		"percentage_str": fmt.Sprintf("%.2f%%", percentage),
+	}, nil
+}
+
+// GetCriticalCasesAdmitted returns critical cases percentage
+func GetCriticalCasesAdmitted(db *sql.DB, filters ReportFilters) (map[string]interface{}, error) {
+	// This would need to be adapted based on your specific severity classification system
+	query := `
+		SELECT 
+			COUNT(*) as total_admitted,
+			COUNT(CASE WHEN c.status = 'critical' THEN 1 END) as critical_cases
+		FROM clients c
+		WHERE c.adm_date IS NOT NULL
+	`
+
+	var args []interface{}
+	argCount := 1
+
+	if filters.StartDate != "" {
+		query += fmt.Sprintf(" AND c.adm_date >= $%d", argCount)
+		args = append(args, filters.StartDate)
+		argCount++
+	}
+
+	if filters.EndDate != "" {
+		query += fmt.Sprintf(" AND c.adm_date <= $%d", argCount)
+		args = append(args, filters.EndDate)
+		argCount++
+	}
+
+	if filters.OutbreakID > 0 {
+		query += fmt.Sprintf(" AND c.outbreak_id = $%d", argCount)
+		args = append(args, filters.OutbreakID)
+		argCount++
+	}
+
+	var total, critical int
+	err := db.QueryRow(query, args...).Scan(&total, &critical)
+	if err != nil {
+		return nil, err
+	}
+
+	var percentage float64
+	if total > 0 {
+		percentage = float64(critical) / float64(total) * 100
+	}
+
+	return map[string]interface{}{
+		"total_admitted": total,
+		"critical_cases": critical,
+		"percentage":     percentage,
+		"percentage_str": fmt.Sprintf("%.2f%%", percentage),
+	}, nil
+}
+
+// GetCasesBySex returns cases distribution by sex
+func GetCasesBySex(db *sql.DB, filters ReportFilters) (map[string]interface{}, error) {
+	query := `
+		SELECT 
+			CASE 
+				WHEN c.gender = 1 THEN 'Male'
+				WHEN c.gender = 2 THEN 'Female'
+				ELSE 'Unknown'
+			END as sex,
+			COUNT(*) as count
+		FROM clients c
+		WHERE c.adm_date IS NOT NULL
+	`
+
+	var args []interface{}
+	argCount := 1
+
+	if filters.StartDate != "" {
+		query += fmt.Sprintf(" AND c.adm_date >= $%d", argCount)
+		args = append(args, filters.StartDate)
+		argCount++
+	}
+
+	if filters.EndDate != "" {
+		query += fmt.Sprintf(" AND c.adm_date <= $%d", argCount)
+		args = append(args, filters.EndDate)
+		argCount++
+	}
+
+	if filters.OutbreakID > 0 {
+		query += fmt.Sprintf(" AND c.outbreak_id = $%d", argCount)
+		args = append(args, filters.OutbreakID)
+		argCount++
+	}
+
+	query += " GROUP BY sex ORDER BY sex"
+
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var labels []string
+	var data []int
+
+	for rows.Next() {
+		var sex sql.NullString
+		var count int
+
+		err := rows.Scan(&sex, &count)
+		if err != nil {
+			continue
+		}
+
+		labels = append(labels, sex.String)
+		data = append(data, count)
+	}
+
+	return map[string]interface{}{
+		"labels": labels,
+		"data":   data,
+	}, nil
+}
+
+// GetCasesByAgeGroup returns cases distribution by age group
+func GetCasesByAgeGroup(db *sql.DB, filters ReportFilters) (map[string]interface{}, error) {
+	query := `
+		SELECT 
+			CASE 
+				WHEN c.age < 5 THEN '<5'
+				WHEN c.age BETWEEN 5 AND 17 THEN '5-17'
+				WHEN c.age BETWEEN 18 AND 35 THEN '18-35'
+				WHEN c.age BETWEEN 36 AND 59 THEN '36-59'
+				WHEN c.age >= 60 THEN '60+'
+				ELSE 'Unknown'
+			END as age_group,
+			COUNT(*) as count
+		FROM clients c
+		WHERE c.adm_date IS NOT NULL
+	`
+
+	var args []interface{}
+	argCount := 1
+
+	if filters.StartDate != "" {
+		query += fmt.Sprintf(" AND c.adm_date >= $%d", argCount)
+		args = append(args, filters.StartDate)
+		argCount++
+	}
+
+	if filters.EndDate != "" {
+		query += fmt.Sprintf(" AND c.adm_date <= $%d", argCount)
+		args = append(args, filters.EndDate)
+		argCount++
+	}
+
+	if filters.OutbreakID > 0 {
+		query += fmt.Sprintf(" AND c.outbreak_id = $%d", argCount)
+		args = append(args, filters.OutbreakID)
+		argCount++
+	}
+
+	query += " GROUP BY age_group ORDER BY age_group"
+
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var labels []string
+	var data []int
+
+	for rows.Next() {
+		var ageGroup sql.NullString
+		var count int
+
+		err := rows.Scan(&ageGroup, &count)
+		if err != nil {
+			continue
+		}
+
+		labels = append(labels, ageGroup.String)
+		data = append(data, count)
+	}
+
+	return map[string]interface{}{
+		"labels": labels,
+		"data":   data,
+	}, nil
+}
+
+// GetCasesByLocation returns cases by district/facility
+func GetCasesByLocation(db *sql.DB, filters ReportFilters) (map[string]interface{}, error) {
+	query := `
+		SELECT 
+			f.facility_name,
+			d.name as district_name,
+			COUNT(*) as case_count
+		FROM clients c
+		LEFT JOIN facility f ON c.site = f.facility_id
+		LEFT JOIN districts d ON f.district = d.name
+		WHERE c.adm_date IS NOT NULL
+	`
+
+	var args []interface{}
+	argCount := 1
+
+	if filters.StartDate != "" {
+		query += fmt.Sprintf(" AND c.adm_date >= $%d", argCount)
+		args = append(args, filters.StartDate)
+		argCount++
+	}
+
+	if filters.EndDate != "" {
+		query += fmt.Sprintf(" AND c.adm_date <= $%d", argCount)
+		args = append(args, filters.EndDate)
+		argCount++
+	}
+
+	if filters.OutbreakID > 0 {
+		query += fmt.Sprintf(" AND c.outbreak_id = $%d", argCount)
+		args = append(args, filters.OutbreakID)
+		argCount++
+	}
+
+	if filters.FacilityID > 0 {
+		query += fmt.Sprintf(" AND f.facility_id = $%d", argCount)
+		args = append(args, filters.FacilityID)
+		argCount++
+	}
+
+	if filters.DistrictID > 0 {
+		query += fmt.Sprintf(" AND d.id = $%d", argCount)
+		args = append(args, filters.DistrictID)
+		argCount++
+	}
+
+	query += " GROUP BY f.facility_name, d.name ORDER BY case_count DESC"
+
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var locations []map[string]interface{}
+
+	for rows.Next() {
+		var facilityName, districtName sql.NullString
+		var count int
+
+		err := rows.Scan(&facilityName, &districtName, &count)
+		if err != nil {
+			continue
+		}
+
+		locations = append(locations, map[string]interface{}{
+			"facility": facilityName.String,
+			"district": districtName.String,
+			"count":    count,
+		})
+	}
+
+	return map[string]interface{}{
+		"locations": locations,
+	}, nil
+}
+
+// GetHCWInfections returns healthcare worker infections
+func GetHCWInfections(db *sql.DB, filters ReportFilters) (map[string]interface{}, error) {
+	// This assumes you have a field to identify healthcare workers
+	// You may need to adapt this based on your actual data structure
+	query := `
+		SELECT 
+			COUNT(*) as total_cases,
+			COUNT(CASE WHEN c.occupation = 1 THEN 1 END) as hcw_cases
+		FROM clients c
+		WHERE c.adm_date IS NOT NULL
+	`
+
+	var args []interface{}
+	argCount := 1
+
+	if filters.StartDate != "" {
+		query += fmt.Sprintf(" AND c.adm_date >= $%d", argCount)
+		args = append(args, filters.StartDate)
+		argCount++
+	}
+
+	if filters.EndDate != "" {
+		query += fmt.Sprintf(" AND c.adm_date <= $%d", argCount)
+		args = append(args, filters.EndDate)
+		argCount++
+	}
+
+	if filters.OutbreakID > 0 {
+		query += fmt.Sprintf(" AND c.outbreak_id = $%d", argCount)
+		args = append(args, filters.OutbreakID)
+		argCount++
+	}
+
+	var total, hcw int
+	err := db.QueryRow(query, args...).Scan(&total, &hcw)
+	if err != nil {
+		return nil, err
+	}
+
+	var percentage float64
+	if total > 0 {
+		percentage = float64(hcw) / float64(total) * 100
+	}
+
+	return map[string]interface{}{
+		"total_cases":    total,
+		"hcw_cases":      hcw,
+		"percentage":     percentage,
+		"percentage_str": fmt.Sprintf("%.2f%%", percentage),
+	}, nil
+}
+
 // Helper function to count cases by status
 func countByStatus(cases []map[string]interface{}, status string) int {
 	count := 0
@@ -1126,6 +1937,12 @@ func GetQuickStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Sto
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
+	// Check if user has reports access using proper database query
+	allowedRoles := []string{"admin", "reports", "vhf_lab_technician", "case_manager", "data_analyst", "cases_viewer", "cif_viewer"}
+	if !security.HasAnyRole(db, userID, allowedRoles) {
+		return c.Status(403).JSON(fiber.Map{"error": "Access denied: Reports permission required"})
+	}
+
 	filters := parseReportFilters(c)
 
 	// Get user roles for access level determination
@@ -1254,11 +2071,221 @@ func getCIFQuickStats(c *fiber.Ctx, db *sql.DB, filters ReportFilters) fiber.Map
 	}
 }
 
+// GetHealthIndicators returns all 14 health indicators for the dashboard
+func GetHealthIndicators(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	// Check if user has reports access using proper database query
+	allowedRoles := []string{"admin", "reports", "vhf_lab_technician", "case_manager", "data_analyst", "cases_viewer", "cif_viewer"}
+	if !security.HasAnyRole(db, userID, allowedRoles) {
+		return c.Status(403).JSON(fiber.Map{"error": "Access denied: Reports permission required"})
+	}
+
+	// Parse filters from query parameters
+	filters := parseReportFilters(c)
+
+	// Get user access restrictions
+	userRoles := security.GetUserRoles(db, userID)
+	userRole := strings.Join(userRoles, ",")
+	userFacility := handlers.GetCurrentFacility(c, db, sl, store)
+	userDistrict := getUserDistrict(c, db, userID)
+
+	// Apply access restrictions
+	filters = applyAccessRestrictions(filters, userRole, userFacility, userDistrict)
+
+	// Build base query with filters
+	baseQuery := "FROM clients WHERE 1=1"
+	var args []interface{}
+	argCount := 1
+
+	// Apply date filters
+	if filters.StartDate != "" {
+		baseQuery += fmt.Sprintf(" AND adm_date >= $%d", argCount)
+		args = append(args, filters.StartDate)
+		argCount++
+	}
+
+	if filters.EndDate != "" {
+		baseQuery += fmt.Sprintf(" AND adm_date <= $%d", argCount)
+		args = append(args, filters.EndDate)
+		argCount++
+	}
+
+	// Apply outbreak filter
+	if filters.OutbreakID > 0 {
+		baseQuery += fmt.Sprintf(" AND outbreak_id = $%d", argCount)
+		args = append(args, filters.OutbreakID)
+		argCount++
+	}
+
+	// Apply facility filter
+	if filters.FacilityID > 0 {
+		baseQuery += fmt.Sprintf(" AND facility_id = $%d", argCount)
+		args = append(args, filters.FacilityID)
+		argCount++
+	}
+
+	// Apply district filter
+	if filters.DistrictID > 0 {
+		baseQuery += fmt.Sprintf(" AND district_id = $%d", argCount)
+		args = append(args, filters.DistrictID)
+		argCount++
+	}
+
+	// Apply patient type filter
+	if filters.PatientType != "" {
+		baseQuery += fmt.Sprintf(" AND patient_type = $%d", argCount)
+		args = append(args, filters.PatientType)
+		argCount++
+	}
+
+	// Apply outcome filter
+	if filters.Outcome != "" {
+		baseQuery += fmt.Sprintf(" AND status = $%d", argCount)
+		args = append(args, filters.Outcome)
+		argCount++
+	}
+
+	// 1. New admissions (daily) - only if date filter is applied
+	var newAdmissions int
+	if filters.StartDate != "" && filters.EndDate != "" {
+		// If date range is specified, count admissions in that range
+		newAdmissionsQuery := fmt.Sprintf("SELECT COUNT(*) %s", baseQuery)
+		err := db.QueryRow(newAdmissionsQuery, args...).Scan(&newAdmissions)
+		if err != nil {
+			sl.Error("Error fetching new admissions", "error", err)
+			newAdmissions = 0
+		}
+	} else {
+		// If no date filter, show 0 for new admissions
+		newAdmissions = 0
+	}
+
+	// 2. Cumulative confirmed cases
+	confirmedQuery := fmt.Sprintf("SELECT COUNT(*) %s AND status = 'confirmed'", baseQuery)
+	var confirmedCases int
+	if err := db.QueryRow(confirmedQuery, args...).Scan(&confirmedCases); err != nil {
+		sl.Error("Error fetching confirmed cases", "error", err)
+		confirmedCases = 0
+	}
+
+	// 3. Cumulative suspected cases
+	suspectedQuery := fmt.Sprintf("SELECT COUNT(*) %s AND status = 'suspected'", baseQuery)
+	var suspectedCases int
+	if err := db.QueryRow(suspectedQuery, args...).Scan(&suspectedCases); err != nil {
+		sl.Error("Error fetching suspected cases", "error", err)
+		suspectedCases = 0
+	}
+
+	// 4. Cumulative deaths
+	deathsQuery := fmt.Sprintf("SELECT COUNT(*) %s AND status = 'died'", baseQuery)
+	var cumulativeDeaths int
+	if err := db.QueryRow(deathsQuery, args...).Scan(&cumulativeDeaths); err != nil {
+		sl.Error("Error fetching cumulative deaths", "error", err)
+		cumulativeDeaths = 0
+	}
+
+	// 5. Case Fatality Rate (CFR)
+	var cfr float64
+	if confirmedCases > 0 {
+		cfr = (float64(cumulativeDeaths) / float64(confirmedCases)) * 100
+	}
+
+	// 6. Current admissions (active cases in hospital)
+	currentQuery := fmt.Sprintf("SELECT COUNT(*) %s AND status = 'active'", baseQuery)
+	var currentAdmissions int
+	if err := db.QueryRow(currentQuery, args...).Scan(&currentAdmissions); err != nil {
+		sl.Error("Error fetching current admissions", "error", err)
+		currentAdmissions = 0
+	}
+
+	// 7. Discharges (cumulative)
+	dischargesQuery := fmt.Sprintf("SELECT COUNT(*) %s AND status = 'discharged'", baseQuery)
+	var discharges int
+	if err := db.QueryRow(dischargesQuery, args...).Scan(&discharges); err != nil {
+		sl.Error("Error fetching discharges", "error", err)
+		discharges = 0
+	}
+
+	// 8. Severe cases admitted
+	severeQuery := fmt.Sprintf("SELECT COUNT(*) %s AND severity = 'severe'", baseQuery)
+	var severeCases int
+	if err := db.QueryRow(severeQuery, args...).Scan(&severeCases); err != nil {
+		sl.Error("Error fetching severe cases", "error", err)
+		severeCases = 0
+	}
+
+	// 9. Critical cases admitted
+	criticalQuery := fmt.Sprintf("SELECT COUNT(*) %s AND severity = 'critical'", baseQuery)
+	var criticalCases int
+	if err := db.QueryRow(criticalQuery, args...).Scan(&criticalCases); err != nil {
+		sl.Error("Error fetching critical cases", "error", err)
+		criticalCases = 0
+	}
+
+	// 10. Cases by sex
+	sexQuery := fmt.Sprintf("SELECT COUNT(*) %s AND gender IS NOT NULL", baseQuery)
+	var casesBySex int
+	if err := db.QueryRow(sexQuery, args...).Scan(&casesBySex); err != nil {
+		sl.Error("Error fetching cases by sex", "error", err)
+		casesBySex = 0
+	}
+
+	// 11. Cases by age group
+	ageQuery := fmt.Sprintf("SELECT COUNT(*) %s AND age IS NOT NULL", baseQuery)
+	var casesByAge int
+	if err := db.QueryRow(ageQuery, args...).Scan(&casesByAge); err != nil {
+		sl.Error("Error fetching cases by age", "error", err)
+		casesByAge = 0
+	}
+
+	// 12. Cases by district/facility
+	locationQuery := fmt.Sprintf("SELECT COUNT(*) %s AND (district_id IS NOT NULL OR facility_id IS NOT NULL)", baseQuery)
+	var casesByLocation int
+	if err := db.QueryRow(locationQuery, args...).Scan(&casesByLocation); err != nil {
+		sl.Error("Error fetching cases by location", "error", err)
+		casesByLocation = 0
+	}
+
+	// 13. Healthcare worker (HCW) infections
+	hcwQuery := fmt.Sprintf("SELECT COUNT(*) %s AND is_healthcare_worker = true", baseQuery)
+	var hcwInfections int
+	if err := db.QueryRow(hcwQuery, args...).Scan(&hcwInfections); err != nil {
+		sl.Error("Error fetching HCW infections", "error", err)
+		hcwInfections = 0
+	}
+
+	return c.JSON(fiber.Map{
+		"new_admissions":     newAdmissions,
+		"confirmed_cases":    confirmedCases,
+		"suspected_cases":    suspectedCases,
+		"cumulative_deaths":  cumulativeDeaths,
+		"cfr":                cfr,
+		"current_admissions": currentAdmissions,
+		"discharges":         discharges,
+		"severe_cases":       severeCases,
+		"critical_cases":     criticalCases,
+		"cases_by_sex":       casesBySex,
+		"cases_by_age":       casesByAge,
+		"cases_by_location":  casesByLocation,
+		"hcw_infections":     hcwInfections,
+	})
+}
+
 // GetChartData returns chart data based on filters
 func GetChartData(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	// Check if user has reports access using proper database query
+	allowedRoles := []string{"admin", "reports", "vhf_lab_technician", "case_manager", "data_analyst", "cases_viewer", "cif_viewer"}
+	if !security.HasAnyRole(db, userID, allowedRoles) {
+		return c.Status(403).JSON(fiber.Map{"error": "Access denied: Reports permission required"})
 	}
 
 	chartType := c.Params("type") // Get from URL parameter, not query parameter
@@ -1301,6 +2328,12 @@ func GetTableData(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Stor
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	// Check if user has reports access using proper database query
+	allowedRoles := []string{"admin", "reports", "vhf_lab_technician", "case_manager", "data_analyst", "cases_viewer", "cif_viewer"}
+	if !security.HasAnyRole(db, userID, allowedRoles) {
+		return c.Status(403).JSON(fiber.Map{"error": "Access denied: Reports permission required"})
 	}
 
 	filters := parseReportFilters(c)
@@ -2016,53 +3049,52 @@ func getAgeGroupsData(c *fiber.Ctx, db *sql.DB, filters ReportFilters) (interfac
 	}, nil
 }
 
-// renderReportView renders the report view template as a standalone HTML document
+// renderReportView renders the report view template using the standard layout
 func renderReportView(c *fiber.Ctx, db *sql.DB, data interface{}) error {
-	// Get the current working directory
-	wd, err := os.Getwd()
-	if err != nil {
-		return c.Status(500).SendString(fmt.Sprintf("Failed to get working directory: %v", err))
-	}
-
-	// Try multiple possible locations for the templates
-	possiblePaths := []string{
-		filepath.Join(wd, "ui", "html"),                    // Current directory
-		filepath.Join(wd, "..", "ui", "html"),              // One level up
-		filepath.Join(wd, "..", "..", "ui", "html"),        // Two levels up
-		filepath.Join(wd, "cmd", "ui", "html"),             // cmd directory
-		filepath.Join(wd, "..", "cmd", "ui", "html"),       // cmd directory one level up
-		filepath.Join(wd, "..", "..", "cmd", "ui", "html"), // cmd directory two levels up
-	}
-
-	var basePath string
-	for _, path := range possiblePaths {
-		if _, err := os.Stat(path); err == nil {
-			basePath = path
-			break
+	// Convert data to TemplateData if it's not already
+	var templateData *handlers.TemplateData
+	if td, ok := data.(*handlers.TemplateData); ok {
+		templateData = td
+	} else if td, ok := data.(handlers.TemplateData); ok {
+		templateData = &td
+	} else {
+		// If it's not TemplateData, create a new one
+		templateData = handlers.NewTemplateData(c, nil)
+		if formMap, ok := data.(map[string]interface{}); ok {
+			templateData.Form = formMap
 		}
 	}
 
-	if basePath == "" {
-		return c.Status(500).SendString(fmt.Sprintf("Template directory not found. Tried paths: %v", possiblePaths))
+	// Determine which template to use based on report type
+	var templateName string
+	if formData, ok := templateData.Form.(map[string]interface{}); ok {
+		// Check if ReportType is directly in the form data
+		if reportType, ok := formData["ReportType"].(string); ok {
+			switch reportType {
+			case "indicators":
+				templateName = "indicators_report"
+			case "vhf", "measles", "polio", "mpox":
+				templateName = "cif_report"
+			default:
+				templateName = "report_view"
+			}
+		} else if filters, ok := formData["Filters"].(ReportFilters); ok {
+			// Check if ReportType is in the Filters struct
+			switch filters.ReportType {
+			case "indicators":
+				templateName = "indicators_report"
+			case "vhf", "measles", "polio", "mpox":
+				templateName = "cif_report"
+			default:
+				templateName = "report_view"
+			}
+		} else {
+			templateName = "report_view"
+		}
+	} else {
+		templateName = "report_view"
 	}
 
-	// Load the report_view template directly
-	templateFile := filepath.Join(basePath, "report_view.html")
-	content, err := os.ReadFile(templateFile)
-	if err != nil {
-		return c.Status(500).SendString(fmt.Sprintf("Failed to read report_view template: %v", err))
-	}
-
-	// Create a new template without layout
-	tmpl := template.New("report_view").Funcs(handlers.CreateTemplateFunctions(c, db))
-
-	// Parse the template content
-	_, err = tmpl.Parse(string(content))
-	if err != nil {
-		return c.Status(500).SendString(fmt.Sprintf("Failed to parse report_view template: %v", err))
-	}
-
-	// Execute template and write output
-	c.Set("Content-Type", "text/html")
-	return tmpl.Execute(c.Response().BodyWriter(), data)
+	// Use the standard GenerateHTML function with the layout
+	return handlers.GenerateHTML(c, db, templateData, templateName)
 }

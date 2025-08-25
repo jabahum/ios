@@ -1,0 +1,346 @@
+{{define "content"}}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Health Indicators Report</h5>
+                    <a href="/reports" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Reports
+                    </a>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">Comprehensive health metrics and epidemiological indicators</p>
+                    <!-- Filters Display -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Applied Filters</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <strong>Date Range:</strong><br>
+                                    {{ if .Form.Filters.StartDate }}{{ .Form.Filters.StartDate }}{{ else }}All{{ end }} - 
+                                    {{ if .Form.Filters.EndDate }}{{ .Form.Filters.EndDate }}{{ else }}All{{ end }}
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>Outbreak:</strong><br>
+                                    {{ if .Form.Filters.OutbreakID }}{{ .Form.Filters.OutbreakID }}{{ else }}All{{ end }}
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>Facility:</strong><br>
+                                    {{ if .Form.Filters.FacilityID }}{{ .Form.Filters.FacilityID }}{{ else }}All{{ end }}
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>District:</strong><br>
+                                    {{ if .Form.Filters.DistrictID }}{{ .Form.Filters.DistrictID }}{{ else }}All{{ end }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Key Indicators Grid -->
+                    <h5 class="mb-4"><i class="fas fa-tachometer-alt me-2"></i>Key Health Indicators</h5>
+                    
+                    <div class="row">
+                        <!-- New Admissions (Daily) -->
+                        {{ if .Form.Summary.new_admissions_daily }}
+                        <div class="col-md-4 mb-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <div class="text-primary mb-2">
+                                        <i class="fas fa-calendar-plus" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <h4 class="text-primary">{{ .Form.Summary.new_admissions_daily.total }}</h4>
+                                    <h6>New Admissions (Daily)</h6>
+                                    <small class="text-muted">Daily aggregation of admission date field</small>
+                                </div>
+                            </div>
+                        </div>
+                        {{ end }}
+
+                        <!-- Cumulative Confirmed Cases -->
+                        {{ if .Form.Summary.cumulative_confirmed }}
+                        <div class="col-md-4 mb-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <div class="text-success mb-2">
+                                        <i class="fas fa-virus" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <h4 class="text-success">{{ .Form.Summary.cumulative_confirmed.confirmed_cases }}</h4>
+                                    <h6>Cumulative Confirmed Cases</h6>
+                                    <small class="text-muted">All patients with positive Mpox PCR/confirmed diagnosis</small>
+                                </div>
+                            </div>
+                        </div>
+                        {{ end }}
+
+                        <!-- Cumulative Suspected Cases -->
+                        {{ if .Form.Summary.cumulative_suspected }}
+                        <div class="col-md-4 mb-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <div class="text-warning mb-2">
+                                        <i class="fas fa-question-circle" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <h4 class="text-warning">{{ .Form.Summary.cumulative_suspected.suspected_cases }}</h4>
+                                    <h6>Cumulative Suspected Cases</h6>
+                                    <small class="text-muted">All patients with Mpox-like symptoms without PCR confirmation</small>
+                                </div>
+                            </div>
+                        </div>
+                        {{ end }}
+
+                        <!-- Cumulative Deaths -->
+                        {{ if .Form.Summary.cumulative_deaths }}
+                        <div class="col-md-4 mb-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <div class="text-danger mb-2">
+                                        <i class="fas fa-cross" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <h4 class="text-danger">{{ .Form.Summary.cumulative_deaths.deaths }}</h4>
+                                    <h6>Cumulative Deaths</h6>
+                                    <small class="text-muted">Patients with outcome = "Death"</small>
+                                </div>
+                            </div>
+                        </div>
+                        {{ end }}
+
+                        <!-- Case Fatality Rate -->
+                        {{ if .Form.Summary.case_fatality_rate }}
+                        <div class="col-md-4 mb-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <div class="text-info mb-2">
+                                        <i class="fas fa-percentage" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <h4 class="text-info">{{ .Form.Summary.case_fatality_rate.cfr_percent }}</h4>
+                                    <h6>Case Fatality Rate (CFR)</h6>
+                                    <small class="text-muted">(Deaths/Confirmed cases) × 100</small>
+                                </div>
+                            </div>
+                        </div>
+                        {{ end }}
+
+                        <!-- Current Admissions -->
+                        {{ if .Form.Summary.current_admissions }}
+                        <div class="col-md-4 mb-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <div class="text-primary mb-2">
+                                        <i class="fas fa-hospital" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <h4 class="text-primary">{{ .Form.Summary.current_admissions.current_admissions }}</h4>
+                                    <h6>Current Admissions</h6>
+                                    <small class="text-muted">Active cases in hospital</small>
+                                </div>
+                            </div>
+                        </div>
+                        {{ end }}
+
+                        <!-- Cumulative Discharges -->
+                        {{ if .Form.Summary.cumulative_discharges }}
+                        <div class="col-md-4 mb-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <div class="text-success mb-2">
+                                        <i class="fas fa-door-open" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <h4 class="text-success">{{ .Form.Summary.cumulative_discharges.discharges }}</h4>
+                                    <h6>Cumulative Discharges</h6>
+                                    <small class="text-muted">Patients with outcome = "Discharged alive"</small>
+                                </div>
+                            </div>
+                        </div>
+                        {{ end }}
+
+                        <!-- Severe Cases -->
+                        {{ if .Form.Summary.severe_cases }}
+                        <div class="col-md-4 mb-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <div class="text-warning mb-2">
+                                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <h4 class="text-warning">{{ .Form.Summary.severe_cases.percentage_str }}</h4>
+                                    <h6>Severe Cases Admitted</h6>
+                                    <small class="text-muted">{{ .Form.Summary.severe_cases.severe_cases }} of {{ .Form.Summary.severe_cases.total_admitted }} total</small>
+                                </div>
+                            </div>
+                        </div>
+                        {{ end }}
+
+                        <!-- Critical Cases -->
+                        {{ if .Form.Summary.critical_cases }}
+                        <div class="col-md-4 mb-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <div class="text-danger mb-2">
+                                        <i class="fas fa-skull-crossbones" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <h4 class="text-danger">{{ .Form.Summary.critical_cases.percentage_str }}</h4>
+                                    <h6>Critical Cases Admitted</h6>
+                                    <small class="text-muted">{{ .Form.Summary.critical_cases.critical_cases }} of {{ .Form.Summary.critical_cases.total_admitted }} total</small>
+                                </div>
+                            </div>
+                        </div>
+                        {{ end }}
+
+                        <!-- HCW Infections -->
+                        {{ if .Form.Summary.hcw_infections }}
+                        <div class="col-md-4 mb-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <div class="text-info mb-2">
+                                        <i class="fas fa-user-md" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <h4 class="text-info">{{ .Form.Summary.hcw_infections.percentage_str }}</h4>
+                                    <h6>Healthcare Worker Infections</h6>
+                                    <small class="text-muted">{{ .Form.Summary.hcw_infections.hcw_cases }} of {{ .Form.Summary.hcw_infections.total_cases }} total</small>
+                                </div>
+                            </div>
+                        </div>
+                        {{ end }}
+                    </div>
+
+        <!-- Charts Section -->
+        <div class="row">
+            <!-- Cases by Sex Chart -->
+            {{ if .Form.Summary.cases_by_sex }}
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h5><i class="fas fa-venus-mars me-2"></i>Cases by Sex</h5>
+                    <canvas id="sexChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+            {{ end }}
+
+            <!-- Cases by Age Group Chart -->
+            {{ if .Form.Summary.cases_by_age }}
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h5><i class="fas fa-users me-2"></i>Cases by Age Group</h5>
+                    <canvas id="ageChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+            {{ end }}
+        </div>
+
+        <!-- Daily Admissions Trend -->
+        {{ if .Form.Summary.new_admissions_daily }}
+        <div class="chart-container">
+            <h5><i class="fas fa-chart-line me-2"></i>Daily Admissions Trend</h5>
+            <canvas id="dailyAdmissionsChart" width="800" height="300"></canvas>
+        </div>
+        {{ end }}
+
+        <!-- Cases by Location Table -->
+        {{ if .Form.Summary.cases_by_location }}
+        <div class="table-responsive">
+            <h5><i class="fas fa-map-marker-alt me-2"></i>Cases by District/Facility</h5>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Facility</th>
+                        <th>District</th>
+                        <th>Case Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range .Form.Summary.cases_by_location.locations }}
+                    <tr>
+                        <td>{{ .facility }}</td>
+                        <td>{{ .district }}</td>
+                        <td><span class="badge bg-primary">{{ .count }}</span></td>
+                    </tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
+        {{ end }}
+    </div>
+
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Charts initialization
+        {{ if .Form.Summary.cases_by_sex }}
+        const sexCtx = document.getElementById('sexChart').getContext('2d');
+        new Chart(sexCtx, {
+            type: 'pie',
+            data: {
+                labels: {{ .Form.Summary.cases_by_sex.labels | toJSON }},
+                datasets: [{
+                    data: {{ .Form.Summary.cases_by_sex.data | toJSON }},
+                    backgroundColor: ['#667eea', '#764ba2', '#f093fb'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+        {{ end }}
+
+        {{ if .Form.Summary.cases_by_age }}
+        const ageCtx = document.getElementById('ageChart').getContext('2d');
+        new Chart(ageCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ .Form.Summary.cases_by_age.labels | toJSON }},
+                datasets: [{
+                    label: 'Cases',
+                    data: {{ .Form.Summary.cases_by_age.data | toJSON }},
+                    backgroundColor: '#667eea',
+                    borderColor: '#764ba2',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        {{ end }}
+
+        {{ if .Form.Summary.new_admissions_daily }}
+        const dailyCtx = document.getElementById('dailyAdmissionsChart').getContext('2d');
+        new Chart(dailyCtx, {
+            type: 'line',
+            data: {
+                labels: {{ .Form.Summary.new_admissions_daily.dates | toJSON }},
+                datasets: [{
+                    label: 'Daily Admissions',
+                    data: {{ .Form.Summary.new_admissions_daily.counts | toJSON }},
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        {{ end }}
+    </script>
+</body>
+</html>
+
+{{ end }} 

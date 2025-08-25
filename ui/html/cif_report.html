@@ -1,0 +1,185 @@
+{{define "content"}}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-medical me-2"></i>
+                        {{if eq .Form.Filters.ReportType "vhf"}}VHF{{end}}
+                        {{if eq .Form.Filters.ReportType "measles"}}Measles{{end}}
+                        {{if eq .Form.Filters.ReportType "polio"}}Polio{{end}}
+                        {{if eq .Form.Filters.ReportType "mpox"}}Mpox{{end}}
+                        Case Investigation Report
+                    </h5>
+                    <div>
+                        <a href="/reports" class="btn btn-outline-primary btn-sm me-2">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Reports
+                        </a>
+                        <button class="btn btn-success btn-sm" onclick="window.print()">
+                            <i class="fas fa-print me-2"></i>Print Report
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Report Header -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Generated on {{now | formatDate}}</h6>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <h6 class="text-muted">Report Type: {{.Form.Filters.ReportType | title}}</h6>
+                        </div>
+                    </div>
+
+                    <!-- Applied Filters -->
+                    {{if .Form.Filters}}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Applied Filters</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {{if or .Form.Filters.StartDate .Form.Filters.EndDate}}
+                                <div class="col-md-3">
+                                    <strong>Date Range:</strong><br>
+                                    {{if .Form.Filters.StartDate}}{{.Form.Filters.StartDate}}{{else}}All{{end}} - 
+                                    {{if .Form.Filters.EndDate}}{{.Form.Filters.EndDate}}{{else}}All{{end}}
+                                </div>
+                                {{end}}
+                                {{if .Form.Filters.OutbreakID}}
+                                <div class="col-md-3">
+                                    <strong>Outbreak:</strong><br>
+                                    {{.Form.Filters.OutbreakID}}
+                                </div>
+                                {{end}}
+                                {{if .Form.Filters.FacilityID}}
+                                <div class="col-md-3">
+                                    <strong>Facility:</strong><br>
+                                    {{.Form.Filters.FacilityID}}
+                                </div>
+                                {{end}}
+                                {{if .Form.Filters.DistrictID}}
+                                <div class="col-md-3">
+                                    <strong>District:</strong><br>
+                                    {{.Form.Filters.DistrictID}}
+                                </div>
+                                {{end}}
+                            </div>
+                        </div>
+                    </div>
+                    {{end}}
+
+                    <!-- Report Summary -->
+                    {{if .Form.Summary}}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Report Summary</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {{range $key, $value := .Form.Summary}}
+                                <div class="col-md-3 mb-3">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <h4 class="text-primary">{{$value}}</h4>
+                                            <div class="text-muted">{{$key | title}}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {{end}}
+                            </div>
+                        </div>
+                    </div>
+                    {{end}}
+
+                    <!-- Report Data -->
+                    {{if .Form.Tables}}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-table me-2"></i>Report Data</h6>
+                        </div>
+                        <div class="card-body">
+                            {{range $tableName, $tableData := .Form.Tables}}
+                            <h6 class="mb-3">{{$tableName | title}}</h6>
+                            {{if $tableData}}
+                                {{if isSlice $tableData}}
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                {{range $index, $row := $tableData}}
+                                                    {{if eq $index 0}}
+                                                        {{range $key, $value := $row}}
+                                                        <th>{{$key | title}}</th>
+                                                        {{end}}
+                                                    {{end}}
+                                                {{end}}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {{range $tableData}}
+                                            <tr>
+                                                {{range $key, $value := .}}
+                                                <td>{{$value}}</td>
+                                                {{end}}
+                                            </tr>
+                                            {{end}}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {{else}}
+                                <p class="text-muted">No data available for this table.</p>
+                                {{end}}
+                            {{else}}
+                            <p class="text-muted">No data available.</p>
+                            {{end}}
+                            {{end}}
+                        </div>
+                    </div>
+                    {{end}}
+
+                    <!-- Error Display -->
+                    {{if .Form.Error}}
+                    <div class="card mb-4 border-danger">
+                        <div class="card-header bg-danger text-white">
+                            <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Error</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-danger">{{.Form.Error}}</p>
+                        </div>
+                    </div>
+                    {{end}}
+
+                    <!-- No Data Message -->
+                    {{if and (not .Form.Summary) (not .Form.Tables) (not .Form.Error)}}
+                    <div class="card mb-4">
+                        <div class="card-body text-center">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Data Available</h5>
+                            <p class="text-muted">No data found for the selected filters. Try adjusting your search criteria.</p>
+                        </div>
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .btn, .card-header .btn {
+        display: none !important;
+    }
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    .card-header {
+        background: none !important;
+        border-bottom: 2px solid #000 !important;
+    }
+}
+</style>
+{{end}} 

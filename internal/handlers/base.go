@@ -359,6 +359,49 @@ func CreateTemplateFunctions(c *fiber.Ctx, db *sql.DB) template.FuncMap {
 			}
 			return optionz
 		},
+		"isSlice": func(v interface{}) bool {
+			if v == nil {
+				return false
+			}
+			val := reflect.ValueOf(v)
+			return val.Kind() == reflect.Slice
+		},
+		"toJSON": func(v interface{}) template.JS {
+			if v == nil {
+				return template.JS("null")
+			}
+			// For simple types, convert to JSON string
+			switch val := v.(type) {
+			case string:
+				return template.JS(fmt.Sprintf(`"%s"`, val))
+			case int, int64, float64, bool:
+				return template.JS(fmt.Sprintf("%v", val))
+			case []string:
+				json := "["
+				for i, s := range val {
+					if i > 0 {
+						json += ","
+					}
+					json += fmt.Sprintf(`"%s"`, s)
+				}
+				json += "]"
+				return template.JS(json)
+			case []int, []int64, []float64:
+				json := "["
+				valReflect := reflect.ValueOf(val)
+				for i := 0; i < valReflect.Len(); i++ {
+					if i > 0 {
+						json += ","
+					}
+					json += fmt.Sprintf("%v", valReflect.Index(i).Interface())
+				}
+				json += "]"
+				return template.JS(json)
+			default:
+				// For complex types, return empty array as fallback
+				return template.JS("[]")
+			}
+		},
 		"renderSymptomRow": func(name, label string, value sql.NullBool, date sql.NullTime, duration sql.NullInt32) template.HTML {
 			var buf bytes.Buffer
 			tmpl := `

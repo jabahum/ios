@@ -1,0 +1,296 @@
+{{define "content"}}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-file-medical me-2"></i>Case Investigation Forms Dashboard</h5>
+                    <a href="/reports" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Reports
+                    </a>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">Comprehensive dashboard for Case Investigation Forms across different diseases</p>
+                    
+                    <!-- CIF Overview Cards -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <div class="text-danger mb-2">
+                                        <i class="fas fa-virus" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <h4 class="text-danger" id="vhfCount">-</h4>
+                                    <h6>VHF Cases</h6>
+                                    <small class="text-muted">Viral Hemorrhagic Fever</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <div class="text-warning mb-2">
+                                        <i class="fas fa-measles" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <h4 class="text-warning" id="measlesCount">-</h4>
+                                    <h6>Measles Cases</h6>
+                                    <small class="text-muted">Measles Investigation</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <div class="text-info mb-2">
+                                        <i class="fas fa-wheelchair" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <h4 class="text-info" id="polioCount">-</h4>
+                                    <h6>Polio Cases</h6>
+                                    <small class="text-muted">Polio Investigation</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <div class="text-success mb-2">
+                                        <i class="fas fa-monkey" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <h4 class="text-success" id="mpoxCount">-</h4>
+                                    <h6>Mpox Cases</h6>
+                                    <small class="text-muted">Mpox Investigation</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CIF Reports Section -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-chart-bar text-danger me-2"></i>VHF CIF Reports</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">Viral Hemorrhagic Fever Case Investigation Forms</p>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-danger" onclick="generateCIFReport('vhf', 'summary')">
+                                            <i class="fas fa-chart-pie me-2"></i>VHF Summary
+                                        </button>
+                                        <button class="btn btn-danger" onclick="generateCIFReport('vhf', 'details')">
+                                            <i class="fas fa-list me-2"></i>VHF Details
+                                        </button>
+                                        <button class="btn btn-danger" onclick="generateCIFReport('vhf', 'lab')">
+                                            <i class="fas fa-flask me-2"></i>VHF Lab Results
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-chart-bar text-warning me-2"></i>Measles CIF Reports</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">Measles Case Investigation Forms</p>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-warning" onclick="generateCIFReport('measles', 'summary')">
+                                            <i class="fas fa-chart-pie me-2"></i>Measles Summary
+                                        </button>
+                                        <button class="btn btn-warning" onclick="generateCIFReport('measles', 'details')">
+                                            <i class="fas fa-list me-2"></i>Measles Details
+                                        </button>
+                                        <button class="btn btn-warning" onclick="generateCIFReport('measles', 'vaccination')">
+                                            <i class="fas fa-syringe me-2"></i>Vaccination Status
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-chart-bar text-info me-2"></i>Polio CIF Reports</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">Polio Case Investigation Forms</p>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-info" onclick="generateCIFReport('polio', 'summary')">
+                                            <i class="fas fa-chart-pie me-2"></i>Polio Summary
+                                        </button>
+                                        <button class="btn btn-info" onclick="generateCIFReport('polio', 'details')">
+                                            <i class="fas fa-list me-2"></i>Polio Details
+                                        </button>
+                                        <button class="btn btn-info" onclick="generateCIFReport('polio', 'paralysis')">
+                                            <i class="fas fa-user-injured me-2"></i>Paralysis Cases
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-chart-bar text-success me-2"></i>Mpox CIF Reports</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">Mpox Case Investigation Forms</p>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-success" onclick="generateCIFReport('mpox', 'summary')">
+                                            <i class="fas fa-chart-pie me-2"></i>Mpox Summary
+                                        </button>
+                                        <button class="btn btn-success" onclick="generateCIFReport('mpox', 'details')">
+                                            <i class="fas fa-list me-2"></i>Mpox Details
+                                        </button>
+                                        <button class="btn btn-success" onclick="generateCIFReport('mpox', 'symptoms')">
+                                            <i class="fas fa-thermometer-half me-2"></i>Symptom Analysis
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CIF Charts Section -->
+                    <div class="row mt-4">
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>CIF Distribution</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="cifDistributionChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>CIF Trends</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="cifTrendsChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        loadCIFStats();
+        initializeCIFCharts();
+    });
+
+    function generateCIFReport(type, subtype) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/reports/generate';
+        
+        const reportTypeInput = document.createElement('input');
+        reportTypeInput.type = 'hidden';
+        reportTypeInput.name = 'report_type';
+        reportTypeInput.value = type;
+        form.appendChild(reportTypeInput);
+        
+        const subtypeInput = document.createElement('input');
+        subtypeInput.type = 'hidden';
+        subtypeInput.name = 'report_subtype';
+        subtypeInput.value = subtype;
+        form.appendChild(subtypeInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    function loadCIFStats() {
+        // Load CIF statistics
+        fetch('/reports/cif-stats')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('vhfCount').textContent = data.vhf_count || 0;
+                document.getElementById('measlesCount').textContent = data.measles_count || 0;
+                document.getElementById('polioCount').textContent = data.polio_count || 0;
+                document.getElementById('mpoxCount').textContent = data.mpox_count || 0;
+            })
+            .catch(error => {
+                console.error('Error loading CIF stats:', error);
+                document.getElementById('vhfCount').textContent = '0';
+                document.getElementById('measlesCount').textContent = '0';
+                document.getElementById('polioCount').textContent = '0';
+                document.getElementById('mpoxCount').textContent = '0';
+            });
+    }
+
+    function initializeCIFCharts() {
+        // CIF Distribution Chart
+        fetch('/reports/cif-distribution')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('cifDistributionChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.labels || ['VHF', 'Measles', 'Polio', 'Mpox'],
+                        datasets: [{
+                            data: data.data || [0, 0, 0, 0],
+                            backgroundColor: [
+                                'rgb(220, 53, 69)',
+                                'rgb(255, 193, 7)',
+                                'rgb(23, 162, 184)',
+                                'rgb(40, 167, 69)'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error loading CIF distribution:', error);
+            });
+
+        // CIF Trends Chart
+        fetch('/reports/cif-trends')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('cifTrendsChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels || [],
+                        datasets: data.datasets || []
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error loading CIF trends:', error);
+            });
+    }
+</script>
+{{end}} 

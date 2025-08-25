@@ -245,6 +245,16 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		appGroup.Get("/alerts", middleware.PermissionRequired(store, db, sl, "alerts", "read"), func(c *fiber.Ctx) error {
 			return handlers.HandlerAlerts(c, db, sl, store, config)
 		})
+
+		// Alerts API endpoint for paginated data
+		appGroup.Get("/api/alerts", middleware.PermissionRequired(store, db, sl, "alerts", "read"), func(c *fiber.Ctx) error {
+			return handlers.HandlerAlertsAPI(c, db, sl, store, config)
+		})
+
+		// Alerts debug endpoint
+		appGroup.Get("/api/alerts/debug", middleware.PermissionRequired(store, db, sl, "alerts", "read"), func(c *fiber.Ctx) error {
+			return handlers.HandlerAlertsDebug(c, db, sl, store, config)
+		})
 		// VHF CIF routes with RBAC protection
 		appGroup.Get("/vhf-cif", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
 			return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "vhf_cif")
@@ -1456,15 +1466,15 @@ func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logg
 	protected.Get("/api/inventory/stock-levels", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryAPIStockLevels(c) })
 	protected.Get("/api/inventory/low-stock", func(c *fiber.Ctx) error { return inventoryHandler.HandlerInventoryAPILowStock(c) })
 
-	// Reports routes
-	protected.Get("/reports", func(c *fiber.Ctx) error {
-		return reports.ReportsHome(c, db, sl, store, config)
-	})
-	protected.Post("/reports/generate", func(c *fiber.Ctx) error {
-		return reports.GenerateReport(c, db, sl, store, config)
+	// Reports routes - More specific routes must come first
+	protected.Get("/reports/cif-dashboard", func(c *fiber.Ctx) error {
+		return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "cif_dashboard")
 	})
 	protected.Get("/reports/quick-stats", func(c *fiber.Ctx) error {
 		return reports.GetQuickStats(c, db, sl, store, config)
+	})
+	protected.Get("/reports/health-indicators", func(c *fiber.Ctx) error {
+		return reports.GetHealthIndicators(c, db, sl, store, config)
 	})
 	protected.Get("/reports/chart-data/:type", func(c *fiber.Ctx) error {
 		return reports.GetChartData(c, db, sl, store, config)
@@ -1472,8 +1482,14 @@ func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logg
 	protected.Get("/reports/table-data", func(c *fiber.Ctx) error {
 		return reports.GetTableData(c, db, sl, store, config)
 	})
+	protected.Post("/reports/generate", func(c *fiber.Ctx) error {
+		return reports.GenerateReport(c, db, sl, store, config)
+	})
 	protected.Post("/reports/export", func(c *fiber.Ctx) error {
 		return reports.ExportReport(c, db, sl, store, config)
+	})
+	protected.Get("/reports", func(c *fiber.Ctx) error {
+		return reports.ReportsHome(c, db, sl, store, config)
 	})
 
 }

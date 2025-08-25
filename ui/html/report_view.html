@@ -1,117 +1,134 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Report View - Integrated Outbreak System</title>
-    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .report-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 2rem 0;
-            margin-bottom: 2rem;
-        }
-        .report-section {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .metric-card {
-            background: white;
-            border-radius: 10px;
-            padding: 1.5rem;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 1rem;
-        }
-        .metric-value {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #667eea;
-        }
-        .metric-label {
-            color: #6c757d;
-            font-size: 0.9rem;
-        }
-    </style>
-</head>
-<body>
-    <!-- Report Header -->
-    <div class="report-header">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <h1><i class="fas fa-chart-bar me-3"></i>Report View</h1>
-                    <p class="mb-0">Generated on <span id="generatedDate"></span></p>
-                </div>
-                <div class="col-md-4 text-end">
-                    <a href="/reports" class="btn btn-outline-light btn-sm me-2">
-                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+{{define "content"}}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Report Results</h5>
+                    <a href="/reports" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Reports
                     </a>
-                    <button class="btn btn-outline-light btn-sm ms-2" onclick="window.history.back()">
-                        <i class="fas fa-arrow-left"></i> Back
-                    </button>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">Generated on {{now | formatDate}}</p>
+                    
+                    <!-- Filters Display -->
+                    {{if .Form.Filters}}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Applied Filters</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <strong>Date Range:</strong><br>
+                                    {{if .Form.Filters.StartDate}}{{.Form.Filters.StartDate}}{{else}}All{{end}} - 
+                                    {{if .Form.Filters.EndDate}}{{.Form.Filters.EndDate}}{{else}}All{{end}}
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>Report Type:</strong><br>
+                                    {{if .Form.Filters.ReportType}}{{.Form.Filters.ReportType | title}}{{else}}General{{end}}
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>Outbreak:</strong><br>
+                                    {{if .Form.Filters.OutbreakID}}{{.Form.Filters.OutbreakID}}{{else}}All{{end}}
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>Facility:</strong><br>
+                                    {{if .Form.Filters.FacilityID}}{{.Form.Filters.FacilityID}}{{else}}All{{end}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {{end}}
+
+                    <!-- Report Summary -->
+                    {{if .Form.Summary}}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Report Summary</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {{range $key, $value := .Form.Summary}}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <h5 class="text-primary">{{$key | title}}</h5>
+                                            <p class="mb-0">{{$value}}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {{end}}
+                            </div>
+                        </div>
+                    </div>
+                    {{end}}
+
+                    <!-- Report Tables -->
+                    {{if .Form.Tables}}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-table me-2"></i>Report Data</h6>
+                        </div>
+                        <div class="card-body">
+                            {{range $tableName, $tableData := .Form.Tables}}
+                            <h6 class="mb-3">{{$tableName | title}}</h6>
+                            {{if $tableData}}
+                                {{if isSlice $tableData}}
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                {{range $index, $row := $tableData}}
+                                                    {{if eq $index 0}}
+                                                        {{range $key, $value := $row}}
+                                                        <th>{{$key | title}}</th>
+                                                        {{end}}
+                                                    {{end}}
+                                                {{end}}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {{range $tableData}}
+                                            <tr>
+                                                {{range $key, $value := .}}
+                                                <td>{{$value}}</td>
+                                                {{end}}
+                                            </tr>
+                                            {{end}}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {{else}}
+                                <p class="text-muted">No data available for this table.</p>
+                                {{end}}
+                            {{else}}
+                            <p class="text-muted">No data available.</p>
+                            {{end}}
+                            {{end}}
+                        </div>
+                    </div>
+                    {{end}}
+
+                    <!-- Error Display -->
+                    {{if .Form.Error}}
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-exclamation-triangle me-2"></i>Error</h6>
+                        <p class="mb-0">{{.Form.Error}}</p>
+                    </div>
+                    {{end}}
+
+                    <!-- No Data Message -->
+                    {{if and (not .Form.Summary) (not .Form.Tables) (not .Form.Error)}}
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>No Data Available</h6>
+                        <p class="mb-0">No report data is available for the selected filters. Please try adjusting your filter criteria.</p>
+                    </div>
+                    {{end}}
                 </div>
             </div>
         </div>
     </div>
-
-    <div class="container">
-        <!-- Simple Content -->
-        <div class="report-section">
-            <h4><i class="fas fa-info-circle me-2"></i>Report Information</h4>
-            <p>This is a simple report view to test for infinite rendering issues.</p>
-            <p>If you can see this page without it expanding infinitely, the issue is resolved.</p>
-        </div>
-
-        <!-- Key Metrics -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="metric-card">
-                    <div class="metric-value">0</div>
-                    <div class="metric-label">Total Cases</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="metric-card">
-                    <div class="metric-value">0</div>
-                    <div class="metric-label">Active Cases</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="metric-card">
-                    <div class="metric-value">0</div>
-                    <div class="metric-label">Recovered</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="metric-card">
-                    <div class="metric-value">0</div>
-                    <div class="metric-label">Deaths</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Simple Message -->
-        <div class="report-section">
-            <h4><i class="fas fa-check-circle me-2"></i>Status</h4>
-            <p class="text-success">✅ Page loaded successfully without infinite rendering!</p>
-            <p>This confirms that the infinite rendering issue has been resolved.</p>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Simple script to set the current date
-        document.getElementById('generatedDate').textContent = new Date().toLocaleString();
-    </script>
-</body>
-</html> 
+</div>
+{{end}} 

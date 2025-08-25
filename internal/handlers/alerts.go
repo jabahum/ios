@@ -9,6 +9,8 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -31,6 +33,8 @@ type ExternalAlert struct {
 	Source        string    `json:"source"`
 	Response      string    `json:"response"`
 	Verified      bool      `json:"verified"`
+	CIFNumber     string    `json:"cif_number,omitempty"`
+	CaseCode      string    `json:"case_code,omitempty"`
 }
 
 // AlertsResponse represents the response from the external alerts API
@@ -38,6 +42,17 @@ type AlertsResponse struct {
 	Success bool            `json:"success"`
 	Data    []ExternalAlert `json:"data"`
 	Message string          `json:"message"`
+}
+
+// PaginatedAlertsResponse represents the paginated response for alerts API
+type PaginatedAlertsResponse struct {
+	Success    bool            `json:"success"`
+	Data       []ExternalAlert `json:"data"`
+	Total      int             `json:"total"`
+	Page       int             `json:"page"`
+	PageSize   int             `json:"page_size"`
+	TotalPages int             `json:"total_pages"`
+	Message    string          `json:"message"`
 }
 
 // TokenResponse represents the response from the authentication endpoint
@@ -66,6 +81,145 @@ func HandlerAlerts(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Sto
 	}
 
 	return GenerateHTML(c, db, data, "alerts")
+}
+
+// HandlerAlertsAPI handles the API endpoint for paginated alerts
+func HandlerAlertsAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	// Get query parameters
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	pageSize, _ := strconv.Atoi(c.Query("page_size", "10"))
+	search := c.Query("search", "")
+	severity := c.Query("severity", "")
+	status := c.Query("status", "")
+	location := c.Query("location", "")
+
+	// Validate parameters
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 0 || pageSize > 1000 {
+		pageSize = 10
+	}
+
+	// Fetch all alerts from external API
+	allAlerts, err := fetchExternalAlerts()
+	if err != nil {
+		sl.Error("Failed to fetch external alerts", "error", err)
+		return c.Status(500).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed to fetch alerts",
+			"error":   err.Error(),
+		})
+	}
+
+	// Filter alerts based on search criteria
+	filteredAlerts := filterAlerts(allAlerts, search, severity, status, location)
+
+	// If pageSize is 0, return all alerts without pagination
+	if pageSize == 0 {
+		response := PaginatedAlertsResponse{
+			Success:    true,
+			Data:       filteredAlerts,
+			Total:      len(filteredAlerts),
+			Page:       1,
+			PageSize:   len(filteredAlerts),
+			TotalPages: 1,
+			Message:    "All alerts retrieved successfully",
+		}
+		return c.JSON(response)
+	}
+
+	// Calculate pagination
+	total := len(filteredAlerts)
+	totalPages := (total + pageSize - 1) / pageSize
+
+	// Apply pagination
+	start := (page - 1) * pageSize
+	end := start + pageSize
+	if end > total {
+		end = total
+	}
+
+	var paginatedAlerts []ExternalAlert
+	if start < total {
+		paginatedAlerts = filteredAlerts[start:end]
+	}
+
+	response := PaginatedAlertsResponse{
+		Success:    true,
+		Data:       paginatedAlerts,
+		Total:      total,
+		Page:       page,
+		PageSize:   pageSize,
+		TotalPages: totalPages,
+		Message:    "Alerts retrieved successfully",
+	}
+
+	return c.JSON(response)
+}
+
+// HandlerAlertsDebug handles debugging the external API
+func HandlerAlertsDebug(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	// Test the external API directly
+	alerts, err := fetchExternalAlerts()
+
+	debugInfo := fiber.Map{
+		"success":      err == nil,
+		"error":        nil,
+		"alerts_count": len(alerts),
+		"sample_data":  err != nil,
+	}
+
+	if err != nil {
+		debugInfo["error"] = err.Error()
+	}
+
+	if len(alerts) > 0 {
+		debugInfo["first_alert"] = alerts[0]
+	}
+
+	return c.JSON(debugInfo)
+}
+
+// filterAlerts filters alerts based on search criteria
+func filterAlerts(alerts []ExternalAlert, search, severity, status, location string) []ExternalAlert {
+	var filtered []ExternalAlert
+
+	for _, alert := range alerts {
+		// Search filter
+		if search != "" {
+			searchLower := strings.ToLower(search)
+			matches := strings.Contains(strings.ToLower(alert.Title), searchLower) ||
+				strings.Contains(strings.ToLower(alert.Description), searchLower) ||
+				strings.Contains(strings.ToLower(alert.Reporter), searchLower) ||
+				strings.Contains(strings.ToLower(alert.Location), searchLower) ||
+				strings.Contains(strings.ToLower(alert.CIFNumber), searchLower) ||
+				strings.Contains(strings.ToLower(alert.CaseCode), searchLower)
+
+			if !matches {
+				continue
+			}
+		}
+
+		// Severity filter
+		if severity != "" && alert.Severity != severity {
+			continue
+		}
+
+		// Status filter
+		if status != "" && alert.Status != status {
+			continue
+		}
+
+		// Location filter
+		if location != "" && !strings.Contains(strings.ToLower(alert.Location), strings.ToLower(location)) {
+			continue
+		}
+
+		filtered = append(filtered, alert)
+	}
+
+	return filtered
 }
 
 // getBearerToken fetches a bearer token using the provided credentials
@@ -207,6 +361,7 @@ func fetchExternalAlerts() ([]ExternalAlert, error) {
 	}
 
 	// If external API fails, return sample alerts for demonstration
+	fmt.Printf("DEBUG: External API failed, returning sample alerts\n")
 	return getSampleAlerts(), nil
 }
 
@@ -224,11 +379,13 @@ func getSampleAlerts() []ExternalAlert {
 			CreatedAt:     now.Add(-2 * time.Hour),
 			UpdatedAt:     now.Add(-30 * time.Minute),
 			Status:        "Alive",
-			Reporter:      "Not specified",
+			Reporter:      "Dr. Sarah Nakimera",
 			ContactNumber: "0782388634",
 			Source:        "Community",
-			Response:      "Mpox",
+			Response:      "Measles",
 			Verified:      true,
+			CIFNumber:     "CIF-2023-001",
+			CaseCode:      "CASE-2023-001",
 		},
 		{
 			ID:            "ALT3754",
@@ -240,11 +397,13 @@ func getSampleAlerts() []ExternalAlert {
 			CreatedAt:     now.Add(-4 * time.Hour),
 			UpdatedAt:     now.Add(-1 * time.Hour),
 			Status:        "Alive",
-			Reporter:      "Not specified",
+			Reporter:      "Nurse Mary Okello",
 			ContactNumber: "0782388634",
 			Source:        "Facility",
-			Response:      "Mpox",
+			Response:      "Cholera",
 			Verified:      true,
+			CIFNumber:     "CIF-2023-002",
+			CaseCode:      "CASE-2023-002",
 		},
 		{
 			ID:            "ALT3753",
@@ -256,11 +415,13 @@ func getSampleAlerts() []ExternalAlert {
 			CreatedAt:     now.Add(-6 * time.Hour),
 			UpdatedAt:     now.Add(-2 * time.Hour),
 			Status:        "Alive",
-			Reporter:      "Not specified",
+			Reporter:      "Dr. John Muwonge",
 			ContactNumber: "0782388634",
 			Source:        "Facility",
-			Response:      "Mpox",
+			Response:      "COVID-19",
 			Verified:      true,
+			CIFNumber:     "CIF-2023-003",
+			CaseCode:      "CASE-2023-003",
 		},
 		{
 			ID:            "ALT3752",
@@ -272,11 +433,13 @@ func getSampleAlerts() []ExternalAlert {
 			CreatedAt:     now.Add(-8 * time.Hour),
 			UpdatedAt:     now.Add(-3 * time.Hour),
 			Status:        "Alive",
-			Reporter:      "Not specified",
+			Reporter:      "Dr. Grace Nalukenge",
 			ContactNumber: "0782388634",
 			Source:        "Facility",
-			Response:      "Mpox",
+			Response:      "Malaria",
 			Verified:      true,
+			CIFNumber:     "CIF-2023-004",
+			CaseCode:      "CASE-2023-004",
 		},
 		{
 			ID:            "ALT3751",
@@ -288,11 +451,13 @@ func getSampleAlerts() []ExternalAlert {
 			CreatedAt:     now.Add(-12 * time.Hour),
 			UpdatedAt:     now.Add(-6 * time.Hour),
 			Status:        "Alive",
-			Reporter:      "Not specified",
+			Reporter:      "Dr. Robert Ssebunya",
 			ContactNumber: "0782388634",
 			Source:        "Facility",
-			Response:      "Mpox",
+			Response:      "Food Safety",
 			Verified:      true,
+			CIFNumber:     "CIF-2023-005",
+			CaseCode:      "CASE-2023-005",
 		},
 		{
 			ID:            "ALT3749",
@@ -304,11 +469,13 @@ func getSampleAlerts() []ExternalAlert {
 			CreatedAt:     now.Add(-14 * time.Hour),
 			UpdatedAt:     now.Add(-8 * time.Hour),
 			Status:        "Alive",
-			Reporter:      "Not specified",
+			Reporter:      "Dr. Alice Namukasa",
 			ContactNumber: "0775677566",
 			Source:        "Facility",
 			Response:      "EVD",
 			Verified:      true,
+			CIFNumber:     "CIF-2023-006",
+			CaseCode:      "CASE-2023-006",
 		},
 		{
 			ID:            "ALT3748",
@@ -320,11 +487,13 @@ func getSampleAlerts() []ExternalAlert {
 			CreatedAt:     now.Add(-16 * time.Hour),
 			UpdatedAt:     now.Add(-10 * time.Hour),
 			Status:        "Alive",
-			Reporter:      "Not specified",
-			ContactNumber: "12",
+			Reporter:      "Dr. Peter Kato",
+			ContactNumber: "0771234567",
 			Source:        "Community",
 			Response:      "EVD",
 			Verified:      true,
+			CIFNumber:     "CIF-2023-007",
+			CaseCode:      "CASE-2023-007",
 		},
 		{
 			ID:            "ALT3756",
@@ -336,11 +505,13 @@ func getSampleAlerts() []ExternalAlert {
 			CreatedAt:     now.Add(-18 * time.Hour),
 			UpdatedAt:     now.Add(-12 * time.Hour),
 			Status:        "Alive",
-			Reporter:      "Not specified",
+			Reporter:      "Dr. Betty Nalwoga",
 			ContactNumber: "0772931104",
 			Source:        "Facility",
 			Response:      "Mpox",
 			Verified:      true,
+			CIFNumber:     "CIF-2023-008",
+			CaseCode:      "CASE-2023-008",
 		},
 		{
 			ID:            "ALT3750",
@@ -352,11 +523,13 @@ func getSampleAlerts() []ExternalAlert {
 			CreatedAt:     now.Add(-20 * time.Hour),
 			UpdatedAt:     now.Add(-14 * time.Hour),
 			Status:        "Alive",
-			Reporter:      "Not specified",
+			Reporter:      "Dr. James Muwonge",
 			ContactNumber: "0705352032",
 			Source:        "Facility",
 			Response:      "Mpox",
 			Verified:      true,
+			CIFNumber:     "CIF-2023-009",
+			CaseCode:      "CASE-2023-009",
 		},
 		{
 			ID:            "ALT3747",
@@ -368,11 +541,13 @@ func getSampleAlerts() []ExternalAlert {
 			CreatedAt:     now.Add(-22 * time.Hour),
 			UpdatedAt:     now.Add(-16 * time.Hour),
 			Status:        "Alive",
-			Reporter:      "Not specified",
+			Reporter:      "Dr. Christine Nalukenge",
 			ContactNumber: "0780115709",
 			Source:        "Facility",
 			Response:      "Mpox",
 			Verified:      true,
+			CIFNumber:     "CIF-2023-010",
+			CaseCode:      "CASE-2023-010",
 		},
 	}
 }
