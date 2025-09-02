@@ -1,178 +1,169 @@
 {{define "content"}}
-<div class="container mt-4">
+<div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Welcome, {{.User}}</h5>
-                    <a href="/outbreaks" class="btn btn-outline-primary">Change Outbreak</a>
-                </div>
-                <div class="card-body">
-                    {{if .Form}}
-                    <div class="alert alert-info">
-                        <h6>Current Outbreak</h6>
-                        <p class="mb-0">
-                            <strong>{{.Form.Name.String}}</strong><br>
-                            {{.Form.Description.String}}<br>
-                            Started: {{humanDate .Form.StartDate.Time}}
-                        </p>
-                    </div>
-                    {{else}}
-                    <div class="alert alert-warning">
-                        <h6>No Outbreak Selected</h6>
-                        <p class="mb-0">
-                            As an administrator, you can access all outbreaks and manage the system. 
-                            <a href="/outbreaks" class="alert-link">Click here to view and manage outbreaks</a>.
-                        </p>
-                    </div>
-                    {{end}}
+            {{if .Form}}
+            <div class="alert alert-info">
+                <h6>Current Outbreak</h6>
+                <p class="mb-0">
+                    <strong>{{.Form.Name.String}}</strong><br>
+                    {{.Form.Description.String}}<br>
+                    Started: {{humanDate .Form.StartDate.Time}}
+                </p>
+            </div>
+            {{else}}
+            <div class="alert alert-warning">
+                <h6>No Outbreak Selected</h6>
+                <p class="mb-0">
+                    As an administrator, you can access all outbreaks and manage the system. 
+                    <a href="/outbreaks" class="alert-link">Click here to view and manage outbreaks</a>.
+                </p>
+            </div>
+            {{end}}
 
                     <!-- Patient Management Section -->
                     {{if or (hasPermission .UserPermissions "cases" "read") (hasPermission .UserPermissions "cases" "create") (hasPermission .UserPermissions "vhf" "read") (hasPermission .UserPermissions "vhf" "create") (hasPermission .UserPermissions "alerts" "read") (hasPermission .UserPermissions "alerts" "create")}}
-                    <h4 class="mt-4 mb-3 text-primary">Patient Management</h4>
+                    <h4 class="mt-4 mb-4 text-primary">
+                        <i class="fas fa-user-injured me-2"></i>Patient Management
+                    </h4>
                     <div class="row">
                         {{if or (hasPermission .UserPermissions "cases" "read") (hasPermission .UserPermissions "cases" "create")}}
-                        <div class="col-md-3 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-user-injured text-primary"></i> Cases
-                                    </h5>
-                                    <p class="card-text">Manage patient cases and records</p>
-                                    <a href="/cases" class="btn btn-primary">View Cases</a>
+                        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                            <div class="dashboard-card">
+                                <div class="card-icon text-primary">
+                                    <i class="fas fa-user-injured"></i>
                                 </div>
+                                <div class="card-title">Cases</div>
+                                <div class="card-description">Manage patient cases and records</div>
+                                <a href="/cases" class="btn btn-primary">View Cases</a>
                             </div>
                         </div>
                         {{end}}
                         
                         {{if hasPermission .UserPermissions "cases" "create"}}
-                        <div class="col-md-3 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-plus-circle text-success"></i> Add New Case
-                                    </h5>
-                                    <p class="card-text">Register a new patient case</p>
-                                    <a href="/cases/new/0" class="btn btn-success">Add Case</a>
+                        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                            <div class="dashboard-card">
+                                <div class="card-icon text-success">
+                                    <i class="fas fa-plus-circle"></i>
                                 </div>
+                                <div class="card-title">Add New Case</div>
+                                <div class="card-description">Register a new patient case</div>
+                                <a href="/cases/new/0" class="btn btn-success">Add Case</a>
                             </div>
                         </div>
                         {{end}}
                         
                         {{if or (hasPermission .UserPermissions "vhf" "read") (hasPermission .UserPermissions "vhf" "create")}}
-                        <div class="col-md-3 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-virus text-danger"></i> VHF Cases
-                                    </h5>
-                                    <p class="card-text">Manage Viral Hemorrhagic Fever cases</p>
-                                    <a href="/vhf-list" class="btn btn-danger">View VHF Cases</a>
+                        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                            <div class="dashboard-card">
+                                <div class="card-icon text-danger">
+                                    <i class="fas fa-virus"></i>
                                 </div>
+                                <div class="card-title">VHF Cases</div>
+                                <div class="card-description">Manage Viral Hemorrhagic Fever cases</div>
+                                <a href="/vhf-list" class="btn btn-danger">View VHF Cases</a>
                             </div>
                         </div>
                         {{end}}
                         
                         {{if or (hasPermission .UserPermissions "alerts" "read") (hasPermission .UserPermissions "alerts" "create")}}
-                        <div class="col-md-3 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-bell text-warning"></i> Alerts
-                                    </h5>
-                                    <p class="card-text">Manage system alerts and notifications</p>
-                                    <a href="/alerts" class="btn btn-warning">View Alerts</a>
+                        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                            <div class="dashboard-card">
+                                <div class="card-icon text-warning">
+                                    <i class="fas fa-bell"></i>
                                 </div>
+                                <div class="card-title">Alerts</div>
+                                <div class="card-description">Manage system alerts and notifications</div>
+                                <a href="/alerts" class="btn btn-warning">View Alerts</a>
                             </div>
                         </div>
                         {{end}}
                     </div>
                     {{end}}
+                </div>
+            </div>
+        </div>
 
                     <!-- CIF Data Section -->
                     {{if or (hasPermission .UserPermissions "cif" "read") (hasPermission .UserPermissions "vhf_cif_reports" "read") (hasPermission .UserPermissions "mpox_cases" "create") (hasPermission .UserPermissions "measles_cif_reports" "read") (hasPermission .UserPermissions "polio_cif_reports" "read")}}
-                    <h4 class="mt-4 mb-3 text-info">CIF Data Management</h4>
+                    <h4 class="mt-5 mb-4 text-info">
+                        <i class="fas fa-file-medical me-2"></i>CIF Data Management
+                    </h4>
                     <div class="row">
                         {{if hasPermission .UserPermissions "cif" "read"}}
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-file-medical text-info"></i> CIF Data
-                                    </h5>
-                                    <p class="card-text">View and manage Case Investigation Forms</p>
-                                    <a href="/vhf-list" class="btn btn-info">View CIF Data</a>
+                        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                            <div class="dashboard-card">
+                                <div class="card-icon text-info">
+                                    <i class="fas fa-file-medical"></i>
                                 </div>
+                                <div class="card-title">CIF Data</div>
+                                <div class="card-description">View and manage Case Investigation Forms</div>
+                                <a href="/vhf-list" class="btn btn-info">View CIF Data</a>
                             </div>
                         </div>
                         {{end}}
                         
                         {{if hasPermission .UserPermissions "vhf_cif_reports" "read"}}
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-chart-bar text-success"></i> CIF Reports
-                                    </h5>
-                                    <p class="card-text">Generate CIF reports and analytics</p>
-                                    <a href="/reports" class="btn btn-success">View Reports</a>
+                        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                            <div class="dashboard-card">
+                                <div class="card-icon text-success">
+                                    <i class="fas fa-chart-bar"></i>
                                 </div>
+                                <div class="card-title">CIF Reports</div>
+                                <div class="card-description">Generate CIF reports and analytics</div>
+                                <a href="/reports" class="btn btn-success">View Reports</a>
                             </div>
                         </div>
                         {{end}}
                         
                         {{if hasPermission .UserPermissions "cif" "read"}}
-                        <div class="col-md-3 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-plus-circle text-primary"></i> New VHF CIF
-                                    </h5>
-                                    <p class="card-text">Create a new VHF Case Investigation Form</p>
-                                    <a href="/vhf-cif" class="btn btn-primary">Create CIF</a>
+                        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                            <div class="dashboard-card">
+                                <div class="card-icon text-primary">
+                                    <i class="fas fa-plus-circle"></i>
                                 </div>
+                                <div class="card-title">New VHF CIF</div>
+                                <div class="card-description">Create a new VHF Case Investigation Form</div>
+                                <a href="/vhf-cif" class="btn btn-primary">Create CIF</a>
                             </div>
                         </div>
                         {{end}}
                         
                         {{if hasPermission .UserPermissions "mpox_cases" "create"}}
-                        <div class="col-md-3 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-plus-circle text-warning"></i> New Mpox CIF
-                                    </h5>
-                                    <p class="card-text">Create a new Mpox Case Investigation Form</p>
-                                    <a href="/mpox-cif" class="btn btn-warning">Create CIF</a>
+                        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                            <div class="dashboard-card">
+                                <div class="card-icon text-warning">
+                                    <i class="fas fa-plus-circle"></i>
                                 </div>
+                                <div class="card-title">New Mpox CIF</div>
+                                <div class="card-description">Create a new Mpox Case Investigation Form</div>
+                                <a href="/mpox-cif" class="btn btn-warning">Create CIF</a>
                             </div>
                         </div>
                         {{end}}
                         
                         {{if hasPermission .UserPermissions "measles_cif_reports" "read"}}
-                        <div class="col-md-3 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-plus-circle text-success"></i> New Measles CIF
-                                    </h5>
-                                    <p class="card-text">Create a new Measles Case Investigation Form</p>
-                                    <a href="/measles_cif" class="btn btn-success">Create CIF</a>
+                        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                            <div class="dashboard-card">
+                                <div class="card-icon text-success">
+                                    <i class="fas fa-plus-circle"></i>
                                 </div>
+                                <div class="card-title">New Measles CIF</div>
+                                <div class="card-description">Create a new Measles Case Investigation Form</div>
+                                <a href="/measles_cif" class="btn btn-success">Create CIF</a>
                             </div>
                         </div>
                         {{end}}
                         
                         {{if hasPermission .UserPermissions "polio_cif_reports" "read"}}
-                        <div class="col-md-3 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-plus-circle text-info"></i> New Polio CIF
-                                    </h5>
-                                    <p class="card-text">Create a new Polio Case Investigation Form</p>
-                                    <a href="/polio-cif" class="btn btn-info">Create CIF</a>
+                        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                            <div class="dashboard-card">
+                                <div class="card-icon text-info">
+                                    <i class="fas fa-plus-circle"></i>
                                 </div>
+                                <div class="card-title">New Polio CIF</div>
+                                <div class="card-description">Create a new Polio Case Investigation Form</div>
+                                <a href="/polio-cif" class="btn btn-info">Create CIF</a>
                             </div>
                         </div>
                         {{end}}

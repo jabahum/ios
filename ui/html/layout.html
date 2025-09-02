@@ -39,32 +39,84 @@
             text-decoration: underline;
         }
         
-        .side-menu {
-            background-color: #fff;
-            border-right: 1px solid #e9ecef;
+        /* Main content adjustment for sidebar */
+        .main-content {
+            margin-left: 280px;
+            padding: 0;
             min-height: calc(100vh - 120px);
-            padding: 20px 0;
-            box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+            background-color: #f8f9fa;
         }
         
-        .menu-item {
-            padding: 12px 20px;
-            display: block;
-            color: #333;
-            text-decoration: none;
-            border-bottom: 1px solid #f8f9fa;
+        /* When navigation is hidden (unauthenticated users) */
+        .main-content.no-sidebar {
+            margin-left: 0;
+        }
+        
+        /* When top ribbon and breadcrumb are hidden (unauthenticated users) */
+        .main-content.no-header {
+            min-height: 100vh;
+        }
+        
+        .content {
+            padding: 1.5rem;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 1rem;
+            min-height: calc(100vh - 160px);
+        }
+        
+        /* Improved card layouts */
+        .dashboard-card {
+            background: #fff;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             transition: all 0.3s ease;
         }
         
-        .menu-item:hover {
-            background-color: #e9ecef;
-            color: #007bff;
-            text-decoration: none;
+        .dashboard-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
         }
         
-        .menu-item.active {
-            background-color: #007bff;
-            color: #fff;
+        .dashboard-card .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .dashboard-card .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+        
+        .dashboard-card .card-description {
+            color: #6c757d;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .dashboard-card .btn {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            font-weight: 500;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .content {
+                margin: 0.5rem;
+                padding: 1rem;
+            }
         }
         
         .content {
@@ -227,26 +279,33 @@
     {{template "head" .}}
 </head>
 <body>
+    {{if .IsAuthenticated}}
     <!-- Top Ribbon -->
     <div class="top-ribbon">
         <div class="container-fluid">
             <div class="row align-items-center">
                 <div class="col-md-6">
+                    <button class="btn btn-outline-light btn-sm me-3 d-md-none" onclick="toggleMobileMenu()">
+                        <i class="fas fa-bars"></i>
+                    </button>
                     <a href="/home" class="me-3 text-decoration-none">
                         <span class="text-white fw-bold fs-4">Case Management System</span>
                     </a>
                     {{if and .IsAuthenticated (ne .OutbreakID 0) (hasPermission .UserPermissions "cases" "read")}}
-                    <a href="/cases" class="me-3 text-decoration-none">
+                    <a href="/cases" class="me-3 text-decoration-none d-none d-md-inline">
                         <i class="fas fa-users"></i> Cases
                     </a>
                     {{end}}
-                    <a href="/outbreaks" class="me-3 text-decoration-none">
+                    <a href="/outbreaks" class="me-3 text-decoration-none d-none d-md-inline">
                         <i class="fas fa-virus"></i> Outbreaks
                     </a>
                 </div>
                 <div class="col-md-6 text-end">
                     <button class="btn btn-outline-light btn-sm me-2" onclick="window.history.back()">
                         <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <button class="btn btn-outline-light btn-sm me-2" onclick="changeOutbreak()">
+                        <i class="fas fa-exchange-alt"></i> Change Outbreak
                     </button>
                     <span class="me-3">
                         <i class="fas fa-user"></i> {{.User}}
@@ -265,21 +324,16 @@
             {{template "breadcrumb" .}}
         </div>
     </div>
+    {{end}}
 
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Left-Hand Side Menu -->
-            <div class="col-md-3">
-                <div class="side-menu">
-                    {{template "sidebar" .}}
-                </div>
-            </div>
-            
-            <!-- Main Content -->
-            <div class="col-md-9">
-                <div class="content">
-                    {{template "content" .}}
-                </div>
+    <!-- Navigation Sidebar -->
+    {{template "navigation" .}}
+    
+    <!-- Main Content -->
+    <div class="main-content {{if not .IsAuthenticated}}no-sidebar no-header{{end}}">
+        <div class="container-fluid">
+            <div class="content">
+                {{template "content" .}}
             </div>
         </div>
     </div>
@@ -287,6 +341,11 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/static/app/cdn/js/flatpickr.min.js"></script>
+    <script>
+        function changeOutbreak() {
+            window.location.href = '/outbreaks';
+        }
+    </script>
     {{template "scripts" .}}
 </body>
 </html>

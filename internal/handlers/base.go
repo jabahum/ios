@@ -43,6 +43,11 @@ type Config struct {
 	SMSUsername  string `json:"SMSUser"`
 	SMSPassword  string `json:"SMSPassword"`
 	SMSBaseURL   string `json:"SMSURL"`
+	DHIS2API     struct {
+		BaseURL  string `json:"BaseURL"`
+		Username string `json:"Username"`
+		Password string `json:"Password"`
+	} `json:"DHIS2API"`
 }
 
 type TemplateData struct {
@@ -127,6 +132,11 @@ type TemplateData struct {
 	DonationItem           *InventoryDonationItem
 	DonationAcknowledgment *InventoryDonationAcknowledgment
 	DonationStatistics     *DonationStatistics
+
+	// Surveillance fields
+	SurveillanceData *SurveillanceData
+	StartDate        string
+	EndDate          string
 }
 
 // Department represents a department in the RBAC system
@@ -617,6 +627,22 @@ func GenerateHTML(c *fiber.Ctx, db *sql.DB, zdata interface{}, filenames ...stri
 	_, err = templates.Parse(string(layoutContent))
 	if err != nil {
 		return c.Status(500).SendString(fmt.Sprintf("Failed to parse layout template: %v", err))
+	}
+
+	// Always include the navigation template
+	navigationFile := filepath.Join(basePath, "navigation.html")
+	if _, err := os.Stat(navigationFile); err == nil {
+		log.Printf("Loading navigation template: %s", navigationFile)
+		navContent, err := os.ReadFile(navigationFile)
+		if err != nil {
+			return c.Status(500).SendString(fmt.Sprintf("Failed to read navigation template: %v", err))
+		}
+		_, err = templates.Parse(string(navContent))
+		if err != nil {
+			return c.Status(500).SendString(fmt.Sprintf("Failed to parse navigation template: %v", err))
+		}
+	} else {
+		log.Printf("Navigation template not found: %s", navigationFile)
 	}
 
 	// Add the requested templates

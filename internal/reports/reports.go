@@ -398,32 +398,35 @@ func generateVHFReport(c *fiber.Ctx, db *sql.DB, filters ReportFilters) ReportDa
 		SELECT 
 			v.id,
 			v.case_code,
-			v.first_name,
-			v.last_name,
-			v.age,
+			v.surname,
+			v.other_names,
+			v.age_years,
+			v.age_months,
 			v.gender,
-			v.date_of_onset,
-			v.case_classification,
+			v.date_of_birth,
+			v.status,
+			v.created_at,
 			v.outbreak_id,
 			f.facility_name,
-			d.name as district_name
-		FROM vhf_case_investigation_form v
-		LEFT JOIN afi_facilities f ON v.reporting_health_facility_name = f.name
-		LEFT JOIN districts d ON f.district = d.name
-		WHERE v.outbreak_id IN (SELECT id FROM outbreaks WHERE outbreak_type = 'vhf')
+			d.name as district_name,
+			v.district
+		FROM vhf_patients v
+		LEFT JOIN afi_facilities f ON v.reporting_health_facility_name = f.facility_name
+		
+		WHERE v.outbreak_id IN (SELECT id FROM outbreaks WHERE outbreak = 'vhf')
 	`
 
 	var args []interface{}
 	argCount := 1
 
 	if filters.StartDate != "" {
-		query += fmt.Sprintf(" AND v.date_of_onset >= $%d", argCount)
+		query += fmt.Sprintf(" AND v.created_at >= $%d", argCount)
 		args = append(args, filters.StartDate)
 		argCount++
 	}
 
 	if filters.EndDate != "" {
-		query += fmt.Sprintf(" AND v.date_of_onset <= $%d", argCount)
+		query += fmt.Sprintf(" AND v.created_at <= $%d", argCount)
 		args = append(args, filters.EndDate)
 		argCount++
 	}
@@ -440,7 +443,7 @@ func generateVHFReport(c *fiber.Ctx, db *sql.DB, filters ReportFilters) ReportDa
 		argCount++
 	}
 
-	query += " ORDER BY v.date_of_onset DESC"
+	query += " ORDER BY v.created_at DESC"
 
 	rows, err := db.Query(query, args...)
 	if err != nil {
@@ -451,37 +454,40 @@ func generateVHFReport(c *fiber.Ctx, db *sql.DB, filters ReportFilters) ReportDa
 	var cases []map[string]interface{}
 	for rows.Next() {
 		var id int
-		var caseCode, firstName, lastName, gender, dateOfOnset, caseClassification sql.NullString
+		var caseCode, surname, otherNames, gender, dateOfBirth, status sql.NullString
 		var age sql.NullFloat64
 		var outbreakID sql.NullInt64
 		var facilityName, districtName sql.NullString
-
-		err := rows.Scan(&id, &caseCode, &firstName, &lastName, &age, &gender, &dateOfOnset, &caseClassification, &outbreakID, &facilityName, &districtName)
+		var district sql.NullString
+		var labStatus sql.NullBool
+		err := rows.Scan(&id, &caseCode, &surname, &otherNames, &age, &gender, &dateOfBirth, &status, &outbreakID, &facilityName, &districtName, &district, &labStatus)
 		if err != nil {
 			continue
 		}
 
 		cases = append(cases, map[string]interface{}{
-			"id":                  id,
-			"case_code":           caseCode.String,
-			"name":                fmt.Sprintf("%s %s", firstName.String, lastName.String),
-			"age":                 age.Float64,
-			"gender":              gender.String,
-			"date_of_onset":       dateOfOnset.String,
-			"case_classification": caseClassification.String,
-			"outbreak_id":         outbreakID.Int64,
-			"facility":            facilityName.String,
-			"district":            districtName.String,
+			"id":             id,
+			"case_code":      caseCode.String,
+			"name":           fmt.Sprintf("%s %s", surname.String, otherNames.String),
+			"age":            age.Float64,
+			"gender":         gender.String,
+			"date_of_birth":  dateOfBirth.String,
+			"status":         status.String,
+			"outbreak_id":    outbreakID.Int64,
+			"facility":       facilityName.String,
+			"district":       districtName.String,
+			"district_other": district.String,
+			"lab_status":     labStatus.Bool,
 		})
 	}
 
 	return ReportData{
 		Filters: filters,
 		Summary: map[string]interface{}{
-			"total_cases":     len(cases),
-			"confirmed_cases": countByClassification(cases, "Confirmed"),
-			"suspect_cases":   countByClassification(cases, "Suspect"),
-			"probable_cases":  countByClassification(cases, "Probable"),
+			"total_cases":  len(cases),
+			"active_cases": countByStatus(cases, "active"),
+			"recovered":    countByStatus(cases, "recovered"),
+			"died":         countByStatus(cases, "died"),
 		},
 		Tables: map[string]interface{}{
 			"cases": cases,

@@ -413,6 +413,7 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		//enc := app.Group("/encounter")
 		dis := app.Group("/discharge")
 		rpt := app.Group("/reports")
+		srv := app.Group("/surveillance")
 
 		// Additional routes
 		RouteFacilities(hfs, db, sl, store, config)
@@ -426,6 +427,7 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		RouteDischarge(dis, db, sl, store, config)
 
 		RouteReports(rpt, db, sl, store, config)
+		RouteSurveillance(srv, db, sl, store, config)
 
 		RouteAPIEncounter(enk, db, sl, store, config)
 		RouteAPIStatus(sta, db, sl, store, config)
@@ -1322,6 +1324,16 @@ func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logg
 		})
 	})
 
+	// Surveillance routes - Added before protected routes group
+	app.Get("/surveillance/community-mortality", AuthRequired(store), func(c *fiber.Ctx) error {
+		log.Printf("DEBUG: /surveillance/community-mortality route accessed")
+		return handlers.CommunityMortalitySurveillance(c, db, store, config)
+	})
+	app.Get("/surveillance/facility-mortality", AuthRequired(store), func(c *fiber.Ctx) error {
+		log.Printf("DEBUG: /surveillance/facility-mortality route accessed")
+		return handlers.FacilityMortalitySurveillance(c, db, store, config)
+	})
+
 	// Protected routes
 	protected := app.Group("/", AuthRequired(store))
 
@@ -1492,4 +1504,17 @@ func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logg
 		return reports.ReportsHome(c, db, sl, store, config)
 	})
 
+}
+
+// RouteSurveillance defines the surveillance routes
+func RouteSurveillance(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
+	// Community Mortality Surveillance
+	v.Get("/community-mortality", middleware.PermissionRequired(store, db, sl, "surveillance", "read"), func(c *fiber.Ctx) error {
+		return handlers.CommunityMortalitySurveillance(c, db, store, config)
+	})
+
+	// Facility Mortality Surveillance
+	v.Get("/facility-mortality", middleware.PermissionRequired(store, db, sl, "surveillance", "read"), func(c *fiber.Ctx) error {
+		return handlers.FacilityMortalitySurveillance(c, db, store, config)
+	})
 }

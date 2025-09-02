@@ -1,0 +1,608 @@
+{{define "navigation"}}
+{{if .IsAuthenticated}}
+<div class="sidebar-nav">
+    <div class="nav-tree">
+        <div class="nav-header">
+            <h6 class="mb-0"><i class="fas fa-sitemap me-2"></i>Navigation</h6>
+        </div>
+        
+        <ul class="nav-tree-list">
+            <!-- Home -->
+            <li class="nav-tree-item">
+                <div class="nav-tree-node" data-path="/home">
+                    <i class="nav-tree-icon fas fa-home"></i>
+                    <span class="nav-tree-text">Home</span>
+                </div>
+            </li>
+
+            <!-- Outbreaks Section -->
+            <li class="nav-tree-item">
+                <div class="nav-tree-node nav-tree-parent" data-path="/outbreaks">
+                    <i class="nav-tree-icon fas fa-virus"></i>
+                    <span class="nav-tree-text">Outbreaks</span>
+                    <i class="nav-tree-toggle fas fa-chevron-down"></i>
+                </div>
+                <ul class="nav-tree-children">
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/outbreaks">
+                            <i class="nav-tree-icon fas fa-list"></i>
+                            <span class="nav-tree-text">All Outbreaks</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/outbreaks/assign">
+                            <i class="nav-tree-icon fas fa-user-plus"></i>
+                            <span class="nav-tree-text">Assign Outbreaks</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/outbreaks/assignments">
+                            <i class="nav-tree-icon fas fa-users"></i>
+                            <span class="nav-tree-text">Outbreak Assignments</span>
+                        </div>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Cases Section -->
+            <li class="nav-tree-item">
+                <div class="nav-tree-node nav-tree-parent" data-path="/cases">
+                    <i class="nav-tree-icon fas fa-user-injured"></i>
+                    <span class="nav-tree-text">Cases</span>
+                    <i class="nav-tree-toggle fas fa-chevron-right"></i>
+                </div>
+                <ul class="nav-tree-children">
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/cases">
+                            <i class="nav-tree-icon fas fa-list"></i>
+                            <span class="nav-tree-text">All Cases</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/cases/new/0">
+                            <i class="nav-tree-icon fas fa-plus"></i>
+                            <span class="nav-tree-text">New Case</span>
+                        </div>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- CIF Records Section -->
+            <li class="nav-tree-item">
+                <div class="nav-tree-node nav-tree-parent" data-path="/cif-records">
+                    <i class="nav-tree-icon fas fa-file-medical"></i>
+                    <span class="nav-tree-text">CIF Records</span>
+                    <i class="nav-tree-toggle fas fa-chevron-right"></i>
+                </div>
+                <ul class="nav-tree-children">
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/vhf-list">
+                            <i class="nav-tree-icon fas fa-virus"></i>
+                            <span class="nav-tree-text"> CIF Records</span>
+                        </div>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Surveillance Section -->
+            <li class="nav-tree-item">
+                <div class="nav-tree-node nav-tree-parent" data-path="/surveillance">
+                    <i class="nav-tree-icon fas fa-search"></i>
+                    <span class="nav-tree-text">Surveillance</span>
+                    <i class="nav-tree-toggle fas fa-chevron-right"></i>
+                </div>
+                <ul class="nav-tree-children">
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/surveillance/community-mortality">
+                            <i class="nav-tree-icon fas fa-users"></i>
+                            <span class="nav-tree-text">Community Mortality Surveillance</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/surveillance/facility-mortality">
+                            <i class="nav-tree-icon fas fa-hospital"></i>
+                            <span class="nav-tree-text">Facility Mortality Surveillance</span>
+                        </div>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Reports Section -->
+            <li class="nav-tree-item">
+                <div class="nav-tree-node nav-tree-parent" data-path="/reports">
+                    <i class="nav-tree-icon fas fa-chart-bar"></i>
+                    <span class="nav-tree-text">Reports</span>
+                    <i class="nav-tree-toggle fas fa-chevron-down"></i>
+                </div>
+                <ul class="nav-tree-children">
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/reports">
+                            <i class="nav-tree-icon fas fa-home"></i>
+                            <span class="nav-tree-text">Reports Dashboard</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/reports/cif-dashboard">
+                            <i class="nav-tree-icon fas fa-file-medical"></i>
+                            <span class="nav-tree-text">CIF Dashboard</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/reports/generate" data-report-type="general" data-report-subtype="overview">
+                            <i class="nav-tree-icon fas fa-eye"></i>
+                            <span class="nav-tree-text">Overview Dashboard</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/reports/generate" data-report-type="general" data-report-subtype="trends">
+                            <i class="nav-tree-icon fas fa-chart-line"></i>
+                            <span class="nav-tree-text">Trend Analysis</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/reports/generate" data-report-type="general" data-report-subtype="demographics">
+                            <i class="nav-tree-icon fas fa-users"></i>
+                            <span class="nav-tree-text">Demographics</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/reports/generate" data-report-type="vhf" data-report-subtype="cif">
+                            <i class="nav-tree-icon fas fa-virus"></i>
+                            <span class="nav-tree-text">VHF CIF Data</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/reports/generate" data-report-type="measles" data-report-subtype="cif">
+                            <i class="nav-tree-icon fas fa-measles"></i>
+                            <span class="nav-tree-text">Measles CIF Data</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/reports/generate" data-report-type="polio" data-report-subtype="cif">
+                            <i class="nav-tree-icon fas fa-wheelchair"></i>
+                            <span class="nav-tree-text">Polio CIF Data</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/reports/generate" data-report-type="mpox" data-report-subtype="cif">
+                            <i class="nav-tree-icon fas fa-monkey"></i>
+                            <span class="nav-tree-text">Mpox CIF Data</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/reports/generate" data-report-type="treatment" data-report-subtype="protocols">
+                            <i class="nav-tree-icon fas fa-clipboard-list"></i>
+                            <span class="nav-tree-text">Treatment Protocols</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/reports/generate" data-report-type="treatment" data-report-subtype="outcomes">
+                            <i class="nav-tree-icon fas fa-chart-pie"></i>
+                            <span class="nav-tree-text">Outcome Analysis</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/reports/generate" data-report-type="lab" data-report-subtype="results">
+                            <i class="nav-tree-icon fas fa-microscope"></i>
+                            <span class="nav-tree-text">Test Results</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/reports/generate" data-report-type="lab" data-report-subtype="specimens">
+                            <i class="nav-tree-icon fas fa-vial"></i>
+                            <span class="nav-tree-text">Specimen Analysis</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/reports/generate" data-report-type="geographic" data-report-subtype="distribution">
+                            <i class="nav-tree-icon fas fa-map"></i>
+                            <span class="nav-tree-text">Case Distribution</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/reports/generate" data-report-type="geographic" data-report-subtype="hotspots">
+                            <i class="nav-tree-icon fas fa-fire"></i>
+                            <span class="nav-tree-text">Hotspot Analysis</span>
+                        </div>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Employees Section -->
+            {{if hasPermission .UserPermissions "employees" "read"}}
+            <li class="nav-tree-item">
+                <div class="nav-tree-node" data-path="/employees">
+                    <i class="nav-tree-icon fas fa-users"></i>
+                    <span class="nav-tree-text">Employees</span>
+                </div>
+            </li>
+            {{end}}
+
+            <!-- Users Section -->
+            {{if hasPermission .UserPermissions "users" "read"}}
+            <li class="nav-tree-item">
+                <div class="nav-tree-node" data-path="/users">
+                    <i class="nav-tree-icon fas fa-user-cog"></i>
+                    <span class="nav-tree-text">Users</span>
+                </div>
+            </li>
+            {{end}}
+
+            <!-- Facilities Section -->
+            {{if hasPermission .UserPermissions "facilities" "read"}}
+            <li class="nav-tree-item">
+                <div class="nav-tree-node" data-path="/secure">
+                    <i class="nav-tree-icon fas fa-hospital"></i>
+                    <span class="nav-tree-text">Facilities</span>
+                </div>
+            </li>
+            {{end}}
+
+            <!-- RBAC Dashboard -->
+            {{if hasPermission .UserPermissions "rbac" "read"}}
+            <li class="nav-tree-item">
+                <div class="nav-tree-node" data-path="/rbac-dashboard">
+                    <i class="nav-tree-icon fas fa-shield-alt"></i>
+                    <span class="nav-tree-text">RBAC Dashboard</span>
+                </div>
+            </li>
+            {{end}}
+
+            <!-- Inventory Section -->
+            {{if hasPermission .UserPermissions "inventory" "read"}}
+            <li class="nav-tree-item">
+                <div class="nav-tree-node nav-tree-parent" data-path="/inventory">
+                    <i class="nav-tree-icon fas fa-boxes"></i>
+                    <span class="nav-tree-text">Inventory</span>
+                    <i class="nav-tree-toggle fas fa-chevron-right"></i>
+                </div>
+                <ul class="nav-tree-children">
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/inventory">
+                            <i class="nav-tree-icon fas fa-tachometer-alt"></i>
+                            <span class="nav-tree-text">Inventory Dashboard</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/inventory/items">
+                            <i class="nav-tree-icon fas fa-box"></i>
+                            <span class="nav-tree-text">Items</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/inventory/stock">
+                            <i class="nav-tree-icon fas fa-warehouse"></i>
+                            <span class="nav-tree-text">Stock Management</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/inventory/purchase-orders">
+                            <i class="nav-tree-icon fas fa-shopping-cart"></i>
+                            <span class="nav-tree-text">Purchase Orders</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/inventory/requisitions">
+                            <i class="nav-tree-icon fas fa-clipboard-list"></i>
+                            <span class="nav-tree-text">Requisitions</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/inventory/donations">
+                            <i class="nav-tree-icon fas fa-gift"></i>
+                            <span class="nav-tree-text">Donations</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/inventory/donors">
+                            <i class="nav-tree-icon fas fa-handshake"></i>
+                            <span class="nav-tree-text">Donors</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/inventory/reports">
+                            <i class="nav-tree-icon fas fa-chart-bar"></i>
+                            <span class="nav-tree-text">Inventory Reports</span>
+                        </div>
+                    </li>
+                </ul>
+            </li>
+            {{end}}
+
+            <!-- Alerts Section -->
+            {{if hasPermission .UserPermissions "alerts" "read"}}
+            <li class="nav-tree-item">
+                <div class="nav-tree-node" data-path="/alerts">
+                    <i class="nav-tree-icon fas fa-bell"></i>
+                    <span class="nav-tree-text">Alerts</span>
+                </div>
+            </li>
+            {{end}}
+        </ul>
+    </div>
+</div>
+
+<style>
+.sidebar-nav {
+    width: 280px;
+    background: #f8f9fa;
+    border-right: 1px solid #dee2e6;
+    height: 100vh;
+    overflow-y: auto;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 1000;
+}
+
+.nav-header {
+    padding: 1rem;
+    border-bottom: 1px solid #dee2e6;
+    background: #fff;
+}
+
+.nav-tree-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.nav-tree-item {
+    margin: 0;
+}
+
+.nav-tree-node {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #f1f3f4;
+    position: relative;
+}
+
+.nav-tree-node:hover {
+    background-color: #e9ecef;
+}
+
+.nav-tree-node.active {
+    background-color: #007bff;
+    color: white;
+}
+
+.nav-tree-icon {
+    width: 20px;
+    margin-right: 0.75rem;
+    text-align: center;
+    color: #6c757d;
+}
+
+.nav-tree-node.active .nav-tree-icon {
+    color: white;
+}
+
+.nav-tree-text {
+    flex: 1;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.nav-tree-toggle {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.2s ease;
+    color: #6c757d;
+}
+
+.nav-tree-parent.expanded .nav-tree-toggle {
+    transform: rotate(90deg);
+}
+
+.nav-tree-children {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    background: #fff;
+    display: none;
+}
+
+.nav-tree-children.expanded {
+    display: block;
+}
+
+.nav-tree-children .nav-tree-node {
+    padding-left: 2.5rem;
+    font-size: 0.85rem;
+}
+
+.nav-tree-children .nav-tree-children .nav-tree-node {
+    padding-left: 3.5rem;
+    font-size: 0.8rem;
+}
+
+/* Main content adjustment */
+.main-content {
+    margin-left: 280px;
+    padding: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .sidebar-nav {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+    
+    .sidebar-nav.show {
+        transform: translateX(0);
+    }
+    
+    .main-content {
+        margin-left: 0;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize navigation
+    initNavigation();
+    
+    // Load saved state
+    loadNavigationState();
+    
+    // Set active item based on current path
+    setActiveNavigationItem();
+});
+
+function initNavigation() {
+    // Handle parent node clicks (expand/collapse)
+    document.querySelectorAll('.nav-tree-parent').forEach(function(parent) {
+        parent.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            const children = this.parentElement.querySelector('.nav-tree-children');
+            const toggle = this.querySelector('.nav-tree-toggle');
+            
+            if (children.classList.contains('expanded')) {
+                children.classList.remove('expanded');
+                this.classList.remove('expanded');
+                toggle.style.transform = 'rotate(0deg)';
+            } else {
+                children.classList.add('expanded');
+                this.classList.add('expanded');
+                toggle.style.transform = 'rotate(90deg)';
+            }
+            
+            // Save state
+            saveNavigationState();
+        });
+    });
+    
+    // Handle leaf node clicks (navigation)
+    document.querySelectorAll('.nav-tree-node:not(.nav-tree-parent)').forEach(function(node) {
+        node.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            const path = this.getAttribute('data-path');
+            const reportType = this.getAttribute('data-report-type');
+            const reportSubtype = this.getAttribute('data-report-subtype');
+            
+            if (path) {
+                // Remove active class from all nodes
+                document.querySelectorAll('.nav-tree-node').forEach(function(n) {
+                    n.classList.remove('active');
+                });
+                
+                // Add active class to clicked node
+                this.classList.add('active');
+                
+                // If it's a report generation link, use the form submission method
+                if (path === '/reports/generate' && reportType && reportSubtype) {
+                    // Create a temporary form and submit it
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = path;
+                    
+                    const reportTypeInput = document.createElement('input');
+                    reportTypeInput.type = 'hidden';
+                    reportTypeInput.name = 'report_type';
+                    reportTypeInput.value = reportType;
+                    form.appendChild(reportTypeInput);
+                    
+                    const reportSubtypeInput = document.createElement('input');
+                    reportSubtypeInput.type = 'hidden';
+                    reportSubtypeInput.name = 'report_subtype';
+                    reportSubtypeInput.value = reportSubtype;
+                    form.appendChild(reportSubtypeInput);
+                    
+                    document.body.appendChild(form);
+                    form.submit();
+                } else {
+                    // Navigate to the path directly
+                    window.location.href = path;
+                }
+            }
+        });
+    });
+}
+
+function saveNavigationState() {
+    const expandedNodes = [];
+    document.querySelectorAll('.nav-tree-parent.expanded').forEach(function(node) {
+        expandedNodes.push(node.getAttribute('data-path'));
+    });
+    
+    localStorage.setItem('navigationState', JSON.stringify({
+        expanded: expandedNodes,
+        timestamp: Date.now()
+    }));
+}
+
+function loadNavigationState() {
+    const saved = localStorage.getItem('navigationState');
+    if (saved) {
+        try {
+            const state = JSON.parse(saved);
+            const now = Date.now();
+            
+            // Only restore state if it's less than 24 hours old
+            if (now - state.timestamp < 24 * 60 * 60 * 1000) {
+                state.expanded.forEach(function(path) {
+                    const node = document.querySelector(`[data-path="${path}"]`);
+                    if (node && node.classList.contains('nav-tree-parent')) {
+                        const children = node.parentElement.querySelector('.nav-tree-children');
+                        const toggle = node.querySelector('.nav-tree-toggle');
+                        
+                        children.classList.add('expanded');
+                        node.classList.add('expanded');
+                        toggle.style.transform = 'rotate(90deg)';
+                    }
+                });
+            }
+        } catch (e) {
+            console.error('Error loading navigation state:', e);
+        }
+    }
+}
+
+function setActiveNavigationItem() {
+    const currentPath = window.location.pathname;
+    
+    // Find the matching navigation item
+    const activeNode = document.querySelector(`[data-path="${currentPath}"]`);
+    if (activeNode) {
+        // Remove active class from all nodes
+        document.querySelectorAll('.nav-tree-node').forEach(function(n) {
+            n.classList.remove('active');
+        });
+        
+        // Add active class to current node
+        activeNode.classList.add('active');
+        
+        // Expand parent nodes to show the active item
+        let parent = activeNode.closest('.nav-tree-children');
+        while (parent) {
+            parent.classList.add('expanded');
+            const parentNode = parent.previousElementSibling;
+            if (parentNode && parentNode.classList.contains('nav-tree-parent')) {
+                parentNode.classList.add('expanded');
+                const toggle = parentNode.querySelector('.nav-tree-toggle');
+                if (toggle) {
+                    toggle.style.transform = 'rotate(90deg)';
+                }
+            }
+            parent = parent.parentElement.closest('.nav-tree-children');
+        }
+    }
+}
+
+// Mobile menu toggle
+function toggleMobileMenu() {
+    const sidebar = document.querySelector('.sidebar-nav');
+    sidebar.classList.toggle('show');
+}
+</script>
+</div>
+{{end}}
+{{end}} 
