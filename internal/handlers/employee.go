@@ -28,11 +28,11 @@ func HandlerEmployeeForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 	if id > 0 {
 		// Load existing employee
 		query := `SELECT employee_id, employee_fname, employee_lname, employee_sex, 
-		          employee_email, employee_phone, employee_cadre, facility
+		          employee_email, employee_phone, employee_cadre, facility, afi_facility
 		          FROM public.employee WHERE employee_id = $1`
 		err := db.QueryRowContext(c.Context(), query, id).Scan(
 			&employee.EmployeeID, &employee.EmployeeFname, &employee.EmployeeLname, &employee.EmployeeSex,
-			&employee.EmployeeEmail, &employee.EmployeePhone, &employee.EmployeeCadre, &employee.Facility,
+			&employee.EmployeeEmail, &employee.EmployeePhone, &employee.EmployeeCadre, &employee.Facility, &employee.AFIFacility,
 		)
 		if err != nil {
 			sl.Error("Error loading employee", "error", err)
@@ -84,6 +84,29 @@ func HandlerEmployeeForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 		}
 	}
 
+	// Load AFI facilities for afi_facility selection
+	type AFIFacility struct {
+		ID   int
+		Name string
+	}
+	var afiFacilities []AFIFacility
+	if rows, err := db.QueryContext(c.Context(), `SELECT id, facility_name FROM afi_facilities ORDER BY facility_name`); err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var f AFIFacility
+			if err := rows.Scan(&f.ID, &f.Name); err == nil {
+				afiFacilities = append(afiFacilities, f)
+			}
+		}
+	}
+	if data.Optionz == nil {
+		data.Optionz = make(map[string]map[string]string)
+	}
+	data.Optionz["afi_facilities"] = map[string]string{"": "Select AFI Facility"}
+	for _, f := range afiFacilities {
+		data.Optionz["afi_facilities"][f.Name] = f.Name
+	}
+
 	// Add employees data for supervisor selection
 	data.Employees = []EmployeeForm{}
 	employeeQuery := `SELECT employee_id, employee_fname, employee_lname FROM public.employee ORDER BY employee_fname, employee_lname`
@@ -120,6 +143,7 @@ func HandlerEmployeeSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 		EmployeePhone: ParseNullString(c.FormValue("employee_phone")),
 		EmployeeCadre: ParseNullString(c.FormValue("employee_cadre")),
 		Facility:      ParseNullInt(c.FormValue("facility")),
+		AFIFacility:   ParseNullString(c.FormValue("afi_facility")),
 	}
 
 	if employee.EmployeeID == 0 {

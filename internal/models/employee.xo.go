@@ -17,6 +17,7 @@ type Employee struct {
 	EmployeePhone sql.NullString `json:"employee_phone"` // employee_phone
 	EmployeeCadre sql.NullString `json:"employee_cadre"` // employee_cadre
 	Facility      sql.NullInt64  `json:"facility"`       // facility
+	AFIFacility   sql.NullString `json:"afi_facility"`   // afi_facility
 	// xo fields
 	_exists, _deleted bool
 }
@@ -42,13 +43,13 @@ func (e *Employee) Insert(ctx context.Context, db DB) error {
 	}
 	// insert (primary key generated and returned by database)
 	const sqlstr = `INSERT INTO public.employee (` +
-		`employee_fname, employee_lname, employee_sex, employee_email, employee_phone, employee_cadre, facility` +
+		`employee_fname, employee_lname, employee_sex, employee_email, employee_phone, employee_cadre, facility, afi_facility` +
 		`) VALUES (` +
-		`$1, $2, $3, $4, $5, $6, $7` +
+		`$1, $2, $3, $4, $5, $6, $7, $8` +
 		`) RETURNING employee_id`
 	// run
-	logf(sqlstr, e.EmployeeFname, e.EmployeeLname, e.EmployeeSex, e.EmployeeEmail, e.EmployeePhone, e.EmployeeCadre, e.Facility)
-	if err := db.QueryRowContext(ctx, sqlstr, e.EmployeeFname, e.EmployeeLname, e.EmployeeSex, e.EmployeeEmail, e.EmployeePhone, e.EmployeeCadre, e.Facility).Scan(&e.EmployeeID); err != nil {
+	logf(sqlstr, e.EmployeeFname, e.EmployeeLname, e.EmployeeSex, e.EmployeeEmail, e.EmployeePhone, e.EmployeeCadre, e.Facility, e.AFIFacility)
+	if err := db.QueryRowContext(ctx, sqlstr, e.EmployeeFname, e.EmployeeLname, e.EmployeeSex, e.EmployeeEmail, e.EmployeePhone, e.EmployeeCadre, e.Facility, e.AFIFacility).Scan(&e.EmployeeID); err != nil {
 		return logerror(err)
 	}
 	// set exists
@@ -66,11 +67,11 @@ func (e *Employee) Update(ctx context.Context, db DB) error {
 	}
 	// update with composite primary key
 	const sqlstr = `UPDATE public.employee SET ` +
-		`employee_fname = $1, employee_lname = $2, employee_sex = $3, employee_email = $4, employee_phone = $5, employee_cadre = $6, facility = $7 ` +
-		`WHERE employee_id = $8`
+		`employee_fname = $1, employee_lname = $2, employee_sex = $3, employee_email = $4, employee_phone = $5, employee_cadre = $6, facility = $7, afi_facility = $8 ` +
+		`WHERE employee_id = $9`
 	// run
-	logf(sqlstr, e.EmployeeFname, e.EmployeeLname, e.EmployeeSex, e.EmployeeEmail, e.EmployeePhone, e.EmployeeCadre, e.Facility, e.EmployeeID)
-	if _, err := db.ExecContext(ctx, sqlstr, e.EmployeeFname, e.EmployeeLname, e.EmployeeSex, e.EmployeeEmail, e.EmployeePhone, e.EmployeeCadre, e.Facility, e.EmployeeID); err != nil {
+	logf(sqlstr, e.EmployeeFname, e.EmployeeLname, e.EmployeeSex, e.EmployeeEmail, e.EmployeePhone, e.EmployeeCadre, e.Facility, e.AFIFacility, e.EmployeeID)
+	if _, err := db.ExecContext(ctx, sqlstr, e.EmployeeFname, e.EmployeeLname, e.EmployeeSex, e.EmployeeEmail, e.EmployeePhone, e.EmployeeCadre, e.Facility, e.AFIFacility, e.EmployeeID); err != nil {
 		return logerror(err)
 	}
 	return nil
@@ -92,16 +93,16 @@ func (e *Employee) Upsert(ctx context.Context, db DB) error {
 	}
 	// upsert
 	const sqlstr = `INSERT INTO public.employee (` +
-		`employee_id, employee_fname, employee_lname, employee_sex, employee_email, employee_phone, employee_cadre, facility` +
+		`employee_id, employee_fname, employee_lname, employee_sex, employee_email, employee_phone, employee_cadre, facility, afi_facility` +
 		`) VALUES (` +
-		`$1, $2, $3, $4, $5, $6, $7, $8` +
+		`$1, $2, $3, $4, $5, $6, $7, $8, $9` +
 		`)` +
 		` ON CONFLICT (employee_id) DO ` +
 		`UPDATE SET ` +
-		`employee_fname = EXCLUDED.employee_fname, employee_lname = EXCLUDED.employee_lname, employee_sex = EXCLUDED.employee_sex, employee_email = EXCLUDED.employee_email, employee_phone = EXCLUDED.employee_phone, employee_cadre = EXCLUDED.employee_cadre, facility = EXCLUDED.facility `
+		`employee_fname = EXCLUDED.employee_fname, employee_lname = EXCLUDED.employee_lname, employee_sex = EXCLUDED.employee_sex, employee_email = EXCLUDED.employee_email, employee_phone = EXCLUDED.employee_phone, employee_cadre = EXCLUDED.employee_cadre, facility = EXCLUDED.facility, afi_facility = EXCLUDED.afi_facility `
 	// run
-	logf(sqlstr, e.EmployeeID, e.EmployeeFname, e.EmployeeLname, e.EmployeeSex, e.EmployeeEmail, e.EmployeePhone, e.EmployeeCadre, e.Facility)
-	if _, err := db.ExecContext(ctx, sqlstr, e.EmployeeID, e.EmployeeFname, e.EmployeeLname, e.EmployeeSex, e.EmployeeEmail, e.EmployeePhone, e.EmployeeCadre, e.Facility); err != nil {
+	logf(sqlstr, e.EmployeeID, e.EmployeeFname, e.EmployeeLname, e.EmployeeSex, e.EmployeeEmail, e.EmployeePhone, e.EmployeeCadre, e.Facility, e.AFIFacility)
+	if _, err := db.ExecContext(ctx, sqlstr, e.EmployeeID, e.EmployeeFname, e.EmployeeLname, e.EmployeeSex, e.EmployeeEmail, e.EmployeePhone, e.EmployeeCadre, e.Facility, e.AFIFacility); err != nil {
 		return logerror(err)
 	}
 	// set exists
@@ -136,7 +137,7 @@ func (e *Employee) Delete(ctx context.Context, db DB) error {
 func EmployeeByEmployeeID(ctx context.Context, db DB, employeeID int) (*Employee, error) {
 	// query
 	const sqlstr = `SELECT ` +
-		`employee_id, employee_fname, employee_lname, employee_sex, employee_email, employee_phone, employee_cadre, facility ` +
+		`employee_id, employee_fname, employee_lname, employee_sex, employee_email, employee_phone, employee_cadre, facility, afi_facility ` +
 		`FROM public.employee ` +
 		`WHERE employee_id = $1`
 	// run
@@ -144,7 +145,7 @@ func EmployeeByEmployeeID(ctx context.Context, db DB, employeeID int) (*Employee
 	e := Employee{
 		_exists: true,
 	}
-	if err := db.QueryRowContext(ctx, sqlstr, employeeID).Scan(&e.EmployeeID, &e.EmployeeFname, &e.EmployeeLname, &e.EmployeeSex, &e.EmployeeEmail, &e.EmployeePhone, &e.EmployeeCadre, &e.Facility); err != nil {
+	if err := db.QueryRowContext(ctx, sqlstr, employeeID).Scan(&e.EmployeeID, &e.EmployeeFname, &e.EmployeeLname, &e.EmployeeSex, &e.EmployeeEmail, &e.EmployeePhone, &e.EmployeeCadre, &e.Facility, &e.AFIFacility); err != nil {
 		return nil, logerror(err)
 	}
 	return &e, nil

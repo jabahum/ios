@@ -966,8 +966,60 @@ func HandlerVHFRiskFactorsSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, stor
 	return c.Redirect(fmt.Sprintf("/vhf-cif/laboratory/%d", patientID))
 }
 
+//Last known save lab data function that does not send sms
 // HandlerVHFLaboratorySubmit handles the submission of laboratory information
-func HandlerVHFLaboratorySubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config, smsService *services.SMSService) error {
+// func HandlerVHFLaboratorySubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config, smsService *services.SMSService) error {
+// 	patientID, err := strconv.ParseInt(c.Params("id"), 10, 64)
+// 	if err != nil {
+// 		return c.Status(400).SendString("Invalid patient ID")
+// 	}
+
+// 	laboratory := &models.VHFLaboratory{
+// 		PatientID:            patientID,
+// 		SampleCollectionDate: parseNullTime(c.FormValue("sample_collection_date")),
+// 		SampleCollectionTime: sql.NullString{String: c.FormValue("sample_collection_time"), Valid: c.FormValue("sample_collection_time") != ""},
+// 		SampleType:           sql.NullString{String: c.FormValue("sample_type"), Valid: c.FormValue("sample_type") != ""},
+// 		OtherSampleType:      sql.NullString{String: c.FormValue("other_sample_type"), Valid: c.FormValue("other_sample_type") != ""},
+// 		RequestedTest:        sql.NullString{String: c.FormValue("requested_test"), Valid: c.FormValue("requested_test") != ""},
+// 		Serology:             sql.NullString{String: c.FormValue("serology"), Valid: c.FormValue("serology") != ""},
+// 		MalariaRDT:           sql.NullString{String: c.FormValue("malaria_rdt"), Valid: c.FormValue("malaria_rdt") != ""},
+// 		HIVRDT:               sql.NullString{String: c.FormValue("hiv_rdt"), Valid: c.FormValue("hiv_rdt") != ""},
+// 		CreatedAt:            time.Now(),
+// 	}
+
+// 	if err := models.SaveVHFLaboratory(db, laboratory); err != nil {
+// 		sl.Error("Failed to save laboratory data", "error", err)
+// 		return c.Status(500).SendString("Failed to save laboratory data")
+// 	}
+// 	// Send SMS notification to CPHL if phone number is provided
+// 	if laboratory.SampleType.String != "" {
+// 		// Get patient details first
+// 		patient, err := models.GetVHFPatient(db, patientID)
+// 		if err != nil {
+// 			sl.Error("Failed to get patient details for SMS", "error", err)
+// 			return c.Status(500).SendString("Failed to get patient details")
+// 		}
+// 		var labPhoneNumber string = "256783261162"
+// 		message := fmt.Sprintf("A suspected VHF Case %s has been notified at %s and sample has been dispatched to CPHL with Case Details: %s %s",
+// 			labPhoneNumber, patient.CaseCode.String, patient.ReportingHealthFacilityName.String, patient.Surname, patient.OtherNames)
+// 		// Send SMS notification
+
+// 		if err := smsService.SendSMS(labPhoneNumber, message); err != nil {
+// 			sl.Error("Failed to send SMS notification", "error", err)
+// 		}
+// 	}
+// 	return c.Redirect(fmt.Sprintf("/vhf/view/%d", patientID))
+// }
+
+// Refactored lab submission function that sends sms
+func HandlerVHFLaboratorySubmit(
+	c *fiber.Ctx,
+	db *sql.DB,
+	sl *slog.Logger,
+	store *session.Store,
+	config Config,
+	smsService *services.SMSService,
+) error {
 	patientID, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
 		return c.Status(400).SendString("Invalid patient ID")
@@ -986,26 +1038,41 @@ func HandlerVHFLaboratorySubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 		CreatedAt:            time.Now(),
 	}
 
+	// Save the lab record
 	if err := models.SaveVHFLaboratory(db, laboratory); err != nil {
 		sl.Error("Failed to save laboratory data", "error", err)
 		return c.Status(500).SendString("Failed to save laboratory data")
 	}
-	// Send SMS notification to CPHL if phone number is provided
-	if laboratory.SampleType.String != "" {
-		// Get patient details first
-		patient, err := models.GetVHFPatient(db, patientID)
-		if err != nil {
-			sl.Error("Failed to get patient details for SMS", "error", err)
-			return c.Status(500).SendString("Failed to get patient details")
-		}
+	sl.Info("Lab record saved successfully", "patientID", patientID)
 
-		message := fmt.Sprintf("A suspected VHF Case %s has been notified at %s and sample has been dispatched to CPHL with Case Details: %s %s",
-			patient.CaseCode.String, patient.ReportingHealthFacilityName.String, patient.Surname, patient.OtherNames)
-		// Send SMS notification
-		if err := smsService.SendSMS("256783261162", message); err != nil {
-			sl.Error("Failed to send SMS notification", "error", err)
-		}
+	// Fetch patient details for SMS
+	patient, err := models.GetVHFPatient(db, patientID)
+	if err != nil {
+		sl.Error("Failed to get patient details for SMS", "error", err)
+		return c.Status(500).SendString("Failed to get patient details")
 	}
+
+	// Prepare SMS
+	labPhoneNumber := "0783261162"
+	message := fmt.Sprintf(
+		"A suspected VHF Case %s has been notified at %s. Sample has been dispatched to CPHL. Case details: %s %s",
+		patient.CaseCode.String,
+		patient.ReportingHealthFacilityName.String,
+		patient.Surname,
+		patient.OtherNames,
+	)
+
+	// Log before sending
+	sl.Info("Attempting to send SMS", "to", labPhoneNumber, "message", message)
+
+	// Send SMS
+	smsService.SendSMS("256783261162", "Test message from handler")
+	if err := smsService.SendSMS(labPhoneNumber, message); err != nil {
+		sl.Error("Failed to send SMS notification", "error", err)
+	} else {
+		sl.Info("SMS sent successfully", "to", labPhoneNumber)
+	}
+
 	return c.Redirect(fmt.Sprintf("/vhf/view/%d", patientID))
 }
 
@@ -1070,28 +1137,29 @@ func HandlerVHFList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 
 	// If user has role ID 65, check their facility assignment
 	if roleCount > 0 {
-		// Get user's facility ID from employee table
-		facilityQuery := `
-			SELECT e.facility 
+		// First try AFI facility string (preferred)
+		afiQuery := `
+			SELECT e.afi_facility
 			FROM employee e
-			JOIN users u ON e.employee_email = u.email
+			JOIN users u ON e.employee_id = u.user_employee
 			WHERE u.user_id = $1
 			LIMIT 1
 		`
-		var userFacilityID sql.NullInt64
-		err := db.QueryRowContext(c.Context(), facilityQuery, userID).Scan(&userFacilityID)
+		var userAFIFacility sql.NullString
+		err := db.QueryRowContext(c.Context(), afiQuery, userID).Scan(&userAFIFacility)
 		if err != nil && err != sql.ErrNoRows {
-			sl.Error("Failed to get user facility", "error", err)
+			sl.Error("Failed to get user AFI facility", "error", err)
 			return c.Status(500).SendString("Failed to get user facility information")
 		}
 
-		// If user has a facility assigned, filter by that facility
-		if userFacilityID.Valid && userFacilityID.Int64 > 0 {
-			facilityFilter = "AND vc.facility_id = $1"
-			args = append(args, userFacilityID.Int64)
-			sl.Info("Filtering VHF cases by user facility", "user_id", userID, "facility_id", userFacilityID.Int64)
+		if userAFIFacility.Valid && userAFIFacility.String != "" {
+			facilityFilter = "AND LOWER(TRIM(vc.reporting_health_facility_name)) = LOWER(TRIM($1))"
+			args = append(args, userAFIFacility.String)
+			sl.Info("Filtering VHF cases by AFI facility name", "user_id", userID, "afi_facility", userAFIFacility.String)
 		} else {
-			sl.Info("User has role 65 but no facility assigned, showing all VHF cases", "user_id", userID)
+			// Strict requirement: no AFI facility set => no records
+			facilityFilter = "AND 1 = 0"
+			sl.Info("vhf_lab_technician without AFI facility; no VHF records will be shown", "user_id", userID)
 		}
 	} else {
 		sl.Info("User does not have role 65, showing all VHF cases", "user_id", userID)

@@ -285,6 +285,18 @@
                                     </select>
                                 </div>
                             </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label" for="afi_facility">AFI Facility</label>
+                                    <select class="form-select" id="afi_facility" name="afi_facility">
+                                        {{ $current := .Employee.AFIFacility.String }}
+                                        {{ range $value, $label := index .Optionz "afi_facilities" }}
+                                            <option value="{{ $value }}" {{ if eq $value $current }}selected{{ end }}>{{ $label }}</option>
+                                        {{ end }}
+                                    </select>
+                                    <div class="form-text">If not attached to a system facility, select AFI facility name</div>
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="row">
@@ -387,7 +399,7 @@
     <script>
         $(document).ready(function() {
             // Initialize Select2 for dropdowns
-            $('#employee_title, #employee_department, #facility, #employee_supervisor, #employee_sex, #employee_status').select2({
+            $('#employee_title, #employee_department, #facility, #afi_facility, #employee_supervisor, #employee_sex, #employee_status').select2({
                 placeholder: 'Select...',
                 allowClear: true,
                 width: '100%'

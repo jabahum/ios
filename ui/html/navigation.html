@@ -16,6 +16,7 @@
             </li>
 
             <!-- Outbreaks Section -->
+            {{if hasPermission .UserPermissions "outbreaks" "read"}}
             <li class="nav-tree-item">
                 <div class="nav-tree-node nav-tree-parent" data-path="/outbreaks">
                     <i class="nav-tree-icon fas fa-virus"></i>
@@ -29,22 +30,28 @@
                             <span class="nav-tree-text">All Outbreaks</span>
                         </div>
                     </li>
+                    {{if hasPermission .UserPermissions "outbreaks" "update"}}
                     <li class="nav-tree-item">
                         <div class="nav-tree-node" data-path="/outbreaks/assign">
                             <i class="nav-tree-icon fas fa-user-plus"></i>
                             <span class="nav-tree-text">Assign Outbreaks</span>
                         </div>
                     </li>
+                    {{end}}
+                    {{if hasPermission .UserPermissions "outbreaks" "read"}}
                     <li class="nav-tree-item">
                         <div class="nav-tree-node" data-path="/outbreaks/assignments">
                             <i class="nav-tree-icon fas fa-users"></i>
                             <span class="nav-tree-text">Outbreak Assignments</span>
                         </div>
                     </li>
+                    {{end}}
                 </ul>
             </li>
+            {{end}}
 
             <!-- Cases Section -->
+            {{if hasPermission .UserPermissions "vhf_patients" "read"}}
             <li class="nav-tree-item">
                 <div class="nav-tree-node nav-tree-parent" data-path="/cases">
                     <i class="nav-tree-icon fas fa-user-injured"></i>
@@ -58,16 +65,20 @@
                             <span class="nav-tree-text">All Cases</span>
                         </div>
                     </li>
+                    {{if hasPermission .UserPermissions "vhf_patients" "create"}}
                     <li class="nav-tree-item">
                         <div class="nav-tree-node" data-path="/cases/new/0">
                             <i class="nav-tree-icon fas fa-plus"></i>
                             <span class="nav-tree-text">New Case</span>
                         </div>
                     </li>
+                    {{end}}
                 </ul>
             </li>
+            {{end}}
 
             <!-- CIF Records Section -->
+            {{if hasPermission .UserPermissions "vhf_patients" "read"}}
             <li class="nav-tree-item">
                 <div class="nav-tree-node nav-tree-parent" data-path="/cif-records">
                     <i class="nav-tree-icon fas fa-file-medical"></i>
@@ -83,8 +94,10 @@
                     </li>
                 </ul>
             </li>
+            {{end}}
 
             <!-- Surveillance Section -->
+            {{if hasPermission .UserPermissions "surveillance" "read"}}
             <li class="nav-tree-item">
                 <div class="nav-tree-node nav-tree-parent" data-path="/surveillance">
                     <i class="nav-tree-icon fas fa-search"></i>
@@ -106,8 +119,10 @@
                     </li>
                 </ul>
             </li>
+            {{end}}
 
             <!-- Reports Section -->
+            {{if hasPermission .UserPermissions "reports" "read"}}
             <li class="nav-tree-item">
                 <div class="nav-tree-node nav-tree-parent" data-path="/reports">
                     <i class="nav-tree-icon fas fa-chart-bar"></i>
@@ -207,6 +222,7 @@
                     </li>
                 </ul>
             </li>
+            {{end}}
 
             <!-- Employees Section -->
             {{if hasPermission .UserPermissions "employees" "read"}}

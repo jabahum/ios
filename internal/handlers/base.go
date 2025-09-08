@@ -195,6 +195,7 @@ type EmployeeForm struct {
 	EmployeePhotoURL   sql.NullString
 	EmployeeNotes      sql.NullString
 	Facility           sql.NullInt64
+	AFIFacility        sql.NullString
 	FacilityInfo       struct {
 		Name sql.NullString
 	}
