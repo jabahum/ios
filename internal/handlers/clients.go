@@ -413,12 +413,18 @@ func HandlerCasesList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 	// Build filter based on outbreak and facility
 	filter := fmt.Sprintf("outbreak_id = %d", outbreakID)
 
-	// If user has a facility assigned, filter by that facility
-	if userFacility > 0 {
-		filter += fmt.Sprintf(" AND site = %d", userFacility)
-		sl.Info("Filtering cases by user facility", "user_id", userID, "facility_id", userFacility)
+	// Admins (admin, super_admin) should see all facilities
+	isAdmin := security.HasAnyRole(db, userID, []string{"admin", "super_admin"})
+	if isAdmin {
+		sl.Info("Admin user - bypassing facility filter", "user_id", userID)
 	} else {
-		sl.Info("No facility assigned to user, showing all cases for outbreak", "user_id", userID)
+		// If user has a facility assigned, filter by that facility
+		if userFacility > 0 {
+			filter += fmt.Sprintf(" AND site = %d", userFacility)
+			sl.Info("Filtering cases by user facility", "user_id", userID, "facility_id", userFacility)
+		} else {
+			sl.Info("No facility assigned to user, showing all cases for outbreak", "user_id", userID)
+		}
 	}
 
 	clients, err := models.Clients(c.Context(), db, filter)
@@ -512,12 +518,16 @@ func HandlerCaseEncounterForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 	// Check facility-based access control
 	userID := GetCurrentUser(c, store)
 	userFacility := GetCurrentFacility(c, db, sl, store)
-	if userFacility > 0 {
-		// User has a facility assigned, check if they can access this case
-		if client.Site.Int64 != int64(userFacility) {
-			sl.Error("User attempted to access case from different facility",
-				"user_id", userID, "user_facility", userFacility, "case_site", client.Site.Int64, "case_id", clientID)
-			return c.Status(403).SendString("Access denied: You can only access cases from your assigned facility.")
+	// Allow admins to access any case regardless of facility
+	isAdmin := security.HasAnyRole(db, userID, []string{"admin", "super_admin"})
+	if !isAdmin {
+		if userFacility > 0 {
+			// User has a facility assigned, check if they can access this case
+			if client.Site.Int64 != int64(userFacility) {
+				sl.Error("User attempted to access case from different facility",
+					"user_id", userID, "user_facility", userFacility, "case_site", client.Site.Int64, "case_id", clientID)
+				return c.Status(403).SendString("Access denied: You can only access cases from your assigned facility.")
+			}
 		}
 	}
 

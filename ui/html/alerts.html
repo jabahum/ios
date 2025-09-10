@@ -55,6 +55,7 @@
                         <div class="col-md-2">
                             <label for="pageSizeSelect" class="form-label">Page Size</label>
                             <select class="form-select" id="pageSizeSelect" onchange="changePageSize()">
+                                <option value="0" selected>All</option>
                                 <option value="10">10</option>
                                 <option value="25">25</option>
                                 <option value="50">50</option>
@@ -97,6 +98,11 @@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="cards-tab" data-bs-toggle="tab" data-bs-target="#cards-view" type="button" role="tab" aria-controls="cards-view" aria-selected="false">
                         <i class="fas fa-th-large me-2"></i>Card View
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="alerts6767-tab" data-bs-toggle="tab" data-bs-target="#alerts6767-view" type="button" role="tab" aria-controls="alerts6767-view" aria-selected="false">
+                        <i class="fas fa-bell me-2"></i>6767 Alerts
                     </button>
                 </li>
             </ul>
@@ -151,6 +157,27 @@
                         <!-- Cards will be loaded dynamically -->
                     </div>
                 </div>
+
+                <!-- 6767 Alerts Tab -->
+                <div class="tab-pane fade" id="alerts6767-view" role="tabpanel" aria-labelledby="alerts6767-tab">
+                    <div class="card">
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover mb-0" id="alerts6767Table">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Event</th>
+                                            <th>Date</th>
+                                            <th>Status</th>
+                                            <th>Org Unit</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="alerts6767TableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -158,7 +185,7 @@
 
 <script>
 let currentPage = 1;
-let currentPageSize = 10;
+let currentPageSize = 0; // 0 = fetch all from API, we paginate on client
 let currentSearch = '';
 let currentFilters = {
     severity: '',
@@ -182,6 +209,8 @@ $(document).ready(function() {
     $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
         if (e.target.id === 'cards-tab') {
             renderCards();
+        } else if (e.target.id === 'alerts6767-tab') {
+            load6767Alerts();
         }
     });
 });
@@ -212,6 +241,8 @@ function loadAlerts() {
                 updateAlertsCount(data.total);
                 renderTable();
                 renderPagination(data);
+                // Keep cards in sync too
+                renderCards();
                 showLoading(false);
             } else {
                 throw new Error(data.message || 'Failed to load alerts');
@@ -647,6 +678,37 @@ setInterval(function() {
 function loadAllAlerts() {
     currentPageSize = 0;
     loadAlerts();
+}
+
+// 6767 Alerts loader
+function load6767Alerts() {
+    const tbody = document.getElementById('alerts6767TableBody');
+    tbody.innerHTML = `<tr><td colspan="4" class="text-center py-3">Loading...</td></tr>`;
+
+    // Optional: forward same date filters in future
+    fetch(`/api/alerts/6767`)
+        .then(r => r.json())
+        .then(d => {
+            if (!d.success) throw new Error(d.message || 'Failed');
+            tbody.innerHTML = '';
+            if (!d.data || d.data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-3">No 6767 alerts found.</td></tr>`;
+                return;
+            }
+            d.data.forEach(ev => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${ev.id}</td>
+                    <td>${formatDate(ev.created_at || ev.updated_at)}</td>
+                    <td><span class="badge bg-${getStatusColor(ev.status)}">${ev.status || '-'}</span></td>
+                    <td>${ev.location || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        })
+        .catch(err => {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-danger text-center py-3">${err.message}</td></tr>`;
+        });
 }
 </script>
 

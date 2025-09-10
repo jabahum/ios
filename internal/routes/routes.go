@@ -251,6 +251,11 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 			return handlers.HandlerAlertsAPI(c, db, sl, store, config)
 		})
 
+		// 6767 Alerts from DHIS2
+		appGroup.Get("/api/alerts/6767", middleware.PermissionRequired(store, db, sl, "alerts", "read"), func(c *fiber.Ctx) error {
+			return handlers.HandlerAlerts6767API(c, db, sl, store, config)
+		})
+
 		// Alerts debug endpoint
 		appGroup.Get("/api/alerts/debug", middleware.PermissionRequired(store, db, sl, "alerts", "read"), func(c *fiber.Ctx) error {
 			return handlers.HandlerAlertsDebug(c, db, sl, store, config)

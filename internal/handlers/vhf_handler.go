@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"case/internal/models"
+	"case/internal/security"
 	"case/internal/services"
 	"database/sql"
 	"fmt"
@@ -1122,6 +1123,9 @@ func HandlerVHFList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 	var facilityFilter string
 	var args []interface{}
 
+	// Admins should not be restricted by facility
+	isAdmin := security.HasAnyRole(db, userID, []string{"admin", "super_admin"})
+
 	// Check if user has vhf_lab_technician role (ID 65)
 	roleQuery := `
 		SELECT COUNT(*) FROM user_roles ur 
@@ -1135,8 +1139,8 @@ func HandlerVHFList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 		return c.Status(500).SendString("Failed to check user permissions")
 	}
 
-	// If user has role ID 65, check their facility assignment
-	if roleCount > 0 {
+	// If user has role ID 65, check their facility assignment (unless admin)
+	if roleCount > 0 && !isAdmin {
 		// First try AFI facility string (preferred)
 		afiQuery := `
 			SELECT e.afi_facility
@@ -1162,6 +1166,9 @@ func HandlerVHFList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 			sl.Info("vhf_lab_technician without AFI facility; no VHF records will be shown", "user_id", userID)
 		}
 	} else {
+		if isAdmin {
+			sl.Info("Admin user - bypassing facility filter for VHF list", "user_id", userID)
+		}
 		sl.Info("User does not have role 65, showing all VHF cases", "user_id", userID)
 	}
 

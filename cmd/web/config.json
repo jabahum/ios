@@ -11,5 +11,10 @@
     "Facility"       : "1",
     "SMSUser"        : "case_management",
     "SMSPassword"    : "C@s3mgt@2025",
-    "SMSURL"         : "https://dispatcher2-mtracpro.health.go.ug"
+    "SMSURL"         : "https://dispatcher2-mtracpro.health.go.ug",
+    "DHIS2API": {
+    "BaseURL": "https://eidsr.health.go.ug/api",
+    "Username": "pwaiswa",
+    "Password": "Waiswa@2020"
+  }
 }

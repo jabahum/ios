@@ -129,7 +129,7 @@
                         </div>
                         {{end}}
                         
-                        {{if hasPermission .UserPermissions "mpox_cases" "create"}}
+                        {{if hasPermission .UserPermissions "cif" "read"}}
                         <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
                             <div class="dashboard-card">
                                 <div class="card-icon text-warning">
@@ -142,7 +142,7 @@
                         </div>
                         {{end}}
                         
-                        {{if hasPermission .UserPermissions "measles_cif_reports" "read"}}
+                        {{if hasPermission .UserPermissions "cif" "read"}}
                         <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
                             <div class="dashboard-card">
                                 <div class="card-icon text-success">
@@ -155,7 +155,7 @@
                         </div>
                         {{end}}
                         
-                        {{if hasPermission .UserPermissions "polio_cif_reports" "read"}}
+                        {{if hasPermission .UserPermissions "cif" "read"}}
                         <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
                             <div class="dashboard-card">
                                 <div class="card-icon text-info">

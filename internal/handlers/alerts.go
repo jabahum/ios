@@ -97,8 +97,8 @@ func HandlerAlertsAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 	if page < 1 {
 		page = 1
 	}
-	if pageSize < 0 || pageSize > 1000 {
-		pageSize = 10
+	if pageSize < 0 || pageSize > 10000 {
+		pageSize = 0
 	}
 
 	// Fetch all alerts from external API
@@ -363,6 +363,105 @@ func fetchExternalAlerts() ([]ExternalAlert, error) {
 	// If external API fails, return sample alerts for demonstration
 	fmt.Printf("DEBUG: External API failed, returning sample alerts\n")
 	return getSampleAlerts(), nil
+}
+
+// DHIS2 minimal structures for 6767 alerts
+type dhis2Event struct {
+	Event       string           `json:"event"`
+	EventDate   string           `json:"eventDate"`
+	Status      string           `json:"status"`
+	OrgUnit     string           `json:"orgUnit"`
+	OrgUnitName string           `json:"orgUnitName"`
+	DataValues  []dhis2DataValue `json:"dataValues"`
+}
+
+type dhis2DataValue struct {
+	DataElement string `json:"dataElement"`
+	Value       string `json:"value"`
+}
+
+type dhis2EventsResponse struct {
+	Events []dhis2Event `json:"events"`
+}
+
+// fetchDHIS2Events retrieves events for a given DHIS2 program
+func fetchDHIS2Events(config Config, programID, startDate, endDate string) ([]dhis2Event, error) {
+	client := &http.Client{Timeout: 30 * time.Second}
+
+	// Build endpoint
+	endpoint := fmt.Sprintf("%s/events.json?program=%s&orgUnit=akV6429SUqu&ouMode=DESCENDANTS&skipPaging=true", config.DHIS2API.BaseURL, programID)
+	if startDate != "" && endDate != "" {
+		endpoint = fmt.Sprintf("%s&startDate=%s&endDate=%s", endpoint, startDate, endDate)
+	}
+
+	req, err := http.NewRequest("GET", endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+	// Basic auth
+	auth := config.DHIS2API.Username + ":" + config.DHIS2API.Password
+	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(auth)))
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("dhis2 error: %d %s", resp.StatusCode, string(b))
+	}
+
+	var dr dhis2EventsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&dr); err != nil {
+		return nil, err
+	}
+	return dr.Events, nil
+}
+
+// HandlerAlerts6767API returns alerts sourced from DHIS2 program iaN1DovM5em
+func HandlerAlerts6767API(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	startDate := c.Query("startDate", "")
+	endDate := c.Query("endDate", "")
+
+	events, err := fetchDHIS2Events(config, "iaN1DovM5em", startDate, endDate)
+	if err != nil {
+		sl.Error("Failed to fetch 6767 alerts from DHIS2", "error", err)
+		return c.Status(500).JSON(fiber.Map{"success": false, "message": "Failed to fetch 6767 alerts", "error": err.Error()})
+	}
+
+	// Convert to ExternalAlert slice for frontend reuse
+	var alerts []ExternalAlert
+	for _, ev := range events {
+		t, _ := time.Parse("2006-01-02T15:04:05.000", ev.EventDate)
+		if t.IsZero() {
+			// fallback to date only
+			t, _ = time.Parse("2006-01-02", ev.EventDate)
+		}
+		alerts = append(alerts, ExternalAlert{
+			ID:          ev.Event,
+			Title:       "6767 Alert",
+			Description: "Imported from DHIS2",
+			Severity:    "Medium",
+			Category:    "6767",
+			Location:    ev.OrgUnitName,
+			CreatedAt:   t,
+			UpdatedAt:   t,
+			Status:      ev.Status,
+			Reporter:    "",
+			Source:      "DHIS2",
+			Response:    "6767",
+			Verified:    false,
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"success": true,
+		"data":    alerts,
+		"total":   len(alerts),
+		"message": "6767 alerts retrieved successfully",
+	})
 }
 
 // getSampleAlerts returns sample alerts for demonstration purposes

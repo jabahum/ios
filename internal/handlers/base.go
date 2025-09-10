@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"case/internal/models"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
@@ -381,37 +382,19 @@ func CreateTemplateFunctions(c *fiber.Ctx, db *sql.DB) template.FuncMap {
 			if v == nil {
 				return template.JS("null")
 			}
-			// For simple types, convert to JSON string
+			// Simple primitives inline
 			switch val := v.(type) {
 			case string:
 				return template.JS(fmt.Sprintf(`"%s"`, val))
 			case int, int64, float64, bool:
 				return template.JS(fmt.Sprintf("%v", val))
-			case []string:
-				json := "["
-				for i, s := range val {
-					if i > 0 {
-						json += ","
-					}
-					json += fmt.Sprintf(`"%s"`, s)
-				}
-				json += "]"
-				return template.JS(json)
-			case []int, []int64, []float64:
-				json := "["
-				valReflect := reflect.ValueOf(val)
-				for i := 0; i < valReflect.Len(); i++ {
-					if i > 0 {
-						json += ","
-					}
-					json += fmt.Sprintf("%v", valReflect.Index(i).Interface())
-				}
-				json += "]"
-				return template.JS(json)
-			default:
-				// For complex types, return empty array as fallback
-				return template.JS("[]")
 			}
+			// Fallback: JSON marshal any complex type (maps, slices, structs)
+			b, err := json.Marshal(v)
+			if err != nil {
+				return template.JS("null")
+			}
+			return template.JS(string(b))
 		},
 		"renderSymptomRow": func(name, label string, value sql.NullBool, date sql.NullTime, duration sql.NullInt32) template.HTML {
 			var buf bytes.Buffer
