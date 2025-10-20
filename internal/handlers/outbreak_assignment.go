@@ -279,7 +279,7 @@ func (h *OutbreakAssignmentHandler) ShowOutbreakAssignments(c *fiber.Ctx) error 
 	}
 
 	// Get all users for the dropdown
-	users, err := h.userService.GetAllUsers()
+	users, err := h.userService.GetAllEnhancedUsers()
 	if err != nil {
 		return c.Status(500).SendString("Failed to load users: " + err.Error())
 	}
@@ -299,6 +299,39 @@ func (h *OutbreakAssignmentHandler) ShowOutbreakAssignments(c *fiber.Ctx) error 
 	fmt.Printf("DEBUG: Template data - Items count: %d\n", len(data.Items))
 
 	return GenerateHTML(c, nil, data, "outbreak_assignments")
+}
+
+// ShowOutbreakAssignmentsAPI returns outbreak assignments and related data as JSON
+func (h *OutbreakAssignmentHandler) ShowOutbreakAssignmentsAPI(c *fiber.Ctx) error {
+	// Ensure user is authenticated
+	sess, err := h.store.Get(c)
+	if err != nil {
+		return c.Status(401).JSON(fiber.Map{"error": "Session error"})
+	}
+	if sess.Get("user") == nil {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	assignments, err := h.userOutbreakService.GetAllOutbreakAssignments()
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to load assignments"})
+	}
+
+	outbreaks, err := h.outbreakService.GetAllOutbreaks()
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to load outbreaks"})
+	}
+
+	users, err := h.userService.GetAllEnhancedUsers()
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to load users"})
+	}
+
+	return c.JSON(fiber.Map{
+		"assignments": assignments,
+		"outbreaks":   outbreaks,
+		"users":       users,
+	})
 }
 
 // ShowAssignOutbreakForm shows the assign outbreak form
@@ -380,6 +413,67 @@ func (h *OutbreakAssignmentHandler) HandleAssignFormSubmission(c *fiber.Ctx) err
 
 	// Redirect to assignments page with success message
 	return c.Redirect("/outbreaks/assignments?success=User assigned successfully")
+}
+
+// HandleAssignFormSubmissionAPI assigns a user to an outbreak from JSON body
+func (h *OutbreakAssignmentHandler) HandleAssignFormSubmissionAPI(c *fiber.Ctx) error {
+	var req struct {
+		OutbreakID int64 `json:"outbreak_id"`
+		UserID     int64 `json:"user_id"`
+	}
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+	if req.OutbreakID == 0 || req.UserID == 0 {
+		return c.Status(400).JSON(fiber.Map{"error": "outbreak_id and user_id are required"})
+	}
+
+	// Get current user from session
+	sess, err := h.store.Get(c)
+	if err != nil {
+		return c.Status(401).JSON(fiber.Map{"error": "Session error"})
+	}
+	userIDFromSession := sess.Get("user")
+	if userIDFromSession == nil {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	var currentUserID int64
+	switch v := userIDFromSession.(type) {
+	case int:
+		currentUserID = int64(v)
+	case int64:
+		currentUserID = v
+	case float64:
+		currentUserID = int64(v)
+	default:
+		return c.Status(401).JSON(fiber.Map{"error": "Invalid user session"})
+	}
+
+	if err := h.userOutbreakService.AssignUserToOutbreak(req.UserID, req.OutbreakID, currentUserID); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"message": "User assigned to outbreak successfully"})
+}
+
+// RemoveUserFromOutbreakAPI removes a user from an outbreak using URL params
+func (h *OutbreakAssignmentHandler) RemoveUserFromOutbreakAPI(c *fiber.Ctx) error {
+	outbreakID := c.Params("outbreak_id")
+	userID := c.Params("user_id")
+
+	oid, err := strconv.ParseInt(outbreakID, 10, 64)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid outbreak ID"})
+	}
+	uid, err := strconv.ParseInt(userID, 10, 64)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid user ID"})
+	}
+
+	if err := h.userOutbreakService.RemoveUserFromOutbreak(uid, oid); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"message": "User removed from outbreak successfully"})
 }
 
 // GetOutbreakService returns the outbreak service

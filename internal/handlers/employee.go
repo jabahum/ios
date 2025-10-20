@@ -28,11 +28,12 @@ func HandlerEmployeeForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 	if id > 0 {
 		// Load existing employee
 		query := `SELECT employee_id, employee_fname, employee_lname, employee_sex, 
-		          employee_email, employee_phone, employee_cadre, facility, afi_facility
+		          employee_email, employee_phone, employee_cadre, facility, afi_facility, afi_region, afi_district
 		          FROM public.employee WHERE employee_id = $1`
 		err := db.QueryRowContext(c.Context(), query, id).Scan(
 			&employee.EmployeeID, &employee.EmployeeFname, &employee.EmployeeLname, &employee.EmployeeSex,
-			&employee.EmployeeEmail, &employee.EmployeePhone, &employee.EmployeeCadre, &employee.Facility, &employee.AFIFacility,
+			&employee.EmployeeEmail, &employee.EmployeePhone, &employee.EmployeeCadre, &employee.Facility,
+			&employee.AFIFacility, &employee.AFIRegion, &employee.AFIDistrict,
 		)
 		if err != nil {
 			sl.Error("Error loading employee", "error", err)
@@ -99,12 +100,47 @@ func HandlerEmployeeForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 			}
 		}
 	}
+
+	// Load unique regions from afi_facilities
+	var regions []string
+	if rows, err := db.QueryContext(c.Context(), `SELECT DISTINCT region FROM afi_facilities WHERE region IS NOT NULL AND region != '' ORDER BY region`); err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var region string
+			if err := rows.Scan(&region); err == nil {
+				regions = append(regions, region)
+			}
+		}
+	}
+
+	// Load unique districts from afi_facilities
+	var districts []string
+	if rows, err := db.QueryContext(c.Context(), `SELECT DISTINCT district FROM afi_facilities WHERE district IS NOT NULL AND district != '' ORDER BY district`); err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var district string
+			if err := rows.Scan(&district); err == nil {
+				districts = append(districts, district)
+			}
+		}
+	}
+
 	if data.Optionz == nil {
 		data.Optionz = make(map[string]map[string]string)
 	}
 	data.Optionz["afi_facilities"] = map[string]string{"": "Select AFI Facility"}
 	for _, f := range afiFacilities {
 		data.Optionz["afi_facilities"][f.Name] = f.Name
+	}
+
+	data.Optionz["afi_regions"] = map[string]string{"": "Select Region"}
+	for _, r := range regions {
+		data.Optionz["afi_regions"][r] = r
+	}
+
+	data.Optionz["afi_districts"] = map[string]string{"": "Select District"}
+	for _, d := range districts {
+		data.Optionz["afi_districts"][d] = d
 	}
 
 	// Add employees data for supervisor selection
@@ -122,6 +158,85 @@ func HandlerEmployeeForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 	}
 
 	return GenerateHTML(c, db, data, "form_employee")
+}
+
+// HandlerGetEmployee handles getting a single employee by ID (API endpoint)
+func HandlerGetEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	employeeID, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid employee ID"})
+	}
+
+	// Get employee details
+	query := `SELECT employee_id, employee_fname, employee_lname, employee_sex, 
+	          employee_email, employee_phone, employee_cadre, facility, afi_facility, afi_region, afi_district,
+	          employee_start_date, employee_end_date, employee_status, employee_department, employee_title
+	          FROM public.employee WHERE employee_id = $1`
+
+	var employee struct {
+		EmployeeID         int            `json:"employee_id"`
+		EmployeeFname      sql.NullString `json:"employee_fname"`
+		EmployeeLname      sql.NullString `json:"employee_lname"`
+		EmployeeSex        sql.NullString `json:"employee_sex"`
+		EmployeeEmail      sql.NullString `json:"employee_email"`
+		EmployeePhone      sql.NullString `json:"employee_phone"`
+		EmployeeCadre      sql.NullString `json:"employee_cadre"`
+		Facility           sql.NullInt64  `json:"facility"`
+		AFIFacility        sql.NullString `json:"afi_facility"`
+		AFIRegion          sql.NullString `json:"afi_region"`
+		AFIDistrict        sql.NullString `json:"afi_district"`
+		EmployeeStartDate  sql.NullTime   `json:"employee_start_date"`
+		EmployeeEndDate    sql.NullTime   `json:"employee_end_date"`
+		EmployeeStatus     sql.NullString `json:"employee_status"`
+		EmployeeDepartment sql.NullString `json:"employee_department"`
+		EmployeeTitle      sql.NullString `json:"employee_title"`
+	}
+
+	err = db.QueryRowContext(c.Context(), query, employeeID).Scan(
+		&employee.EmployeeID, &employee.EmployeeFname, &employee.EmployeeLname, &employee.EmployeeSex,
+		&employee.EmployeeEmail, &employee.EmployeePhone, &employee.EmployeeCadre, &employee.Facility,
+		&employee.AFIFacility, &employee.AFIRegion, &employee.AFIDistrict,
+		&employee.EmployeeStartDate, &employee.EmployeeEndDate, &employee.EmployeeStatus,
+		&employee.EmployeeDepartment, &employee.EmployeeTitle,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return c.Status(404).JSON(fiber.Map{"error": "Employee not found"})
+		}
+		sl.Error("Error getting employee", "error", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
+	}
+
+	return c.JSON(employee)
+}
+
+// HandlerDeleteEmployee handles deleting an employee (API endpoint)
+func HandlerDeleteEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	employeeID, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid employee ID"})
+	}
+
+	// Check if employee exists
+	var exists bool
+	err = db.QueryRowContext(c.Context(), "SELECT EXISTS(SELECT 1 FROM employee WHERE employee_id = $1)", employeeID).Scan(&exists)
+	if err != nil {
+		sl.Error("Error checking employee existence", "error", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
+	}
+	if !exists {
+		return c.Status(404).JSON(fiber.Map{"error": "Employee not found"})
+	}
+
+	// Delete employee
+	_, err = db.ExecContext(c.Context(), "DELETE FROM employee WHERE employee_id = $1", employeeID)
+	if err != nil {
+		sl.Error("Error deleting employee", "error", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to delete employee"})
+	}
+
+	sl.Info("Employee deleted successfully", "employee_id", employeeID)
+	return c.JSON(fiber.Map{"message": "Employee deleted successfully"})
 }
 
 // HandlerEmployeeSubmit handles employee form submission
@@ -144,6 +259,8 @@ func HandlerEmployeeSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 		EmployeeCadre: ParseNullString(c.FormValue("employee_cadre")),
 		Facility:      ParseNullInt(c.FormValue("facility")),
 		AFIFacility:   ParseNullString(c.FormValue("afi_facility")),
+		AFIRegion:     ParseNullString(c.FormValue("afi_region")),
+		AFIDistrict:   ParseNullString(c.FormValue("afi_district")),
 	}
 
 	if employee.EmployeeID == 0 {

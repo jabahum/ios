@@ -393,7 +393,7 @@ func applyAccessRestrictions(filters ReportFilters, role string, facility, distr
 
 // Report generation functions with real data
 func generateVHFReport(c *fiber.Ctx, db *sql.DB, filters ReportFilters) ReportData {
-	// Get VHF cases from VHF CIF table
+	// Get VHF cases from VHF patients table
 	query := `
 		SELECT 
 			v.id,
@@ -401,19 +401,14 @@ func generateVHFReport(c *fiber.Ctx, db *sql.DB, filters ReportFilters) ReportDa
 			v.surname,
 			v.other_names,
 			v.age_years,
-			v.age_months,
 			v.gender,
 			v.date_of_birth,
 			v.status,
 			v.created_at,
-			v.outbreak_id,
-			f.facility_name,
-			d.name as district_name,
-			v.district
+			v.district,
+			v.reporting_health_facility_name
 		FROM vhf_patients v
-		LEFT JOIN afi_facilities f ON v.reporting_health_facility_name = f.facility_name
-		
-		WHERE v.outbreak_id IN (SELECT id FROM outbreaks WHERE outbreak = 'vhf')
+		WHERE 1=1
 	`
 
 	var args []interface{}
@@ -438,8 +433,8 @@ func generateVHFReport(c *fiber.Ctx, db *sql.DB, filters ReportFilters) ReportDa
 	}
 
 	if filters.FacilityID > 0 {
-		query += fmt.Sprintf(" AND f.id = $%d", argCount)
-		args = append(args, filters.FacilityID)
+		query += fmt.Sprintf(" AND v.reporting_health_facility_name LIKE $%d", argCount)
+		args = append(args, "%"+fmt.Sprintf("%d", filters.FacilityID)+"%")
 		argCount++
 	}
 
@@ -455,29 +450,26 @@ func generateVHFReport(c *fiber.Ctx, db *sql.DB, filters ReportFilters) ReportDa
 	for rows.Next() {
 		var id int
 		var caseCode, surname, otherNames, gender, dateOfBirth, status sql.NullString
-		var age sql.NullFloat64
-		var outbreakID sql.NullInt64
-		var facilityName, districtName sql.NullString
-		var district sql.NullString
-		var labStatus sql.NullBool
-		err := rows.Scan(&id, &caseCode, &surname, &otherNames, &age, &gender, &dateOfBirth, &status, &outbreakID, &facilityName, &districtName, &district, &labStatus)
+		var age sql.NullInt64
+		var district, facilityName sql.NullString
+		var createdAt sql.NullTime
+
+		err := rows.Scan(&id, &caseCode, &surname, &otherNames, &age, &gender, &dateOfBirth, &status, &createdAt, &district, &facilityName)
 		if err != nil {
 			continue
 		}
 
 		cases = append(cases, map[string]interface{}{
-			"id":             id,
-			"case_code":      caseCode.String,
-			"name":           fmt.Sprintf("%s %s", surname.String, otherNames.String),
-			"age":            age.Float64,
-			"gender":         gender.String,
-			"date_of_birth":  dateOfBirth.String,
-			"status":         status.String,
-			"outbreak_id":    outbreakID.Int64,
-			"facility":       facilityName.String,
-			"district":       districtName.String,
-			"district_other": district.String,
-			"lab_status":     labStatus.Bool,
+			"id":            id,
+			"case_code":     caseCode.String,
+			"name":          fmt.Sprintf("%s %s", surname.String, otherNames.String),
+			"age":           age.Int64,
+			"gender":        gender.String,
+			"date_of_birth": dateOfBirth.String,
+			"status":        status.String,
+			"district":      district.String,
+			"facility":      facilityName.String,
+			"created_at":    createdAt.Time,
 		})
 	}
 
@@ -496,24 +488,23 @@ func generateVHFReport(c *fiber.Ctx, db *sql.DB, filters ReportFilters) ReportDa
 }
 
 func generateMeaslesReport(c *fiber.Ctx, db *sql.DB, filters ReportFilters) ReportData {
-	// Get Measles cases from Measles CIF table
+	// Get Measles cases from clients table (fallback since measles_case_investigation_form doesn't exist)
 	query := `
 		SELECT 
-			m.id,
-			m.case_code,
-			m.first_name,
-			m.last_name,
-			m.age,
-			m.gender,
-			m.date_of_onset,
-			m.case_classification,
-			m.outbreak_id,
+			c.id,
+			c.case_no as case_code,
+			c.firstname,
+			c.lastname,
+			c.age,
+			c.gender,
+			c.adm_date,
+			c.status as case_classification,
+			c.outbreak_id,
 			f.facility_name,
-			d.name as district_name
-		FROM measles_case_investigation_form m
-		LEFT JOIN afi_facilities f ON m.reporting_health_facility_name = f.name
-		LEFT JOIN districts d ON f.district = d.name
-		WHERE m.outbreak_id IN (SELECT id FROM outbreaks WHERE outbreak_type = 'measles')
+			f.district
+		FROM clients c
+		LEFT JOIN facility f ON c.site = f.facility_id
+		WHERE c.outbreak_id IN (SELECT id FROM outbreaks WHERE outbreak_type = 'measles')
 	`
 
 	var args []interface{}
@@ -894,8 +885,8 @@ func generateGeneralReport(c *fiber.Ctx, db *sql.DB, filters ReportFilters) Repo
 func generateIndicatorsReport(c *fiber.Ctx, db *sql.DB, filters ReportFilters) ReportData {
 	indicators := make(map[string]interface{})
 
-	// 1. New admissions (daily)
-	newAdmissions, err := GetNewAdmissionsDaily(db, filters)
+	// 1. New admissions (daily) - simplified to use clients table
+	newAdmissions, err := getNewAdmissionsDaily(db, filters)
 	if err == nil {
 		indicators["new_admissions_daily"] = newAdmissions
 	}
@@ -981,6 +972,68 @@ func generateIndicatorsReport(c *fiber.Ctx, db *sql.DB, filters ReportFilters) R
 	}
 }
 
+// getNewAdmissionsDaily returns daily new admissions count (simplified version)
+func getNewAdmissionsDaily(db *sql.DB, filters ReportFilters) (map[string]interface{}, error) {
+	query := `
+		SELECT 
+			DATE(adm_date) as admission_date,
+			COUNT(*) as daily_admissions
+		FROM clients
+		WHERE adm_date IS NOT NULL
+	`
+
+	var args []interface{}
+	argCount := 1
+
+	if filters.StartDate != "" {
+		query += fmt.Sprintf(" AND adm_date >= $%d", argCount)
+		args = append(args, filters.StartDate)
+		argCount++
+	}
+
+	if filters.EndDate != "" {
+		query += fmt.Sprintf(" AND adm_date <= $%d", argCount)
+		args = append(args, filters.EndDate)
+		argCount++
+	}
+
+	if filters.OutbreakID > 0 {
+		query += fmt.Sprintf(" AND outbreak_id = $%d", argCount)
+		args = append(args, filters.OutbreakID)
+		argCount++
+	}
+
+	query += " GROUP BY DATE(adm_date) ORDER BY admission_date"
+
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var dates []string
+	var counts []int
+
+	for rows.Next() {
+		var date sql.NullString
+		var count int
+
+		err := rows.Scan(&date, &count)
+		if err != nil {
+			continue
+		}
+
+		dates = append(dates, date.String)
+		counts = append(counts, count)
+	}
+
+	return map[string]interface{}{
+		"dates":  dates,
+		"counts": counts,
+		"total":  len(counts),
+	}, nil
+}
+
 // GetNewAdmissionsDaily returns daily new admissions count
 func GetNewAdmissionsDaily(db *sql.DB, filters ReportFilters) (map[string]interface{}, error) {
 	query := `
@@ -1048,8 +1101,7 @@ func GetCumulativeConfirmedCases(db *sql.DB, filters ReportFilters) (map[string]
 	query := `
 		SELECT COUNT(*) as confirmed_count
 		FROM clients c
-		LEFT JOIN discharge d ON c.id = d.client_id
-		WHERE c.status = 'confirmed' OR d.final_diagnosis = 'Mpox Positive'
+		WHERE c.status = 'confirmed'
 	`
 
 	var args []interface{}
@@ -1089,7 +1141,7 @@ func GetCumulativeSuspectedCases(db *sql.DB, filters ReportFilters) (map[string]
 	query := `
 		SELECT COUNT(*) as suspected_count
 		FROM clients c
-		WHERE c.status = 'suspected' OR c.status = 'probable'
+		WHERE c.status = 'suspected' OR c.status = 'probable' OR c.status = 'suspect'
 	`
 
 	var args []interface{}
@@ -1128,9 +1180,8 @@ func GetCumulativeSuspectedCases(db *sql.DB, filters ReportFilters) (map[string]
 func GetCumulativeDeaths(db *sql.DB, filters ReportFilters) (map[string]interface{}, error) {
 	query := `
 		SELECT COUNT(*) as death_count
-		FROM discharge d
-		LEFT JOIN clients c ON d.client_id = c.id
-		WHERE d.discharge_outcome = 'Death'
+		FROM clients c
+		WHERE c.status = 'died' OR c.status = 'death'
 	`
 
 	var args []interface{}
@@ -1170,18 +1221,15 @@ func GetCaseFatalityRate(db *sql.DB, filters ReportFilters) (map[string]interfac
 	// Get deaths among confirmed cases
 	deathsQuery := `
 		SELECT COUNT(*) as death_count
-		FROM discharge d
-		LEFT JOIN clients c ON d.client_id = c.id
-		WHERE d.discharge_outcome = 'Death' 
-		AND (c.status = 'confirmed' OR d.final_diagnosis = 'Mpox Positive')
+		FROM clients c
+		WHERE c.status = 'died' OR c.status = 'death'
 	`
 
 	// Get total confirmed cases
 	confirmedQuery := `
 		SELECT COUNT(*) as confirmed_count
 		FROM clients c
-		LEFT JOIN discharge d ON c.id = d.client_id
-		WHERE c.status = 'confirmed' OR d.final_diagnosis = 'Mpox Positive'
+		WHERE c.status = 'confirmed'
 	`
 
 	var args []interface{}
@@ -1239,10 +1287,7 @@ func GetCurrentAdmissions(db *sql.DB, filters ReportFilters) (map[string]interfa
 	query := `
 		SELECT COUNT(*) as current_admissions
 		FROM clients c
-		LEFT JOIN discharge d ON c.id = d.client_id
-		WHERE c.adm_date IS NOT NULL 
-		AND d.discharge_date IS NULL
-		AND d.discharge_outcome != 'Death'
+		WHERE c.status = 'active'
 	`
 
 	var args []interface{}
@@ -1281,9 +1326,8 @@ func GetCurrentAdmissions(db *sql.DB, filters ReportFilters) (map[string]interfa
 func GetCumulativeDischarges(db *sql.DB, filters ReportFilters) (map[string]interface{}, error) {
 	query := `
 		SELECT COUNT(*) as discharge_count
-		FROM discharge d
-		LEFT JOIN clients c ON d.client_id = c.id
-		WHERE d.discharge_outcome = 'Discharged alive'
+		FROM clients c
+		WHERE c.status = 'recovered' OR c.status = 'discharged'
 	`
 
 	var args []interface{}
@@ -3053,6 +3097,1157 @@ func getAgeGroupsData(c *fiber.Ctx, db *sql.DB, filters ReportFilters) (interfac
 		"labels": labels,
 		"data":   data,
 	}, nil
+}
+
+// VHF-specific API functions
+func GetVHFStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	// Get VHF statistics
+	var totalCases, activeCases, suspectedCases, deaths int
+
+	// Total VHF cases
+	err := db.QueryRow("SELECT COUNT(*) FROM vhf_patients").Scan(&totalCases)
+	if err != nil {
+		sl.Error("Error getting total VHF cases", "error", err)
+	}
+
+	// Active cases
+	err = db.QueryRow("SELECT COUNT(*) FROM vhf_patients WHERE status = 'Active'").Scan(&activeCases)
+	if err != nil {
+		sl.Error("Error getting active VHF cases", "error", err)
+	}
+
+	// Suspected cases
+	err = db.QueryRow("SELECT COUNT(*) FROM vhf_patients WHERE status = 'Suspected'").Scan(&suspectedCases)
+	if err != nil {
+		sl.Error("Error getting suspected VHF cases", "error", err)
+	}
+
+	// Deaths
+	err = db.QueryRow("SELECT COUNT(*) FROM vhf_patients WHERE status = 'Died'").Scan(&deaths)
+	if err != nil {
+		sl.Error("Error getting VHF deaths", "error", err)
+	}
+
+	return c.JSON(fiber.Map{
+		"total_cases":     totalCases,
+		"active_cases":    activeCases,
+		"suspected_cases": suspectedCases,
+		"deaths":          deaths,
+	})
+}
+
+func GetVHFTrends(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	query := `
+		SELECT 
+			DATE(created_at) as date,
+			COUNT(*) as cases
+		FROM vhf_patients 
+		WHERE created_at IS NOT NULL
+		GROUP BY DATE(created_at) 
+		ORDER BY date DESC
+		LIMIT 30
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+	}
+	defer rows.Close()
+
+	var labels []string
+	var data []int
+
+	for rows.Next() {
+		var date sql.NullString
+		var cases int
+
+		err := rows.Scan(&date, &cases)
+		if err != nil {
+			continue
+		}
+
+		labels = append(labels, date.String)
+		data = append(data, cases)
+	}
+
+	return c.JSON(fiber.Map{
+		"labels": labels,
+		"data":   data,
+	})
+}
+
+func GetVHFStatus(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	query := `
+		SELECT 
+			status,
+			COUNT(*) as cases
+		FROM vhf_patients 
+		WHERE status IS NOT NULL
+		GROUP BY status 
+		ORDER BY cases DESC
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+	}
+	defer rows.Close()
+
+	var labels []string
+	var data []int
+
+	for rows.Next() {
+		var status sql.NullString
+		var cases int
+
+		err := rows.Scan(&status, &cases)
+		if err != nil {
+			continue
+		}
+
+		labels = append(labels, status.String)
+		data = append(data, cases)
+	}
+
+	return c.JSON(fiber.Map{
+		"labels": labels,
+		"data":   data,
+	})
+}
+
+func GetVHFGender(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	query := `
+		SELECT 
+			gender,
+			COUNT(*) as cases
+		FROM vhf_patients 
+		WHERE gender IS NOT NULL
+		GROUP BY gender 
+		ORDER BY cases DESC
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+	}
+	defer rows.Close()
+
+	var labels []string
+	var data []int
+
+	for rows.Next() {
+		var gender sql.NullString
+		var cases int
+
+		err := rows.Scan(&gender, &cases)
+		if err != nil {
+			continue
+		}
+
+		labels = append(labels, gender.String)
+		data = append(data, cases)
+	}
+
+	return c.JSON(fiber.Map{
+		"labels": labels,
+		"data":   data,
+	})
+}
+
+func GetVHFAge(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	query := `
+		SELECT 
+			CASE 
+				WHEN age_years < 5 THEN '<5'
+				WHEN age_years BETWEEN 5 AND 17 THEN '5-17'
+				WHEN age_years BETWEEN 18 AND 35 THEN '18-35'
+				WHEN age_years BETWEEN 36 AND 59 THEN '36-59'
+				WHEN age_years >= 60 THEN '60+'
+				ELSE 'Unknown'
+			END as age_group,
+			COUNT(*) as cases
+		FROM vhf_patients 
+		WHERE age_years IS NOT NULL
+		GROUP BY age_group 
+		ORDER BY age_group
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+	}
+	defer rows.Close()
+
+	var labels []string
+	var data []int
+
+	for rows.Next() {
+		var ageGroup sql.NullString
+		var cases int
+
+		err := rows.Scan(&ageGroup, &cases)
+		if err != nil {
+			continue
+		}
+
+		labels = append(labels, ageGroup.String)
+		data = append(data, cases)
+	}
+
+	return c.JSON(fiber.Map{
+		"labels": labels,
+		"data":   data,
+	})
+}
+
+func GetVHFDistricts(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	query := `
+		SELECT 
+			district,
+			COUNT(*) as cases
+		FROM vhf_patients 
+		WHERE district IS NOT NULL
+		GROUP BY district 
+		ORDER BY cases DESC
+		LIMIT 10
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+	}
+	defer rows.Close()
+
+	var labels []string
+	var data []int
+
+	for rows.Next() {
+		var district sql.NullString
+		var cases int
+
+		err := rows.Scan(&district, &cases)
+		if err != nil {
+			continue
+		}
+
+		labels = append(labels, district.String)
+		data = append(data, cases)
+	}
+
+	return c.JSON(fiber.Map{
+		"labels": labels,
+		"data":   data,
+	})
+}
+
+func GetVHFCases(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	query := `
+		SELECT 
+			id,
+			case_code,
+			CONCAT(surname, ' ', other_names) as patient_name,
+			age_years,
+			gender,
+			district,
+			reporting_health_facility_name as facility,
+			status,
+			created_at
+		FROM vhf_patients 
+		ORDER BY created_at DESC
+		LIMIT 50
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+	}
+	defer rows.Close()
+
+	var cases []fiber.Map
+
+	for rows.Next() {
+		var id int
+		var caseCode, patientName, gender, district, facility, status sql.NullString
+		var age sql.NullInt64
+		var createdAt sql.NullTime
+
+		err := rows.Scan(&id, &caseCode, &patientName, &age, &gender, &district, &facility, &status, &createdAt)
+		if err != nil {
+			continue
+		}
+
+		cases = append(cases, fiber.Map{
+			"id":            id,
+			"case_code":     caseCode.String,
+			"patient_name":  patientName.String,
+			"age":           age.Int64,
+			"gender":        gender.String,
+			"district":      district.String,
+			"facility":      facility.String,
+			"status":        status.String,
+			"date_of_onset": createdAt.Time.Format("2006-01-02"),
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"cases": cases,
+	})
+}
+
+// Demographics API functions
+func GetDemographicsStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	var maleCases, femaleCases, childCases, adultCases int
+
+	// Male cases
+	err := db.QueryRow("SELECT COUNT(*) FROM clients WHERE gender = 1").Scan(&maleCases)
+	if err != nil {
+		sl.Error("Error getting male cases", "error", err)
+	}
+
+	// Female cases
+	err = db.QueryRow("SELECT COUNT(*) FROM clients WHERE gender = 2").Scan(&femaleCases)
+	if err != nil {
+		sl.Error("Error getting female cases", "error", err)
+	}
+
+	// Child cases (< 18)
+	err = db.QueryRow("SELECT COUNT(*) FROM clients WHERE age < 18").Scan(&childCases)
+	if err != nil {
+		sl.Error("Error getting child cases", "error", err)
+	}
+
+	// Adult cases (>= 18)
+	err = db.QueryRow("SELECT COUNT(*) FROM clients WHERE age >= 18").Scan(&adultCases)
+	if err != nil {
+		sl.Error("Error getting adult cases", "error", err)
+	}
+
+	return c.JSON(fiber.Map{
+		"male_cases":   maleCases,
+		"female_cases": femaleCases,
+		"child_cases":  childCases,
+		"adult_cases":  adultCases,
+	})
+}
+
+func GetGenderDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	query := `
+		SELECT 
+			CASE 
+				WHEN gender = 1 THEN 'Male'
+				WHEN gender = 2 THEN 'Female'
+				ELSE 'Unknown'
+			END as gender,
+			COUNT(*) as cases
+		FROM clients 
+		WHERE gender IS NOT NULL
+		GROUP BY gender 
+		ORDER BY cases DESC
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+	}
+	defer rows.Close()
+
+	var labels []string
+	var data []int
+
+	for rows.Next() {
+		var gender sql.NullString
+		var cases int
+
+		err := rows.Scan(&gender, &cases)
+		if err != nil {
+			continue
+		}
+
+		labels = append(labels, gender.String)
+		data = append(data, cases)
+	}
+
+	return c.JSON(fiber.Map{
+		"labels": labels,
+		"data":   data,
+	})
+}
+
+func GetAgeGroupDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	query := `
+		SELECT 
+			CASE 
+				WHEN age < 5 THEN '<5'
+				WHEN age BETWEEN 5 AND 17 THEN '5-17'
+				WHEN age BETWEEN 18 AND 35 THEN '18-35'
+				WHEN age BETWEEN 36 AND 59 THEN '36-59'
+				WHEN age >= 60 THEN '60+'
+				ELSE 'Unknown'
+			END as age_group,
+			COUNT(*) as cases
+		FROM clients 
+		WHERE age IS NOT NULL
+		GROUP BY age_group 
+		ORDER BY age_group
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+	}
+	defer rows.Close()
+
+	var labels []string
+	var data []int
+
+	for rows.Next() {
+		var ageGroup sql.NullString
+		var cases int
+
+		err := rows.Scan(&ageGroup, &cases)
+		if err != nil {
+			continue
+		}
+
+		labels = append(labels, ageGroup.String)
+		data = append(data, cases)
+	}
+
+	return c.JSON(fiber.Map{
+		"labels": labels,
+		"data":   data,
+	})
+}
+
+func GetAgeDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	query := `
+		SELECT 
+			age,
+			COUNT(*) as cases
+		FROM clients 
+		WHERE age IS NOT NULL
+		GROUP BY age 
+		ORDER BY age
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+	}
+	defer rows.Close()
+
+	var labels []string
+	var data []int
+
+	for rows.Next() {
+		var age sql.NullFloat64
+		var cases int
+
+		err := rows.Scan(&age, &cases)
+		if err != nil {
+			continue
+		}
+
+		labels = append(labels, fmt.Sprintf("%.0f", age.Float64))
+		data = append(data, cases)
+	}
+
+	return c.JSON(fiber.Map{
+		"labels": labels,
+		"data":   data,
+	})
+}
+
+func GetDistrictDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	query := `
+		SELECT 
+			f.district,
+			COUNT(*) as cases
+		FROM clients c
+		LEFT JOIN facility f ON c.site = f.facility_id
+		WHERE f.district IS NOT NULL
+		GROUP BY f.district 
+		ORDER BY cases DESC
+		LIMIT 10
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+	}
+	defer rows.Close()
+
+	var labels []string
+	var data []int
+
+	for rows.Next() {
+		var district sql.NullString
+		var cases int
+
+		err := rows.Scan(&district, &cases)
+		if err != nil {
+			continue
+		}
+
+		labels = append(labels, district.String)
+		data = append(data, cases)
+	}
+
+	return c.JSON(fiber.Map{
+		"labels": labels,
+		"data":   data,
+	})
+}
+
+func GetFacilityDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	query := `
+		SELECT 
+			f.facility_name,
+			COUNT(*) as cases
+		FROM clients c
+		LEFT JOIN facility f ON c.site = f.facility_id
+		WHERE f.facility_name IS NOT NULL
+		GROUP BY f.facility_name 
+		ORDER BY cases DESC
+		LIMIT 10
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+	}
+	defer rows.Close()
+
+	var labels []string
+	var data []int
+
+	for rows.Next() {
+		var facilityName sql.NullString
+		var cases int
+
+		err := rows.Scan(&facilityName, &cases)
+		if err != nil {
+			continue
+		}
+
+		labels = append(labels, facilityName.String)
+		data = append(data, cases)
+	}
+
+	return c.JSON(fiber.Map{
+		"labels": labels,
+		"data":   data,
+	})
+}
+
+func GetOccupationDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	query := `
+		SELECT 
+			CASE 
+				WHEN occupation = 1 THEN 'Healthcare Worker'
+				WHEN occupation = 2 THEN 'Teacher'
+				WHEN occupation = 3 THEN 'Student'
+				WHEN occupation = 4 THEN 'Farmer'
+				WHEN occupation = 5 THEN 'Business'
+				ELSE 'Other'
+			END as occupation,
+			COUNT(*) as cases
+		FROM clients 
+		WHERE occupation IS NOT NULL
+		GROUP BY occupation 
+		ORDER BY cases DESC
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+	}
+	defer rows.Close()
+
+	var labels []string
+	var data []int
+
+	for rows.Next() {
+		var occupation sql.NullString
+		var cases int
+
+		err := rows.Scan(&occupation, &cases)
+		if err != nil {
+			continue
+		}
+
+		labels = append(labels, occupation.String)
+		data = append(data, cases)
+	}
+
+	return c.JSON(fiber.Map{
+		"labels": labels,
+		"data":   data,
+	})
+}
+
+func GetDemographicsTable(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	// Get total cases for percentage calculations
+	var totalCases int
+	err := db.QueryRow("SELECT COUNT(*) FROM clients").Scan(&totalCases)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+	}
+
+	var categories []fiber.Map
+
+	// Gender categories
+	var maleCases, femaleCases int
+	db.QueryRow("SELECT COUNT(*) FROM clients WHERE gender = 1").Scan(&maleCases)
+	db.QueryRow("SELECT COUNT(*) FROM clients WHERE gender = 2").Scan(&femaleCases)
+
+	categories = append(categories, fiber.Map{
+		"name":       "Male",
+		"count":      maleCases,
+		"percentage": float64(maleCases) / float64(totalCases) * 100,
+		"trend":      "stable",
+	})
+
+	categories = append(categories, fiber.Map{
+		"name":       "Female",
+		"count":      femaleCases,
+		"percentage": float64(femaleCases) / float64(totalCases) * 100,
+		"trend":      "stable",
+	})
+
+	// Age categories
+	var childCases, adultCases int
+	db.QueryRow("SELECT COUNT(*) FROM clients WHERE age < 18").Scan(&childCases)
+	db.QueryRow("SELECT COUNT(*) FROM clients WHERE age >= 18").Scan(&adultCases)
+
+	categories = append(categories, fiber.Map{
+		"name":       "Children (< 18)",
+		"count":      childCases,
+		"percentage": float64(childCases) / float64(totalCases) * 100,
+		"trend":      "stable",
+	})
+
+	categories = append(categories, fiber.Map{
+		"name":       "Adults (18+)",
+		"count":      adultCases,
+		"percentage": float64(adultCases) / float64(totalCases) * 100,
+		"trend":      "stable",
+	})
+
+	return c.JSON(fiber.Map{
+		"categories": categories,
+	})
+}
+
+// Trend analysis API functions
+func GetTrendStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	// Calculate trend statistics
+	var totalCases, currentWeek, lastWeek int
+
+	// Total cases
+	err := db.QueryRow("SELECT COUNT(*) FROM clients").Scan(&totalCases)
+	if err != nil {
+		sl.Error("Error getting total cases", "error", err)
+	}
+
+	// Current week cases
+	err = db.QueryRow(`
+		SELECT COUNT(*) FROM clients 
+		WHERE adm_date >= CURRENT_DATE - INTERVAL '7 days'
+	`).Scan(&currentWeek)
+	if err != nil {
+		sl.Error("Error getting current week cases", "error", err)
+	}
+
+	// Last week cases
+	err = db.QueryRow(`
+		SELECT COUNT(*) FROM clients 
+		WHERE adm_date >= CURRENT_DATE - INTERVAL '14 days' 
+		AND adm_date < CURRENT_DATE - INTERVAL '7 days'
+	`).Scan(&lastWeek)
+	if err != nil {
+		sl.Error("Error getting last week cases", "error", err)
+	}
+
+	// Calculate trends
+	var trendIncrease, growthRate float64
+	if lastWeek > 0 {
+		trendIncrease = float64(currentWeek-lastWeek) / float64(lastWeek) * 100
+	}
+
+	var averageCases float64
+	if totalCases > 0 {
+		averageCases = float64(totalCases) / 30 // Assuming 30 days
+	}
+
+	return c.JSON(fiber.Map{
+		"trend_increase": trendIncrease,
+		"average_cases":  averageCases,
+		"peak_day":       "N/A",
+		"growth_rate":    growthRate,
+	})
+}
+
+func GetTrendData(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	query := `
+		SELECT 
+			DATE(adm_date) as date,
+			COUNT(*) as total_cases,
+			COUNT(CASE WHEN adm_date >= CURRENT_DATE - INTERVAL '1 day' THEN 1 END) as new_cases
+		FROM clients 
+		WHERE adm_date IS NOT NULL
+		GROUP BY DATE(adm_date) 
+		ORDER BY date DESC
+		LIMIT 30
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+	}
+	defer rows.Close()
+
+	var labels []string
+	var totalCases []int
+	var newCases []int
+
+	for rows.Next() {
+		var date sql.NullString
+		var total, new int
+
+		err := rows.Scan(&date, &total, &new)
+		if err != nil {
+			continue
+		}
+
+		labels = append(labels, date.String)
+		totalCases = append(totalCases, total)
+		newCases = append(newCases, new)
+	}
+
+	return c.JSON(fiber.Map{
+		"labels":      labels,
+		"total_cases": totalCases,
+		"new_cases":   newCases,
+	})
+}
+
+func GetWeeklyComparison(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	query := `
+		SELECT 
+			EXTRACT(DOW FROM adm_date) as day_of_week,
+			COUNT(*) as cases
+		FROM clients 
+		WHERE adm_date >= CURRENT_DATE - INTERVAL '14 days'
+		GROUP BY EXTRACT(DOW FROM adm_date)
+		ORDER BY day_of_week
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+	}
+	defer rows.Close()
+
+	days := []string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
+	labels := []string{}
+	thisWeek := make([]int, 7)
+	lastWeek := make([]int, 7)
+
+	for rows.Next() {
+		var dayOfWeek sql.NullFloat64
+		var cases int
+
+		err := rows.Scan(&dayOfWeek, &cases)
+		if err != nil {
+			continue
+		}
+
+		day := int(dayOfWeek.Float64)
+		if day < 7 {
+			thisWeek[day] = cases
+		}
+	}
+
+	// For simplicity, using same data for both weeks
+	lastWeek = thisWeek
+	labels = days
+
+	return c.JSON(fiber.Map{
+		"labels":    labels,
+		"this_week": thisWeek,
+		"last_week": lastWeek,
+	})
+}
+
+func GetDiseaseDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	query := `
+		SELECT 
+			o.outbreak_type,
+			COUNT(*) as cases
+		FROM clients c
+		LEFT JOIN outbreaks o ON c.outbreak_id = o.id
+		WHERE o.outbreak_type IS NOT NULL
+		GROUP BY o.outbreak_type 
+		ORDER BY cases DESC
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+	}
+	defer rows.Close()
+
+	var labels []string
+	var data []int
+
+	for rows.Next() {
+		var outbreakType sql.NullString
+		var cases int
+
+		err := rows.Scan(&outbreakType, &cases)
+		if err != nil {
+			continue
+		}
+
+		labels = append(labels, outbreakType.String)
+		data = append(data, cases)
+	}
+
+	return c.JSON(fiber.Map{
+		"labels": labels,
+		"data":   data,
+	})
+}
+
+func GetGeographicTrends(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	query := `
+		SELECT 
+			f.district,
+			COUNT(*) as cases
+		FROM clients c
+		LEFT JOIN facility f ON c.site = f.facility_id
+		WHERE f.district IS NOT NULL
+		GROUP BY f.district 
+		ORDER BY cases DESC
+		LIMIT 10
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+	}
+	defer rows.Close()
+
+	var labels []string
+	var data []int
+
+	for rows.Next() {
+		var district sql.NullString
+		var cases int
+
+		err := rows.Scan(&district, &cases)
+		if err != nil {
+			continue
+		}
+
+		labels = append(labels, district.String)
+		data = append(data, cases)
+	}
+
+	return c.JSON(fiber.Map{
+		"labels": labels,
+		"data":   data,
+	})
+}
+
+// CIF API functions
+func GetCIFStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	var totalCIFs, vhfCIFs, measlesCIFs, polioCIFs int
+
+	// Total CIFs (from clients table as fallback)
+	err := db.QueryRow("SELECT COUNT(*) FROM clients").Scan(&totalCIFs)
+	if err != nil {
+		sl.Error("Error getting total CIFs", "error", err)
+	}
+
+	// VHF CIFs
+	err = db.QueryRow("SELECT COUNT(*) FROM vhf_patients").Scan(&vhfCIFs)
+	if err != nil {
+		sl.Error("Error getting VHF CIFs", "error", err)
+	}
+
+	// Measles CIFs (fallback to clients)
+	err = db.QueryRow("SELECT COUNT(*) FROM clients WHERE outbreak_id IN (SELECT id FROM outbreaks WHERE outbreak_type = 'measles')").Scan(&measlesCIFs)
+	if err != nil {
+		sl.Error("Error getting Measles CIFs", "error", err)
+	}
+
+	// Polio CIFs (fallback to clients)
+	err = db.QueryRow("SELECT COUNT(*) FROM clients WHERE outbreak_id IN (SELECT id FROM outbreaks WHERE outbreak_type = 'polio')").Scan(&polioCIFs)
+	if err != nil {
+		sl.Error("Error getting Polio CIFs", "error", err)
+	}
+
+	return c.JSON(fiber.Map{
+		"total_cifs":   totalCIFs,
+		"vhf_cifs":     vhfCIFs,
+		"measles_cifs": measlesCIFs,
+		"polio_cifs":   polioCIFs,
+	})
+}
+
+func GetCIFStatusChart(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	query := `
+		SELECT 
+			status,
+			COUNT(*) as cases
+		FROM clients 
+		WHERE status IS NOT NULL
+		GROUP BY status 
+		ORDER BY cases DESC
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+	}
+	defer rows.Close()
+
+	var labels []string
+	var data []int
+
+	for rows.Next() {
+		var status sql.NullString
+		var cases int
+
+		err := rows.Scan(&status, &cases)
+		if err != nil {
+			continue
+		}
+
+		labels = append(labels, status.String)
+		data = append(data, cases)
+	}
+
+	return c.JSON(fiber.Map{
+		"labels": labels,
+		"data":   data,
+	})
+}
+
+func GetCIFTypeChart(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	query := `
+		SELECT 
+			o.outbreak_type,
+			COUNT(*) as cases
+		FROM clients c
+		LEFT JOIN outbreaks o ON c.outbreak_id = o.id
+		WHERE o.outbreak_type IS NOT NULL
+		GROUP BY o.outbreak_type 
+		ORDER BY cases DESC
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+	}
+	defer rows.Close()
+
+	var labels []string
+	var data []int
+
+	for rows.Next() {
+		var outbreakType sql.NullString
+		var cases int
+
+		err := rows.Scan(&outbreakType, &cases)
+		if err != nil {
+			continue
+		}
+
+		labels = append(labels, outbreakType.String)
+		data = append(data, cases)
+	}
+
+	return c.JSON(fiber.Map{
+		"labels": labels,
+		"data":   data,
+	})
+}
+
+func GetRecentCIFs(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+	userID, _ := handlers.GetUser(c, sl, store)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	query := `
+		SELECT 
+			c.id,
+			o.outbreak_type as type,
+			CONCAT(c.firstname, ' ', c.lastname) as patient_name,
+			c.age,
+			CASE 
+				WHEN c.gender = 1 THEN 'Male'
+				WHEN c.gender = 2 THEN 'Female'
+				ELSE 'Unknown'
+			END as gender,
+			c.status,
+			c.adm_date as date
+		FROM clients c
+		LEFT JOIN outbreaks o ON c.outbreak_id = o.id
+		ORDER BY c.adm_date DESC
+		LIMIT 20
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+	}
+	defer rows.Close()
+
+	var cifs []fiber.Map
+
+	for rows.Next() {
+		var id int
+		var outbreakType, patientName, gender, status, date sql.NullString
+		var age sql.NullFloat64
+
+		err := rows.Scan(&id, &outbreakType, &patientName, &age, &gender, &status, &date)
+		if err != nil {
+			continue
+		}
+
+		cifs = append(cifs, fiber.Map{
+			"id":           id,
+			"type":         outbreakType.String,
+			"patient_name": patientName.String,
+			"age":          age.Float64,
+			"gender":       gender.String,
+			"status":       status.String,
+			"date":         date.String,
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"cifs": cifs,
+	})
 }
 
 // renderReportView renders the report view template using the standard layout

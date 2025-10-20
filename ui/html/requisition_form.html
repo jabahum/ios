@@ -1,0 +1,269 @@
+{{ define "content" }}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="/home">Home</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management">Resource Management</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management/requisitions">Requisitions</a></li>
+                        <li class="breadcrumb-item active">{{if .Requisition}}Edit Requisition{{else}}Create Requisition{{end}}</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">{{if .Requisition}}Edit Requisition{{else}}Create New Requisition{{end}}</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Requisition Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="/resource-management/requisitions/save" id="requisitionForm">
+                        {{if .Requisition}}<input type="hidden" name="id" value="{{.Requisition.ID}}">{{end}}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="requisition_number" class="form-label">Requisition Number</label>
+                                    <input type="text" class="form-control" id="requisition_number" name="requisition_number" 
+                                           value="{{if .Requisition}}{{.Requisition.RequisitionNumber}}{{else}}REQ-{{now.Format "20060102"}}-{{now.Format "150405"}}{{end}}" readonly>
+                                    <div class="form-text">Auto-generated requisition number</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="outbreak_id" class="form-label">Outbreak <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="outbreak_id" name="outbreak_id" required>
+                                        <option value="">Select Outbreak</option>
+                                        {{range .Outbreaks}}
+                                        <option value="{{.ID}}" {{if and $.Requisition (eq $.Requisition.OutbreakID .ID)}}selected{{end}}>
+                                            {{if .Name.Valid}}{{.Name.String}}{{else}}Outbreak {{.ID}}{{end}}{{if .Description.Valid}} - {{.Description.String}}{{end}}
+                                        </option>
+                                        {{end}}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="deployment_id" class="form-label">Associated Deployment</label>
+                                    <select class="form-select" id="deployment_id" name="deployment_id">
+                                        <option value="">Select Deployment (Optional)</option>
+                                        {{range .RRTDeployments}}
+                                        <option value="{{.ID}}" {{if and $.Requisition $.Requisition.DeploymentID.Valid (eq $.Requisition.DeploymentID.Int64 .ID)}}selected{{end}}>
+                                            {{if .Team}}{{.Team.TeamName}}{{else}}Unknown Team{{end}} - {{.DeploymentDate.Format "Jan 2, 2006"}}
+                                        </option>
+                                        {{end}}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="priority" class="form-label">Priority <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="priority" name="priority" required>
+                                        <option value="">Select Priority</option>
+                                        <option value="low" {{if and .Requisition (eq .Requisition.Priority "low")}}selected{{end}}>Low</option>
+                                        <option value="normal" {{if and .Requisition (eq .Requisition.Priority "normal")}}selected{{end}}>Normal</option>
+                                        <option value="high" {{if and .Requisition (eq .Requisition.Priority "high")}}selected{{end}}>High</option>
+                                        <option value="urgent" {{if and .Requisition (eq .Requisition.Priority "urgent")}}selected{{end}}>Urgent</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="required_date" class="form-label">Required Date</label>
+                                    <input type="date" class="form-control" id="required_date" name="required_date" 
+                                           value="{{if and .Requisition .Requisition.RequiredDate.Valid}}{{.Requisition.RequiredDate.Time.Format "2006-01-02"}}{{end}}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="status" class="form-label">Status</label>
+                                    <select class="form-select" id="status" name="status">
+                                        <option value="pending" {{if not .Requisition}}selected{{else if eq .Requisition.Status "pending"}}selected{{end}}>Pending</option>
+                                        <option value="approved" {{if and .Requisition (eq .Requisition.Status "approved")}}selected{{end}}>Approved</option>
+                                        <option value="rejected" {{if and .Requisition (eq .Requisition.Status "rejected")}}selected{{end}}>Rejected</option>
+                                        <option value="dispatched" {{if and .Requisition (eq .Requisition.Status "dispatched")}}selected{{end}}>Dispatched</option>
+                                        <option value="completed" {{if and .Requisition (eq .Requisition.Status "completed")}}selected{{end}}>Completed</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="4" 
+                                      placeholder="Additional notes about the requisition...">{{if and .Requisition .Requisition.Notes.Valid}}{{.Requisition.Notes.String}}{{end}}</textarea>
+                        </div>
+
+                        <!-- Resource Items Section -->
+                        <div class="mb-4">
+                            <h6 class="mb-3">Requested Resources</h6>
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="resourceItemsTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Resource</th>
+                                            <th>Quantity</th>
+                                            <th>Unit Cost</th>
+                                            <th>Notes</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <select class="form-select resource-select" name="resource_id[]">
+                                                    <option value="">Select Resource</option>
+                                                    {{range .Resources}}
+                                                    <option value="{{.ID}}">{{.Name}} ({{.UnitOfMeasure}})</option>
+                                                    {{end}}
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <input type="number" class="form-control" name="quantity_requested[]" min="0" step="0.01" placeholder="0">
+                                            </td>
+                                            <td>
+                                                <input type="number" class="form-control" name="unit_cost[]" min="0" step="0.01" placeholder="0.00">
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control" name="item_notes[]" placeholder="Notes">
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeResourceRow(this)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="addResourceRow()">
+                                <i class="fas fa-plus me-2"></i>Add Resource
+                            </button>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="/resource-management/requisitions" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Requisitions
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>{{if .Requisition}}Update Requisition{{else}}Create Requisition{{end}}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Requisition Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Requisition Process</h6>
+                        <ul class="mb-0">
+                            <li>Select appropriate outbreak and deployment</li>
+                            <li>Set realistic priority and required date</li>
+                            <li>Add all required resources with quantities</li>
+                            <li>Provide clear notes for approval process</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Important Notes</h6>
+                        <ul class="mb-0">
+                            <li>Requisition numbers are auto-generated</li>
+                            <li>High priority requests get faster processing</li>
+                            <li>Required date helps with planning</li>
+                            <li>Approval workflow depends on priority</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">Priority Guidelines</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <span class="badge bg-danger me-2">Urgent</span>
+                                <small>Life-threatening situations</small>
+                            </div>
+                            <div class="mb-2">
+                                <span class="badge bg-warning me-2">High</span>
+                                <small>Critical outbreak response</small>
+                            </div>
+                            <div class="mb-2">
+                                <span class="badge bg-info me-2">Normal</span>
+                                <small>Standard operations</small>
+                            </div>
+                            <div class="mb-0">
+                                <span class="badge bg-secondary me-2">Low</span>
+                                <small>Non-urgent requests</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Set default required date to 3 days from now
+    if (!$('#required_date').val()) {
+        var futureDate = new Date();
+        futureDate.setDate(futureDate.getDate() + 3);
+        $('#required_date').val(futureDate.toISOString().split('T')[0]);
+    }
+});
+
+function addResourceRow() {
+    var table = $('#resourceItemsTable tbody');
+    var newRow = `
+        <tr>
+            <td>
+                <select class="form-select resource-select" name="resource_id[]">
+                    <option value="">Select Resource</option>
+                    {{range .Resources}}
+                    <option value="{{.ID}}">{{.Name}} ({{.UnitOfMeasure}})</option>
+                    {{end}}
+                </select>
+            </td>
+            <td>
+                <input type="number" class="form-control" name="quantity_requested[]" min="0" step="0.01" placeholder="0">
+            </td>
+            <td>
+                <input type="number" class="form-control" name="unit_cost[]" min="0" step="0.01" placeholder="0.00">
+            </td>
+            <td>
+                <input type="text" class="form-control" name="item_notes[]" placeholder="Notes">
+            </td>
+            <td>
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeResourceRow(this)">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `;
+    table.append(newRow);
+}
+
+function removeResourceRow(button) {
+    $(button).closest('tr').remove();
+}
+</script>
+{{ end }}

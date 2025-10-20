@@ -1139,37 +1139,86 @@ func HandlerVHFList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 		return c.Status(500).SendString("Failed to check user permissions")
 	}
 
-	// If user has role ID 65, check their facility assignment (unless admin)
-	if roleCount > 0 && !isAdmin {
-		// First try AFI facility string (preferred)
+	// Check if user has any VHF-related roles or regional/district assignments
+	hasVHFRole := roleCount > 0
+
+	// Also check if user has regional/district assignments (even without role 65)
+	var hasRegionalAssignment bool
+	regionalQuery := `
+		SELECT COUNT(*) FROM employee e
+		JOIN users u ON e.employee_id = u.user_employee
+		WHERE u.user_id = $1 AND (
+			(e.afi_region IS NOT NULL AND e.afi_region != '') OR 
+			(e.afi_district IS NOT NULL AND e.afi_district != '') OR
+			(e.afi_facility IS NOT NULL AND e.afi_facility != '')
+		)
+	`
+	var regionalCount int
+	err = db.QueryRowContext(c.Context(), regionalQuery, userID).Scan(&regionalCount)
+	if err != nil {
+		sl.Error("Failed to check user regional assignments", "error", err)
+	}
+	hasRegionalAssignment = regionalCount > 0
+
+	// Apply filtering if user has VHF role OR regional/district assignments (unless admin)
+	if (hasVHFRole || hasRegionalAssignment) && !isAdmin {
+		// Get user's AFI facility, region, and district directly from employee table
 		afiQuery := `
-			SELECT e.afi_facility
+			SELECT e.afi_facility, e.afi_region, e.afi_district
 			FROM employee e
 			JOIN users u ON e.employee_id = u.user_employee
 			WHERE u.user_id = $1
 			LIMIT 1
 		`
-		var userAFIFacility sql.NullString
-		err := db.QueryRowContext(c.Context(), afiQuery, userID).Scan(&userAFIFacility)
+		var userAFIFacility, userAFIRegion, userAFIDistrict sql.NullString
+		err := db.QueryRowContext(c.Context(), afiQuery, userID).Scan(&userAFIFacility, &userAFIRegion, &userAFIDistrict)
 		if err != nil && err != sql.ErrNoRows {
-			sl.Error("Failed to get user AFI facility", "error", err)
+			sl.Error("Failed to get user AFI facility/region/district", "error", err)
 			return c.Status(500).SendString("Failed to get user facility information")
 		}
 
+		// Build filter based on what's available
+		filterConditions := []string{}
+		paramIndex := 1
+
 		if userAFIFacility.Valid && userAFIFacility.String != "" {
-			facilityFilter = "AND LOWER(TRIM(vc.reporting_health_facility_name)) = LOWER(TRIM($1))"
+			// First priority: exact facility match
+			filterConditions = append(filterConditions, fmt.Sprintf("LOWER(TRIM(vc.reporting_health_facility_name)) = LOWER(TRIM($%d))", paramIndex))
 			args = append(args, userAFIFacility.String)
+			paramIndex++
 			sl.Info("Filtering VHF cases by AFI facility name", "user_id", userID, "afi_facility", userAFIFacility.String)
+		}
+
+		if userAFIDistrict.Valid && userAFIDistrict.String != "" {
+			// Second priority: same district
+			filterConditions = append(filterConditions, fmt.Sprintf("LOWER(TRIM(vc.district)) = LOWER(TRIM($%d))", paramIndex))
+			args = append(args, userAFIDistrict.String)
+			paramIndex++
+			sl.Info("Filtering VHF cases by AFI district", "user_id", userID, "afi_district", userAFIDistrict.String)
+		}
+
+		if userAFIRegion.Valid && userAFIRegion.String != "" {
+			// Third priority: same region - simplified logic
+			filterConditions = append(filterConditions, fmt.Sprintf("EXISTS (SELECT 1 FROM afi_facilities af WHERE LOWER(TRIM(af.facility_name)) = LOWER(TRIM(vc.reporting_health_facility_name)) AND LOWER(TRIM(af.region)) = LOWER(TRIM($%d)))", paramIndex))
+			args = append(args, userAFIRegion.String)
+			paramIndex++
+			sl.Info("Filtering VHF cases by AFI region", "user_id", userID, "afi_region", userAFIRegion.String)
+		}
+
+		if len(filterConditions) > 0 {
+			facilityFilter = "AND (" + strings.Join(filterConditions, " OR ") + ")"
+			sl.Info("Applied VHF filtering", "user_id", userID, "conditions", len(filterConditions), "filter", facilityFilter)
 		} else {
-			// Strict requirement: no AFI facility set => no records
+			// Strict requirement: no AFI facility/region/district set => no records
 			facilityFilter = "AND 1 = 0"
-			sl.Info("vhf_lab_technician without AFI facility; no VHF records will be shown", "user_id", userID)
+			sl.Info("User without AFI facility/region/district; no VHF records will be shown", "user_id", userID)
 		}
 	} else {
 		if isAdmin {
 			sl.Info("Admin user - bypassing facility filter for VHF list", "user_id", userID)
+		} else {
+			sl.Info("User without VHF role or regional assignments - showing all VHF cases", "user_id", userID)
 		}
-		sl.Info("User does not have role 65, showing all VHF cases", "user_id", userID)
 	}
 
 	// Build the query with optional facility filtering

@@ -57,6 +57,36 @@ func (s *UserService) GetAllUsers() ([]*User, error) {
 	return users, nil
 }
 
+// GetAllEnhancedUsers gets all enhanced users
+func (s *UserService) GetAllEnhancedUsers() ([]*EnhancedUser, error) {
+	query := `SELECT user_id, user_name, user_pass, user_employee, email, first_name, last_name, 
+	          password_hash, password_salt, is_active, is_locked, failed_login_attempts, 
+	          last_login_at, password_changed_at, password_expires_at, department_id, 
+	          created_at, updated_at, created_by, updated_by 
+	          FROM users ORDER BY first_name, last_name`
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []*EnhancedUser
+	for rows.Next() {
+		user := &EnhancedUser{}
+		err := rows.Scan(&user.UserID, &user.UserName, &user.UserPass, &user.UserEmployee,
+			&user.Email, &user.FirstName, &user.LastName, &user.PasswordHash, &user.PasswordSalt,
+			&user.IsActive, &user.IsLocked, &user.FailedLoginAttempts, &user.LastLoginAt,
+			&user.PasswordChangedAt, &user.PasswordExpiresAt, &user.DepartmentID,
+			&user.CreatedAt, &user.UpdatedAt, &user.CreatedBy, &user.UpdatedBy)
+		if err != nil {
+			return nil, err
+		}
+		user.SetAsExists()
+		users = append(users, user)
+	}
+	return users, nil
+}
+
 // UpdatePassword updates a user's password
 func (s *UserService) UpdatePassword(userID int64, passwordHash, passwordSalt string) error {
 	query := `UPDATE users SET user_pass = $1 WHERE user_id = $2`

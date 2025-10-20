@@ -1,0 +1,28 @@
+{
+  "Port": ":8080",
+  "ReadTimeout": 30,
+  "WriteTimeout": 30,
+  "Static": "ui/static",
+  "Ux": "postgres",
+  "Px": "pwaiswa",
+  "Dx": "ios",
+  "LogFile": "app.log",
+  "LogData": "data.log",
+  "Facility": "1",
+  "SMSUser": "case_management",
+  "SMSPassword": "C@s3mgt@2025",
+  "SMSURL": "https://dispatcher2-mtracpro.health.go.ug",
+  "DHIS2API": {
+    "BaseURL": "https://eidsr.health.go.ug/api",
+    "Username": "pwaiswa",
+    "Password": "Waiswa@2020"
+  },
+  "Database": {
+    "Host": "localhost",
+    "Port": 5432,
+    "User": "postgres",
+    "Password": "pwaiswa",
+    "DBName": "ios",
+    "SSLMode": "disable"
+  }
+} 

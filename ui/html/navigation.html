@@ -117,6 +117,30 @@
                             <span class="nav-tree-text">Facility Mortality Surveillance</span>
                         </div>
                     </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/surveillance/home_based_care">
+                            <i class="nav-tree-icon fas fa-home"></i>
+                            <span class="nav-tree-text">Home Based Care Surveillance</span> 
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/surveillance/points_of_entry">
+                            <i class="nav-tree-icon fas fa-home"></i>
+                            <span class="nav-tree-text">Points of Entry Surveillance</span> 
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/surveillance/contact_tracing">
+                            <i class="nav-tree-icon fas fa-home"></i>
+                            <span class="nav-tree-text">Contact Tracing Surveillance</span> 
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/surveillance/active_case_search">
+                            <i class="nav-tree-icon fas fa-home"></i>
+                            <span class="nav-tree-text">Active Case Search</span> 
+                        </div>
+                    </li>
                 </ul>
             </li>
             {{end}}
@@ -243,7 +267,15 @@
                 </div>
             </li>
             {{end}}
-
+            <!-- RBAC Dashboard -->
+            {{if hasPermission .UserPermissions "users" "read"}}
+            <li class="nav-tree-item">
+                <div class="nav-tree-node" data-path="/rbac-dashboard">
+                    <i class="nav-tree-icon fas fa-shield-alt"></i>
+                    <span class="nav-tree-text">Roles and Permissions Management</span>
+                </div>
+            </li>
+            {{end}}
             <!-- Facilities Section -->
             {{if hasPermission .UserPermissions "facilities" "read"}}
             <li class="nav-tree-item">
@@ -254,15 +286,7 @@
             </li>
             {{end}}
 
-            <!-- RBAC Dashboard -->
-            {{if hasPermission .UserPermissions "rbac" "read"}}
-            <li class="nav-tree-item">
-                <div class="nav-tree-node" data-path="/rbac-dashboard">
-                    <i class="nav-tree-icon fas fa-shield-alt"></i>
-                    <span class="nav-tree-text">RBAC Dashboard</span>
-                </div>
-            </li>
-            {{end}}
+           
 
             <!-- Inventory Section -->
             {{if hasPermission .UserPermissions "inventory" "read"}}
@@ -319,6 +343,91 @@
                         <div class="nav-tree-node" data-path="/inventory/reports">
                             <i class="nav-tree-icon fas fa-chart-bar"></i>
                             <span class="nav-tree-text">Inventory Reports</span>
+                        </div>
+                    </li>
+                </ul>
+            </li>
+            {{end}}
+
+            <!-- Resource Management Section -->
+            {{if hasPermission .UserPermissions "admin" "read"}}
+            <li class="nav-tree-item">
+                <div class="nav-tree-node nav-tree-parent" data-path="/resource-management">
+                    <i class="nav-tree-icon fas fa-tools"></i>
+                    <span class="nav-tree-text">Resource Management</span>
+                    <i class="nav-tree-toggle fas fa-chevron-right"></i>
+                </div>
+                <ul class="nav-tree-children">
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/resource-management">
+                            <i class="nav-tree-icon fas fa-tachometer-alt"></i>
+                            <span class="nav-tree-text">Dashboard</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/resource-management/pillars">
+                            <i class="nav-tree-icon fas fa-building"></i>
+                            <span class="nav-tree-text">Pillars</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/resource-management/rrt-teams">
+                            <i class="nav-tree-icon fas fa-users"></i>
+                            <span class="nav-tree-text">RRT Teams</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/resource-management/rrt-team-members">
+                            <i class="nav-tree-icon fas fa-user-plus"></i>
+                            <span class="nav-tree-text">Team Members</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/resource-management/rrt-deployments">
+                            <i class="nav-tree-icon fas fa-truck"></i>
+                            <span class="nav-tree-text">Deployments</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/resource-management/deployment-proposals">
+                            <i class="nav-tree-icon fas fa-clipboard"></i>
+                            <span class="nav-tree-text">Deployment Proposals</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/resource-management/resources">
+                            <i class="nav-tree-icon fas fa-boxes"></i>
+                            <span class="nav-tree-text">Resources</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/resource-management/requisitions">
+                            <i class="nav-tree-icon fas fa-clipboard-list"></i>
+                            <span class="nav-tree-text">Requisitions</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/resource-management/field-role-assignments">
+                            <i class="nav-tree-icon fas fa-user-check"></i>
+                            <span class="nav-tree-text">Field Role Assignments</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/resource-management/deployment-extensions">
+                            <i class="nav-tree-icon fas fa-clock"></i>
+                            <span class="nav-tree-text">Deployment Extensions</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/resource-management/activity-logs">
+                            <i class="nav-tree-icon fas fa-activity"></i>
+                            <span class="nav-tree-text">Activity Logs</span>
+                        </div>
+                    </li>
+                    <li class="nav-tree-item">
+                        <div class="nav-tree-node" data-path="/resource-management/sitrep">
+                            <i class="nav-tree-icon fas fa-file-alt"></i>
+                            <span class="nav-tree-text">SitRep Generation</span>
                         </div>
                     </li>
                 </ul>

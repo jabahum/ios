@@ -1,0 +1,196 @@
+{{ define "content" }}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="/resource-management">Resource Management</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management/rrt-team-members">Team Members</a></li>
+                        <li class="breadcrumb-item active">Team Member Assignments</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">RRT Team Member Assignments</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-users me-2"></i>Team Member Assignments
+                            </h5>
+                        </div>
+                        <div class="col-auto">
+                            <a href="/resource-management/rrt-team-member-assignments/new" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i>New Assignment
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {{if .RRTTeamMemberAssignments}}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Team</th>
+                                    <th>Member</th>
+                                    <th>Role</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Status</th>
+                                    <th>Notes</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{range .RRTTeamMemberAssignments}}
+                                <tr>
+                                    <td>
+                                        {{if .Team}}
+                                            <strong>{{.Team.Name}}</strong>
+                                            {{if .Team.OutbreakID.Valid}}
+                                                <br><small class="text-muted">Outbreak: {{.Team.OutbreakID.Int64}}</small>
+                                            {{end}}
+                                        {{else}}
+                                            <span class="text-muted">No team assigned</span>
+                                        {{end}}
+                                    </td>
+                                    <td>
+                                        {{if .Member}}
+                                            <div>
+                                                <strong>{{.Member.FirstName}} {{.Member.LastName}}</strong>
+                                            </div>
+                                            {{if .Member.Email.Valid}}
+                                                <div class="small text-muted">
+                                                    <i class="fas fa-envelope me-1"></i>{{.Member.Email.String}}
+                                                </div>
+                                            {{end}}
+                                        {{else}}
+                                            <span class="text-muted">No member assigned</span>
+                                        {{end}}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{.Role}}</span>
+                                    </td>
+                                    <td>
+                                        <i class="fas fa-calendar me-1"></i>{{.StartDate.Format "2006-01-02"}}
+                                    </td>
+                                    <td>
+                                        {{if .EndDate.Valid}}
+                                            <i class="fas fa-calendar me-1"></i>{{.EndDate.Time.Format "2006-01-02"}}
+                                        {{else}}
+                                            <span class="text-muted">Ongoing</span>
+                                        {{end}}
+                                    </td>
+                                    <td>
+                                        {{if .IsActive}}
+                                            <span class="badge bg-success">Active</span>
+                                        {{else}}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {{end}}
+                                    </td>
+                                    <td>
+                                        {{if .AssignmentNotes.Valid}}
+                                            {{if gt (len .AssignmentNotes.String) 50}}
+                                                {{printf "%.47s..." .AssignmentNotes.String}}
+                                            {{else}}
+                                                {{.AssignmentNotes.String}}
+                                            {{end}}
+                                        {{else}}
+                                            <span class="text-muted">No notes</span>
+                                        {{end}}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="/resource-management/rrt-team-member-assignments/edit/{{.ID}}" 
+                                               class="btn btn-sm btn-outline-primary" title="Edit Assignment">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            {{if .IsActive}}
+                                                <button type="button" class="btn btn-sm btn-outline-warning" 
+                                                        onclick="deactivateAssignment({{.ID}})" title="Deactivate">
+                                                    <i class="fas fa-pause"></i>
+                                                </button>
+                                            {{else}}
+                                                <button type="button" class="btn btn-sm btn-outline-success" 
+                                                        onclick="activateAssignment({{.ID}})" title="Activate">
+                                                    <i class="fas fa-play"></i>
+                                                </button>
+                                            {{end}}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+                    {{else}}
+                    <div class="text-center py-5">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Team Member Assignments Found</h5>
+                        <p class="text-muted">Start by creating a new team member assignment.</p>
+                        <a href="/resource-management/rrt-team-member-assignments/new" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Create First Assignment
+                        </a>
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function deactivateAssignment(assignmentId) {
+    if (confirm('Are you sure you want to deactivate this assignment?')) {
+        fetch(`/resource-management/rrt-team-member-assignments/${assignmentId}/deactivate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error deactivating assignment: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deactivating assignment');
+        });
+    }
+}
+
+function activateAssignment(assignmentId) {
+    if (confirm('Are you sure you want to activate this assignment?')) {
+        fetch(`/resource-management/rrt-team-member-assignments/${assignmentId}/activate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error activating assignment: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error activating assignment');
+        });
+    }
+}
+</script>
+{{ end }}

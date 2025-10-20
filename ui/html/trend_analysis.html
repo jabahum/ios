@@ -1,0 +1,412 @@
+{{define "content"}}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Reports Navigation Sidebar -->
+        <div class="col-md-3 col-lg-2">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Reports
+                        <button class="btn btn-sm btn-outline-secondary float-end" onclick="toggleSidebar()">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <nav class="nav flex-column">
+                        <div class="nav-item">
+                            <a class="nav-link" href="/reports/dashboard">
+                                <i class="fas fa-home me-2"></i>Reports Dashboard
+                            </a>
+                        </div>
+                        <div class="nav-item">
+                            <a class="nav-link" href="/reports/cif-dashboard">
+                                <i class="fas fa-file-alt me-2"></i>CIF Dashboard
+                            </a>
+                        </div>
+                        <div class="nav-item">
+                            <a class="nav-link active" href="/reports/trend-analysis">
+                                <i class="fas fa-chart-line me-2"></i>Trend Analysis
+                            </a>
+                        </div>
+                        <div class="nav-item">
+                            <a class="nav-link" href="/reports/demographics">
+                                <i class="fas fa-users me-2"></i>Demographics
+                            </a>
+                        </div>
+                        <div class="nav-item">
+                            <a class="nav-link" href="/reports/outcome-analysis">
+                                <i class="fas fa-chart-pie me-2"></i>Outcome Analysis
+                            </a>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content Area -->
+        <div class="col-md-9 col-lg-10">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Trend Analysis
+                        <span class="badge bg-info ms-2">Time Series Analysis</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Trend Analysis Controls -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <label class="form-label">Time Period</label>
+                            <select class="form-select" id="timePeriod" onchange="updateTrends()">
+                                <option value="7">Last 7 Days</option>
+                                <option value="30" selected>Last 30 Days</option>
+                                <option value="90">Last 90 Days</option>
+                                <option value="365">Last Year</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Disease Type</label>
+                            <select class="form-select" id="diseaseType" onchange="updateTrends()">
+                                <option value="all">All Diseases</option>
+                                <option value="vhf">VHF</option>
+                                <option value="measles">Measles</option>
+                                <option value="polio">Polio</option>
+                                <option value="mpox">Mpox</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Geographic Level</label>
+                            <select class="form-select" id="geoLevel" onchange="updateTrends()">
+                                <option value="national">National</option>
+                                <option value="regional">Regional</option>
+                                <option value="district">District</option>
+                                <option value="facility">Facility</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Chart Type</label>
+                            <select class="form-select" id="chartType" onchange="updateTrends()">
+                                <option value="line">Line Chart</option>
+                                <option value="bar">Bar Chart</option>
+                                <option value="area">Area Chart</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Main Trend Chart -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Case Trends Over Time</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="mainTrendChart" height="400"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Comparative Analysis -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Weekly Comparison</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="weeklyComparisonChart" height="300"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Disease Distribution</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="diseaseDistributionChart" height="300"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Geographic Trends -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Geographic Trends</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="geographicTrendsChart" height="300"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Trend Statistics -->
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-arrow-up fa-2x mb-2"></i>
+                                    <h4 id="trendIncrease">-</h4>
+                                    <p class="mb-0">% Increase</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-chart-line fa-2x mb-2"></i>
+                                    <h4 id="averageCases">-</h4>
+                                    <p class="mb-0">Avg Daily Cases</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-calendar fa-2x mb-2"></i>
+                                    <h4 id="peakDay">-</h4>
+                                    <p class="mb-0">Peak Day</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-trending-up fa-2x mb-2"></i>
+                                    <h4 id="growthRate">-</h4>
+                                    <p class="mb-0">Growth Rate</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let mainTrendChart = null;
+    let weeklyComparisonChart = null;
+    let diseaseDistributionChart = null;
+    let geographicTrendsChart = null;
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+        loadTrendStats();
+        initializeTrendCharts();
+    });
+
+    function toggleSidebar() {
+        const sidebar = document.querySelector('.col-md-3');
+        sidebar.classList.toggle('d-none');
+    }
+
+    function loadTrendStats() {
+        fetch('/reports/trend-stats')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('trendIncrease').textContent = (data.trend_increase || 0) + '%';
+                document.getElementById('averageCases').textContent = data.average_cases || 0;
+                document.getElementById('peakDay').textContent = data.peak_day || 'N/A';
+                document.getElementById('growthRate').textContent = (data.growth_rate || 0) + '%';
+            })
+            .catch(error => {
+                console.error('Error loading trend stats:', error);
+            });
+    }
+
+    function initializeTrendCharts() {
+        // Main Trend Chart
+        fetch('/reports/trend-data')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('mainTrendChart').getContext('2d');
+                mainTrendChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels || [],
+                        datasets: [{
+                            label: 'Total Cases',
+                            data: data.total_cases || [],
+                            borderColor: 'rgb(75, 192, 192)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                            tension: 0.1
+                        }, {
+                            label: 'New Cases',
+                            data: data.new_cases || [],
+                            borderColor: 'rgb(255, 99, 132)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error loading trend data:', error);
+            });
+
+        // Weekly Comparison Chart
+        fetch('/reports/weekly-comparison')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('weeklyComparisonChart').getContext('2d');
+                weeklyComparisonChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.labels || [],
+                        datasets: [{
+                            label: 'This Week',
+                            data: data.this_week || [],
+                            backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }, {
+                            label: 'Last Week',
+                            data: data.last_week || [],
+                            backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error loading weekly comparison:', error);
+            });
+
+        // Disease Distribution Chart
+        fetch('/reports/disease-distribution')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('diseaseDistributionChart').getContext('2d');
+                diseaseDistributionChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.labels || ['No Data'],
+                        datasets: [{
+                            data: data.data || [0],
+                            backgroundColor: [
+                                'rgb(75, 192, 192)',
+                                'rgb(255, 205, 86)',
+                                'rgb(255, 99, 132)',
+                                'rgb(54, 162, 235)',
+                                'rgb(153, 102, 255)'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error loading disease distribution:', error);
+            });
+
+        // Geographic Trends Chart
+        fetch('/reports/geographic-trends')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('geographicTrendsChart').getContext('2d');
+                geographicTrendsChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.labels || ['No Data'],
+                        datasets: [{
+                            label: 'Cases by Location',
+                            data: data.data || [0],
+                            backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error loading geographic trends:', error);
+            });
+    }
+
+    function updateTrends() {
+        const timePeriod = document.getElementById('timePeriod').value;
+        const diseaseType = document.getElementById('diseaseType').value;
+        const geoLevel = document.getElementById('geoLevel').value;
+        const chartType = document.getElementById('chartType').value;
+
+        // Update main trend chart
+        if (mainTrendChart) {
+            mainTrendChart.destroy();
+        }
+
+        fetch(`/reports/trend-data?period=${timePeriod}&disease=${diseaseType}&geo=${geoLevel}&type=${chartType}`)
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('mainTrendChart').getContext('2d');
+                mainTrendChart = new Chart(ctx, {
+                    type: chartType,
+                    data: {
+                        labels: data.labels || [],
+                        datasets: [{
+                            label: 'Total Cases',
+                            data: data.total_cases || [],
+                            borderColor: 'rgb(75, 192, 192)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                            tension: 0.1
+                        }, {
+                            label: 'New Cases',
+                            data: data.new_cases || [],
+                            borderColor: 'rgb(255, 99, 132)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error updating trends:', error);
+            });
+
+        // Reload stats
+        loadTrendStats();
+    }
+</script>
+{{end}}

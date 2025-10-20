@@ -1,0 +1,245 @@
+{{ define "content" }}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="/home">Home</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management">Resource Management</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management/rrt-deployments">RRT Deployments</a></li>
+                        <li class="breadcrumb-item active">{{if .RRTDeployment}}Edit Deployment{{else}}Create Deployment{{end}}</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">{{if .RRTDeployment}}Edit RRT Deployment{{else}}Deploy RRT Team{{end}}</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Deployment Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="/resource-management/rrt-deployments/save" id="deploymentForm">
+                        {{if .RRTDeployment}}<input type="hidden" name="id" value="{{.RRTDeployment.ID}}">{{end}}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="team_id" class="form-label">RRT Team <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="team_id" name="team_id" required>
+                                        <option value="">Select RRT Team</option>
+                                        {{range .RRTTeams}}
+                                        <option value="{{.ID}}" {{if and $.RRTDeployment (eq $.RRTDeployment.TeamID .ID)}}selected{{end}}>
+                                            {{.TeamName}} ({{.TeamCode}})
+                                        </option>
+                                        {{end}}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="outbreak_id" class="form-label">Outbreak <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="outbreak_id" name="outbreak_id" required>
+                                        <option value="">Select Outbreak</option>
+                                        {{range .Outbreaks}}
+                                        <option value="{{.ID}}" {{if and $.RRTDeployment (eq $.RRTDeployment.OutbreakID .ID)}}selected{{end}}>
+                                            {{if .Name.Valid}}{{.Name.String}}{{else}}Outbreak {{.ID}}{{end}}{{if .Description.Valid}} - {{.Description.String}}{{end}}
+                                        </option>
+                                        {{end}}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="deployment_date" class="form-label">Deployment Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="deployment_date" name="deployment_date" 
+                                           value="{{if .RRTDeployment}}{{.RRTDeployment.DeploymentDate.Format "2006-01-02"}}{{else}}{{now.Format "2006-01-02"}}{{end}}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="expected_return_date" class="form-label">Expected Return Date</label>
+                                    <input type="date" class="form-control" id="expected_return_date" name="expected_return_date" 
+                                           value="{{if and .RRTDeployment .RRTDeployment.ExpectedReturnDate.Valid}}{{.RRTDeployment.ExpectedReturnDate.Time.Format "2006-01-02"}}{{end}}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="deployment_status" class="form-label">Deployment Status <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="deployment_status" name="deployment_status" required>
+                                        <option value="">Select Status</option>
+                                        <option value="deployed" {{if and .RRTDeployment (eq .RRTDeployment.DeploymentStatus "deployed")}}selected{{end}}>Deployed</option>
+                                        <option value="extended" {{if and .RRTDeployment (eq .RRTDeployment.DeploymentStatus "extended")}}selected{{end}}>Extended</option>
+                                        <option value="returned" {{if and .RRTDeployment (eq .RRTDeployment.DeploymentStatus "returned")}}selected{{end}}>Returned</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="assigned_vehicle" class="form-label">Assigned Vehicle</label>
+                                    <input type="text" class="form-control" id="assigned_vehicle" name="assigned_vehicle" 
+                                           value="{{if and .RRTDeployment .RRTDeployment.AssignedVehicle.Valid}}{{.RRTDeployment.AssignedVehicle.String}}{{end}}"
+                                           placeholder="e.g., Vehicle Registration Number">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="assigned_driver" class="form-label">Assigned Driver</label>
+                                    <input type="text" class="form-control" id="assigned_driver" name="assigned_driver" 
+                                           value="{{if and .RRTDeployment .RRTDeployment.AssignedDriver.Valid}}{{.RRTDeployment.AssignedDriver.String}}{{end}}"
+                                           placeholder="Driver name and contact">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="deployment_purpose" class="form-label">Deployment Purpose</label>
+                                    <select class="form-select" id="deployment_purpose" name="deployment_purpose">
+                                        <option value="">Select Purpose</option>
+                                        <option value="investigation" {{if and .RRTDeployment .RRTDeployment.DeploymentPurpose.Valid (eq .RRTDeployment.DeploymentPurpose.String "investigation")}}selected{{end}}>Investigation</option>
+                                        <option value="response" {{if and .RRTDeployment .RRTDeployment.DeploymentPurpose.Valid (eq .RRTDeployment.DeploymentPurpose.String "response")}}selected{{end}}>Response</option>
+                                        <option value="assessment" {{if and .RRTDeployment .RRTDeployment.DeploymentPurpose.Valid (eq .RRTDeployment.DeploymentPurpose.String "assessment")}}selected{{end}}>Assessment</option>
+                                        <option value="training" {{if and .RRTDeployment .RRTDeployment.DeploymentPurpose.Valid (eq .RRTDeployment.DeploymentPurpose.String "training")}}selected{{end}}>Training</option>
+                                        <option value="other" {{if and .RRTDeployment .RRTDeployment.DeploymentPurpose.Valid (eq .RRTDeployment.DeploymentPurpose.String "other")}}selected{{end}}>Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="deployment_notes" class="form-label">Deployment Notes</label>
+                            <textarea class="form-control" id="deployment_notes" name="deployment_notes" rows="4" 
+                                      placeholder="Additional notes about the deployment...">{{if and .RRTDeployment .RRTDeployment.DeploymentNotes.Valid}}{{.RRTDeployment.DeploymentNotes.String}}{{end}}</textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="/resource-management/rrt-deployments" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Deployments
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>{{if .RRTDeployment}}Update Deployment{{else}}Create Deployment{{end}}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Deployment Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Deployment Checklist</h6>
+                        <ul class="mb-0">
+                            <li>Verify team availability and readiness</li>
+                            <li>Confirm outbreak location and access</li>
+                            <li>Arrange transportation and logistics</li>
+                            <li>Set realistic deployment duration</li>
+                            <li>Ensure communication protocols are in place</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Important Notes</h6>
+                        <ul class="mb-0">
+                            <li>Deployment date should be realistic and achievable</li>
+                            <li>Expected return date helps with resource planning</li>
+                            <li>Vehicle assignment ensures accountability</li>
+                            <li>Clear purpose helps with activity planning</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">Team Information</h6>
+                        </div>
+                        <div class="card-body" id="teamInfo">
+                            <p class="text-muted">Select a team to view details</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Handle team selection
+    $('#team_id').on('change', function() {
+        var teamId = $(this).val();
+        if (teamId) {
+            loadTeamInfo(teamId);
+        } else {
+            $('#teamInfo').html('<p class="text-muted">Select a team to view details</p>');
+        }
+    });
+
+    // Set default deployment date to today
+    if (!$('#deployment_date').val()) {
+        var today = new Date().toISOString().split('T')[0];
+        $('#deployment_date').val(today);
+    }
+
+    // Set default status to deployed for new deployments
+    {{if not .RRTDeployment}}
+    $('#deployment_status').val('deployed');
+    {{end}}
+});
+
+function loadTeamInfo(teamId) {
+    // This would typically make an AJAX call to get team details
+    // For now, we'll show a placeholder
+    $('#teamInfo').html(`
+        <div class="text-center">
+            <div class="spinner-border spinner-border-sm" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading team information...</p>
+        </div>
+    `);
+    
+    // Simulate loading
+    setTimeout(function() {
+        $('#teamInfo').html(`
+            <div class="d-flex align-items-center mb-3">
+                <div class="avatar-sm bg-soft-primary rounded me-3">
+                    <i class="fas fa-users text-primary"></i>
+                </div>
+                <div>
+                    <h6 class="mb-0">Selected Team</h6>
+                    <small class="text-muted">Team details will be shown here</small>
+                </div>
+            </div>
+            <div class="row text-center">
+                <div class="col-6">
+                    <div class="border-end">
+                        <h5 class="mb-0">5</h5>
+                        <small class="text-muted">Members</small>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <h5 class="mb-0">Active</h5>
+                    <small class="text-muted">Status</small>
+                </div>
+            </div>
+        `);
+    }, 1000);
+}
+</script>
+{{ end }}

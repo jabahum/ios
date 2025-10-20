@@ -1,0 +1,136 @@
+{{ define "content" }}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="/resource-management">Resource Management</a></li>
+                            <li class="breadcrumb-item"><a href="/resource-management/pillars">Pillars</a></li>
+                            <li class="breadcrumb-item active">{{if .Pillar}}Edit Pillar{{else}}Add Pillar{{end}}</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="/resource-management/pillars/save" id="pillarForm">
+                        {{if .Pillar}}<input type="hidden" name="id" value="{{.Pillar.ID}}">{{end}}
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                <!-- Basic Information -->
+                                <div class="mb-4">
+                                    <h6 class="text-primary mb-3">
+                                        <i class="fas fa-info-circle me-2"></i>Basic Information
+                                    </h6>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="mb-3">
+                                                <label for="name" class="form-label">Pillar Name <span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control" id="name" name="name" 
+                                                       value="{{if .Pillar}}{{.Pillar.Name}}{{end}}" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="mb-3">
+                                                <label for="description" class="form-label">Description</label>
+                                                <textarea class="form-control" id="description" name="description" rows="3">{{if and .Pillar .Pillar.Description.Valid}}{{.Pillar.Description.String}}{{end}}</textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Pillar Head Information -->
+                                <div class="mb-4">
+                                    <h6 class="text-primary mb-3">
+                                        <i class="fas fa-user-tie me-2"></i>Pillar Head Information
+                                    </h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="pillar_head_id" class="form-label">Select User as Head</label>
+                                                <select class="form-select" id="pillar_head_id" name="pillar_head_id">
+                                                    <option value="">Select a User</option>
+                                                    {{range .Users}}
+                                                    <option value="{{.UserID}}" {{if and $.Pillar $.Pillar.PillarHeadID.Valid (eq $.Pillar.PillarHeadID.Int64 .UserID)}}selected{{end}}>
+                                                        {{if .FirstName.Valid}}{{.FirstName.String}}{{else}}User {{.UserID}}{{end}} ({{if .Email.Valid}}{{.Email.String}}{{else}}No email{{end}})
+                                                    </option>
+                                                    {{end}}
+                                                </select>
+                                                <div class="form-text">Or fill in manual details below</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="pillar_head_name" class="form-label">Head Name</label>
+                                                <input type="text" class="form-control" id="pillar_head_name" name="pillar_head_name" 
+                                                       value="{{if and .Pillar .Pillar.PillarHeadName.Valid}}{{.Pillar.PillarHeadName.String}}{{end}}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="pillar_head_email" class="form-label">Head Email</label>
+                                                <input type="email" class="form-control" id="pillar_head_email" name="pillar_head_email" 
+                                                       value="{{if and .Pillar .Pillar.PillarHeadEmail.Valid}}{{.Pillar.PillarHeadEmail.String}}{{end}}">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="pillar_head_phone" class="form-label">Head Phone</label>
+                                                <input type="tel" class="form-control" id="pillar_head_phone" name="pillar_head_phone" 
+                                                       value="{{if and .Pillar .Pillar.PillarHeadPhone.Valid}}{{.Pillar.PillarHeadPhone.String}}{{end}}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Status -->
+                                <div class="mb-4">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="true" 
+                                               {{if not .Pillar}}checked{{else if .Pillar.IsActive}}checked{{end}}>
+                                        <label class="form-check-label" for="is_active">Active Pillar</label>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between">
+                                    <a href="/resource-management/pillars" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left me-2"></i>Back to Pillars
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>{{if .Pillar}}Update Pillar{{else}}Create Pillar{{end}}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-fill head details when user is selected
+    const userSelect = document.getElementById('pillar_head_id');
+    const nameInput = document.getElementById('pillar_head_name');
+    const emailInput = document.getElementById('pillar_head_email');
+    const phoneInput = document.getElementById('pillar_head_phone');
+
+    userSelect.addEventListener('change', function() {
+        if (this.value) {
+            // In a real implementation, you would fetch user details via AJAX
+            // For now, we'll just clear the manual fields
+            nameInput.value = '';
+            emailInput.value = '';
+            phoneInput.value = '';
+        }
+    });
+});
+</script>
+{{end}}

@@ -1,0 +1,269 @@
+{{ define "content" }}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="/home">Home</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management">Resource Management</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management/rrt-teams">RRT Teams</a></li>
+                        <li class="breadcrumb-item active">{{if .RRTTeam}}Edit Team{{else}}Create Team{{end}}</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">{{if .RRTTeam}}Edit RRT Team{{else}}Create New RRT Team{{end}}</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Team Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="/resource-management/rrt-teams/save" id="teamForm">
+                        {{if .RRTTeam}}<input type="hidden" name="id" value="{{.RRTTeam.ID}}">{{end}}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="team_name" class="form-label">Team Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="team_name" name="team_name" 
+                                           value="{{if .RRTTeam}}{{.RRTTeam.TeamName}}{{end}}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="team_code" class="form-label">Team Code <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="team_code" name="team_code" 
+                                           value="{{if .RRTTeam}}{{.RRTTeam.TeamCode}}{{end}}" required>
+                                    <div class="form-text">Unique identifier for the team</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="team_type" class="form-label">Team Type <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="team_type" name="team_type" required>
+                                        <option value="">Select Team Type</option>
+                                        <option value="investigation" {{if and .RRTTeam (eq .RRTTeam.TeamType "investigation")}}selected{{end}}>Investigation</option>
+                                        <option value="logistics" {{if and .RRTTeam (eq .RRTTeam.TeamType "logistics")}}selected{{end}}>Logistics</option>
+                                        <option value="medical" {{if and .RRTTeam (eq .RRTTeam.TeamType "medical")}}selected{{end}}>Medical</option>
+                                        <option value="communication" {{if and .RRTTeam (eq .RRTTeam.TeamType "communication")}}selected{{end}}>Communication</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="team_size" class="form-label">Team Size <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="team_size" name="team_size" 
+                                           value="{{if .RRTTeam}}{{.RRTTeam.TeamSize}}{{else}}1{{end}}" min="1" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="team_lead_name" class="form-label">Team Lead Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="team_lead_name" name="team_lead_name" 
+                                           value="{{if .RRTTeam}}{{.RRTTeam.TeamLeadName}}{{end}}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="team_lead_phone" class="form-label">Team Lead Phone</label>
+                                    <input type="tel" class="form-control" id="team_lead_phone" name="team_lead_phone" 
+                                           value="{{if and .RRTTeam .RRTTeam.TeamLeadPhone.Valid}}{{.RRTTeam.TeamLeadPhone.String}}{{end}}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="team_lead_email" class="form-label">Team Lead Email</label>
+                                    <input type="email" class="form-control" id="team_lead_email" name="team_lead_email" 
+                                           value="{{if and .RRTTeam .RRTTeam.TeamLeadEmail.Valid}}{{.RRTTeam.TeamLeadEmail.String}}{{end}}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="base_location" class="form-label">Base Location</label>
+                                    <input type="text" class="form-control" id="base_location" name="base_location" 
+                                           value="{{if and .RRTTeam .RRTTeam.BaseLocation.Valid}}{{.RRTTeam.BaseLocation.String}}{{end}}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="specializations" class="form-label">Specializations</label>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="spec_epidemiology" value="epidemiology">
+                                        <label class="form-check-label" for="spec_epidemiology">Epidemiology</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="spec_laboratory" value="laboratory">
+                                        <label class="form-check-label" for="spec_laboratory">Laboratory</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="spec_logistics" value="logistics">
+                                        <label class="form-check-label" for="spec_logistics">Logistics</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="spec_communication" value="communication">
+                                        <label class="form-check-label" for="spec_communication">Communication</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="spec_medical" value="medical">
+                                        <label class="form-check-label" for="spec_medical">Medical</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="spec_surveillance" value="surveillance">
+                                        <label class="form-check-label" for="spec_surveillance">Surveillance</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="spec_environmental" value="environmental">
+                                        <label class="form-check-label" for="spec_environmental">Environmental</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="spec_psychosocial" value="psychosocial">
+                                        <label class="form-check-label" for="spec_psychosocial">Psychosocial</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="true" 
+                                       {{if not .RRTTeam}}checked{{else if .RRTTeam.IsActive}}checked{{end}}>
+                                <label class="form-check-label" for="is_active">Active Team</label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="/resource-management/rrt-teams" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Teams
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>{{if .RRTTeam}}Update Team{{else}}Create Team{{end}}
+                            </button>
+                        </div>
+
+                        <!-- Team Members Selection -->
+                        <div class="mb-4">
+                            <h6 class="text-primary mb-3">
+                                <i class="fas fa-users me-2"></i>Team Members
+                            </h6>
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="mb-3">
+                                        <label for="team_members" class="form-label">Select Team Members</label>
+                                        <select class="form-select" id="team_members" name="team_members[]" multiple size="8">
+                                            {{range .RRTTeamMembers}}
+                                            <option value="{{.ID}}">
+                                                {{.FirstName}} {{.LastName}} - {{.Position.String}} ({{.Organization.String}})
+                                            </option>
+                                            {{end}}
+                                        </select>
+                                        <div class="form-text">Hold Ctrl/Cmd to select multiple members</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Team Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Team Setup Guidelines</h6>
+                        <ul class="mb-0">
+                            <li>Ensure team lead has appropriate qualifications</li>
+                            <li>Include diverse specializations for comprehensive response</li>
+                            <li>Verify contact information is current and accessible</li>
+                            <li>Set realistic team size based on outbreak scope</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Important Notes</h6>
+                        <ul class="mb-0">
+                            <li>Team code must be unique across all teams</li>
+                            <li>Team type determines available resources and protocols</li>
+                            <li>Base location helps with deployment planning</li>
+                            <li>Specializations should match outbreak requirements</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Handle specializations
+    {{if .RRTTeam}}
+    {{range .RRTTeam.Specializations}}
+    $('input[value="{{.}}"]').prop('checked', true);
+    {{end}}
+    {{end}}
+
+    // Form validation
+    $('#teamForm').on('submit', function(e) {
+        var specializations = [];
+        $('input[name^="spec_"]:checked').each(function() {
+            specializations.push($(this).val());
+        });
+        
+        // Create hidden input for specializations
+        if (specializations.length > 0) {
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'specializations',
+                value: JSON.stringify(specializations)
+            }).appendTo('#teamForm');
+        }
+    });
+
+    // Auto-generate team code from team name
+    $('#team_name').on('blur', function() {
+        if (!$('#team_code').val()) {
+            var teamName = $(this).val();
+            var teamCode = teamName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().substring(0, 8);
+            $('#team_code').val(teamCode);
+        }
+    });
+});
+</script>
+{{ end }}

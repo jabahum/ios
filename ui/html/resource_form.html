@@ -1,0 +1,259 @@
+{{ define "content" }}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="/home">Home</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management">Resource Management</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management/resources">Resources</a></li>
+                        <li class="breadcrumb-item active">{{if .Resource}}Edit Resource{{else}}Create Resource{{end}}</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">{{if .Resource}}Edit Resource{{else}}Add New Resource{{end}}</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Resource Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="/resource-management/resources/save" id="resourceForm">
+                        {{if .Resource}}<input type="hidden" name="id" value="{{.Resource.ID}}">{{end}}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Resource Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="name" name="name" 
+                                           value="{{if .Resource}}{{.Resource.Name}}{{end}}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="resource_code" class="form-label">Resource Code</label>
+                                    <input type="text" class="form-control" id="resource_code" name="resource_code" 
+                                           value="{{if and .Resource .Resource.ResourceCode.Valid}}{{.Resource.ResourceCode.String}}{{end}}">
+                                    <div class="form-text">Unique identifier for the resource</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="category_id" class="form-label">Category <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="category_id" name="category_id" required>
+                                        <option value="">Select Category</option>
+                                        {{range .ResourceCategories}}
+                                        <option value="{{.ID}}" {{if and $.Resource (eq $.Resource.CategoryID .ID)}}selected{{end}}>
+                                            {{.Name}}
+                                        </option>
+                                        {{end}}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="unit_of_measure" class="form-label">Unit of Measure <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="unit_of_measure" name="unit_of_measure" required>
+                                        <option value="">Select Unit</option>
+                                        <option value="pieces" {{if and .Resource (eq .Resource.UnitOfMeasure "pieces")}}selected{{end}}>Pieces</option>
+                                        <option value="boxes" {{if and .Resource (eq .Resource.UnitOfMeasure "boxes")}}selected{{end}}>Boxes</option>
+                                        <option value="liters" {{if and .Resource (eq .Resource.UnitOfMeasure "liters")}}selected{{end}}>Liters</option>
+                                        <option value="kilograms" {{if and .Resource (eq .Resource.UnitOfMeasure "kilograms")}}selected{{end}}>Kilograms</option>
+                                        <option value="meters" {{if and .Resource (eq .Resource.UnitOfMeasure "meters")}}selected{{end}}>Meters</option>
+                                        <option value="units" {{if and .Resource (eq .Resource.UnitOfMeasure "units")}}selected{{end}}>Units</option>
+                                        <option value="pairs" {{if and .Resource (eq .Resource.UnitOfMeasure "pairs")}}selected{{end}}>Pairs</option>
+                                        <option value="sets" {{if and .Resource (eq .Resource.UnitOfMeasure "sets")}}selected{{end}}>Sets</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" 
+                                      placeholder="Detailed description of the resource...">{{if and .Resource .Resource.Description.Valid}}{{.Resource.Description.String}}{{end}}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Resource Type</label>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="is_consumable" name="is_consumable" value="true" 
+                                                       {{if and .Resource .Resource.IsConsumable}}checked{{end}}>
+                                                <label class="form-check-label" for="is_consumable">Consumable</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="has_expiry" name="has_expiry" value="true" 
+                                                       {{if and .Resource .Resource.HasExpiry}}checked{{end}}>
+                                                <label class="form-check-label" for="has_expiry">Has Expiry Date</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="shelf_life_days" class="form-label">Shelf Life (Days)</label>
+                                    <input type="number" class="form-control" id="shelf_life_days" name="shelf_life_days" 
+                                           value="{{if and .Resource .Resource.ShelfLifeDays.Valid}}{{.Resource.ShelfLifeDays.Int64}}{{end}}"
+                                           min="1" placeholder="Number of days">
+                                    <div class="form-text">Only applicable if resource has expiry date</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="is_critical" name="is_critical" value="true" 
+                                               {{if and .Resource .Resource.IsCritical}}checked{{end}}>
+                                        <label class="form-check-label" for="is_critical">Critical Resource</label>
+                                    </div>
+                                    <div class="form-text">Critical resources require special attention and monitoring</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="true" 
+                                               {{if not .Resource}}checked{{else if .Resource.IsActive}}checked{{end}}>
+                                        <label class="form-check-label" for="is_active">Active Resource</label>
+                                    </div>
+                                    <div class="form-text">Inactive resources won't appear in requisition lists</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="/resource-management/resources" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Resources
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>{{if .Resource}}Update Resource{{else}}Create Resource{{end}}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Resource Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Resource Setup</h6>
+                        <ul class="mb-0">
+                            <li>Use descriptive names for easy identification</li>
+                            <li>Assign appropriate categories for organization</li>
+                            <li>Set correct units for accurate tracking</li>
+                            <li>Mark critical resources for priority handling</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Important Notes</h6>
+                        <ul class="mb-0">
+                            <li>Resource codes should be unique and meaningful</li>
+                            <li>Consumable items are tracked by quantity</li>
+                            <li>Expiry dates help with stock rotation</li>
+                            <li>Critical resources get priority in requisitions</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">Category Information</h6>
+                        </div>
+                        <div class="card-body" id="categoryInfo">
+                            <p class="text-muted">Select a category to view details</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Handle category selection
+    $('#category_id').on('change', function() {
+        var categoryId = $(this).val();
+        if (categoryId) {
+            loadCategoryInfo(categoryId);
+        } else {
+            $('#categoryInfo').html('<p class="text-muted">Select a category to view details</p>');
+        }
+    });
+
+    // Handle expiry date checkbox
+    $('#has_expiry').on('change', function() {
+        if ($(this).is(':checked')) {
+            $('#shelf_life_days').prop('required', true);
+        } else {
+            $('#shelf_life_days').prop('required', false).val('');
+        }
+    });
+
+    // Auto-generate resource code from name
+    $('#name').on('blur', function() {
+        if (!$('#resource_code').val()) {
+            var resourceName = $(this).val();
+            var resourceCode = resourceName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().substring(0, 10);
+            $('#resource_code').val(resourceCode);
+        }
+    });
+});
+
+function loadCategoryInfo(categoryId) {
+    // This would typically make an AJAX call to get category details
+    // For now, we'll show a placeholder
+    $('#categoryInfo').html(`
+        <div class="text-center">
+            <div class="spinner-border spinner-border-sm" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading category information...</p>
+        </div>
+    `);
+    
+    // Simulate loading
+    setTimeout(function() {
+        $('#categoryInfo').html(`
+            <div class="d-flex align-items-center mb-3">
+                <div class="avatar-sm bg-soft-info rounded me-3">
+                    <i class="fas fa-tag text-info"></i>
+                </div>
+                <div>
+                    <h6 class="mb-0">Selected Category</h6>
+                    <small class="text-muted">Category details will be shown here</small>
+                </div>
+            </div>
+            <div class="alert alert-light">
+                <small class="text-muted">
+                    This category helps organize resources and determine 
+                    appropriate handling procedures.
+                </small>
+            </div>
+        `);
+    }, 1000);
+}
+</script>
+{{ end }}

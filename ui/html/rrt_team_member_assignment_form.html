@@ -1,0 +1,142 @@
+{{ define "content" }}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="/resource-management">Resource Management</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management/rrt-team-members">Team Members</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management/rrt-team-member-assignments">Assignments</a></li>
+                        <li class="breadcrumb-item active">{{if .RRTTeamMemberAssignment}}Edit{{else}}New{{end}} Assignment</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">{{if .RRTTeamMemberAssignment}}Edit{{else}}New{{end}} Team Member Assignment</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user-plus me-2"></i>Assignment Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="/resource-management/rrt-team-member-assignments/save">
+                        {{if .RRTTeamMemberAssignment}}<input type="hidden" name="id" value="{{.RRTTeamMemberAssignment.ID}}">{{end}}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="team_id" class="form-label">Team <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="team_id" name="team_id" required>
+                                        <option value="">Select a Team</option>
+                                        {{range .RRTTeams}}
+                                        <option value="{{.ID}}" {{if and $.RRTTeamMemberAssignment $.RRTTeamMemberAssignment.TeamID (eq $.RRTTeamMemberAssignment.TeamID .ID)}}selected{{end}}>
+                                            {{.Name}} {{if .OutbreakID.Valid}}(Outbreak {{.OutbreakID.Int64}}){{end}}
+                                        </option>
+                                        {{end}}
+                                    </select>
+                                    <div class="form-text">Select the team to assign the member to</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="member_id" class="form-label">Team Member <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="member_id" name="member_id" required>
+                                        <option value="">Select a Team Member</option>
+                                        {{range .RRTTeamMembers}}
+                                        <option value="{{.ID}}" {{if and $.RRTTeamMemberAssignment $.RRTTeamMemberAssignment.MemberID (eq $.RRTTeamMemberAssignment.MemberID .ID)}}selected{{end}}>
+                                            {{.FirstName}} {{.LastName}} ({{.Position.String}})
+                                        </option>
+                                        {{end}}
+                                    </select>
+                                    <div class="form-text">Select the team member to assign</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="role" class="form-label">Role <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="role" name="role" required>
+                                        <option value="">Select a Role</option>
+                                        <option value="Team Lead" {{if and $.RRTTeamMemberAssignment (eq $.RRTTeamMemberAssignment.Role "Team Lead")}}selected{{end}}>Team Lead</option>
+                                        <option value="Deputy Lead" {{if and $.RRTTeamMemberAssignment (eq $.RRTTeamMemberAssignment.Role "Deputy Lead")}}selected{{end}}>Deputy Lead</option>
+                                        <option value="Epidemiologist" {{if and $.RRTTeamMemberAssignment (eq $.RRTTeamMemberAssignment.Role "Epidemiologist")}}selected{{end}}>Epidemiologist</option>
+                                        <option value="Laboratory Technician" {{if and $.RRTTeamMemberAssignment (eq $.RRTTeamMemberAssignment.Role "Laboratory Technician")}}selected{{end}}>Laboratory Technician</option>
+                                        <option value="Logistics Officer" {{if and $.RRTTeamMemberAssignment (eq $.RRTTeamMemberAssignment.Role "Logistics Officer")}}selected{{end}}>Logistics Officer</option>
+                                        <option value="Communication Specialist" {{if and $.RRTTeamMemberAssignment (eq $.RRTTeamMemberAssignment.Role "Communication Specialist")}}selected{{end}}>Communication Specialist</option>
+                                        <option value="Driver" {{if and $.RRTTeamMemberAssignment (eq $.RRTTeamMemberAssignment.Role "Driver")}}selected{{end}}>Driver</option>
+                                        <option value="Other" {{if and $.RRTTeamMemberAssignment (eq $.RRTTeamMemberAssignment.Role "Other")}}selected{{end}}>Other</option>
+                                    </select>
+                                    <div class="form-text">Select the role for this assignment</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="start_date" class="form-label">Start Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="start_date" name="start_date" 
+                                           value="{{if .RRTTeamMemberAssignment}}{{.RRTTeamMemberAssignment.StartDate.Format "2006-01-02"}}{{end}}" required>
+                                    <div class="form-text">When does this assignment begin?</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="end_date" class="form-label">End Date</label>
+                                    <input type="date" class="form-control" id="end_date" name="end_date" 
+                                           value="{{if and .RRTTeamMemberAssignment .RRTTeamMemberAssignment.EndDate.Valid}}{{.RRTTeamMemberAssignment.EndDate.Time.Format "2006-01-02"}}{{end}}">
+                                    <div class="form-text">When does this assignment end? (Leave blank for ongoing)</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="true"
+                                               {{if not .RRTTeamMemberAssignment}}checked{{else if .RRTTeamMemberAssignment.IsActive}}checked{{end}}>
+                                        <label class="form-check-label" for="is_active">
+                                            Active Assignment
+                                        </label>
+                                    </div>
+                                    <div class="form-text">Is this assignment currently active?</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label for="assignment_notes" class="form-label">Assignment Notes</label>
+                                    <textarea class="form-control" id="assignment_notes" name="assignment_notes" rows="4" 
+                                              placeholder="Enter any additional notes about this assignment...">{{if and .RRTTeamMemberAssignment .RRTTeamMemberAssignment.AssignmentNotes.Valid}}{{.RRTTeamMemberAssignment.AssignmentNotes.String}}{{end}}</textarea>
+                                    <div class="form-text">Any additional information about this assignment</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="/resource-management/rrt-team-member-assignments" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left me-1"></i>Back to Assignments
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-1"></i>{{if .RRTTeamMemberAssignment}}Update{{else}}Create{{end}} Assignment
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{ end }}

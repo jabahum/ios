@@ -406,4 +406,117 @@
         </div>
     </div>
 
+    <script>
+        // Employee management functions
+        function editEmployee(employeeId) {
+            // Redirect to edit form
+            window.location.href = `/employees/new/${employeeId}`;
+        }
+
+        function viewEmployee(employeeId) {
+            // Load employee details in modal
+            fetch(`/api/employees/${employeeId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('employeeDetailsContent').innerHTML = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Personal Information</h6>
+                                <p><strong>Name:</strong> ${data.employee_fname || ''} ${data.employee_lname || ''}</p>
+                                <p><strong>Email:</strong> ${data.employee_email || 'N/A'}</p>
+                                <p><strong>Phone:</strong> ${data.employee_phone || 'N/A'}</p>
+                                <p><strong>Gender:</strong> ${data.employee_sex || 'N/A'}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Work Information</h6>
+                                <p><strong>Cadre:</strong> ${data.employee_cadre || 'N/A'}</p>
+                                <p><strong>Department:</strong> ${data.employee_department || 'N/A'}</p>
+                                <p><strong>Title:</strong> ${data.employee_title || 'N/A'}</p>
+                                <p><strong>Status:</strong> ${data.employee_status || 'N/A'}</p>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <h6>Assignment Information</h6>
+                                <p><strong>AFI Facility:</strong> ${data.afi_facility || 'N/A'}</p>
+                                <p><strong>AFI Region:</strong> ${data.afi_region || 'N/A'}</p>
+                                <p><strong>AFI District:</strong> ${data.afi_district || 'N/A'}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Dates</h6>
+                                <p><strong>Start Date:</strong> ${data.employee_start_date || 'N/A'}</p>
+                                <p><strong>End Date:</strong> ${data.employee_end_date || 'N/A'}</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Set up edit button
+                    document.getElementById('editEmployeeBtn').onclick = () => editEmployee(employeeId);
+                    
+                    // Show modal
+                    new bootstrap.Modal(document.getElementById('employeeDetailsModal')).show();
+                })
+                .catch(error => {
+                    console.error('Error loading employee details:', error);
+                    alert('Error loading employee details');
+                });
+        }
+
+        function manageAssignments(employeeId) {
+            // TODO: Implement assignment management
+            alert('Assignment management feature coming soon!');
+        }
+
+        function viewHistory(employeeId) {
+            // TODO: Implement history view
+            alert('History view feature coming soon!');
+        }
+
+        function deleteEmployee(employeeId) {
+            // Show confirmation modal
+            document.getElementById('confirmDelete').onclick = () => {
+                // TODO: Implement delete functionality
+                fetch(`/api/employees/${employeeId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('Error deleting employee');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error deleting employee');
+                });
+            };
+            
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+
+        // Filter functionality
+        function applyFilters() {
+            const form = document.getElementById('filterForm');
+            const formData = new FormData(form);
+            
+            // Convert form data to URL parameters
+            const params = new URLSearchParams();
+            for (let [key, value] of formData.entries()) {
+                if (value) params.append(key, value);
+            }
+            
+            // Reload page with filters
+            window.location.href = `/employees/list?${params.toString()}`;
+        }
+
+        function clearFilters() {
+            document.getElementById('filterForm').reset();
+            window.location.href = '/employees/list';
+        }
+    </script>
+
 {{ end }} 

@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -219,6 +220,83 @@ func AuditMiddleware() fiber.Handler {
 		}
 
 		return err
+	}
+}
+
+// RoleRequiredAny creates middleware that checks if user has any of the specified roles
+func RoleRequiredAny(store *session.Store, db *sql.DB, sl *slog.Logger, roleNames ...string) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// Get user session
+		sess, err := store.Get(c)
+		if err != nil {
+			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Authentication required",
+			})
+		}
+
+		// Check if user is authenticated
+		if sess.Get("isAuthenticated") != true {
+			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Authentication required",
+			})
+		}
+
+		// Get user ID from session (try both keys for compatibility)
+		var userID int
+		var ok bool
+		// Try user_id first (RBAC standard)
+		if userID, ok = sess.Get("user_id").(int); !ok {
+			// Fallback to user (legacy authentication)
+			if userID, ok = sess.Get("user").(int); !ok {
+				return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+					"error": "Invalid user session",
+				})
+			}
+		}
+
+		// Get user roles
+		roles, err := models.GetUserRoles(c.Context(), db, userID)
+		if err != nil {
+			sl.Error("Error getting user roles", "error", err, "user_id", userID)
+			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Internal server error",
+			})
+		}
+
+		// Check if user has any of the required roles
+		hasRole := false
+		for _, role := range roles {
+			for _, requiredRole := range roleNames {
+				if role.Name == requiredRole {
+					hasRole = true
+					break
+				}
+			}
+			if hasRole {
+				break
+			}
+		}
+
+		if !hasRole {
+			// Log unauthorized access attempt
+			auditLog := &models.AuditLog{
+				UserID:    sql.NullInt64{Int64: int64(userID), Valid: true},
+				Action:    "unauthorized_access",
+				Resource:  "role_check",
+				Details:   "Role denied: " + fmt.Sprintf("%v", roleNames),
+				IPAddress: c.IP(),
+				UserAgent: c.Get("User-Agent"),
+				CreatedAt: time.Now(),
+			}
+			models.LogAuditEvent(c.Context(), db, auditLog)
+
+			return c.Status(http.StatusForbidden).JSON(fiber.Map{
+				"error":   "Access denied",
+				"message": "You don't have any of the required roles to access this resource",
+			})
+		}
+
+		return c.Next()
 	}
 }
 

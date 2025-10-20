@@ -1,0 +1,179 @@
+{{ define "content" }}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="/home">Home</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management">Resource Management</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management/field-role-assignments">Field Role Assignments</a></li>
+                        <li class="breadcrumb-item active">{{if .RRTFieldRoleAssignment}}Edit Assignment{{else}}New Assignment{{end}}</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">{{if .RRTFieldRoleAssignment}}Edit Field Role Assignment{{else}}Create Field Role Assignment{{end}}</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Assignment Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="/resource-management/field-role-assignments/save" id="assignmentForm">
+                        {{if .RRTFieldRoleAssignment}}<input type="hidden" name="id" value="{{.RRTFieldRoleAssignment.ID}}">{{end}}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="deployment_id" class="form-label">Deployment <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="deployment_id" name="deployment_id" required>
+                                        <option value="">Select Deployment</option>
+                                        {{range .RRTDeployments}}
+                                        <option value="{{.ID}}" {{if and $.RRTFieldRoleAssignment (eq $.RRTFieldRoleAssignment.DeploymentID .ID)}}selected{{end}}>
+                                            {{if .Team}}{{.Team.TeamName}}{{else}}Deployment {{.ID}}{{end}}
+                                            {{if .Outbreak}} - {{if .Outbreak.Name.Valid}}{{.Outbreak.Name.String}}{{end}}{{end}}
+                                        </option>
+                                        {{end}}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="member_id" class="form-label">Team Member <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="member_id" name="member_id" required>
+                                        <option value="">Select Team Member</option>
+                                        {{range .RRTTeamMembers}}
+                                        <option value="{{.ID}}" {{if and $.RRTFieldRoleAssignment (eq $.RRTFieldRoleAssignment.MemberID .ID)}}selected{{end}}>
+                                            {{.FirstName}} {{.LastName}}{{if .Position.Valid}} - {{.Position.String}}{{end}}
+                                        </option>
+                                        {{end}}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="additional_role" class="form-label">Additional Role <span class="text-danger">*</span></label>
+                            <select class="form-select" id="additional_role" name="additional_role" required>
+                                <option value="">Select Role</option>
+                                <option value="Team Lead" {{if and .RRTFieldRoleAssignment (eq .RRTFieldRoleAssignment.AdditionalRole "Team Lead")}}selected{{end}}>Team Lead</option>
+                                <option value="Deputy Lead" {{if and .RRTFieldRoleAssignment (eq .RRTFieldRoleAssignment.AdditionalRole "Deputy Lead")}}selected{{end}}>Deputy Lead</option>
+                                <option value="Coordinator" {{if and .RRTFieldRoleAssignment (eq .RRTFieldRoleAssignment.AdditionalRole "Coordinator")}}selected{{end}}>Coordinator</option>
+                                <option value="Data Manager" {{if and .RRTFieldRoleAssignment (eq .RRTFieldRoleAssignment.AdditionalRole "Data Manager")}}selected{{end}}>Data Manager</option>
+                                <option value="Logistics Coordinator" {{if and .RRTFieldRoleAssignment (eq .RRTFieldRoleAssignment.AdditionalRole "Logistics Coordinator")}}selected{{end}}>Logistics Coordinator</option>
+                                <option value="Communication Lead" {{if and .RRTFieldRoleAssignment (eq .RRTFieldRoleAssignment.AdditionalRole "Communication Lead")}}selected{{end}}>Communication Lead</option>
+                                <option value="Training Coordinator" {{if and .RRTFieldRoleAssignment (eq .RRTFieldRoleAssignment.AdditionalRole "Training Coordinator")}}selected{{end}}>Training Coordinator</option>
+                                <option value="Safety Officer" {{if and .RRTFieldRoleAssignment (eq .RRTFieldRoleAssignment.AdditionalRole "Safety Officer")}}selected{{end}}>Safety Officer</option>
+                                <option value="Field Supervisor" {{if and .RRTFieldRoleAssignment (eq .RRTFieldRoleAssignment.AdditionalRole "Field Supervisor")}}selected{{end}}>Field Supervisor</option>
+                                <option value="Other" {{if and .RRTFieldRoleAssignment (eq .RRTFieldRoleAssignment.AdditionalRole "Other")}}selected{{end}}>Other</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="end_date" class="form-label">Assignment End Date</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" 
+                                   value="{{if and .RRTFieldRoleAssignment .RRTFieldRoleAssignment.EndDate.Valid}}{{.RRTFieldRoleAssignment.EndDate.Time.Format "2006-01-02"}}{{end}}">
+                            <small class="form-text text-muted">Leave blank if assignment is ongoing</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="assignment_reason" class="form-label">Assignment Reason</label>
+                            <textarea class="form-control" id="assignment_reason" name="assignment_reason" rows="3" 
+                                      placeholder="Explain why this additional role is needed...">{{if and .RRTFieldRoleAssignment .RRTFieldRoleAssignment.AssignmentReason.Valid}}{{.RRTFieldRoleAssignment.AssignmentReason.String}}{{end}}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="true" 
+                                       {{if .RRTFieldRoleAssignment}}{{if .RRTFieldRoleAssignment.IsActive}}checked{{end}}{{else}}checked{{end}}>
+                                <label class="form-check-label" for="is_active">
+                                    Assignment is Active
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="/resource-management/field-role-assignments" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Assignments
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>{{if .RRTFieldRoleAssignment}}Update Assignment{{else}}Create Assignment{{end}}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Assignment Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Field Role Assignment</h6>
+                        <ul class="mb-0">
+                            <li>Assigns additional responsibilities to team members</li>
+                            <li>Provides flexibility in field operations</li>
+                            <li>Helps distribute workload effectively</li>
+                            <li>Supports skill development and leadership</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Important Notes</h6>
+                        <ul class="mb-0">
+                            <li>Ensure team member is qualified for the role</li>
+                            <li>Consider workload and availability</li>
+                            <li>Communicate clearly with the team member</li>
+                            <li>Document reason for assignment</li>
+                            <li>Monitor performance and provide support</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">Common Field Roles</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <strong>Team Lead:</strong> Overall coordination and decision-making
+                            </div>
+                            <div class="mb-2">
+                                <strong>Deputy Lead:</strong> Supports team lead, acts as backup
+                            </div>
+                            <div class="mb-2">
+                                <strong>Coordinator:</strong> Manages specific activities or areas
+                            </div>
+                            <div class="mb-2">
+                                <strong>Data Manager:</strong> Handles data collection and reporting
+                            </div>
+                            <div class="mb-0">
+                                <strong>Safety Officer:</strong> Ensures team safety protocols
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Handle deployment selection to show team info
+    $('#deployment_id').on('change', function() {
+        var deploymentId = $(this).val();
+        if (deploymentId) {
+            // Could load deployment details via AJAX here
+            console.log('Selected deployment:', deploymentId);
+        }
+    });
+});
+</script>
+{{ end }}

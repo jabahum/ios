@@ -1,0 +1,254 @@
+{{ define "content" }}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="/home">Home</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management">Resource Management</a></li>
+                        <li class="breadcrumb-item active">RRT Deployments</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">RRT Deployments</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">RRT Deployments</h5>
+                    <p class="text-muted mb-0">Track and manage RRT team deployments to outbreaks</p>
+                </div>
+                <div>
+                    <a href="/resource-management/rrt-deployments/new" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Deploy New Team
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="outbreak_filter" class="form-label">Filter by Outbreak</label>
+                            <select class="form-select" id="outbreak_filter">
+                                <option value="">All Outbreaks</option>
+                                <!-- Outbreak options will be populated here -->
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="status_filter" class="form-label">Filter by Status</label>
+                            <select class="form-select" id="status_filter">
+                                <option value="">All Statuses</option>
+                                <option value="deployed">Deployed</option>
+                                <option value="extended">Extended</option>
+                                <option value="returned">Returned</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="date_filter" class="form-label">Filter by Date</label>
+                            <input type="date" class="form-control" id="date_filter">
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button class="btn btn-outline-primary w-100" onclick="applyFilters()">
+                                <i class="fas fa-filter me-2"></i>Apply Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deployments List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">All Deployments</h5>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-secondary btn-sm" onclick="refreshDeployments()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" onclick="exportDeployments()">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {{if .RRTDeployments}}
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="deploymentsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Team</th>
+                                    <th>Outbreak</th>
+                                    <th>Deployment Date</th>
+                                    <th>Expected Return</th>
+                                    <th>Status</th>
+                                    <th>Vehicle</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{range .RRTDeployments}}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm bg-soft-primary rounded me-3">
+                                                <i class="fas fa-users text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0">{{if .Team}}{{.Team.TeamName}}{{else}}Unknown Team{{end}}</h6>
+                                                <small class="text-muted">{{if .Team}}{{.Team.TeamCode}}{{end}}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{if .Outbreak}}{{if .Outbreak.Name.Valid}}{{.Outbreak.Name.String}}{{else}}Unknown Outbreak{{end}}{{else}}Unknown Outbreak{{end}}</strong>
+                                            {{if .Outbreak}}{{if .Outbreak.Description.Valid}}
+                                            <br><small class="text-muted">{{.Outbreak.Description.String}}</small>
+                                            {{end}}{{end}}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{.DeploymentDate.Format "Jan 2, 2006"}}</strong>
+                                            <br><small class="text-muted">{{.DeploymentDate.Format "15:04"}}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {{if .ExpectedReturnDate.Valid}}
+                                        <div>
+                                            <strong>{{.ExpectedReturnDate.Time.Format "Jan 2, 2006"}}</strong>
+                                            <br><small class="text-muted">{{.ExpectedReturnDate.Time.Format "15:04"}}</small>
+                                        </div>
+                                        {{else}}
+                                        <span class="text-muted">Not specified</span>
+                                        {{end}}
+                                    </td>
+                                    <td>
+                                        {{if eq .DeploymentStatus "deployed"}}
+                                        <span class="badge bg-success">Deployed</span>
+                                        {{else if eq .DeploymentStatus "extended"}}
+                                        <span class="badge bg-warning">Extended</span>
+                                        {{else if eq .DeploymentStatus "returned"}}
+                                        <span class="badge bg-info">Returned</span>
+                                        {{else}}
+                                        <span class="badge bg-secondary">{{.DeploymentStatus}}</span>
+                                        {{end}}
+                                    </td>
+                                    <td>
+                                        {{if .AssignedVehicle.Valid}}
+                                        <div>
+                                            <i class="fas fa-truck text-muted me-1"></i>{{.AssignedVehicle.String}}
+                                            {{if .AssignedDriver.Valid}}
+                                            <br><small class="text-muted">Driver: {{.AssignedDriver.String}}</small>
+                                            {{end}}
+                                        </div>
+                                        {{else}}
+                                        <span class="text-muted">Not assigned</span>
+                                        {{end}}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="/resource-management/rrt-deployments/edit/{{.ID}}" class="btn btn-outline-primary btn-sm" title="Edit Deployment">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="/resource-management/activity-logs?deployment_id={{.ID}}" class="btn btn-outline-info btn-sm" title="View Activities">
+                                                <i class="fas fa-activity"></i>
+                                            </a>
+                                            {{if eq .DeploymentStatus "deployed"}}
+                                            <button class="btn btn-outline-success btn-sm" onclick="returnTeam({{.ID}})" title="Mark as Returned">
+                                                <i class="fas fa-undo"></i>
+                                            </button>
+                                            {{end}}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+                    {{else}}
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <i class="fas fa-truck text-muted" style="font-size: 4rem;"></i>
+                        </div>
+                        <h5 class="text-muted">No Deployments Found</h5>
+                        <p class="text-muted">Get started by deploying your first RRT team.</p>
+                        <a href="/resource-management/rrt-deployments/new" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Deploy First Team
+                        </a>
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Initialize DataTable
+    if ($.fn.DataTable) {
+        $('#deploymentsTable').DataTable({
+            "pageLength": 25,
+            "order": [[2, "desc"]],
+            "columnDefs": [
+                { "orderable": false, "targets": 6 }
+            ]
+        });
+    }
+});
+
+function refreshDeployments() {
+    location.reload();
+}
+
+function exportDeployments() {
+    // Implement export functionality
+    alert('Export functionality will be implemented');
+}
+
+function returnTeam(deploymentId) {
+    if (confirm('Are you sure you want to mark this team as returned?')) {
+        // Implement return functionality
+        alert('Return functionality will be implemented');
+    }
+}
+
+function applyFilters() {
+    var outbreakFilter = $('#outbreak_filter').val();
+    var statusFilter = $('#status_filter').val();
+    var dateFilter = $('#date_filter').val();
+    
+    // Build URL with filters
+    var url = '/resource-management/rrt-deployments?';
+    var params = [];
+    
+    if (outbreakFilter) params.push('outbreak_id=' + outbreakFilter);
+    if (statusFilter) params.push('status=' + statusFilter);
+    if (dateFilter) params.push('date=' + dateFilter);
+    
+    if (params.length > 0) {
+        url += params.join('&');
+        window.location.href = url;
+    } else {
+        window.location.href = '/resource-management/rrt-deployments';
+    }
+}
+</script>
+{{ end }}

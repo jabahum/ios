@@ -1,0 +1,277 @@
+{{ define "content" }}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="/home">Home</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management">Resource Management</a></li>
+                        <li class="breadcrumb-item active">SitRep Generation</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">Situation Report Generation</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Generate Situation Report</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="/resource-management/sitrep/generate" id="sitrepForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="outbreak_id" class="form-label">Outbreak <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="outbreak_id" name="outbreak_id" required>
+                                        <option value="">Select Outbreak</option>
+                                        {{range .Outbreaks}}
+                                        <option value="{{.ID}}">{{if .Name.Valid}}{{.Name.String}}{{else}}Outbreak {{.ID}}{{end}}{{if .Description.Valid}} - {{.Description.String}}{{end}}</option>
+                                        {{end}}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="report_type" class="form-label">Report Type <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="report_type" name="report_type" required>
+                                        <option value="">Select Report Type</option>
+                                        <option value="weekly">Weekly Report</option>
+                                        <option value="monthly">Monthly Report</option>
+                                        <option value="final">Final Report</option>
+                                        <option value="custom">Custom Period</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="period_start" class="form-label">Report Period Start <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="period_start" name="period_start" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="period_end" class="form-label">Report Period End <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="period_end" name="period_end" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Include Sections</label>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="include_cases" name="include_sections" value="cases" checked>
+                                        <label class="form-check-label" for="include_cases">Case Summary</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="include_resources" name="include_sections" value="resources" checked>
+                                        <label class="form-check-label" for="include_resources">Resource Utilization</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="include_activities" name="include_sections" value="activities" checked>
+                                        <label class="form-check-label" for="include_activities">RRT Activities</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="include_deployments" name="include_sections" value="deployments" checked>
+                                        <label class="form-check-label" for="include_deployments">Team Deployments</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="include_challenges" name="include_sections" value="challenges">
+                                        <label class="form-check-label" for="include_challenges">Challenges</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="include_recommendations" name="include_sections" value="recommendations">
+                                        <label class="form-check-label" for="include_recommendations">Recommendations</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="/resource-management" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="generateBtn">
+                                <i class="fas fa-file-alt me-2"></i>Generate SitRep
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">SitRep Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Report Generation</h6>
+                        <ul class="mb-0">
+                            <li>Select appropriate outbreak and time period</li>
+                            <li>Include relevant sections for comprehensive reporting</li>
+                            <li>Weekly reports are ideal for ongoing outbreaks</li>
+                            <li>Final reports summarize entire outbreak response</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Important Notes</h6>
+                        <ul class="mb-0">
+                            <li>Ensure all data is up-to-date before generation</li>
+                            <li>Review generated report before distribution</li>
+                            <li>Reports are automatically saved for future reference</li>
+                            <li>Generated reports can be exported to PDF</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">Quick Actions</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-primary btn-sm" onclick="setWeeklyReport()">
+                                    <i class="fas fa-calendar-week me-2"></i>Set Weekly Report
+                                </button>
+                                <button class="btn btn-outline-info btn-sm" onclick="setMonthlyReport()">
+                                    <i class="fas fa-calendar-alt me-2"></i>Set Monthly Report
+                                </button>
+                                <button class="btn btn-outline-success btn-sm" onclick="setFinalReport()">
+                                    <i class="fas fa-flag-checkered me-2"></i>Set Final Report
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generated Reports Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Recent Generated Reports</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-4">
+                        <i class="fas fa-file-alt text-muted" style="font-size: 3rem;"></i>
+                        <h5 class="text-muted mt-3">No Reports Generated Yet</h5>
+                        <p class="text-muted">Generate your first situation report to see it here.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Set default dates
+    var today = new Date();
+    var lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    
+    $('#period_end').val(today.toISOString().split('T')[0]);
+    $('#period_start').val(lastWeek.toISOString().split('T')[0]);
+
+    // Handle report type changes
+    $('#report_type').on('change', function() {
+        var reportType = $(this).val();
+        var today = new Date();
+        var startDate, endDate;
+
+        switch(reportType) {
+            case 'weekly':
+                startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                endDate = today;
+                break;
+            case 'monthly':
+                startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+                endDate = today;
+                break;
+            case 'final':
+                // Set to outbreak start date (would need to fetch from selected outbreak)
+                startDate = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
+                endDate = today;
+                break;
+        }
+
+        if (startDate && endDate) {
+            $('#period_start').val(startDate.toISOString().split('T')[0]);
+            $('#period_end').val(endDate.toISOString().split('T')[0]);
+        }
+    });
+
+    // Handle form submission
+    $('#sitrepForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        // Show loading state
+        $('#generateBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Generating...');
+        
+        // Collect form data
+        var formData = new FormData(this);
+        
+        // Submit form
+        fetch('/resource-management/sitrep/generate', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('SitRep generated successfully!');
+                // Optionally redirect to view the generated report
+                // window.location.href = '/resource-management/sitrep/view/' + data.sitrep_id;
+            } else {
+                alert('Error generating SitRep: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error generating SitRep. Please try again.');
+        })
+        .finally(() => {
+            // Reset button state
+            $('#generateBtn').prop('disabled', false).html('<i class="fas fa-file-alt me-2"></i>Generate SitRep');
+        });
+    });
+});
+
+function setWeeklyReport() {
+    $('#report_type').val('weekly').trigger('change');
+}
+
+function setMonthlyReport() {
+    $('#report_type').val('monthly').trigger('change');
+}
+
+function setFinalReport() {
+    $('#report_type').val('final').trigger('change');
+}
+</script>
+{{ end }}

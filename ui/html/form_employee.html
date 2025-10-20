@@ -25,7 +25,7 @@
         }
         
         .header-section {
-            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
             color: white;
             padding: 30px;
             border-radius: 10px 10px 0 0;
@@ -53,12 +53,12 @@
         }
         
         .form-control:focus, .form-select:focus {
-            border-color: #17a2b8;
-            box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.25);
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
             border: none;
             border-radius: 8px;
             padding: 12px 30px;
@@ -68,7 +68,7 @@
         
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(23, 162, 184, 0.4);
+            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.4);
         }
         
         .card {
@@ -295,6 +295,33 @@
                                         {{ end }}
                                     </select>
                                     <div class="form-text">If not attached to a system facility, select AFI facility name</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label" for="afi_region">AFI Region</label>
+                                    <select class="form-select" id="afi_region" name="afi_region">
+                                        {{ $current := .Employee.AFIRegion.String }}
+                                        {{ range $value, $label := index .Optionz "afi_regions" }}
+                                            <option value="{{ $value }}" {{ if eq $value $current }}selected{{ end }}>{{ $label }}</option>
+                                        {{ end }}
+                                    </select>
+                                    <div class="form-text">Select region for regional-level access control</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label" for="afi_district">AFI District</label>
+                                    <select class="form-select" id="afi_district" name="afi_district">
+                                        {{ $current := .Employee.AFIDistrict.String }}
+                                        {{ range $value, $label := index .Optionz "afi_districts" }}
+                                            <option value="{{ $value }}" {{ if eq $value $current }}selected{{ end }}>{{ $label }}</option>
+                                        {{ end }}
+                                    </select>
+                                    <div class="form-text">Select district for district-level access control</div>
                                 </div>
                             </div>
                         </div>

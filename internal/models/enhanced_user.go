@@ -230,3 +230,34 @@ func GetAllEnhancedUsers(ctx context.Context, db DB) ([]*EnhancedUser, error) {
 	}
 	return res, nil
 }
+
+// FullName returns the full name of the user
+func (u *EnhancedUser) FullName() string {
+	if u.FirstName.Valid && u.LastName.Valid {
+		return u.FirstName.String + " " + u.LastName.String
+	}
+	if u.FirstName.Valid {
+		return u.FirstName.String
+	}
+	if u.LastName.Valid {
+		return u.LastName.String
+	}
+	if u.UserName.Valid {
+		return u.UserName.String
+	}
+	return "Unknown User"
+}
+
+// GetEmail returns the email address
+func (u *EnhancedUser) GetEmail() string {
+	if u.Email.Valid {
+		return u.Email.String
+	}
+	return ""
+}
+
+// GetPhone returns the phone number (if available)
+func (u *EnhancedUser) GetPhone() string {
+	// Phone field doesn't exist in EnhancedUser, return empty string
+	return ""
+}

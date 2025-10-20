@@ -88,6 +88,9 @@
                     <a href="/vhf-lab/{{.ID}}" class="btn btn-sm {{if .LabStatus}}btn-warning{{else}}btn-primary{{end}}">
                       <i class="bi bi-vial"></i> {{if .LabStatus}}Update Lab{{else}}Lab{{end}}
                     </a>
+                    <button type="button" class="btn btn-sm btn-success btn-admit" data-case-id="{{.ID}}" data-case-code="{{.CaseCode}}">
+                      <i class="bi bi-hospital"></i> Admit
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -266,9 +269,208 @@
     </div>
   </div>
 
+  <!-- Admit Modal -->
+  <div class="modal fade" id="admitModal" tabindex="-1" aria-labelledby="admitModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="admitModalLabel">Admit Case</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="outbreakSelect" class="form-label">Select Outbreak</label>
+            <select id="outbreakSelect" class="form-select" disabled>
+              <option value="" selected>Loading outbreaks...</option>
+            </select>
+            <div class="form-text" id="admitCaseInfo"></div>
+          </div>
+          <div id="admitAlert" class="alert d-none" role="alert"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" id="confirmAdmitBtn" class="btn btn-primary" disabled>
+            <span class="spinner-border spinner-border-sm me-2 d-none" role="status" aria-hidden="true"></span>
+            Admit Case
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+  <script>
+    (function() {
+      let selectedCaseId = null;
+      let selectedAdmitButton = null;
+      let selectedOutbreakId = null;
+
+      function setModalLoading(isLoading) {
+        const $select = $('#outbreakSelect');
+        const $confirm = $('#confirmAdmitBtn');
+        const $spinner = $('#confirmAdmitBtn .spinner-border');
+        if (isLoading) {
+          $select.prop('disabled', true);
+          $confirm.prop('disabled', true);
+          $spinner.removeClass('d-none');
+        } else {
+          $spinner.addClass('d-none');
+        }
+      }
+
+      function showAdmitAlert(type, message) {
+        const $alert = $('#admitAlert');
+        $alert.removeClass('d-none alert-success alert-danger alert-warning').addClass('alert-' + type).text(message);
+      }
+
+      function clearAdmitAlert() {
+        $('#admitAlert').addClass('d-none').removeClass('alert-success alert-danger alert-warning').text('');
+      }
+
+      function safeText(v, fallback) {
+        if (v == null) return fallback || '';
+        if (typeof v === 'string' || typeof v === 'number') return '' + v;
+        // Handle objects like {String:"...", Valid:true}
+        if (typeof v === 'object') {
+          if (typeof v.String === 'string' || typeof v.String === 'number') return '' + v.String;
+          if (typeof v.Value === 'string' || typeof v.Value === 'number') return '' + v.Value;
+          if (typeof v.name === 'string') return v.name;
+          if (typeof v.Name === 'string') return v.Name;
+        }
+        try { return JSON.stringify(v); } catch(e) { return fallback || ''; }
+      }
+
+      function extractOutbreakId(o) {
+        return o.id || o.ID || o.Id || o.outbreak_id || (o.outbreak && (o.outbreak.id || o.outbreak.ID));
+      }
+
+      function extractOutbreakName(o) {
+        // Try common fields first
+        let name = o.name ?? o.Name ?? o.title ?? o.Title ?? o.outbreak_name;
+        // If still object-like, try nested .String
+        if (!name && o.name && typeof o.name === 'object') name = o.name.String || o.name.Value;
+        if (!name && o.Name && typeof o.Name === 'object') name = o.Name.String || o.Name.Value;
+        if (!name && o.title && typeof o.title === 'object') name = o.title.String || o.title.Value;
+        // Fallback: build from code or id
+        if (!name) name = o.code || o.Code || ('Outbreak #' + (extractOutbreakId(o) || ''));
+        return safeText(name, 'Outbreak');
+      }
+
+      function loadOutbreaks() {
+        const $select = $('#outbreakSelect');
+        $select.empty().append('<option value="">Loading outbreaks...</option>').prop('disabled', true);
+        $.ajax({
+          url: 'http://localhost:3000/api/outbreaks',
+          method: 'GET',
+          dataType: 'json'
+        }).done(function(data) {
+          $select.empty().append('<option value="">Select an outbreak</option>');
+          // Accept both array or {outbreaks: []}
+          const outbreaks = Array.isArray(data) ? data : (data.outbreaks || []);
+          outbreaks.forEach(function(o) {
+            const id = extractOutbreakId(o);
+            const name = extractOutbreakName(o);
+            $select.append('<option value="' + id + '">' + name + '</option>');
+          });
+          $select.prop('disabled', false);
+          $('#confirmAdmitBtn').prop('disabled', true);
+        }).fail(function(xhr) {
+          $select.empty().append('<option value="">Failed to load outbreaks</option>').prop('disabled', true);
+          showAdmitAlert('danger', 'Unable to fetch outbreaks. Please try again.');
+        });
+      }
+
+      // Open modal on Admit click
+      $(document).on('click', '.btn-admit', function() {
+        clearAdmitAlert();
+        selectedCaseId = $(this).data('case-id');
+        selectedAdmitButton = $(this);
+        selectedOutbreakId = null; // Reset outbreak selection
+        const caseCode = $(this).data('case-code') || '';
+        $('#admitCaseInfo').text(caseCode ? ('Admitting case: ' + caseCode) : '');
+
+        loadOutbreaks();
+        const modalEl = document.getElementById('admitModal');
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+      });
+
+      // Enable confirm once an outbreak is selected
+      $(document).on('change', '#outbreakSelect', function() {
+        const val = $(this).val();
+        selectedOutbreakId = val; // Persist the selected outbreak ID
+        console.log('Outbreak selected:', val, 'Stored outbreak ID:', selectedOutbreakId);
+        $('#confirmAdmitBtn').prop('disabled', !val);
+        clearAdmitAlert();
+      });
+
+      // Confirm admission
+      $(document).on('click', '#confirmAdmitBtn', function() {
+        clearAdmitAlert();
+        const outbreakId = selectedOutbreakId || $('#outbreakSelect').val();
+        console.log('Confirm admission - Case ID:', selectedCaseId, 'Outbreak ID:', outbreakId, 'Selected outbreak ID:', selectedOutbreakId);
+        if (!selectedCaseId || !outbreakId) {
+          showAdmitAlert('warning', 'Please select a case and an outbreak before proceeding.');
+          return;
+        }
+
+        setModalLoading(true);
+
+        // 1) Fetch CIF. Prefer case_code if present on the row
+        const caseCode = (selectedAdmitButton && selectedAdmitButton.data('case-code')) ? selectedAdmitButton.data('case-code') : null;
+        const cifRequest = caseCode ?
+          $.ajax({ url: '/api/cif', method: 'GET', dataType: 'json', data: { case_code: caseCode } }) :
+          $.ajax({ url: '/api/cif/' + encodeURIComponent(selectedCaseId), method: 'GET', dataType: 'json' });
+
+        cifRequest.done(function(cif) {
+          // 2) Build admission payload from CIF
+          // Fallback keys to increase robustness
+          const patient = cif.patient || cif.Patient || cif || {};
+          const payload = {
+            outbreak_id: parseInt(outbreakId, 10),
+            case_id: selectedCaseId,
+            patient_name: patient.name || patient.full_name || patient.patient_name || '',
+            age: patient.age || patient.patient_age || null,
+            gender: patient.gender || patient.sex || '',
+            district: patient.district || patient.residence_district || '',
+            // Additional common fields if present
+            onset_date: cif.onset_date || patient.onset_date || null,
+            symptoms: cif.symptoms || patient.symptoms || '',
+            classification: cif.classification || patient.classification || '',
+            // Mark as admission created from CIF
+            source: 'cif_import'
+          };
+          console.log('CIF data received:', cif);
+          console.log('Payload being sent:', payload);
+
+          // 3) POST admission
+          return $.ajax({
+            url: '/api/cases',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(payload)
+          });
+        }).done(function(resp) {
+          // Success
+          setModalLoading(false);
+          const modalEl = document.getElementById('admitModal');
+          const modal = bootstrap.Modal.getInstance(modalEl);
+          modal && modal.hide();
+
+          // Navigate to the patient form right away (server also returns redirect)
+          var target = (resp && resp.redirect) ? resp.redirect : '/cases/new/0';
+          window.location.href = target;
+          return;
+        }).fail(function(xhr) {
+          setModalLoading(false);
+          const message = xhr && xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : 'Admission failed. Please try again.';
+          showAdmitAlert('danger', message);
+        });
+      });
+    })();
+  </script>
   <script>
     $(document).ready(function() {
       // Initialize DataTables for all tables

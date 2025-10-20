@@ -1,0 +1,97 @@
+{{ define "content" }}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-0">
+                            <i class="fas fa-history me-2"></i>Pillar Change History
+                        </h4>
+                        <p class="text-muted mb-0">Track all changes made to this pillar</p>
+                    </div>
+                    <div>
+                        <a href="/resource-management/pillars" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Pillars
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {{if .PillarChanges}}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Change Type</th>
+                                    <th>Changed By</th>
+                                    <th>Old Value</th>
+                                    <th>New Value</th>
+                                    <th>Reason</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{range .PillarChanges}}
+                                <tr>
+                                    <td>
+                                        <div class="small">
+                                            <i class="fas fa-calendar me-1"></i>{{.ChangedAt.Format "2006-01-02 15:04"}}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{.GetChangeDescription}}</span>
+                                    </td>
+                                    <td>
+                                        {{if .ChangedByUser}}
+                                            {{.ChangedByUser.FullName}}
+                                        {{else}}
+                                            <span class="text-muted">Unknown</span>
+                                        {{end}}
+                                    </td>
+                                    <td>
+                                        {{if .OldValue.Valid}}
+                                            <div class="small text-muted">{{.OldValue.String}}</div>
+                                        {{else}}
+                                            <span class="text-muted">-</span>
+                                        {{end}}
+                                    </td>
+                                    <td>
+                                        {{if .NewValue.Valid}}
+                                            <div class="small text-success">{{.NewValue.String}}</div>
+                                        {{else}}
+                                            <span class="text-muted">-</span>
+                                        {{end}}
+                                    </td>
+                                    <td>
+                                        {{if .ChangeReason.Valid}}
+                                            <div class="small">{{.ChangeReason.String}}</div>
+                                        {{else}}
+                                            <span class="text-muted">-</span>
+                                        {{end}}
+                                    </td>
+                                    <td>
+                                        {{if .Notes.Valid}}
+                                            <div class="small">{{.Notes.String}}</div>
+                                        {{else}}
+                                            <span class="text-muted">-</span>
+                                        {{end}}
+                                    </td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+                    {{else}}
+                    <div class="text-center py-5">
+                        <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Changes Found</h5>
+                        <p class="text-muted">This pillar has no recorded changes yet.</p>
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}

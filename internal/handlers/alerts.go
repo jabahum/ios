@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bytes"
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
@@ -11,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -35,6 +35,61 @@ type ExternalAlert struct {
 	Verified      bool      `json:"verified"`
 	CIFNumber     string    `json:"cif_number,omitempty"`
 	CaseCode      string    `json:"case_code,omitempty"`
+
+	// API response fields (for unmarshaling)
+	IDAPI int `json:"id"`
+
+	// Additional fields from actual API response
+	Date                       string `json:"date"`
+	Time                       string `json:"time"`
+	CallTaker                  string `json:"callTaker"`
+	CifNo                      string `json:"cifNo"`
+	PersonReporting            string `json:"personReporting"`
+	Village                    string `json:"village"`
+	SubCounty                  string `json:"subCounty"`
+	ContactNumberAPI           string `json:"contactNumber"`
+	SourceOfAlert              string `json:"sourceOfAlert"`
+	AlertCaseName              string `json:"alertCaseName"`
+	AlertCaseAge               int    `json:"alertCaseAge"`
+	AlertCaseSex               string `json:"alertCaseSex"`
+	AlertCasePregnantDuration  int    `json:"alertCasePregnantDuration"`
+	AlertCaseVillage           string `json:"alertCaseVillage"`
+	AlertCaseParish            string `json:"alertCaseParish"`
+	AlertCaseSubCounty         string `json:"alertCaseSubCounty"`
+	AlertCaseDistrict          string `json:"alertCaseDistrict"`
+	AlertCaseNationality       string `json:"alertCaseNationality"`
+	PointOfContactName         string `json:"pointOfContactName"`
+	PointOfContactRelationship string `json:"pointOfContactRelationship"`
+	PointOfContactPhone        string `json:"pointOfContactPhone"`
+	History                    string `json:"history"`
+	HealthFacilityVisit        string `json:"healthFacilityVisit"`
+	TraditionalHealerVisit     string `json:"traditionalHealerVisit"`
+	Symptoms                   string `json:"symptoms"`
+	Actions                    string `json:"actions"`
+	CaseVerificationDesk       string `json:"caseVerificationDesk"`
+	FieldVerification          string `json:"fieldVerification"`
+	FieldVerificationDecision  string `json:"fieldVerificationDecision"`
+	Feedback                   string `json:"feedback"`
+	LabResult                  string `json:"labResult"`
+	LabResultDate              string `json:"labResultDate"`
+	IsHighlighted              bool   `json:"isHighlighted"`
+	AssignedTo                 string `json:"assignedTo"`
+	AlertReportedBefore        string `json:"alertReportedBefore"`
+	AlertFrom                  string `json:"alertFrom"`
+	VerifiedAPI                *bool  `json:"verified"`
+	Comments                   string `json:"comments"`
+	VerificationDate           string `json:"verificationDate"`
+	VerificationTime           string `json:"verificationTime"`
+	ResponseAPI                string `json:"response"`
+	Narrative                  string `json:"narrative"`
+	FacilityType               string `json:"facilityType"`
+	Facility                   string `json:"facility"`
+	IsVerified                 bool   `json:"isVerified"`
+	VerifiedBy                 string `json:"verifiedBy"`
+	Region                     string `json:"region"`
+	CaseCodeAPI                string `json:"caseCode"`
+	CreatedAtAPI               string `json:"createdAt"`
+	UpdatedAtAPI               string `json:"updatedAt"`
 }
 
 // AlertsResponse represents the response from the external alerts API
@@ -62,10 +117,62 @@ type TokenResponse struct {
 	ExpiresIn   int    `json:"expires_in"`
 }
 
+// TokenCache holds cached token information
+type TokenCache struct {
+	Token     string
+	ExpiresAt time.Time
+	mutex     sync.RWMutex
+}
+
+// Global token cache
+var tokenCache = &TokenCache{}
+
+// mapAPIAlertToFrontend maps API response fields to frontend expected fields
+func mapAPIAlertToFrontend(apiAlert ExternalAlert) ExternalAlert {
+	// Parse dates
+	var createdAt time.Time
+	if apiAlert.CreatedAtAPI != "" {
+		if parsed, err := time.Parse("2006-01-02T15:04:05-07:00", apiAlert.CreatedAtAPI); err == nil {
+			createdAt = parsed
+		} else if parsed, err := time.Parse("2006-01-02T15:04:05.000Z", apiAlert.CreatedAtAPI); err == nil {
+			createdAt = parsed
+		}
+	}
+
+	var updatedAt time.Time
+	if apiAlert.UpdatedAtAPI != "" && apiAlert.UpdatedAtAPI != "0001-01-01T00:00:00Z" {
+		if parsed, err := time.Parse("2006-01-02T15:04:05-07:00", apiAlert.UpdatedAtAPI); err == nil {
+			updatedAt = parsed
+		} else if parsed, err := time.Parse("2006-01-02T15:04:05.000Z", apiAlert.UpdatedAtAPI); err == nil {
+			updatedAt = parsed
+		}
+	}
+
+	// Map fields to frontend expected format
+	return ExternalAlert{
+		ID:            fmt.Sprintf("%d", apiAlert.IDAPI),
+		Title:         apiAlert.AlertCaseName,
+		Description:   apiAlert.Symptoms,
+		Severity:      "Medium", // Default since not provided by API
+		Category:      apiAlert.ResponseAPI,
+		Location:      apiAlert.AlertCaseDistrict,
+		CreatedAt:     createdAt,
+		UpdatedAt:     updatedAt,
+		Status:        apiAlert.Status,
+		Reporter:      apiAlert.PersonReporting,
+		ContactNumber: apiAlert.ContactNumberAPI,
+		Source:        apiAlert.SourceOfAlert,
+		Response:      apiAlert.ResponseAPI,
+		Verified:      apiAlert.IsVerified,
+		CIFNumber:     apiAlert.CifNo,
+		CaseCode:      apiAlert.CaseCodeAPI,
+	}
+}
+
 // HandlerAlerts handles the alerts page
 func HandlerAlerts(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
 	// Fetch alerts from external API
-	alerts, err := fetchExternalAlerts()
+	alerts, err := fetchExternalAlerts(config)
 	if err != nil {
 		sl.Error("Failed to fetch external alerts", "error", err)
 		// Continue with empty alerts rather than failing completely
@@ -102,7 +209,7 @@ func HandlerAlertsAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 	}
 
 	// Fetch all alerts from external API
-	allAlerts, err := fetchExternalAlerts()
+	allAlerts, err := fetchExternalAlerts(config)
 	if err != nil {
 		sl.Error("Failed to fetch external alerts", "error", err)
 		return c.Status(500).JSON(fiber.Map{
@@ -161,7 +268,7 @@ func HandlerAlertsAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 // HandlerAlertsDebug handles debugging the external API
 func HandlerAlertsDebug(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
 	// Test the external API directly
-	alerts, err := fetchExternalAlerts()
+	alerts, err := fetchExternalAlerts(config)
 
 	debugInfo := fiber.Map{
 		"success":      err == nil,
@@ -222,147 +329,123 @@ func filterAlerts(alerts []ExternalAlert, search, severity, status, location str
 	return filtered
 }
 
-// getBearerToken fetches a bearer token using the provided credentials
-func getBearerToken() (string, error) {
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
+// getBearerToken returns the provided test token for now
+func getBearerToken(config Config) (string, error) {
+	// Using the provided test token
+	testToken := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTc2NjIzMTcsInVzZXJfaWQiOjEsInVzZXJuYW1lIjoicHdhaXN3YSJ9.WevC8m0gFOlQmI3or8QdVuDRGx3-D5M44DV4gIABXTM"
 
-	// Create login request
-	loginData := map[string]string{
-		"username": "pwaiswa",
-		"password": "leaves",
-	}
+	// Cache the token with expiration
+	tokenCache.mutex.Lock()
+	tokenCache.Token = testToken
+	tokenCache.ExpiresAt = time.Now().Add(55 * time.Minute) // Default to 55 minutes
+	tokenCache.mutex.Unlock()
 
-	loginJSON, err := json.Marshal(loginData)
-	if err != nil {
-		return "", fmt.Errorf("failed to marshal login data: %w", err)
-	}
-
-	// Try different authentication endpoints
-	endpoints := []string{
-		"https://alerts.health.go.ug/api/v1/login",
-		"https://alerts.health.go.ug/api/v1/token",
-		// "https://alerts.health.go.ug/api/v1/oauth/token",
-		// "https://alerts.health.go.ug/auth/login",
-	}
-
-	for _, endpoint := range endpoints {
-		req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(loginJSON))
-		if err != nil {
-			continue
-		}
-
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Accept", "application/json")
-
-		resp, err := client.Do(req)
-		if err != nil {
-			continue
-		}
-
-		if resp.StatusCode == http.StatusOK {
-			bodyBytes, err := io.ReadAll(resp.Body)
-			resp.Body.Close()
-			if err != nil {
-				continue
-			}
-
-			var tokenResp TokenResponse
-			if err := json.Unmarshal(bodyBytes, &tokenResp); err != nil {
-				// Try parsing as simple token response
-				var simpleResp map[string]interface{}
-				if err := json.Unmarshal(bodyBytes, &simpleResp); err == nil {
-					if token, ok := simpleResp["token"].(string); ok {
-						return token, nil
-					}
-					if token, ok := simpleResp["access_token"].(string); ok {
-						return token, nil
-					}
-				}
-				continue
-			}
-
-			if tokenResp.AccessToken != "" {
-				return tokenResp.AccessToken, nil
-			}
-		}
-		resp.Body.Close()
-	}
-
-	return "", fmt.Errorf("failed to obtain bearer token from any endpoint")
+	return testToken, nil
 }
 
-// fetchExternalAlerts fetches alerts from the external API
-func fetchExternalAlerts() ([]ExternalAlert, error) {
-	// Create HTTP client with timeout
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
+// fetchExternalAlerts fetches alerts from the external API using token-based authentication
+func fetchExternalAlerts(config Config) ([]ExternalAlert, error) {
+	client := &http.Client{Timeout: 30 * time.Second}
+	url := config.AlertsAPI.BaseURL + "/alerts"
 
-	// Create request
-	req, err := http.NewRequest("GET", "https://alerts.health.go.ug/api/v1/alerts", nil)
+	// Get bearer token using proper authentication
+	token, err := getBearerToken(config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return getSampleAlerts(), fmt.Errorf("failed to obtain authentication token: %w", err)
 	}
 
-	// Try different authentication methods
-	authMethods := []struct {
-		name   string
-		header string
-		value  string
-	}{
-		{"Basic Auth", "Authorization", "Basic " + base64.StdEncoding.EncodeToString([]byte("pwaiswa:leaves"))},
-		{"API Key", "X-API-Key", "pwaiswa"},
-		{"API Key", "Authorization", "ApiKey pwaiswa"},
-		{"Custom Header", "X-Auth-Username", "pwaiswa"},
-		{"Custom Header", "X-Auth-Password", "leaves"},
+	// Make authenticated request with bearer token
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return getSampleAlerts(), fmt.Errorf("failed to create request: %w", err)
 	}
 
-	for _, method := range authMethods {
-		req.Header.Set(method.header, method.value)
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Accept", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Accept", "application/json")
 
-		// Make request
-		resp, err := client.Do(req)
+	resp, err := client.Do(req)
+	if err != nil {
+		return getSampleAlerts(), fmt.Errorf("failed to make request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
+		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
-			continue
+			return getSampleAlerts(), fmt.Errorf("failed to read response body: %w", err)
 		}
 
-		if resp.StatusCode == http.StatusOK {
-			// Read response body
-			bodyBytes, err := io.ReadAll(resp.Body)
-			resp.Body.Close()
-			if err != nil {
-				continue
+		// Try parsing directly as array first (this is what the API actually returns)
+		var apiAlerts []ExternalAlert
+		if err := json.Unmarshal(bodyBytes, &apiAlerts); err == nil {
+			// Map API response to frontend expected format
+			var mappedAlerts []ExternalAlert
+			for _, apiAlert := range apiAlerts {
+				mappedAlerts = append(mappedAlerts, mapAPIAlertToFrontend(apiAlert))
 			}
+			return mappedAlerts, nil
+		}
 
-			// Debug: Log the raw response
-			fmt.Printf("DEBUG: Raw API response with %s: %s\n", method.name, string(bodyBytes))
-
-			// Parse response
-			var alertsResponse AlertsResponse
-			if err := json.Unmarshal(bodyBytes, &alertsResponse); err != nil {
-				continue
+		// Try parsing as structured response as fallback
+		var alertsResponse AlertsResponse
+		if err := json.Unmarshal(bodyBytes, &alertsResponse); err == nil && alertsResponse.Success {
+			// Map API response to frontend expected format
+			var mappedAlerts []ExternalAlert
+			for _, apiAlert := range alertsResponse.Data {
+				mappedAlerts = append(mappedAlerts, mapAPIAlertToFrontend(apiAlert))
 			}
+			return mappedAlerts, nil
+		}
 
-			// Debug: Log the parsed response
-			fmt.Printf("DEBUG: Parsed response - Success: %v, Message: %s, Data count: %d\n",
-				alertsResponse.Success, alertsResponse.Message, len(alertsResponse.Data))
+		return getSampleAlerts(), fmt.Errorf("failed to parse API response, returning samples")
+	}
 
-			// Check if the API response indicates success
-			if alertsResponse.Success {
-				return alertsResponse.Data, nil
+	// If token authentication failed, try basic auth as fallback
+	auth := config.AlertsAPI.Username + ":" + config.AlertsAPI.Password
+	req, err = http.NewRequest("GET", url, nil)
+	if err != nil {
+		return getSampleAlerts(), fmt.Errorf("failed to create fallback request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(auth)))
+	req.Header.Set("Accept", "application/json")
+
+	resp, err = client.Do(req)
+	if err != nil {
+		return getSampleAlerts(), fmt.Errorf("failed to make fallback request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return getSampleAlerts(), fmt.Errorf("failed to read fallback response body: %w", err)
+		}
+
+		// Try parsing directly as array first (this is what the API actually returns)
+		var apiAlerts []ExternalAlert
+		if err := json.Unmarshal(bodyBytes, &apiAlerts); err == nil {
+			// Map API response to frontend expected format
+			var mappedAlerts []ExternalAlert
+			for _, apiAlert := range apiAlerts {
+				mappedAlerts = append(mappedAlerts, mapAPIAlertToFrontend(apiAlert))
 			}
-		} else {
-			resp.Body.Close()
+			return mappedAlerts, nil
+		}
+
+		// Try parsing as structured response as fallback
+		var alertsResponse AlertsResponse
+		if err := json.Unmarshal(bodyBytes, &alertsResponse); err == nil && alertsResponse.Success {
+			// Map API response to frontend expected format
+			var mappedAlerts []ExternalAlert
+			for _, apiAlert := range alertsResponse.Data {
+				mappedAlerts = append(mappedAlerts, mapAPIAlertToFrontend(apiAlert))
+			}
+			return mappedAlerts, nil
 		}
 	}
 
-	// If external API fails, return sample alerts for demonstration
-	fmt.Printf("DEBUG: External API failed, returning sample alerts\n")
-	return getSampleAlerts(), nil
+	return getSampleAlerts(), fmt.Errorf("failed to fetch real alerts, returning samples")
 }
 
 // DHIS2 minimal structures for 6767 alerts

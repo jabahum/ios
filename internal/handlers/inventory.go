@@ -118,7 +118,7 @@ func (h *InventoryHandler) HandlerInventoryItemsList(c *fiber.Ctx) error {
 		return c.Status(403).SendString("Access denied. You don't have permission to access inventory management.")
 	}
 
-	data := NewTemplateData(c, h.store)
+	data := NewTemplateDataWithDB(c, h.store, h.db)
 
 	items, err := h.getAllInventoryItems()
 	if err != nil {
@@ -132,7 +132,7 @@ func (h *InventoryHandler) HandlerInventoryItemsList(c *fiber.Ctx) error {
 
 // HandlerInventoryItemForm displays the form for adding/editing inventory items
 func (h *InventoryHandler) HandlerInventoryItemForm(c *fiber.Ctx) error {
-	data := NewTemplateData(c, h.store)
+	data := NewTemplateDataWithDB(c, h.store, h.db)
 
 	// Get categories for dropdown
 	categories, err := h.getAllCategories()
@@ -148,15 +148,34 @@ func (h *InventoryHandler) HandlerInventoryItemForm(c *fiber.Ctx) error {
 		suppliers = []*InventorySupplier{}
 	}
 
-	// Get treatment sites for dropdown
-	_, err = h.getAllTreatmentSites()
+	// Get facilities for dropdown
+	facilities, err := h.getAllFacilities()
 	if err != nil {
-		log.Printf("Error getting treatment sites: %v", err)
+		log.Printf("Error getting facilities: %v", err)
+		facilities = []map[string]interface{}{}
 	}
 
 	data.InventoryCategories = categories
 	data.InventorySuppliers = suppliers
-	// Note: TreatmentSites not available in TemplateData yet
+
+	// Convert facilities to the expected format
+	var sites []*InventoryTreatmentSite
+	for _, facility := range facilities {
+		sites = append(sites, &InventoryTreatmentSite{
+			ID:            facility["id"].(int),
+			Name:          facility["name"].(string),
+			Location:      "",       // Facilities don't have location in this table
+			ContactPerson: "",       // Facilities don't have contact person in this table
+			Phone:         "",       // Facilities don't have phone in this table
+			Email:         "",       // Facilities don't have email in this table
+			Status:        "active", // Assume active
+		})
+	}
+	data.InventoryTreatmentSites = sites
+
+	// Debug logging
+	log.Printf("DEBUG: InventoryItemForm - Categories: %d, Suppliers: %d, Facilities: %d",
+		len(categories), len(suppliers), len(sites))
 
 	// If editing, get the item
 	itemID := c.Params("id")
@@ -208,7 +227,7 @@ func (h *InventoryHandler) HandlerInventoryItemSave(c *fiber.Ctx) error {
 
 // HandlerInventoryStockForm displays the stock management form
 func (h *InventoryHandler) HandlerInventoryStockForm(c *fiber.Ctx) error {
-	data := NewTemplateData(c, h.store)
+	data := NewTemplateDataWithDB(c, h.store, h.db)
 
 	// Get items for dropdown
 	items, err := h.getAllInventoryItems()
@@ -217,14 +236,29 @@ func (h *InventoryHandler) HandlerInventoryStockForm(c *fiber.Ctx) error {
 		items = []*InventoryItem{}
 	}
 
-	// Get treatment sites for dropdown
-	_, err = h.getAllTreatmentSites()
+	// Get facilities for dropdown
+	facilities, err := h.getAllFacilities()
 	if err != nil {
-		log.Printf("Error getting treatment sites: %v", err)
+		log.Printf("Error getting facilities: %v", err)
+		facilities = []map[string]interface{}{}
 	}
 
 	data.InventoryItems = items
-	// Note: TreatmentSites not available in TemplateData yet
+
+	// Convert facilities to the expected format
+	var sites []*InventoryTreatmentSite
+	for _, facility := range facilities {
+		sites = append(sites, &InventoryTreatmentSite{
+			ID:            facility["id"].(int),
+			Name:          facility["name"].(string),
+			Location:      "",       // Facilities don't have location in this table
+			ContactPerson: "",       // Facilities don't have contact person in this table
+			Phone:         "",       // Facilities don't have phone in this table
+			Email:         "",       // Facilities don't have email in this table
+			Status:        "active", // Assume active
+		})
+	}
+	data.InventoryTreatmentSites = sites
 
 	return GenerateHTML(c, h.db, data, "inventory_stock_form")
 }
@@ -253,7 +287,7 @@ func (h *InventoryHandler) HandlerInventoryStockSave(c *fiber.Ctx) error {
 
 // HandlerInventoryPurchaseOrderForm displays the purchase order form
 func (h *InventoryHandler) HandlerInventoryPurchaseOrderForm(c *fiber.Ctx) error {
-	data := NewTemplateData(c, h.store)
+	data := NewTemplateDataWithDB(c, h.store, h.db)
 
 	// Get suppliers for dropdown
 	suppliers, err := h.getAllSuppliers()
@@ -296,13 +330,29 @@ func (h *InventoryHandler) HandlerInventoryPurchaseOrderSave(c *fiber.Ctx) error
 
 // HandlerInventoryRequisitionForm displays the requisition form
 func (h *InventoryHandler) HandlerInventoryRequisitionForm(c *fiber.Ctx) error {
-	data := NewTemplateData(c, h.store)
+	data := NewTemplateDataWithDB(c, h.store, h.db)
 
-	// Get treatment sites for dropdown
-	_, err := h.getAllTreatmentSites()
+	// Get facilities for dropdown
+	facilities, err := h.getAllFacilities()
 	if err != nil {
-		log.Printf("Error getting treatment sites: %v", err)
+		log.Printf("Error getting facilities: %v", err)
+		facilities = []map[string]interface{}{}
 	}
+
+	// Convert facilities to the expected format
+	var sites []*InventoryTreatmentSite
+	for _, facility := range facilities {
+		sites = append(sites, &InventoryTreatmentSite{
+			ID:            facility["id"].(int),
+			Name:          facility["name"].(string),
+			Location:      "",       // Facilities don't have location in this table
+			ContactPerson: "",       // Facilities don't have contact person in this table
+			Phone:         "",       // Facilities don't have phone in this table
+			Email:         "",       // Facilities don't have email in this table
+			Status:        "active", // Assume active
+		})
+	}
+	data.InventoryTreatmentSites = sites
 
 	// Get items for dropdown
 	items, err := h.getAllInventoryItems()
@@ -900,12 +950,12 @@ func (h *InventoryHandler) getAllOutbreaks() ([]map[string]interface{}, error) {
 	return outbreaks, nil
 }
 
-// getAllTreatmentSites retrieves all treatment sites for dropdown
-func (h *InventoryHandler) getAllTreatmentSites() ([]map[string]interface{}, error) {
+// getAllFacilities retrieves all facilities for dropdown
+func (h *InventoryHandler) getAllFacilities() ([]map[string]interface{}, error) {
 	query := `
-		SELECT id, name, location, contact_person, phone, email, status
-		FROM treatment_sites
-		ORDER BY name
+		SELECT facility_id, facility_name, facility_level
+		FROM facility
+		ORDER BY facility_name
 	`
 
 	rows, err := h.db.Query(query)
@@ -914,29 +964,31 @@ func (h *InventoryHandler) getAllTreatmentSites() ([]map[string]interface{}, err
 	}
 	defer rows.Close()
 
-	var sites []map[string]interface{}
+	var facilities []map[string]interface{}
 	for rows.Next() {
 		var id int
-		var name, location, contactPerson, phone, email, status string
+		var name sql.NullString
+		var level sql.NullInt64
 
-		err := rows.Scan(&id, &name, &location, &contactPerson, &phone, &email, &status)
+		err := rows.Scan(&id, &name, &level)
 		if err != nil {
 			return nil, err
 		}
 
-		site := map[string]interface{}{
-			"id":             id,
-			"name":           name,
-			"location":       location,
-			"contact_person": contactPerson,
-			"phone":          phone,
-			"email":          email,
-			"status":         status,
+		facilityName := ""
+		if name.Valid {
+			facilityName = name.String
 		}
-		sites = append(sites, site)
+
+		facility := map[string]interface{}{
+			"id":             id,
+			"name":           facilityName,
+			"facility_level": level,
+		}
+		facilities = append(facilities, facility)
 	}
 
-	return sites, nil
+	return facilities, nil
 }
 
 // API Handlers for AJAX calls
@@ -971,6 +1023,51 @@ func (h *InventoryHandler) HandlerInventoryAPILowStock(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(alerts)
+}
+
+// HandlerInventoryAPICategories returns inventory categories as JSON
+func (h *InventoryHandler) HandlerInventoryAPICategories(c *fiber.Ctx) error {
+	categories, err := h.getAllCategories()
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Error loading categories"})
+	}
+
+	return c.JSON(categories)
+}
+
+// HandlerInventoryAPISuppliers returns inventory suppliers as JSON
+func (h *InventoryHandler) HandlerInventoryAPISuppliers(c *fiber.Ctx) error {
+	suppliers, err := h.getAllSuppliers()
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Error loading suppliers"})
+	}
+
+	return c.JSON(suppliers)
+}
+
+// HandlerInventoryAPITreatmentSites returns facilities as JSON
+func (h *InventoryHandler) HandlerInventoryAPITreatmentSites(c *fiber.Ctx) error {
+	facilities, err := h.getAllFacilities()
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Error loading facilities"})
+	}
+
+	return c.JSON(facilities)
+}
+
+// HandlerInventoryAPITransactionTypes returns transaction types as JSON
+func (h *InventoryHandler) HandlerInventoryAPITransactionTypes(c *fiber.Ctx) error {
+	transactionTypes := []map[string]interface{}{
+		{"id": "IN", "name": "Stock In", "description": "Items received into inventory"},
+		{"id": "OUT", "name": "Stock Out", "description": "Items issued from inventory"},
+		{"id": "ADJUSTMENT", "name": "Stock Adjustment", "description": "Stock level adjustments"},
+		{"id": "TRANSFER", "name": "Transfer", "description": "Transfer between sites"},
+		{"id": "DONATION", "name": "Donation", "description": "Donated items"},
+		{"id": "LOSS", "name": "Loss", "description": "Lost or damaged items"},
+		{"id": "EXPIRED", "name": "Expired", "description": "Expired items"},
+	}
+
+	return c.JSON(transactionTypes)
 }
 
 // Database helper methods
@@ -1074,13 +1171,11 @@ func (h *InventoryHandler) getRecentTransactions() ([]*InventoryTransaction, err
 func (h *InventoryHandler) getAllInventoryItems() ([]*InventoryItem, error) {
 	query := `
 		SELECT 
-			i.id, i.name, i.description, i.category_id, i.supplier_id, i.unit_of_measure,
+			i.id, i.name, i.description, i.category_id, i.unit_of_measure,
 			i.minimum_stock_level, i.maximum_stock_level, i.unit_cost, i.is_active, i.created_at,
-			c.name as category_name,
-			s.name as supplier_name
+			c.name as category_name
 		FROM inventory_items i
 		LEFT JOIN inventory_categories c ON i.category_id = c.id
-		LEFT JOIN inventory_suppliers s ON i.supplier_id = s.id
 		ORDER BY i.name
 	`
 
@@ -1095,9 +1190,9 @@ func (h *InventoryHandler) getAllInventoryItems() ([]*InventoryItem, error) {
 		var item InventoryItem
 		var isActive bool
 		err := rows.Scan(
-			&item.ID, &item.Name, &item.Description, &item.CategoryID, &item.SupplierID,
+			&item.ID, &item.Name, &item.Description, &item.CategoryID,
 			&item.Unit, &item.MinStock, &item.MaxStock, &item.UnitCost, &isActive,
-			&item.CreatedAt, &item.CategoryName, &item.SupplierName,
+			&item.CreatedAt, &item.CategoryName,
 		)
 		if err != nil {
 			return nil, err
@@ -1177,7 +1272,7 @@ func (h *InventoryHandler) updateInventoryItem(item *InventoryItem) error {
 }
 
 func (h *InventoryHandler) getAllCategories() ([]*InventoryCategory, error) {
-	query := `SELECT id, name, description, status FROM inventory_categories ORDER BY name`
+	query := `SELECT id, name, description, is_active FROM inventory_categories ORDER BY name`
 
 	rows, err := h.db.Query(query)
 	if err != nil {
@@ -1188,9 +1283,16 @@ func (h *InventoryHandler) getAllCategories() ([]*InventoryCategory, error) {
 	var categories []*InventoryCategory
 	for rows.Next() {
 		var cat InventoryCategory
-		err := rows.Scan(&cat.ID, &cat.Name, &cat.Description, &cat.Status)
+		var isActive bool
+		err := rows.Scan(&cat.ID, &cat.Name, &cat.Description, &isActive)
 		if err != nil {
 			return nil, err
+		}
+		// Convert boolean to status string
+		if isActive {
+			cat.Status = "active"
+		} else {
+			cat.Status = "inactive"
 		}
 		categories = append(categories, &cat)
 	}
@@ -1199,7 +1301,7 @@ func (h *InventoryHandler) getAllCategories() ([]*InventoryCategory, error) {
 }
 
 func (h *InventoryHandler) getAllSuppliers() ([]*InventorySupplier, error) {
-	query := `SELECT id, name, contact_person, phone, email, address, status FROM inventory_suppliers ORDER BY name`
+	query := `SELECT id, name, contact_person, phone, email, address, is_active FROM inventory_suppliers ORDER BY name`
 
 	rows, err := h.db.Query(query)
 	if err != nil {
@@ -1210,9 +1312,16 @@ func (h *InventoryHandler) getAllSuppliers() ([]*InventorySupplier, error) {
 	var suppliers []*InventorySupplier
 	for rows.Next() {
 		var sup InventorySupplier
-		err := rows.Scan(&sup.ID, &sup.Name, &sup.ContactPerson, &sup.Phone, &sup.Email, &sup.Address, &sup.Status)
+		var isActive bool
+		err := rows.Scan(&sup.ID, &sup.Name, &sup.ContactPerson, &sup.Phone, &sup.Email, &sup.Address, &isActive)
 		if err != nil {
 			return nil, err
+		}
+		// Convert boolean to status string
+		if isActive {
+			sup.Status = "active"
+		} else {
+			sup.Status = "inactive"
 		}
 		suppliers = append(suppliers, &sup)
 	}

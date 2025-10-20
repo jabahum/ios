@@ -228,7 +228,7 @@ function loadAlerts() {
         location: currentFilters.location
     });
 
-    fetch(`/api/alerts?${params}`)
+    fetch(`https://alerts.health.go.ug/api/v1/alerts?${params}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);

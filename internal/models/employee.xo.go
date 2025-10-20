@@ -18,6 +18,8 @@ type Employee struct {
 	EmployeeCadre sql.NullString `json:"employee_cadre"` // employee_cadre
 	Facility      sql.NullInt64  `json:"facility"`       // facility
 	AFIFacility   sql.NullString `json:"afi_facility"`   // afi_facility
+	AFIRegion     sql.NullString `json:"afi_region"`     // afi_region
+	AFIDistrict   sql.NullString `json:"afi_district"`   // afi_district
 	// xo fields
 	_exists, _deleted bool
 }
@@ -43,13 +45,13 @@ func (e *Employee) Insert(ctx context.Context, db DB) error {
 	}
 	// insert (primary key generated and returned by database)
 	const sqlstr = `INSERT INTO public.employee (` +
-		`employee_fname, employee_lname, employee_sex, employee_email, employee_phone, employee_cadre, facility, afi_facility` +
+		`employee_fname, employee_lname, employee_sex, employee_email, employee_phone, employee_cadre, facility, afi_facility, afi_region, afi_district` +
 		`) VALUES (` +
-		`$1, $2, $3, $4, $5, $6, $7, $8` +
+		`$1, $2, $3, $4, $5, $6, $7, $8, $9, $10` +
 		`) RETURNING employee_id`
 	// run
-	logf(sqlstr, e.EmployeeFname, e.EmployeeLname, e.EmployeeSex, e.EmployeeEmail, e.EmployeePhone, e.EmployeeCadre, e.Facility, e.AFIFacility)
-	if err := db.QueryRowContext(ctx, sqlstr, e.EmployeeFname, e.EmployeeLname, e.EmployeeSex, e.EmployeeEmail, e.EmployeePhone, e.EmployeeCadre, e.Facility, e.AFIFacility).Scan(&e.EmployeeID); err != nil {
+	logf(sqlstr, e.EmployeeFname, e.EmployeeLname, e.EmployeeSex, e.EmployeeEmail, e.EmployeePhone, e.EmployeeCadre, e.Facility, e.AFIFacility, e.AFIRegion, e.AFIDistrict)
+	if err := db.QueryRowContext(ctx, sqlstr, e.EmployeeFname, e.EmployeeLname, e.EmployeeSex, e.EmployeeEmail, e.EmployeePhone, e.EmployeeCadre, e.Facility, e.AFIFacility, e.AFIRegion, e.AFIDistrict).Scan(&e.EmployeeID); err != nil {
 		return logerror(err)
 	}
 	// set exists
@@ -67,11 +69,11 @@ func (e *Employee) Update(ctx context.Context, db DB) error {
 	}
 	// update with composite primary key
 	const sqlstr = `UPDATE public.employee SET ` +
-		`employee_fname = $1, employee_lname = $2, employee_sex = $3, employee_email = $4, employee_phone = $5, employee_cadre = $6, facility = $7, afi_facility = $8 ` +
-		`WHERE employee_id = $9`
+		`employee_fname = $1, employee_lname = $2, employee_sex = $3, employee_email = $4, employee_phone = $5, employee_cadre = $6, facility = $7, afi_facility = $8, afi_region = $9, afi_district = $10 ` +
+		`WHERE employee_id = $11`
 	// run
-	logf(sqlstr, e.EmployeeFname, e.EmployeeLname, e.EmployeeSex, e.EmployeeEmail, e.EmployeePhone, e.EmployeeCadre, e.Facility, e.AFIFacility, e.EmployeeID)
-	if _, err := db.ExecContext(ctx, sqlstr, e.EmployeeFname, e.EmployeeLname, e.EmployeeSex, e.EmployeeEmail, e.EmployeePhone, e.EmployeeCadre, e.Facility, e.AFIFacility, e.EmployeeID); err != nil {
+	logf(sqlstr, e.EmployeeFname, e.EmployeeLname, e.EmployeeSex, e.EmployeeEmail, e.EmployeePhone, e.EmployeeCadre, e.Facility, e.AFIFacility, e.AFIRegion, e.AFIDistrict, e.EmployeeID)
+	if _, err := db.ExecContext(ctx, sqlstr, e.EmployeeFname, e.EmployeeLname, e.EmployeeSex, e.EmployeeEmail, e.EmployeePhone, e.EmployeeCadre, e.Facility, e.AFIFacility, e.AFIRegion, e.AFIDistrict, e.EmployeeID); err != nil {
 		return logerror(err)
 	}
 	return nil

@@ -1,0 +1,310 @@
+{{ define "content" }}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="/home">Home</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management">Resource Management</a></li>
+                        <li class="breadcrumb-item active">Deployment Proposals</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">RRT Deployment Proposals</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">Deployment Proposals</h5>
+                    <p class="text-muted mb-0">Review and approve RRT team deployment proposals</p>
+                </div>
+                <div>
+                    <a href="/resource-management/deployment-proposals/new" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Create Proposal
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="outbreak_filter" class="form-label">Filter by Outbreak</label>
+                            <select class="form-select" id="outbreak_filter">
+                                <option value="">All Outbreaks</option>
+                                <!-- Outbreak options will be populated here -->
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="status_filter" class="form-label">Filter by Status</label>
+                            <select class="form-select" id="status_filter">
+                                <option value="">All Statuses</option>
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                                <option value="modified">Modified</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="date_filter" class="form-label">Filter by Date</label>
+                            <input type="date" class="form-control" id="date_filter">
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button class="btn btn-outline-primary w-100" onclick="applyFilters()">
+                                <i class="fas fa-filter me-2"></i>Apply Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Proposals List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">All Proposals</h5>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-secondary btn-sm" onclick="refreshProposals()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" onclick="exportProposals()">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {{if .RRTDeploymentProposals}}
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="proposalsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Proposal #</th>
+                                    <th>Outbreak</th>
+                                    <th>Purpose</th>
+                                    <th>Proposed Date</th>
+                                    <th>Duration</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{range .RRTDeploymentProposals}}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm bg-soft-primary rounded me-3">
+                                                <i class="fas fa-file-alt text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0">{{.ProposalNumber}}</h6>
+                                                <small class="text-muted">Proposed by User {{.ProposedBy}}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{if .Outbreak}}{{if .Outbreak.Name.Valid}}{{.Outbreak.Name.String}}{{else}}Unknown Outbreak{{end}}{{else}}Unknown Outbreak{{end}}</strong>
+                                            {{if .Outbreak}}{{if .Outbreak.Description.Valid}}
+                                            <br><small class="text-muted">{{.Outbreak.Description.String}}</small>
+                                            {{end}}{{end}}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{.DeploymentPurpose}}</strong>
+                                            {{if .SpecialRequirements.Valid}}
+                                            <br><small class="text-muted">{{.SpecialRequirements.String}}</small>
+                                            {{end}}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{.ProposedDate.Format "Jan 2, 2006"}}</strong>
+                                            <br><small class="text-muted">{{.ProposedDate.Format "15:04"}}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {{if .DeploymentDurationDays.Valid}}
+                                        <span class="badge bg-soft-info">{{.DeploymentDurationDays.Int64}} days</span>
+                                        {{else}}
+                                        <span class="text-muted">Not specified</span>
+                                        {{end}}
+                                        {{if .ExpectedStartDate.Valid}}
+                                        <br><small class="text-muted">Start: {{.ExpectedStartDate.Time.Format "Jan 2"}}</small>
+                                        {{end}}
+                                    </td>
+                                    <td>
+                                        {{if eq .Status "pending"}}
+                                        <span class="badge bg-warning">Pending Review</span>
+                                        {{else if eq .Status "approved"}}
+                                        <span class="badge bg-success">Approved</span>
+                                        {{else if eq .Status "rejected"}}
+                                        <span class="badge bg-danger">Rejected</span>
+                                        {{else if eq .Status "modified"}}
+                                        <span class="badge bg-info">Modified</span>
+                                        {{else}}
+                                        <span class="badge bg-secondary">{{.Status}}</span>
+                                        {{end}}
+                                        {{if .ReviewedAt.Valid}}
+                                        <br><small class="text-muted">Reviewed: {{.ReviewedAt.Time.Format "Jan 2, 2006"}}</small>
+                                        {{end}}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="/resource-management/deployment-proposals/view/{{.ID}}" class="btn btn-outline-primary btn-sm" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {{if eq .Status "pending"}}
+                                            <button class="btn btn-outline-success btn-sm" onclick="reviewProposal({{.ID}}, 'approve')" title="Approve">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm" onclick="reviewProposal({{.ID}}, 'reject')" title="Reject">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                            {{end}}
+                                            {{if eq .Status "rejected"}}
+                                            <button class="btn btn-outline-info btn-sm" onclick="resubmitProposal({{.ID}})" title="Resubmit">
+                                                <i class="fas fa-redo"></i>
+                                            </button>
+                                            {{end}}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+                    {{else}}
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <i class="fas fa-file-alt text-muted" style="font-size: 4rem;"></i>
+                        </div>
+                        <h5 class="text-muted">No Proposals Found</h5>
+                        <p class="text-muted">Get started by creating your first deployment proposal.</p>
+                        <a href="/resource-management/deployment-proposals/new" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Create First Proposal
+                        </a>
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Initialize DataTable
+    if ($.fn.DataTable) {
+        $('#proposalsTable').DataTable({
+            "pageLength": 25,
+            "order": [[3, "desc"]],
+            "columnDefs": [
+                { "orderable": false, "targets": 6 }
+            ]
+        });
+    }
+});
+
+function refreshProposals() {
+    location.reload();
+}
+
+function exportProposals() {
+    // Implement export functionality
+    alert('Export functionality will be implemented');
+}
+
+function reviewProposal(proposalId, action) {
+    var title = action === 'approve' ? 'Approve Proposal' : 'Reject Proposal';
+    var message = action === 'approve' ? 
+        'Are you sure you want to approve this deployment proposal?' : 
+        'Are you sure you want to reject this deployment proposal?';
+    
+    if (confirm(message)) {
+        var notes = '';
+        if (action === 'approve') {
+            notes = prompt('Please provide approval notes (optional):');
+            if (notes === null) return; // User canceled
+            
+            // Submit approval
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/resource-management/deployment-proposals/approve/' + proposalId;
+            
+            var notesInput = document.createElement('input');
+            notesInput.type = 'hidden';
+            notesInput.name = 'review_notes';
+            notesInput.value = notes || '';
+            form.appendChild(notesInput);
+            
+            document.body.appendChild(form);
+            form.submit();
+        } else {
+            var rejectionReason = prompt('Please provide rejection reason:');
+            if (rejectionReason === null || rejectionReason === '') {
+                alert('Rejection reason is required');
+                return;
+            }
+            
+            // Submit rejection
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/resource-management/deployment-proposals/reject/' + proposalId;
+            
+            var reasonInput = document.createElement('input');
+            reasonInput.type = 'hidden';
+            reasonInput.name = 'rejection_reason';
+            reasonInput.value = rejectionReason;
+            form.appendChild(reasonInput);
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+}
+
+function resubmitProposal(proposalId) {
+    if (confirm('Are you sure you want to resubmit this proposal for review?')) {
+        // Implement resubmit functionality
+        alert('Resubmit functionality will be implemented');
+    }
+}
+
+function applyFilters() {
+    var outbreakFilter = $('#outbreak_filter').val();
+    var statusFilter = $('#status_filter').val();
+    var dateFilter = $('#date_filter').val();
+    
+    // Build URL with filters
+    var url = '/resource-management/deployment-proposals?';
+    var params = [];
+    
+    if (outbreakFilter) params.push('outbreak_id=' + outbreakFilter);
+    if (statusFilter) params.push('status=' + statusFilter);
+    if (dateFilter) params.push('date=' + dateFilter);
+    
+    if (params.length > 0) {
+        url += params.join('&');
+        window.location.href = url;
+    } else {
+        window.location.href = '/resource-management/deployment-proposals';
+    }
+}
+</script>
+{{ end }}

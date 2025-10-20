@@ -1,0 +1,192 @@
+{{ define "content" }}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="/home">Home</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management">Resource Management</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management/activity-logs">Activity Logs</a></li>
+                        <li class="breadcrumb-item active">{{if .ActivityLog}}Edit Activity{{else}}New Activity{{end}}</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">{{if .ActivityLog}}Edit Activity Log{{else}}Create Activity Log{{end}}</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Activity Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="/resource-management/activity-logs/save" id="activityForm">
+                        {{if .ActivityLog}}<input type="hidden" name="id" value="{{.ActivityLog.ID}}">{{end}}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="deployment_id" class="form-label">Deployment <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="deployment_id" name="deployment_id" required>
+                                        <option value="">Select Deployment</option>
+                                        {{range .RRTDeployments}}
+                                        <option value="{{.ID}}" {{if and $.ActivityLog (eq $.ActivityLog.DeploymentID .ID)}}selected{{end}}>
+                                            {{if .Team}}{{.Team.TeamName}}{{else}}Deployment {{.ID}}{{end}}
+                                            {{if .Outbreak}} - {{if .Outbreak.Name.Valid}}{{.Outbreak.Name.String}}{{end}}{{end}}
+                                        </option>
+                                        {{end}}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="activity_type" class="form-label">Activity Type <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="activity_type" name="activity_type" required>
+                                        <option value="">Select Type</option>
+                                        <option value="Investigation" {{if and .ActivityLog (eq .ActivityLog.ActivityType "Investigation")}}selected{{end}}>Investigation</option>
+                                        <option value="Training" {{if and .ActivityLog (eq .ActivityLog.ActivityType "Training")}}selected{{end}}>Training</option>
+                                        <option value="Meeting" {{if and .ActivityLog (eq .ActivityLog.ActivityType "Meeting")}}selected{{end}}>Meeting</option>
+                                        <option value="Surveillance" {{if and .ActivityLog (eq .ActivityLog.ActivityType "Surveillance")}}selected{{end}}>Surveillance</option>
+                                        <option value="Case Follow-up" {{if and .ActivityLog (eq .ActivityLog.ActivityType "Case Follow-up")}}selected{{end}}>Case Follow-up</option>
+                                        <option value="Contact Tracing" {{if and .ActivityLog (eq .ActivityLog.ActivityType "Contact Tracing")}}selected{{end}}>Contact Tracing</option>
+                                        <option value="Sample Collection" {{if and .ActivityLog (eq .ActivityLog.ActivityType "Sample Collection")}}selected{{end}}>Sample Collection</option>
+                                        <option value="Community Engagement" {{if and .ActivityLog (eq .ActivityLog.ActivityType "Community Engagement")}}selected{{end}}>Community Engagement</option>
+                                        <option value="Risk Assessment" {{if and .ActivityLog (eq .ActivityLog.ActivityType "Risk Assessment")}}selected{{end}}>Risk Assessment</option>
+                                        <option value="Other" {{if and .ActivityLog (eq .ActivityLog.ActivityType "Other")}}selected{{end}}>Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="activity_date" class="form-label">Activity Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="activity_date" name="activity_date" 
+                                           value="{{if .ActivityLog}}{{.ActivityLog.ActivityDate.Format "2006-01-02"}}{{end}}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="start_time" class="form-label">Start Time</label>
+                                    <input type="time" class="form-control" id="start_time" name="start_time" 
+                                           value="{{if and .ActivityLog .ActivityLog.StartTime.Valid}}{{.ActivityLog.StartTime.Time.Format "15:04"}}{{end}}">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="end_time" class="form-label">End Time</label>
+                                    <input type="time" class="form-control" id="end_time" name="end_time" 
+                                           value="{{if and .ActivityLog .ActivityLog.EndTime.Valid}}{{.ActivityLog.EndTime.Time.Format "15:04"}}{{end}}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="location" class="form-label">Location</label>
+                                    <input type="text" class="form-control" id="location" name="location" 
+                                           value="{{if and .ActivityLog .ActivityLog.Location.Valid}}{{.ActivityLog.Location.String}}{{end}}"
+                                           placeholder="Activity location or venue">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="participants_count" class="form-label">Participants Count</label>
+                                    <input type="number" class="form-control" id="participants_count" name="participants_count" 
+                                           value="{{if and .ActivityLog .ActivityLog.ParticipantsCount.Valid}}{{.ActivityLog.ParticipantsCount.Int64}}{{end}}"
+                                           min="0" placeholder="Number of participants">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="activity_description" class="form-label">Activity Description</label>
+                            <textarea class="form-control" id="activity_description" name="activity_description" rows="3" 
+                                      placeholder="Describe the activity in detail...">{{if and .ActivityLog .ActivityLog.ActivityDescription.Valid}}{{.ActivityLog.ActivityDescription.String}}{{end}}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="outcomes" class="form-label">Outcomes</label>
+                            <textarea class="form-control" id="outcomes" name="outcomes" rows="3" 
+                                      placeholder="Key outcomes and achievements...">{{if and .ActivityLog .ActivityLog.Outcomes.Valid}}{{.ActivityLog.Outcomes.String}}{{end}}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="challenges" class="form-label">Challenges</label>
+                            <textarea class="form-control" id="challenges" name="challenges" rows="3" 
+                                      placeholder="Challenges faced during the activity...">{{if and .ActivityLog .ActivityLog.Challenges.Valid}}{{.ActivityLog.Challenges.String}}{{end}}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="recommendations" class="form-label">Recommendations</label>
+                            <textarea class="form-control" id="recommendations" name="recommendations" rows="3" 
+                                      placeholder="Recommendations for future activities...">{{if and .ActivityLog .ActivityLog.Recommendations.Valid}}{{.ActivityLog.Recommendations.String}}{{end}}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="resources_used" class="form-label">Resources Used</label>
+                            <textarea class="form-control" id="resources_used" name="resources_used" rows="2" 
+                                      placeholder="Resources and materials used...">{{if and .ActivityLog .ActivityLog.ResourcesUsed.Valid}}{{.ActivityLog.ResourcesUsed.String}}{{end}}</textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="/resource-management/activity-logs" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Activity Logs
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>{{if .ActivityLog}}Update Activity{{else}}Create Activity{{end}}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Activity Log Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Documentation Tips</h6>
+                        <ul class="mb-0">
+                            <li>Record activities promptly while details are fresh</li>
+                            <li>Be specific and detailed in descriptions</li>
+                            <li>Include measurable outcomes when possible</li>
+                            <li>Document challenges to improve future operations</li>
+                            <li>Note resources used for tracking purposes</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Important</h6>
+                        <ul class="mb-0">
+                            <li>Activity logs support accountability</li>
+                            <li>Used for reporting to stakeholders</li>
+                            <li>Help identify patterns and trends</li>
+                            <li>Essential for evidence-based planning</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Set default date to today if creating new
+    {{if not .ActivityLog}}
+    var today = new Date().toISOString().split('T')[0];
+    $('#activity_date').val(today);
+    {{end}}
+});
+</script>
+{{ end }}
+

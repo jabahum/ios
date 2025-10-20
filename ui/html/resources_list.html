@@ -1,0 +1,257 @@
+{{ define "content" }}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="/home">Home</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management">Resource Management</a></li>
+                        <li class="breadcrumb-item active">Resources</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">Resource Management</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">Resource Catalog</h5>
+                    <p class="text-muted mb-0">Manage resources and supplies for outbreak response</p>
+                </div>
+                <div>
+                    <a href="/resource-management/resources/new" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Add New Resource
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="category_filter" class="form-label">Filter by Category</label>
+                            <select class="form-select" id="category_filter">
+                                <option value="">All Categories</option>
+                                <option value="medical">Medical</option>
+                                <option value="lab">Laboratory</option>
+                                <option value="ppe">PPE</option>
+                                <option value="logistics">Logistics</option>
+                                <option value="it">IT Equipment</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="status_filter" class="form-label">Filter by Status</label>
+                            <select class="form-select" id="status_filter">
+                                <option value="">All Statuses</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="search_filter" class="form-label">Search Resources</label>
+                            <input type="text" class="form-control" id="search_filter" placeholder="Search by name or code...">
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button class="btn btn-outline-primary w-100" onclick="applyFilters()">
+                                <i class="fas fa-search me-2"></i>Search
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resources List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">All Resources</h5>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-secondary btn-sm" onclick="refreshResources()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" onclick="exportResources()">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {{if .Resources}}
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="resourcesTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Resource Code</th>
+                                    <th>Name</th>
+                                    <th>Category</th>
+                                    <th>Unit</th>
+                                    <th>Type</th>
+                                    <th>Critical</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{range .Resources}}
+                                <tr>
+                                    <td>
+                                        {{if .ResourceCode.Valid}}
+                                        <span class="badge bg-primary">{{.ResourceCode.String}}</span>
+                                        {{else}}
+                                        <span class="text-muted">No code</span>
+                                        {{end}}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm bg-soft-{{if eq .CategoryID 1}}primary{{else if eq .CategoryID 2}}info{{else if eq .CategoryID 3}}warning{{else}}secondary{{end}} rounded me-3">
+                                                <i class="fas fa-{{if eq .CategoryID 1}}stethoscope{{else if eq .CategoryID 2}}flask{{else if eq .CategoryID 3}}shield-alt{{else}}box{{end}} text-{{if eq .CategoryID 1}}primary{{else if eq .CategoryID 2}}info{{else if eq .CategoryID 3}}warning{{else}}secondary{{end}}"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0">{{.Name}}</h6>
+                                                {{if .Description.Valid}}
+                                                <small class="text-muted">{{.Description.String}}</small>
+                                                {{end}}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-soft-info">
+                                            {{if .Category}}{{.Category.Name}}{{else}}Unknown{{end}}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-soft-secondary">{{.UnitOfMeasure}}</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-column gap-1">
+                                            {{if .IsConsumable}}
+                                            <span class="badge bg-success">Consumable</span>
+                                            {{else}}
+                                            <span class="badge bg-info">Non-Consumable</span>
+                                            {{end}}
+                                            {{if .HasExpiry}}
+                                            <span class="badge bg-warning">Expires</span>
+                                            {{end}}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {{if .IsCritical}}
+                                        <span class="badge bg-danger">Critical</span>
+                                        {{else}}
+                                        <span class="badge bg-secondary">Normal</span>
+                                        {{end}}
+                                    </td>
+                                    <td>
+                                        {{if .IsActive}}
+                                        <span class="badge bg-success">Active</span>
+                                        {{else}}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                        {{end}}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="/resource-management/resources/edit/{{.ID}}" class="btn btn-outline-primary btn-sm" title="Edit Resource">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button class="btn btn-outline-info btn-sm" onclick="viewStock({{.ID}})" title="View Stock">
+                                                <i class="fas fa-warehouse"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm" onclick="deleteResource({{.ID}})" title="Delete Resource">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+                    {{else}}
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <i class="fas fa-boxes text-muted" style="font-size: 4rem;"></i>
+                        </div>
+                        <h5 class="text-muted">No Resources Found</h5>
+                        <p class="text-muted">Get started by adding your first resource to the catalog.</p>
+                        <a href="/resource-management/resources/new" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Add First Resource
+                        </a>
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Initialize DataTable
+    if ($.fn.DataTable) {
+        $('#resourcesTable').DataTable({
+            "pageLength": 25,
+            "order": [[1, "asc"]],
+            "columnDefs": [
+                { "orderable": false, "targets": 7 }
+            ]
+        });
+    }
+});
+
+function refreshResources() {
+    location.reload();
+}
+
+function exportResources() {
+    // Implement export functionality
+    alert('Export functionality will be implemented');
+}
+
+function viewStock(resourceId) {
+    // Implement stock view functionality
+    alert('Stock view functionality will be implemented');
+}
+
+function deleteResource(resourceId) {
+    if (confirm('Are you sure you want to delete this resource? This action cannot be undone.')) {
+        // Implement delete functionality
+        alert('Delete functionality will be implemented');
+    }
+}
+
+function applyFilters() {
+    var categoryFilter = $('#category_filter').val();
+    var statusFilter = $('#status_filter').val();
+    var searchFilter = $('#search_filter').val();
+    
+    // Build URL with filters
+    var url = '/resource-management/resources?';
+    var params = [];
+    
+    if (categoryFilter) params.push('category=' + categoryFilter);
+    if (statusFilter) params.push('status=' + statusFilter);
+    if (searchFilter) params.push('search=' + searchFilter);
+    
+    if (params.length > 0) {
+        url += params.join('&');
+        window.location.href = url;
+    } else {
+        window.location.href = '/resource-management/resources';
+    }
+}
+</script>
+{{ end }}

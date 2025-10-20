@@ -1,0 +1,325 @@
+{{ define "content" }}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="/home">Home</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management">Resource Management</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management/deployment-proposals">Deployment Proposals</a></li>
+                        <li class="breadcrumb-item active">View Proposal</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">Deployment Proposal Details</h4>
+            </div>
+        </div>
+    </div>
+
+    {{if .RRTDeploymentProposal}}
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Proposal Information -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Proposal #{{.RRTDeploymentProposal.ProposalNumber}}</h5>
+                        <div>
+                            {{if eq .RRTDeploymentProposal.Status "pending"}}
+                            <span class="badge bg-warning">Pending Review</span>
+                            {{else if eq .RRTDeploymentProposal.Status "approved"}}
+                            <span class="badge bg-success">Approved</span>
+                            {{else if eq .RRTDeploymentProposal.Status "rejected"}}
+                            <span class="badge bg-danger">Rejected</span>
+                            {{else}}
+                            <span class="badge bg-secondary">{{.RRTDeploymentProposal.Status}}</span>
+                            {{end}}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Outbreak Information -->
+                    <div class="mb-4">
+                        <h6 class="text-uppercase text-muted mb-3">Outbreak Information</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Outbreak Name</label>
+                                    <p class="form-control-plaintext">
+                                        {{if .RRTDeploymentProposal.Outbreak}}
+                                            {{if .RRTDeploymentProposal.Outbreak.Name.Valid}}
+                                                {{.RRTDeploymentProposal.Outbreak.Name.String}}
+                                            {{else}}
+                                                Unknown
+                                            {{end}}
+                                        {{else}}
+                                            Not specified
+                                        {{end}}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Proposal Date</label>
+                                    <p class="form-control-plaintext">{{.RRTDeploymentProposal.ProposedDate.Format "January 2, 2006 15:04"}}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Deployment Purpose -->
+                    <div class="mb-4">
+                        <h6 class="text-uppercase text-muted mb-3">Deployment Purpose</h6>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <p class="mb-0">{{.RRTDeploymentProposal.DeploymentPurpose}}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Justification -->
+                    <div class="mb-4">
+                        <h6 class="text-uppercase text-muted mb-3">Justification</h6>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <p class="mb-0">{{.RRTDeploymentProposal.Justification}}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline & Duration -->
+                    <div class="mb-4">
+                        <h6 class="text-uppercase text-muted mb-3">Timeline & Duration</h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Duration</label>
+                                    <p class="form-control-plaintext">
+                                        {{if .RRTDeploymentProposal.DeploymentDurationDays.Valid}}
+                                            {{.RRTDeploymentProposal.DeploymentDurationDays.Int64}} days
+                                        {{else}}
+                                            Not specified
+                                        {{end}}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Expected Start</label>
+                                    <p class="form-control-plaintext">
+                                        {{if .RRTDeploymentProposal.ExpectedStartDate.Valid}}
+                                            {{.RRTDeploymentProposal.ExpectedStartDate.Time.Format "Jan 2, 2006"}}
+                                        {{else}}
+                                            Not specified
+                                        {{end}}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Expected End</label>
+                                    <p class="form-control-plaintext">
+                                        {{if .RRTDeploymentProposal.ExpectedEndDate.Valid}}
+                                            {{.RRTDeploymentProposal.ExpectedEndDate.Time.Format "Jan 2, 2006"}}
+                                        {{else}}
+                                            Not specified
+                                        {{end}}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Required Skills -->
+                    {{if .RRTDeploymentProposal.RequiredSkills}}
+                    <div class="mb-4">
+                        <h6 class="text-uppercase text-muted mb-3">Required Skills</h6>
+                        <div>
+                            {{range .RRTDeploymentProposal.RequiredSkills}}
+                            <span class="badge bg-primary me-2 mb-2">{{.}}</span>
+                            {{end}}
+                        </div>
+                    </div>
+                    {{end}}
+
+                    <!-- Special Requirements -->
+                    {{if .RRTDeploymentProposal.SpecialRequirements.Valid}}
+                    <div class="mb-4">
+                        <h6 class="text-uppercase text-muted mb-3">Special Requirements</h6>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <p class="mb-0">{{.RRTDeploymentProposal.SpecialRequirements.String}}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {{end}}
+
+                    <!-- Review Information -->
+                    {{if ne .RRTDeploymentProposal.Status "pending"}}
+                    <div class="mb-4">
+                        <h6 class="text-uppercase text-muted mb-3">Review Information</h6>
+                        <div class="card {{if eq .RRTDeploymentProposal.Status "approved"}}border-success{{else if eq .RRTDeploymentProposal.Status "rejected"}}border-danger{{end}}">
+                            <div class="card-body">
+                                {{if .RRTDeploymentProposal.ReviewedAt.Valid}}
+                                <div class="mb-2">
+                                    <strong>Reviewed Date:</strong> {{.RRTDeploymentProposal.ReviewedAt.Time.Format "January 2, 2006 15:04"}}
+                                </div>
+                                {{end}}
+                                {{if .RRTDeploymentProposal.ReviewNotes.Valid}}
+                                <div class="mb-2">
+                                    <strong>Review Notes:</strong>
+                                    <p class="mt-1">{{.RRTDeploymentProposal.ReviewNotes.String}}</p>
+                                </div>
+                                {{end}}
+                                {{if .RRTDeploymentProposal.RejectionReason.Valid}}
+                                <div>
+                                    <strong>Rejection Reason:</strong>
+                                    <p class="mt-1 text-danger">{{.RRTDeploymentProposal.RejectionReason.String}}</p>
+                                </div>
+                                {{end}}
+                            </div>
+                        </div>
+                    </div>
+                    {{end}}
+
+                    <!-- Actions -->
+                    <div class="d-flex justify-content-between">
+                        <a href="/resource-management/deployment-proposals" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Proposals
+                        </a>
+                        <div>
+                            {{if eq .RRTDeploymentProposal.Status "pending"}}
+                            <button type="button" class="btn btn-success me-2" onclick="approveProposal({{.RRTDeploymentProposal.ID}})">
+                                <i class="fas fa-check me-2"></i>Approve
+                            </button>
+                            <button type="button" class="btn btn-danger" onclick="rejectProposal({{.RRTDeploymentProposal.ID}})">
+                                <i class="fas fa-times me-2"></i>Reject
+                            </button>
+                            {{end}}
+                            {{if eq .RRTDeploymentProposal.Status "approved"}}
+                            <a href="/resource-management/rrt-deployments/new?proposal_id={{.RRTDeploymentProposal.ID}}" class="btn btn-primary">
+                                <i class="fas fa-rocket me-2"></i>Create Deployment
+                            </a>
+                            {{end}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Proposal Summary</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="text-muted small">Proposal Number</label>
+                        <div class="fw-bold">{{.RRTDeploymentProposal.ProposalNumber}}</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-muted small">Status</label>
+                        <div>
+                            {{if eq .RRTDeploymentProposal.Status "pending"}}
+                            <span class="badge bg-warning">Pending Review</span>
+                            {{else if eq .RRTDeploymentProposal.Status "approved"}}
+                            <span class="badge bg-success">Approved</span>
+                            {{else if eq .RRTDeploymentProposal.Status "rejected"}}
+                            <span class="badge bg-danger">Rejected</span>
+                            {{else}}
+                            <span class="badge bg-secondary">{{.RRTDeploymentProposal.Status}}</span>
+                            {{end}}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-muted small">Created</label>
+                        <div>{{.RRTDeploymentProposal.CreatedAt.Format "Jan 2, 2006"}}</div>
+                    </div>
+                    {{if .RRTDeploymentProposal.UpdatedAt}}
+                    <div class="mb-3">
+                        <label class="text-muted small">Last Updated</label>
+                        <div>{{.RRTDeploymentProposal.UpdatedAt.Format "Jan 2, 2006"}}</div>
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Workflow Actions</h6>
+                </div>
+                <div class="card-body">
+                    {{if eq .RRTDeploymentProposal.Status "pending"}}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        This proposal is awaiting review and approval.
+                    </div>
+                    {{else if eq .RRTDeploymentProposal.Status "approved"}}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        This proposal has been approved and can be converted to a deployment.
+                    </div>
+                    {{else if eq .RRTDeploymentProposal.Status "rejected"}}
+                    <div class="alert alert-danger">
+                        <i class="fas fa-times-circle me-2"></i>
+                        This proposal has been rejected.
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+    </div>
+    {{else}}
+    <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        Proposal not found or you don't have permission to view it.
+    </div>
+    {{end}}
+</div>
+
+<script>
+function approveProposal(proposalId) {
+    if (confirm('Are you sure you want to approve this deployment proposal?')) {
+        var notes = prompt('Please provide approval notes (optional):');
+        if (notes !== null) {
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/resource-management/deployment-proposals/approve/' + proposalId;
+            
+            var notesInput = document.createElement('input');
+            notesInput.type = 'hidden';
+            notesInput.name = 'review_notes';
+            notesInput.value = notes || '';
+            form.appendChild(notesInput);
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+}
+
+function rejectProposal(proposalId) {
+    if (confirm('Are you sure you want to reject this deployment proposal?')) {
+        var reason = prompt('Please provide rejection reason:');
+        if (reason && reason.trim() !== '') {
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/resource-management/deployment-proposals/reject/' + proposalId;
+            
+            var reasonInput = document.createElement('input');
+            reasonInput.type = 'hidden';
+            reasonInput.name = 'rejection_reason';
+            reasonInput.value = reason;
+            form.appendChild(reasonInput);
+            
+            document.body.appendChild(form);
+            form.submit();
+        } else {
+            alert('Rejection reason is required');
+        }
+    }
+}
+</script>
+{{ end }}
+

@@ -1,0 +1,288 @@
+{{ define "content" }}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="/home">Home</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management">Resource Management</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management/deployment-extensions">Deployment Extensions</a></li>
+                        <li class="breadcrumb-item active">{{if .RRTDeploymentExtension}}View Extension{{else}}Request Extension{{end}}</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">{{if .RRTDeploymentExtension}}Deployment Extension Details{{else}}Request Deployment Extension{{end}}</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Extension Request Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="/resource-management/deployment-extensions/save" id="extensionForm">
+                        {{if .RRTDeploymentExtension}}<input type="hidden" name="id" value="{{.RRTDeploymentExtension.ID}}">{{end}}
+                        
+                        <div class="mb-3">
+                            <label for="deployment_id" class="form-label">Deployment <span class="text-danger">*</span></label>
+                            <select class="form-select" id="deployment_id" name="deployment_id" required 
+                                    {{if .RRTDeploymentExtension}}disabled{{end}}>
+                                <option value="">Select Deployment</option>
+                                {{range .RRTDeployments}}
+                                <option value="{{.ID}}" {{if and $.RRTDeploymentExtension (eq $.RRTDeploymentExtension.DeploymentID .ID)}}selected{{end}}>
+                                    {{if .Team}}{{.Team.TeamName}}{{else}}Deployment {{.ID}}{{end}}
+                                    {{if .Outbreak}} - {{if .Outbreak.Name.Valid}}{{.Outbreak.Name.String}}{{end}}{{end}}
+                                    ({{.DeploymentDate.Format "2006-01-02"}})
+                                </option>
+                                {{end}}
+                            </select>
+                            {{if .RRTDeploymentExtension}}
+                            <input type="hidden" name="deployment_id" value="{{.RRTDeploymentExtension.DeploymentID}}">
+                            {{end}}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="extension_reason" class="form-label">Extension Reason <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="extension_reason" name="extension_reason" rows="4" 
+                                      placeholder="Explain in detail why the deployment needs to be extended..."
+                                      {{if .RRTDeploymentExtension}}readonly{{end}} required>{{if .RRTDeploymentExtension}}{{.RRTDeploymentExtension.ExtensionReason}}{{end}}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="original_end_date" class="form-label">Original End Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="original_end_date" name="original_end_date" 
+                                           value="{{if .RRTDeploymentExtension}}{{.RRTDeploymentExtension.OriginalEndDate.Format "2006-01-02"}}{{end}}"
+                                           {{if .RRTDeploymentExtension}}readonly{{end}} required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="new_end_date" class="form-label">New End Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="new_end_date" name="new_end_date" 
+                                           value="{{if .RRTDeploymentExtension}}{{.RRTDeploymentExtension.NewEndDate.Format "2006-01-02"}}{{end}}"
+                                           {{if .RRTDeploymentExtension}}readonly{{end}} required>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{if .RRTDeploymentExtension}}
+                        <!-- View Mode - Show Status and Review Information -->
+                        <div class="card border-{{if eq .RRTDeploymentExtension.Status "approved"}}success{{else if eq .RRTDeploymentExtension.Status "rejected"}}danger{{else}}warning{{end}} mb-3">
+                            <div class="card-header bg-{{if eq .RRTDeploymentExtension.Status "approved"}}success{{else if eq .RRTDeploymentExtension.Status "rejected"}}danger{{else}}warning{{end}} text-white">
+                                <h6 class="mb-0">Extension Status</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-2">
+                                    <strong>Status:</strong> 
+                                    <span class="badge bg-{{if eq .RRTDeploymentExtension.Status "approved"}}success{{else if eq .RRTDeploymentExtension.Status "rejected"}}danger{{else}}warning{{end}}">
+                                        {{.RRTDeploymentExtension.Status}}
+                                    </span>
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Requested Date:</strong> {{.RRTDeploymentExtension.RequestedDate.Format "2006-01-02 15:04"}}
+                                </div>
+                                {{if .RRTDeploymentExtension.ReviewedDate.Valid}}
+                                <div class="mb-2">
+                                    <strong>Reviewed Date:</strong> {{.RRTDeploymentExtension.ReviewedDate.Time.Format "2006-01-02 15:04"}}
+                                </div>
+                                {{end}}
+                                {{if .RRTDeploymentExtension.ApprovalNotes.Valid}}
+                                <div class="mb-2">
+                                    <strong>Approval Notes:</strong>
+                                    <div class="mt-1">{{.RRTDeploymentExtension.ApprovalNotes.String}}</div>
+                                </div>
+                                {{end}}
+                                {{if .RRTDeploymentExtension.RejectionReason.Valid}}
+                                <div class="mb-0">
+                                    <strong>Rejection Reason:</strong>
+                                    <div class="mt-1">{{.RRTDeploymentExtension.RejectionReason.String}}</div>
+                                </div>
+                                {{end}}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="/resource-management/deployment-extensions" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Extensions
+                            </a>
+                            {{if eq .RRTDeploymentExtension.Status "pending"}}
+                            <div>
+                                <button type="button" class="btn btn-success me-2" onclick="approveExtension({{.RRTDeploymentExtension.ID}})">
+                                    <i class="fas fa-check me-2"></i>Approve
+                                </button>
+                                <button type="button" class="btn btn-danger" onclick="rejectExtension({{.RRTDeploymentExtension.ID}})">
+                                    <i class="fas fa-times me-2"></i>Reject
+                                </button>
+                            </div>
+                            {{end}}
+                        </div>
+                        {{else}}
+                        <!-- Create Mode -->
+                        <div class="d-flex justify-content-between">
+                            <a href="/resource-management/deployment-extensions" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Extensions
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-2"></i>Submit Extension Request
+                            </button>
+                        </div>
+                        {{end}}
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Extension Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Extension Requirements</h6>
+                        <ul class="mb-0">
+                            <li>Provide clear justification for extension</li>
+                            <li>Specify realistic new end date</li>
+                            <li>Consider team availability and resources</li>
+                            <li>Ensure outbreak situation warrants extension</li>
+                            <li>Extensions require approval before implementation</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Important Notes</h6>
+                        <ul class="mb-0">
+                            <li>Submit extension requests well in advance</li>
+                            <li>Consider impact on team members</li>
+                            <li>Ensure adequate resources are available</li>
+                            <li>Review original deployment objectives</li>
+                            <li>Document reasons comprehensively</li>
+                        </ul>
+                    </div>
+
+                    {{if .RRTDeploymentExtension}}
+                    {{if .RRTDeploymentExtension.Deployment}}
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">Deployment Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <strong>Team:</strong> {{.RRTDeploymentExtension.Deployment.Team.TeamName}}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Outbreak:</strong> {{if .RRTDeploymentExtension.Deployment.Outbreak.Name.Valid}}{{.RRTDeploymentExtension.Deployment.Outbreak.Name.String}}{{end}}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Deployment Date:</strong> {{.RRTDeploymentExtension.Deployment.DeploymentDate.Format "2006-01-02"}}
+                            </div>
+                            <div class="mb-0">
+                                <strong>Status:</strong> {{.RRTDeploymentExtension.Deployment.DeploymentStatus}}
+                            </div>
+                        </div>
+                    </div>
+                    {{end}}
+                    {{end}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{if .RRTDeploymentExtension}}
+<!-- Approval Modal -->
+<div class="modal fade" id="approvalModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Approve Extension</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="approvalForm" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="approval_notes" class="form-label">Approval Notes</label>
+                        <textarea class="form-control" id="approval_notes" name="approval_notes" rows="3" 
+                                  placeholder="Add any notes about this approval..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Approve Extension</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Rejection Modal -->
+<div class="modal fade" id="rejectionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reject Extension</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="rejectionForm" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="rejection_reason" class="form-label">Rejection Reason <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="rejection_reason" name="rejection_reason" rows="3" 
+                                  placeholder="Explain why this extension is being rejected..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Reject Extension</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function approveExtension(extensionId) {
+    $('#approvalForm').attr('action', '/resource-management/deployment-extensions/approve/' + extensionId);
+    $('#approvalModal').modal('show');
+}
+
+function rejectExtension(extensionId) {
+    $('#rejectionForm').attr('action', '/resource-management/deployment-extensions/reject/' + extensionId);
+    $('#rejectionModal').modal('show');
+}
+</script>
+{{end}}
+
+<script>
+$(document).ready(function() {
+    {{if not .RRTDeploymentExtension}}
+    // Load deployment details when selected
+    $('#deployment_id').on('change', function() {
+        var deploymentId = $(this).val();
+        if (deploymentId) {
+            // Load deployment end date and populate original_end_date
+            // This would typically be an AJAX call
+            console.log('Selected deployment:', deploymentId);
+        }
+    });
+
+    // Calculate extension duration when dates change
+    $('#original_end_date, #new_end_date').on('change', function() {
+        var originalDate = new Date($('#original_end_date').val());
+        var newDate = new Date($('#new_end_date').val());
+        
+        if (originalDate && newDate && newDate > originalDate) {
+            var diffTime = Math.abs(newDate - originalDate);
+            var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            console.log('Extension duration:', diffDays, 'days');
+        }
+    });
+    {{end}}
+});
+</script>
+{{ end }}

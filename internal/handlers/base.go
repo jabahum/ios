@@ -30,6 +30,122 @@ var (
 	dbG  *sql.DB
 )
 
+// Role constants for RBAC system
+const (
+	RoleSuperAdmin          = "super_admin"
+	RoleAdmin               = "admin"
+	RoleManager             = "manager"
+	RoleDataEntry           = "data_entry"
+	RoleViewer              = "viewer"
+	RoleLabTechnician       = "lab_technician"
+	RoleSurveillanceOfficer = "surveillance_officer"
+	RoleInventoryManager    = "inventory_manager"
+	RoleInventoryClerk      = "inventory_clerk"
+	RoleOutbreakCoordinator = "outbreak_coordinator"
+	RoleCaseManager         = "case_manager"
+	RoleReports             = "reports"
+)
+
+// Permission constants for RBAC system
+const (
+	// VHF Patients permissions
+	PermissionVHFPatientsCreate = "vhf_patients:create"
+	PermissionVHFPatientsRead   = "vhf_patients:read"
+	PermissionVHFPatientsUpdate = "vhf_patients:update"
+	PermissionVHFPatientsDelete = "vhf_patients:delete"
+	PermissionVHFPatientsExport = "vhf_patients:export"
+
+	// Users permissions
+	PermissionUsersCreate = "users:create"
+	PermissionUsersRead   = "users:read"
+	PermissionUsersUpdate = "users:update"
+	PermissionUsersDelete = "users:delete"
+
+	// Reports permissions
+	PermissionReportsRead   = "reports:read"
+	PermissionReportsExport = "reports:export"
+
+	// Outbreaks permissions
+	PermissionOutbreaksCreate = "outbreaks:create"
+	PermissionOutbreaksRead   = "outbreaks:read"
+	PermissionOutbreaksUpdate = "outbreaks:update"
+	PermissionOutbreaksDelete = "outbreaks:delete"
+
+	// Inventory permissions
+	PermissionInventoryCategoriesCreate = "inventory_categories:create"
+	PermissionInventoryCategoriesRead   = "inventory_categories:read"
+	PermissionInventoryCategoriesUpdate = "inventory_categories:update"
+	PermissionInventoryCategoriesDelete = "inventory_categories:delete"
+
+	PermissionInventoryItemsCreate = "inventory_items:create"
+	PermissionInventoryItemsRead   = "inventory_items:read"
+	PermissionInventoryItemsUpdate = "inventory_items:update"
+	PermissionInventoryItemsDelete = "inventory_items:delete"
+
+	PermissionInventorySuppliersCreate = "inventory_suppliers:create"
+	PermissionInventorySuppliersRead   = "inventory_suppliers:read"
+	PermissionInventorySuppliersUpdate = "inventory_suppliers:update"
+	PermissionInventorySuppliersDelete = "inventory_suppliers:delete"
+
+	PermissionInventoryTransactionsCreate = "inventory_transactions:create"
+	PermissionInventoryTransactionsRead   = "inventory_transactions:read"
+	PermissionInventoryTransactionsUpdate = "inventory_transactions:update"
+	PermissionInventoryTransactionsDelete = "inventory_transactions:delete"
+
+	PermissionInventoryReportsRead     = "inventory_reports:read"
+	PermissionInventoryReportsGenerate = "inventory_reports:generate"
+)
+
+// Role checking helper functions
+func HasRole(userRoles []string, role string) bool {
+	for _, r := range userRoles {
+		if r == role {
+			return true
+		}
+	}
+	return false
+}
+
+func HasAnyRole(userRoles []string, roles ...string) bool {
+	for _, userRole := range userRoles {
+		for _, role := range roles {
+			if userRole == role {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func HasPermission(userPermissions map[string][]string, resource, action string) bool {
+	if actions, exists := userPermissions[resource]; exists {
+		for _, a := range actions {
+			if a == action {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// GetRoleHierarchy returns roles in order of precedence (highest to lowest)
+func GetRoleHierarchy() []string {
+	return []string{
+		RoleSuperAdmin,
+		RoleAdmin,
+		RoleManager,
+		RoleInventoryManager,
+		RoleOutbreakCoordinator,
+		RoleCaseManager,
+		RoleReports,
+		RoleLabTechnician,
+		RoleSurveillanceOfficer,
+		RoleInventoryClerk,
+		RoleDataEntry,
+		RoleViewer,
+	}
+}
+
 type Config struct {
 	Address      string `json:"Port"`
 	ReadTimeout  int64  `json:"ReadTimeout"`
@@ -49,6 +165,11 @@ type Config struct {
 		Username string `json:"Username"`
 		Password string `json:"Password"`
 	} `json:"DHIS2API"`
+	AlertsAPI struct {
+		BaseURL  string `json:"BaseURL"`
+		Username string `json:"Username"`
+		Password string `json:"Password"`
+	} `json:"AlertsAPI"`
 }
 
 type TemplateData struct {
@@ -76,35 +197,35 @@ type TemplateData struct {
 	Flash           string
 	Menuz           string
 	IsAuthenticated bool
-	CSRFToken       string              // Add a CSRFToken field.
-	IsNew           bool                // Add IsNew field for form templates
-	Message         string              // Add Message field for alerts
-	MessageType     string              // Add MessageType field for alert styling
-	From            string              // Add From field for tracking form source
-	Stats           *Stats              // Add Stats field for dashboard statistics
-	Departments     []Department        // Add Departments field for RBAC
-	Roles           []Role              // Add Roles field for RBAC
-	Permissions     []Permission        // Add Permissions field for RBAC
-	UserPermissions map[string][]string // Add UserPermissions field for access control
-	UserRoles       []string            // Add UserRoles field for role-based access
-	UserFacility    int                 // Add UserFacility field for facility-based restrictions
-	Outbreaks       []*models.Outbreak  // Correct type for outbreaks
-	Users           []*models.User      // Correct type for users
-	Employee        *EmployeeForm       // Add Employee field for employee forms
-	Titles          []EmployeeTitle     // Add Titles field for employee titles
-	Facilities      []Facility          // Add Facilities field for facilities
-	Employees       []EmployeeForm      // Add Employees field for employee lists
-	Case            any                 // Add Case field for VHF case data
-	Patient         any                 // Add Patient field for patient data
-	Lab             any                 // Add Lab field for laboratory data
-	ClinicalSigns   any                 // Add ClinicalSigns field for VHF clinical signs data
-	Hospitalization any                 // Add Hospitalization field for VHF hospitalization data
-	RiskFactors     any                 // Add RiskFactors field for VHF risk factors data
-	Investigator    any                 // Add Investigator field for VHF investigator data
-	Districts       []string            // Add Districts field for location dropdowns
-	Subcounties     []string            // Add Subcounties field for location dropdowns
-	Parishes        []string            // Add Parishes field for location dropdowns
-	Villages        []string            // Add Villages field for location dropdowns
+	CSRFToken       string                 // Add a CSRFToken field.
+	IsNew           bool                   // Add IsNew field for form templates
+	Message         string                 // Add Message field for alerts
+	MessageType     string                 // Add MessageType field for alert styling
+	From            string                 // Add From field for tracking form source
+	Stats           *Stats                 // Add Stats field for dashboard statistics
+	Departments     []Department           // Add Departments field for RBAC
+	Roles           []Role                 // Add Roles field for RBAC
+	Permissions     []Permission           // Add Permissions field for RBAC
+	UserPermissions map[string][]string    // Add UserPermissions field for access control
+	UserRoles       []string               // Add UserRoles field for role-based access
+	UserFacility    int                    // Add UserFacility field for facility-based restrictions
+	Outbreaks       []*models.Outbreak     // Correct type for outbreaks
+	Users           []*models.EnhancedUser // Correct type for users
+	Employee        *EmployeeForm          // Add Employee field for employee forms
+	Titles          []EmployeeTitle        // Add Titles field for employee titles
+	Facilities      []Facility             // Add Facilities field for facilities
+	Employees       []EmployeeForm         // Add Employees field for employee lists
+	Case            any                    // Add Case field for VHF case data
+	Patient         any                    // Add Patient field for patient data
+	Lab             any                    // Add Lab field for laboratory data
+	ClinicalSigns   any                    // Add ClinicalSigns field for VHF clinical signs data
+	Hospitalization any                    // Add Hospitalization field for VHF hospitalization data
+	RiskFactors     any                    // Add RiskFactors field for VHF risk factors data
+	Investigator    any                    // Add Investigator field for VHF investigator data
+	Districts       []string               // Add Districts field for location dropdowns
+	Subcounties     []string               // Add Subcounties field for location dropdowns
+	Parishes        []string               // Add Parishes field for location dropdowns
+	Villages        []string               // Add Villages field for location dropdowns
 
 	// Custom fields for Mpox admission logic
 	HasMpoxAdmission bool
@@ -138,6 +259,43 @@ type TemplateData struct {
 	SurveillanceData *SurveillanceData
 	StartDate        string
 	EndDate          string
+
+	// Resource Management fields
+	ResourceStats      map[string]interface{}     // Resource management statistics
+	RRTTeams           []*models.RRTTeam          // RRT teams
+	RRTTeam            *models.RRTTeam            // Single RRT team
+	RRTDeployments     []*models.RRTDeployment    // RRT deployments
+	RRTDeployment      *models.RRTDeployment      // Single RRT deployment
+	Resources          []*models.Resource         // Resources
+	Resource           *models.Resource           // Single resource
+	ResourceCategories []*models.ResourceCategory // Resource categories
+	StorageLocations   []*models.StorageLocation  // Storage locations
+	ResourceDonors     []*models.Donor            // Resource Management Donors
+	Requisitions       []*models.Requisition      // Requisitions
+	Requisition        *models.Requisition        // Single requisition
+	Dispatches         []*models.Dispatch         // Dispatches
+	ActivityLogs       []*models.ActivityLog      // Activity logs
+	ActivityLog        *models.ActivityLog        // Single activity log
+	GeneratedSitreps   []*models.GeneratedSitRep  // Generated SitReps
+	GeneratedSitrep    *models.GeneratedSitRep    // Single generated SitRep
+
+	// RRT Team Members fields
+	RRTTeamMembers           []*models.RRTTeamMember           // RRT team members
+	RRTTeamMember            *models.RRTTeamMember             // Single RRT team member
+	RRTTeamMemberAssignments []*models.RRTTeamMemberAssignment // Team member assignments
+	RRTTeamMemberAssignment  *models.RRTTeamMemberAssignment   // Single team member assignment
+	RRTDeploymentProposals   []*models.RRTDeploymentProposal   // Deployment proposals
+	RRTDeploymentProposal    *models.RRTDeploymentProposal     // Single deployment proposal
+	RRTDeploymentExtensions  []*models.RRTDeploymentExtension  // Deployment extensions
+	RRTDeploymentExtension   *models.RRTDeploymentExtension    // Single deployment extension
+	RRTFieldRoleAssignments  []*models.RRTFieldRoleAssignment  // Field role assignments
+	RRTFieldRoleAssignment   *models.RRTFieldRoleAssignment    // Single field role assignment
+
+	// Pillars fields
+	Pillars       []*models.Pillar       // Pillars
+	Pillar        *models.Pillar         // Single pillar
+	PillarChanges []*models.PillarChange // Pillar changes
+	PillarChange  *models.PillarChange   // Single pillar change
 }
 
 // Department represents a department in the RBAC system
@@ -197,6 +355,8 @@ type EmployeeForm struct {
 	EmployeeNotes      sql.NullString
 	Facility           sql.NullInt64
 	AFIFacility        sql.NullString
+	AFIRegion          sql.NullString
+	AFIDistrict        sql.NullString
 	FacilityInfo       struct {
 		Name sql.NullString
 	}

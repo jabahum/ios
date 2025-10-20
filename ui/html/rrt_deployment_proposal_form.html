@@ -1,0 +1,381 @@
+{{ define "content" }}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="/home">Home</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management">Resource Management</a></li>
+                        <li class="breadcrumb-item"><a href="/resource-management/deployment-proposals">Deployment Proposals</a></li>
+                        <li class="breadcrumb-item active">Create Proposal</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">Create Deployment Proposal</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Proposal Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="/resource-management/deployment-proposals/save" id="proposalForm">
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="outbreak_id" class="form-label">Outbreak <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="outbreak_id" name="outbreak_id" required>
+                                        <option value="">Select Outbreak</option>
+                                        {{range .Outbreaks}}
+                                        <option value="{{.ID}}">
+                                            {{if .Name.Valid}}{{.Name.String}}{{else}}Outbreak {{.ID}}{{end}}{{if .Description.Valid}} - {{.Description.String}}{{end}}
+                                        </option>
+                                        {{end}}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="deployment_duration_days" class="form-label">Deployment Duration (Days)</label>
+                                    <input type="number" class="form-control" id="deployment_duration_days" name="deployment_duration_days" 
+                                           min="1" max="365" placeholder="e.g., 14">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="expected_start_date" class="form-label">Expected Start Date</label>
+                                    <input type="date" class="form-control" id="expected_start_date" name="expected_start_date">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="expected_end_date" class="form-label">Expected End Date</label>
+                                    <input type="date" class="form-control" id="expected_end_date" name="expected_end_date">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="deployment_purpose" class="form-label">Deployment Purpose <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="deployment_purpose" name="deployment_purpose" rows="3" 
+                                      placeholder="Describe the purpose and objectives of this deployment..." required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="justification" class="form-label">Justification <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="justification" name="justification" rows="4" 
+                                      placeholder="Provide detailed justification for this deployment proposal..." required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="special_requirements" class="form-label">Special Requirements</label>
+                            <textarea class="form-control" id="special_requirements" name="special_requirements" rows="3" 
+                                      placeholder="Any special equipment, skills, or requirements needed..."></textarea>
+                        </div>
+
+                        <!-- Team Composition Section -->
+                        <div class="mb-4">
+                            <h6 class="mb-3">Proposed Team Composition</h6>
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="teamCompositionTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Member</th>
+                                            <th>Role</th>
+                                            <th>Essential</th>
+                                            <th>Alternative</th>
+                                            <th>Notes</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <select class="form-select member-select" name="member_id[]">
+                                                    <option value="">Select Team Member</option>
+                                                    {{range .RRTTeamMembers}}
+                                                    <option value="{{.ID}}">{{.FullName}} ({{.Organization.String}})</option>
+                                                    {{end}}
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <select class="form-select" name="proposed_role[]">
+                                                    <option value="">Select Role</option>
+                                                    <option value="Team Lead">Team Lead</option>
+                                                    <option value="Deputy Lead">Deputy Lead</option>
+                                                    <option value="Epidemiologist">Epidemiologist</option>
+                                                    <option value="Medical Officer">Medical Officer</option>
+                                                    <option value="Laboratory Technician">Laboratory Technician</option>
+                                                    <option value="Logistics Officer">Logistics Officer</option>
+                                                    <option value="Communication Officer">Communication Officer</option>
+                                                    <option value="Driver">Driver</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" name="is_essential[]" value="true">
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <select class="form-select" name="alternative_member_id[]">
+                                                    <option value="">Select Alternative</option>
+                                                    {{range .RRTTeamMembers}}
+                                                    <option value="{{.ID}}">{{.FullName}}</option>
+                                                    {{end}}
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control" name="member_notes[]" placeholder="Notes">
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeTeamMemberRow(this)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="addTeamMemberRow()">
+                                <i class="fas fa-plus me-2"></i>Add Team Member
+                            </button>
+                        </div>
+
+                        <!-- Required Skills Section -->
+                        <div class="mb-4">
+                            <h6 class="mb-3">Required Skills</h6>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="skill_epidemiology" value="epidemiology">
+                                        <label class="form-check-label" for="skill_epidemiology">Epidemiology</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="skill_medical" value="medical">
+                                        <label class="form-check-label" for="skill_medical">Medical</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="skill_laboratory" value="laboratory">
+                                        <label class="form-check-label" for="skill_laboratory">Laboratory</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="skill_logistics" value="logistics">
+                                        <label class="form-check-label" for="skill_logistics">Logistics</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="skill_communication" value="communication">
+                                        <label class="form-check-label" for="skill_communication">Communication</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="skill_surveillance" value="surveillance">
+                                        <label class="form-check-label" for="skill_surveillance">Surveillance</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="skill_driving" value="driving">
+                                        <label class="form-check-label" for="skill_driving">Driving</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="skill_leadership" value="leadership">
+                                        <label class="form-check-label" for="skill_leadership">Leadership</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="/resource-management/deployment-proposals" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Proposals
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Submit Proposal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Proposal Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Proposal Requirements</h6>
+                        <ul class="mb-0">
+                            <li>Select appropriate outbreak and timeframe</li>
+                            <li>Define clear deployment purpose and objectives</li>
+                            <li>Propose qualified team members with specific roles</li>
+                            <li>Include essential members and alternatives</li>
+                            <li>Provide detailed justification for approval</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Important Notes</h6>
+                        <ul class="mb-0">
+                            <li>Proposals require approval before deployment</li>
+                            <li>Essential members cannot be easily replaced</li>
+                            <li>Include all required skills for the mission</li>
+                            <li>Provide realistic timeframes and duration</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">Team Composition Tips</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <strong>Team Lead:</strong> Overall coordination and leadership
+                            </div>
+                            <div class="mb-2">
+                                <strong>Deputy Lead:</strong> Backup leadership and support
+                            </div>
+                            <div class="mb-2">
+                                <strong>Specialists:</strong> Domain experts (medical, lab, etc.)
+                            </div>
+                            <div class="mb-2">
+                                <strong>Support Staff:</strong> Logistics, communication, drivers
+                            </div>
+                            <div class="mb-0">
+                                <strong>Alternatives:</strong> Backup members for key positions
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Set default start date to tomorrow
+    var tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    $('#expected_start_date').val(tomorrow.toISOString().split('T')[0]);
+
+    // Handle duration change
+    $('#deployment_duration_days').on('change', function() {
+        var duration = parseInt($(this).val());
+        var startDate = $('#expected_start_date').val();
+        if (duration && startDate) {
+            var start = new Date(startDate);
+            var end = new Date(start.getTime() + duration * 24 * 60 * 60 * 1000);
+            $('#expected_end_date').val(end.toISOString().split('T')[0]);
+        }
+    });
+
+    // Handle start date change
+    $('#expected_start_date').on('change', function() {
+        var duration = parseInt($('#deployment_duration_days').val());
+        var startDate = $(this).val();
+        if (duration && startDate) {
+            var start = new Date(startDate);
+            var end = new Date(start.getTime() + duration * 24 * 60 * 60 * 1000);
+            $('#expected_end_date').val(end.toISOString().split('T')[0]);
+        }
+    });
+
+    // Form validation
+    $('#proposalForm').on('submit', function(e) {
+        var requiredSkills = [];
+        $('input[id^="skill_"]:checked').each(function() {
+            requiredSkills.push($(this).val());
+        });
+        
+        // Create hidden input for required skills
+        if (requiredSkills.length > 0) {
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'required_skills',
+                value: JSON.stringify(requiredSkills)
+            }).appendTo('#proposalForm');
+        }
+    });
+});
+
+function addTeamMemberRow() {
+    var table = $('#teamCompositionTable tbody');
+    var newRow = `
+        <tr>
+            <td>
+                <select class="form-select member-select" name="member_id[]">
+                    <option value="">Select Team Member</option>
+                    {{range .RRTTeamMembers}}
+                    <option value="{{.ID}}">{{.FullName}} ({{.Organization.String}})</option>
+                    {{end}}
+                </select>
+            </td>
+            <td>
+                <select class="form-select" name="proposed_role[]">
+                    <option value="">Select Role</option>
+                    <option value="Team Lead">Team Lead</option>
+                    <option value="Deputy Lead">Deputy Lead</option>
+                    <option value="Epidemiologist">Epidemiologist</option>
+                    <option value="Medical Officer">Medical Officer</option>
+                    <option value="Laboratory Technician">Laboratory Technician</option>
+                    <option value="Logistics Officer">Logistics Officer</option>
+                    <option value="Communication Officer">Communication Officer</option>
+                    <option value="Driver">Driver</option>
+                    <option value="Other">Other</option>
+                </select>
+            </td>
+            <td>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="is_essential[]" value="true">
+                </div>
+            </td>
+            <td>
+                <select class="form-select" name="alternative_member_id[]">
+                    <option value="">Select Alternative</option>
+                    {{range .RRTTeamMembers}}
+                    <option value="{{.ID}}">{{.FullName}}</option>
+                    {{end}}
+                </select>
+            </td>
+            <td>
+                <input type="text" class="form-control" name="member_notes[]" placeholder="Notes">
+            </td>
+            <td>
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeTeamMemberRow(this)">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `;
+    table.append(newRow);
+}
+
+function removeTeamMemberRow(button) {
+    $(button).closest('tr').remove();
+}
+</script>
+{{ end }}
