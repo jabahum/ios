@@ -1,0 +1,773 @@
+basePath: /
+host: localhost:3000
+info:
+  contact:
+    email: support@ios.gov.ug
+    name: API Support
+  description: This is the API documentation for the Integrated Outbreak Surveillance
+    System
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Integrated Outbreak Surveillance (IOS) API
+  version: "1.0"
+paths:
+  /api/alerts:
+    get:
+      description: Retrieve list of alerts with pagination
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated alerts
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get alerts
+      tags:
+      - Alerts
+  /api/employees:
+    get:
+      description: Retrieve list of all employees
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of employees
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get all employees
+      tags:
+      - Employees
+  /api/facilities:
+    get:
+      description: Retrieve list of health facilities
+      parameters:
+      - description: Filter by district
+        in: query
+        name: district_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of facilities
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all facilities
+      tags:
+      - Facilities
+  /api/inventory/items:
+    get:
+      description: Retrieve list of inventory items
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of items
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get inventory items
+      tags:
+      - Inventory
+  /api/inventory/stock-levels:
+    get:
+      description: Retrieve current stock levels for all items
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Stock levels
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get stock levels
+      tags:
+      - Inventory
+  /api/locations/districts:
+    get:
+      description: Retrieve list of all districts in Uganda
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of districts
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all districts
+      tags:
+      - Locations
+  /api/locations/parishes/{subcounty_id}:
+    get:
+      description: Retrieve parishes for a specific subcounty
+      parameters:
+      - description: Subcounty ID
+        in: path
+        name: subcounty_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of parishes
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get parishes by subcounty
+      tags:
+      - Locations
+  /api/locations/subcounties/{district_id}:
+    get:
+      description: Retrieve subcounties for a specific district
+      parameters:
+      - description: District ID
+        in: path
+        name: district_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of subcounties
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get subcounties by district
+      tags:
+      - Locations
+  /api/locations/villages/{parish_id}:
+    get:
+      description: Retrieve villages for a specific parish
+      parameters:
+      - description: Parish ID
+        in: path
+        name: parish_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of villages
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get villages by parish
+      tags:
+      - Locations
+  /api/measles/patients:
+    get:
+      description: Retrieve list of Measles cases
+      parameters:
+      - description: Filter by outbreak
+        in: query
+        name: outbreak_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of Measles cases
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get Measles cases
+      tags:
+      - Measles
+  /api/mpox/patients:
+    get:
+      description: Retrieve list of Mpox cases
+      parameters:
+      - description: Filter by outbreak
+        in: query
+        name: outbreak_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of Mpox cases
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get Mpox cases
+      tags:
+      - Mpox
+  /api/outbreaks:
+    get:
+      description: Retrieve list of all outbreaks
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of outbreaks
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get all outbreaks
+      tags:
+      - Outbreaks
+  /api/pillars:
+    get:
+      description: Retrieve list of all resource management pillars
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of pillars
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get pillars
+      tags:
+      - Resource Management
+  /api/polio/patients:
+    get:
+      description: Retrieve list of Polio cases
+      parameters:
+      - description: Filter by outbreak
+        in: query
+        name: outbreak_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of Polio cases
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get Polio cases
+      tags:
+      - Polio
+  /api/rbac/permissions:
+    get:
+      description: Retrieve list of all RBAC permissions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of permissions
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get all permissions
+      tags:
+      - RBAC
+  /api/rbac/roles:
+    get:
+      description: Retrieve list of all RBAC roles
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of roles
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get all roles
+      tags:
+      - RBAC
+  /api/users:
+    get:
+      description: Retrieve list of all users
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of users
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get all users
+      tags:
+      - Users
+  /api/vhf/patients:
+    get:
+      description: Retrieve list of Viral Hemorrhagic Fever cases
+      parameters:
+      - description: Filter by outbreak
+        in: query
+        name: outbreak_id
+        type: integer
+      - description: Filter by status
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of VHF cases
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get VHF cases
+      tags:
+      - VHF
+    post:
+      consumes:
+      - application/json
+      description: Create a new Viral Hemorrhagic Fever case
+      parameters:
+      - description: VHF case data
+        in: body
+        name: case
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Case created successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Create VHF case
+      tags:
+      - VHF
+  /api/vhf/patients/{id}:
+    get:
+      description: Retrieve detailed information about a specific VHF case
+      parameters:
+      - description: Case ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: VHF case details
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Case not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get VHF case by ID
+      tags:
+      - VHF
+  /login:
+    post:
+      consumes:
+      - application/json
+      - application/x-www-form-urlencoded
+      description: Authenticate user with username and password
+      parameters:
+      - description: Username
+        in: formData
+        name: username
+        required: true
+        type: string
+      - description: Password
+        in: formData
+        name: password
+        required: true
+        type: string
+      produces:
+      - application/json
+      - text/html
+      responses:
+        "200":
+          description: Login successful
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid credentials
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: User login
+      tags:
+      - Authentication
+  /logout:
+    get:
+      description: End user session
+      responses:
+        "302":
+          description: Redirect to login
+      summary: User logout
+      tags:
+      - Authentication
+  /reports/quick-stats:
+    get:
+      description: Retrieve dashboard quick statistics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Statistics
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get quick statistics
+      tags:
+      - Reports
+securityDefinitions:
+  SessionAuth:
+    in: cookie
+    name: session
+    type: apiKey
+swagger: "2.0"
+tags:
+- description: Authentication endpoints
+  name: Authentication
+- description: User management endpoints
+  name: Users
+- description: Employee management endpoints
+  name: Employees
+- description: Facility management endpoints
+  name: Facilities
+- description: Outbreak management endpoints
+  name: Outbreaks
+- description: Case management endpoints
+  name: Cases
+- description: Viral Hemorrhagic Fever (VHF) case management endpoints
+  name: VHF
+- description: Mpox case management endpoints
+  name: Mpox
+- description: Measles case management endpoints
+  name: Measles
+- description: Polio case management endpoints
+  name: Polio
+- description: Laboratory test management endpoints
+  name: Laboratory
+- description: Inventory management endpoints
+  name: Inventory
+- description: Resource and RRT management endpoints
+  name: Resource Management
+- description: Reporting and analytics endpoints
+  name: Reports
+- description: Surveillance data endpoints
+  name: Surveillance
+- description: Alert management endpoints
+  name: Alerts
+- description: Role-Based Access Control endpoints
+  name: RBAC
+- description: Location data (districts, subcounties, parishes, villages) endpoints
+  name: Locations

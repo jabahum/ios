@@ -16,6 +16,7 @@ import (
 
 	_ "github.com/lib/pq"
 
+	_ "case/cmd/web/docs" // Swagger documentation
 	"case/internal/handlers"
 	"case/internal/models"
 	"case/internal/routes"

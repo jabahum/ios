@@ -13,6 +13,8 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/session"
 	_ "github.com/lib/pq"
 
+	fiberSwagger "github.com/arsmn/fiber-swagger/v2"
+
 	"case/internal/handlers"
 	"case/internal/middleware"
 	"case/internal/models"
@@ -21,6 +23,10 @@ import (
 )
 
 func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger, config handlers.Config, smsService *services.SMSService) {
+
+	// Swagger documentation routes
+	app.Get("/swagger/*", fiberSwagger.HandlerDefault)
+	app.Get("/api/docs/*", fiberSwagger.HandlerDefault)
 
 	// Public routes
 	app.Get("/", func(c *fiber.Ctx) error {
