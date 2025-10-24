@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS rrt_deployments (
     deployment_notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by INTEGER REFERENCES users(id)
+    created_by INTEGER REFERENCES users(user_id)
 );
 
 -- Resource Categories (enhanced from inventory_categories)
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS resource_categories (
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by INTEGER REFERENCES users(id)
+    created_by INTEGER REFERENCES users(user_id)
 );
 
 -- Resources (enhanced from inventory_items)
@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS resources (
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by INTEGER REFERENCES users(id)
+    created_by INTEGER REFERENCES users(user_id)
 );
 
 -- Storage Locations
@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS storage_locations (
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by INTEGER REFERENCES users(id)
+    created_by INTEGER REFERENCES users(user_id)
 );
 
 -- Donors/Source Entities
@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS donors (
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by INTEGER REFERENCES users(id)
+    created_by INTEGER REFERENCES users(user_id)
 );
 
 -- Stock Ledger (main tracking table)
@@ -119,7 +119,7 @@ CREATE TABLE IF NOT EXISTS stock_ledger (
     batch_number VARCHAR(100),
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by INTEGER REFERENCES users(id)
+    created_by INTEGER REFERENCES users(user_id)
 );
 
 -- Requisitions
@@ -128,12 +128,12 @@ CREATE TABLE IF NOT EXISTS requisitions (
     requisition_number VARCHAR(100) UNIQUE NOT NULL,
     outbreak_id INTEGER NOT NULL REFERENCES outbreaks(id),
     deployment_id INTEGER REFERENCES rrt_deployments(id),
-    requested_by INTEGER NOT NULL REFERENCES users(id),
+    requested_by INTEGER NOT NULL REFERENCES users(user_id),
     requested_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     required_date DATE,
     priority VARCHAR(50) DEFAULT 'normal', -- 'low', 'normal', 'high', 'urgent'
     status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'approved', 'rejected', 'dispatched', 'completed'
-    approved_by INTEGER REFERENCES users(id),
+    approved_by INTEGER REFERENCES users(user_id),
     approved_date TIMESTAMP,
     rejection_reason TEXT,
     dispatch_date TIMESTAMP,
@@ -165,7 +165,7 @@ CREATE TABLE IF NOT EXISTS dispatches (
     from_location_id INTEGER NOT NULL REFERENCES storage_locations(id),
     to_location_id INTEGER REFERENCES storage_locations(id),
     to_deployment_id INTEGER REFERENCES rrt_deployments(id),
-    dispatched_by INTEGER NOT NULL REFERENCES users(id),
+    dispatched_by INTEGER NOT NULL REFERENCES users(user_id),
     dispatch_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     expected_delivery_date DATE,
     actual_delivery_date TIMESTAMP,
@@ -209,7 +209,7 @@ CREATE TABLE IF NOT EXISTS activity_logs (
     recommendations TEXT,
     resources_used TEXT, -- JSON or text description of resources consumed
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by INTEGER REFERENCES users(id)
+    created_by INTEGER REFERENCES users(user_id)
 );
 
 -- Activity Participants
@@ -232,7 +232,7 @@ CREATE TABLE IF NOT EXISTS sitrep_templates (
     is_active BOOLEAN DEFAULT true,
     template_content TEXT, -- JSON structure for the template
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by INTEGER REFERENCES users(id)
+    created_by INTEGER REFERENCES users(user_id)
 );
 
 -- Generated SitReps
@@ -244,9 +244,9 @@ CREATE TABLE IF NOT EXISTS generated_sitreps (
     report_type VARCHAR(100) NOT NULL, -- 'weekly', 'monthly', 'final'
     report_title VARCHAR(255),
     report_content TEXT, -- JSON or HTML content
-    generated_by INTEGER REFERENCES users(id),
+    generated_by INTEGER REFERENCES users(user_id),
     generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    approved_by INTEGER REFERENCES users(id),
+    approved_by INTEGER REFERENCES users(user_id),
     approved_at TIMESTAMP,
     status VARCHAR(50) DEFAULT 'draft', -- 'draft', 'approved', 'published'
     file_path VARCHAR(500), -- Path to generated PDF/HTML file
@@ -265,7 +265,7 @@ CREATE TABLE IF NOT EXISTS outbreak_closure_criteria (
     closure_date DATE,
     closure_notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by INTEGER REFERENCES users(id)
+    created_by INTEGER REFERENCES users(user_id)
 );
 
 -- Indexes for performance

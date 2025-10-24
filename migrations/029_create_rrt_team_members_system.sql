@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS rrt_team_members (
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by INTEGER REFERENCES users(id)
+    created_by INTEGER REFERENCES users(user_id)
 );
 
 -- RRT Team Member Assignments table (tracks team membership over time)
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS rrt_team_member_assignments (
     is_active BOOLEAN DEFAULT TRUE,
     assignment_notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by INTEGER REFERENCES users(id)
+    created_by INTEGER REFERENCES users(user_id)
 );
 
 -- RRT Deployment Proposals table (for team deployment suggestions)
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS rrt_deployment_proposals (
     id SERIAL PRIMARY KEY,
     proposal_number VARCHAR(50) UNIQUE NOT NULL,
     outbreak_id INTEGER NOT NULL REFERENCES outbreaks(id) ON DELETE CASCADE,
-    proposed_by INTEGER NOT NULL REFERENCES users(id),
+    proposed_by INTEGER NOT NULL REFERENCES users(user_id),
     proposed_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deployment_purpose TEXT NOT NULL,
     proposed_team_composition JSONB, -- JSON structure with team members and roles
@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS rrt_deployment_proposals (
     special_requirements TEXT,
     justification TEXT NOT NULL,
     status VARCHAR(20) DEFAULT 'pending', -- pending, approved, rejected, modified
-    reviewed_by INTEGER REFERENCES users(id),
+    reviewed_by INTEGER REFERENCES users(user_id),
     reviewed_at TIMESTAMP,
     review_notes TEXT,
     rejection_reason TEXT,
@@ -82,9 +82,9 @@ CREATE TABLE IF NOT EXISTS rrt_deployment_extensions (
     extension_reason TEXT NOT NULL,
     original_end_date DATE NOT NULL,
     new_end_date DATE NOT NULL,
-    requested_by INTEGER NOT NULL REFERENCES users(id),
+    requested_by INTEGER NOT NULL REFERENCES users(user_id),
     requested_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    approved_by INTEGER REFERENCES users(id),
+    approved_by INTEGER REFERENCES users(user_id),
     approved_date TIMESTAMP,
     status VARCHAR(20) DEFAULT 'pending', -- pending, approved, rejected
     approval_notes TEXT,
@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS rrt_field_role_assignments (
     additional_role VARCHAR(100) NOT NULL,
     assignment_date DATE NOT NULL,
     end_date DATE,
-    assigned_by INTEGER NOT NULL REFERENCES users(id),
+    assigned_by INTEGER NOT NULL REFERENCES users(user_id),
     assignment_reason TEXT,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

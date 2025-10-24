@@ -3,15 +3,15 @@ CREATE TABLE IF NOT EXISTS pillars (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    pillar_head_id INTEGER REFERENCES users(id),
+    pillar_head_id INTEGER REFERENCES users(user_id),
     pillar_head_name VARCHAR(255),
     pillar_head_email VARCHAR(255),
     pillar_head_phone VARCHAR(50),
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by INTEGER REFERENCES users(id),
-    updated_by INTEGER REFERENCES users(id)
+    created_by INTEGER REFERENCES users(user_id),
+    updated_by INTEGER REFERENCES users(user_id)
 );
 
 -- Create pillar changes tracking table
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS pillar_changes (
     old_value TEXT,
     new_value TEXT,
     change_reason TEXT,
-    changed_by INTEGER REFERENCES users(id),
+    changed_by INTEGER REFERENCES users(user_id),
     changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     notes TEXT
 );
@@ -44,5 +44,5 @@ INSERT INTO pillars (name, description, pillar_head_name, pillar_head_email, pil
 ('Clinical Care', 'Patient management, treatment protocols, and clinical guidelines', 'Dr. Emily Rodriguez', 'emily.rodriguez@health.gov', '+256-700-345678', true, 1),
 ('Logistics', 'Supply chain management, equipment distribution, and resource allocation', 'Mr. David Kimani', 'david.kimani@health.gov', '+256-700-456789', true, 1),
 ('Communication', 'Public health messaging, risk communication, and community engagement', 'Ms. Grace Mwangi', 'grace.mwangi@health.gov', '+256-700-567890', true, 1),
-('Data Management', 'Health information systems, data analysis, and reporting', 'Mr. James Ochieng', 'james.ochieng@health.gov', '+256-700-678901', true, 1)
+('SIIRI', 'Health information systems, data analysis, and reporting', 'Mr. Paul Mbaka', 'james.ochieng@health.gov', '+256-700-678901', true, 1)
 ON CONFLICT DO NOTHING;
