@@ -40,6 +40,9 @@ func main() {
 		Password: os.Getenv("SMS_PASSWORD"),
 	})
 
+	// Initialize Voice service
+	voiceService := services.NewVoiceService(services.VoiceConfig{VoiceURL: os.Getenv("VOICE_URL")})
+
 	// Initialize session store
 	store := session.New()
 
@@ -55,7 +58,7 @@ func main() {
 	app.Use(logger.New())
 
 	// Set up routes
-	routes.SetRoute(app, db, store, sl, config, smsService)
+	routes.SetRoute(app, db, store, sl, config, smsService, voiceService)
 
 	// Start server
 	log.Fatal(app.Listen(":3000"))

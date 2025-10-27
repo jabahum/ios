@@ -31,10 +31,10 @@ func main() {
 	}
 
 	// Test connection string
-	connStr := fmt.Sprintf("host=localhost port=5432 user=%s password=%s dbname=%s sslmode=disable",
+	connStr := fmt.Sprintf("host=db port=5432 user=%s password=%s dbname=%s sslmode=disable",
 		config.Ux, config.Px, config.Dx)
 
-	fmt.Printf("Testing connection to: %s@localhost:5432/%s\n", config.Ux, config.Dx)
+	fmt.Printf("Testing connection to: %s@db:5432/%s\n", config.Ux, config.Dx)
 
 	// Open connection
 	db, err := sql.Open("postgres", connStr)
@@ -55,6 +55,7 @@ func main() {
 
 	fmt.Println("Testing database ping...")
 	if err := db.PingContext(ctx); err != nil {
+		fmt.Println("connstr:", connStr)
 		log.Fatal("Database ping failed:", err)
 	}
 	fmt.Println("✓ Database ping successful")

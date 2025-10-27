@@ -13,7 +13,7 @@ import (
 	"case/internal/services"
 )
 
-func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger, config handlers.Config, smsService *services.SMSService) {
+func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger, config handlers.Config, smsService *services.SMSService, voiceService *services.VoiceService) {
 	RouteHome(app, db, sl, store, config, smsService)
 	RouteVerify(app, db, sl, store, config)
 
@@ -48,7 +48,7 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		// Additional routes
 		RouteFacilities(hfs, db, sl, store, config)
 		RouteUsers(usr, db, sl, store, config)
-		RouteCases(cse, db, sl, store, config)
+		RouteCases(cse, db, sl, store, config, smsService, voiceService)
 		RouteMorbidity(mob, db, sl, store, config)
 		RouteSymptoms(sym, db, sl, store, config)
 		RouteRush(rus, db, sl, store, config)
@@ -135,8 +135,8 @@ func RouteEmployees(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.
 	v.Get("/", func(c *fiber.Ctx) error { return handlers.HandlerEmployeeList(c, db, sl, store, config) })
 }
 
-func RouteCases(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
-	v.Get("/new/:i", func(c *fiber.Ctx) error { return handlers.HandlerCasesForm(c, db, sl, store, config) })
+func RouteCases(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config, smsService *services.SMSService, voiceService *services.VoiceService) {
+	v.Get("/new/:i", func(c *fiber.Ctx) error { return handlers.HandlerCasesForm(c, db, sl, store, config, smsService, voiceService) })
 	v.Post("/save", func(c *fiber.Ctx) error { return handlers.HandlerCasesSubmit(c, db, sl, store, config) })
 	v.Post("/filter", func(c *fiber.Ctx) error { return handlers.HandlerCasesList(c, db, sl, store, config) })
 	v.Get("/list", func(c *fiber.Ctx) error { return handlers.HandlerCasesList(c, db, sl, store, config) })
@@ -148,9 +148,9 @@ func RouteCases(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Stor
 	v.Post("/encounters/save", func(c *fiber.Ctx) error { return handlers.HandlerCaseEncounterSubmit(c, db, sl, store, config) })
 }
 
-func RouteCaseDischarge(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
-	v.Get("/view/:i/:j", func(c *fiber.Ctx) error { return handlers.HandlerCasesForm(c, db, sl, store, config) })
-	v.Get("/new/:i/:j", func(c *fiber.Ctx) error { return handlers.HandlerCasesForm(c, db, sl, store, config) })
+func RouteCaseDischarge(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config, smsService *services.SMSService, voiceService *services.VoiceService) {
+	v.Get("/view/:i/:j", func(c *fiber.Ctx) error { return handlers.HandlerCasesForm(c, db, sl, store, config, smsService, voiceService) })
+	v.Get("/new/:i/:j", func(c *fiber.Ctx) error { return handlers.HandlerCasesForm(c, db, sl, store, config, smsService, voiceService) })
 	v.Post("/save/:i/:j", func(c *fiber.Ctx) error { return handlers.HandlerCasesSubmit(c, db, sl, store, config) })
 }
 
