@@ -170,6 +170,7 @@ type Config struct {
 		Username string `json:"Username"`
 		Password string `json:"Password"`
 	} `json:"AlertsAPI"`
+	VoiceURL     string `json:"VoiceURL"`
 }
 
 type TemplateData struct {
@@ -231,6 +232,7 @@ type TemplateData struct {
 	HasMpoxAdmission bool
 	MpoxAdmissionID  int
 	UserFacilityID   string // Add UserFacilityID field for default facility selection
+	IsHomeBasedCare  bool
 
 	// Inventory fields
 	InventoryStats          *InventoryStats

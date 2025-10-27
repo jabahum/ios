@@ -152,8 +152,90 @@
                         <li class="nav-item">
                             <a class="nav-link" id="dis-tab" data-toggle="tab" href="#dis" role="tab" aria-controls="dis" aria-selected="false">Discharge</a>
                         </li>
+                        {{ if .IsHomeBasedCare }}
+                        <li class="nav-item">
+                            <a class="nav-link" id="hbc-tab" data-toggle="tab" href="#hbc" role="tab" aria-controls="hbc" aria-selected="false">Home Based Care</a>
+                        </li>
+                        {{ end }}
                     </ul>
                     <div class="tab-content" id="myTabContent">
+                        <div class="tab-pane fade" id="hbc" role="tabpanel" aria-labelledby="hbc-tab">
+                            <div class="container-fluid">
+                                <div class="row">
+                                    <span class="col-sm-5" style="padding-top: 10px; float: left;">Preferred Followup Method: 
+                                        <span style="text-transform: uppercase; font-weight: 600; font-size: 16px;">{{ .Form.HbcFollowup.String }}</span>
+                                    </span>
+                                    {{ if eq .Form.HbcFollowup.String "sms" }}
+                                    <a href="http://localhost:3000/sms?to={{ .Form.HbcPhone.String }}&message=test%20message" class="col-sm-5 btn btn-success" style="float: right; padding-top: 10px;">Send daily followup survey</a>
+                                    {{ else if eq .Form.HbcFollowup.String "ivr" }}
+                                    <a href="http://localhost:3001/call?phone={{ .Form.HbcPhone.String }}" class="col-sm-5 btn btn-success" style="float: right; padding-top: 10px;">Send daily followup survey</a>
+                                    {{ else }}
+                                    <a href="http://localhost:3000/whatsapp?phone={{ .Form.HbcPhone.String }}" class="col-sm-5 btn btn-success" style="float: right; padding-top: 10px;">Send daily followup survey</a>
+                                    {{ end }}
+                                </div>
+                                <hr style="width: 100%;">
+                                <div class="row">
+                                    <!-- Left Side: Scrollable Table -->
+                                    <div class="col-md-12">
+                                        <div class="card">
+                                            <div class="card-header">Follow ups</div>
+                                            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                                                <table class="table table-striped">
+                                                    <thead>
+                                                        <tr>
+                                                            <!-- <th>#</th> -->
+                                                            <th>Date</th>
+                                                            <th>Phone</th>
+                                                            <th>Channel</th>
+                                                            <th>Patient Condition</th>
+                                                            <th>Pain Level</th>
+                                                            <th>New Lesions</th>
+                                                            <th>Comorbidities</th>
+                                                            <th>Lesions Dry</th>
+                                                            <th>Neighbours Exposed</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!-- Dynamically load encounter rows here -->
+                                                        {{ if .FormChild3 }}
+                                                            {{ range $key, $value := .FormChild3 }}
+                                                            <tr>
+                                                                <!-- <td>{{ $key }}</td> -->
+                                                                <td>{{ $value.completed_at }}</td>
+                                                                <td>{{ $value.phone_number }}</td>
+                                                                <td>{{ $value.platform }}</td>
+                                                                <td>{{ $value.general_status }}</td>
+                                                                <td>{{ $value.pain_level }}</td>
+                                                                <td>{{ $value.sensitive_lesions }}</td>
+                                                                <td>{{ $value.comorbidities }}</td>
+                                                                <td>{{ $value.new_lesions }}</td>
+                                                                <td>{{ $value.exposure_alert }}</td>
+                                                            </tr>
+                                                            {{ end }}
+                                                        {{ end }}
+                                                    </tbody>
+                                                </table>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                            
+                                    <!-- Right Side: Encounter Form -->
+                                    <!-- <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-header">Encounter Details</div>
+                                            <div class="card-body">
+                                                <div class="paper-look" id="result_encounter">
+                                                   
+                                                        
+                                                </div>                                                
+                                            </div>
+                                        </div>
+                                    </div> -->
+                                </div>
+                            </div>
+
+                        </div>
                         {{ if eq .OutbreakID 6 }}
                         <div class="tab-pane fade" id="admissions" role="tabpanel" aria-labelledby="admissions-tab">
                             <div class="card">
@@ -198,10 +280,6 @@
                         </div>
                         {{ end }}
                         <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
-                        
-
-
-
                             <div class="form-container">
                                 <form method="post" action="/cases/save" id="caseForm">
                                     <div class="row registration-input-row">    
@@ -463,8 +541,38 @@
                                                     <script>
                                                     document.addEventListener("DOMContentLoaded", function() {
                                                         document.getElementById("adm_ward").value = "{{.Form.AdmWard.String}}";
+                                                        if (document.getElementById("adm_ward").value == "3") {
+                                                            document.getElementById("hbc_options").style.display = "flex";
+                                                            const radioButtons = document.querySelectorAll('input[name="hbc_followup"]')
+                                                            // Iterate through the radio buttons and check the one that matches
+                                                            radioButtons.forEach(radio => {
+                                                                if (radio.value === "{{ .Form.HbcFollowup.String }}") {
+                                                                    radio.checked = true;
+                                                                }
+                                                            });
+                                                        }
                                                     });
+                                                    document.getElementById("adm_ward").addEventListener("change", function() {
+                                                        console.log("adm_ward changed to "+this.value);
+                                                        if (this.value == "3") {
+                                                            document.getElementById("hbc_options").style.display = "flex";
+                                                        } else {
+                                                            document.getElementById("hbc_options").style.display = "none";
+                                                        }
+                                                    })
                                                     </script>
+                                                </div>
+                                            </div>
+                                            <div class="row" id="hbc_options" style="display: none;">
+                                                <label class="col-sm-5 col-form-label col-form-label-sm">HBC Followup via:</label>
+                                                <div class="col-sm-5">
+                                                    <label class="col-form-label col-form-label-sm"><input type="radio" name="hbc_followup" value="sms"> SMS</label><br>
+                                                    <label class="col-form-label col-form-label-sm"><input type="radio" name="hbc_followup" value="ivr"> IVR calls</label><br>
+                                                    <label class="col-form-label col-form-label-sm"><input type="radio" name="hbc_followup" value="whatsapp"> Whatsapp</label>
+                                                </div>
+                                                <label class="col-sm-5 col-form-label col-form-label-sm" for="hbc_phone">HBC Phone No:</label>
+                                                <div class="col-sm-5">
+                                                    <input class="form-control form-control-sm patient-input" value="{{.Form.HbcPhone.String}}" id="hbc_phone" name="hbc_phone" type="text"/>
                                                 </div>
                                             </div>
                                         </div>
@@ -675,6 +783,7 @@
 
 
                         </div>
+
                         <div class="tab-pane fade" id="encounter" role="tabpanel" aria-labelledby="encounter-tab">
                             <div class="container-fluid">
                                 <div class="row">

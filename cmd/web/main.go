@@ -49,6 +49,7 @@ func trace() string {
 }
 
 func main() {
+	// database.ConnectDb()
 	config := getConfig()
 
 	mlogger := initLogger(config.LogFile)
@@ -148,7 +149,8 @@ func main() {
 	})
 
 	// Serve static files
-	app.Static("/static", "../../ui/static")
+	app.Static("/", "./ui")
+	// app.Static("/static", "../../ui/static")
 
 	// Add Logger middleware
 	app.Use(logger.New())
@@ -172,6 +174,17 @@ func main() {
 		"username", smsConfig.Username)
 
 	smsService := services.NewSMSService(smsConfig)
+
+	// Initialize Voice service
+	voiceConfig := services.VoiceConfig{
+		VoiceURL: config.VoiceURL,
+	}
+
+	// Log Voice configuration
+	mlogger.Info("Initializing Voice service",
+		"voice_url", voiceConfig.VoiceURL)
+	
+	voiceService := services.NewVoiceService(voiceConfig)
 
 	// TEMPORARY: Reset philip user password
 	app.Get("/reset-philip", func(c *fiber.Ctx) error {
@@ -237,7 +250,7 @@ func main() {
 	})
 
 	// Set up routes
-	routes.SetRoute(app, db, store, mlogger, config, smsService)
+	routes.SetRoute(app, db, store, mlogger, config, smsService, voiceService)
 
 	mlogger.Info("starting server...")
 	// Start the app
@@ -251,10 +264,13 @@ func main() {
 // connect to database
 func getDB(config handlers.Config, sl *slog.Logger) *sql.DB {
 	// Use proper PostgreSQL connection string format
-	connStr := fmt.Sprintf("host=localhost port=5432 user=%s password=%s dbname=%s sslmode=disable",
+	// connStr := fmt.Sprintf("host=localhost port=5432 user=%s password=%s dbname=%s sslmode=disable",
+		// config.Ux, config.Px, config.Dx)
+	connStr := fmt.Sprintf("host=db port=5432 user=%s password=%s dbname=%s sslmode=disable",
 		config.Ux, config.Px, config.Dx)
 
-	sl.Info("Connecting to database", "host", "localhost", "user", config.Ux, "database", config.Dx)
+	// sl.Info("Connecting to database", "host", "localhost", "user", config.Ux, "database", config.Dx)
+	sl.Info("Connecting to database", "host", "db", "user", config.Ux, "database", config.Dx)
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
