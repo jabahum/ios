@@ -22,7 +22,7 @@ import (
 	"case/internal/services"
 )
 
-func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger, config handlers.Config, smsService *services.SMSService) {
+func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger, config handlers.Config, smsService *services.SMSService, voiceService *services.VoiceService) {
 
 	// Swagger documentation routes
 	app.Get("/swagger/*", fiberSwagger.HandlerDefault)
@@ -32,6 +32,16 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 	app.Get("/", func(c *fiber.Ctx) error {
 		return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "landing")
 	})
+
+	//survey routes
+	app.Get("/surveys", func(c *fiber.Ctx) error {
+		return handlers.HandlerGetSurveys(c, db, sl)
+	})
+
+	app.Get("/call", func(c *fiber.Ctx) error {
+		return models.SendCall(c)
+	})
+	
 	app.Get("/login", func(c *fiber.Ctx) error {
 		return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "login")
 	})
@@ -649,7 +659,7 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		// Additional routes
 		RouteFacilities(hfs, db, sl, store, config)
 		RouteUsers(usr, db, sl, store, config)
-		RouteCases(cse, db, sl, store, config)
+		RouteCases(cse, db, sl, store, config, smsService, voiceService)
 		RouteMorbidity(mob, db, sl, store, config)
 		RouteSymptoms(sym, db, sl, store, config)
 		RouteRush(rus, db, sl, store, config)
@@ -668,7 +678,7 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		appGroup.Get("/vhf/new", func(c *fiber.Ctx) error {
 			return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "vhf_cif")
 		})
-		appGroup.Get("/cases/new", func(c *fiber.Ctx) error { return handlers.HandlerCasesForm(c, db, sl, store, config) })
+		appGroup.Get("/cases/new", func(c *fiber.Ctx) error { return handlers.HandlerCasesForm(c, db, sl, store, config, smsService, voiceService) })
 		appGroup.Get("/cases/:outbreak_id", func(c *fiber.Ctx) error {
 			// Set the outbreak ID in session and redirect to cases list
 			outbreakID, err := strconv.Atoi(c.Params("outbreak_id"))
@@ -1386,10 +1396,10 @@ func RouteEmployees(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.
 	})
 }
 
-func RouteCases(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
+func RouteCases(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config, smsService *services.SMSService, voiceService *services.VoiceService) {
 	// Add RBAC permission checks for case management
 	v.Get("/new/:i", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
-		return handlers.HandlerCasesForm(c, db, sl, store, config)
+		return handlers.HandlerCasesForm(c, db, sl, store, config, smsService, voiceService)
 	})
 	v.Post("/save", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
 		return handlers.HandlerCasesSubmit(c, db, sl, store, config)
@@ -1448,13 +1458,13 @@ func RouteCases(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Stor
 	})
 }
 
-func RouteCaseDischarge(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
+func RouteCaseDischarge(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config, smsService *services.SMSService, voiceService *services.VoiceService) {
 	// Add RBAC permission checks for case discharge
 	v.Get("/view/:i/:j", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
-		return handlers.HandlerCasesForm(c, db, sl, store, config)
+		return handlers.HandlerCasesForm(c, db, sl, store, config, smsService, voiceService)
 	})
 	v.Get("/new/:i/:j", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
-		return handlers.HandlerCasesForm(c, db, sl, store, config)
+		return handlers.HandlerCasesForm(c, db, sl, store, config, smsService, voiceService)
 	})
 	v.Post("/save/:i/:j", middleware.PermissionRequired(store, db, sl, "vhf_patients", "update"), func(c *fiber.Ctx) error {
 		return handlers.HandlerCasesSubmit(c, db, sl, store, config)

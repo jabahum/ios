@@ -21,5 +21,6 @@
         "BaseURL": "https://alerts.health.go.ug/api/v1",
         "Username": "pwaiswa",
         "Password": "leaves"
-    }
+    },
+    "VoiceURL"       : "https://voice.africastalking.com/call"
 }

@@ -3,6 +3,7 @@ package handlers
 import (
 	"case/internal/models"
 	"case/internal/security"
+	"case/internal/services"
 	"context"
 	"database/sql"
 	"errors"
@@ -11,6 +12,8 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	// "io"
+    // "encoding/json"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
@@ -161,7 +164,7 @@ type FullTreatmentData struct {
 	MetronidazoleFreq           sql.NullString  `json:"metronidazole_freq"`
 }
 
-func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config, smsService *services.SMSService, voiceService *services.VoiceService) error {
 	DoZaLogging("INFO", "Starting Client form", nil)
 
 	userID, userName := GetUser(c, sl, store)
@@ -232,12 +235,61 @@ func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 	data.HasMpoxAdmission = hasAdmission
 	data.MpoxAdmissionID = admissionID // int
 
+	// *********************
+// 		// Create the request
+// 		req, err := http.NewRequest("GET", "https://localhost:3000/get_assessments?phone="+client.HbcPhone.String+"&platform="+client.HbcFollowup.String, nil)
+// 		if err != nil {
+// 			return fmt.Errorf("failed to create request: %v", err)
+// 		}
+// 		fmt.Println("get assessments request::>>>", req)
+
+// 		// Add basic auth
+// 		// req.SetBasicAuth(os.Getenv("SMS_USERNAME"), os.Getenv("SMS_PASSWORD"))
+
+// 		// Create client with timeout
+// 		httpClient := &http.Client{
+// 			// Timeout: 10 * time.Second, // 10 second timeout
+// 		}
+
+// 		// Send the request
+// 		resp, err := httpClient.Do(req)
+// 		if err != nil {
+// 			return fmt.Errorf("failed to send request: %v", err)
+// 		}
+// 		defer resp.Body.Close()
+
+// 		// Read response body
+// 		body, err := io.ReadAll(resp.Body)
+// 		if err != nil {
+// 			return fmt.Errorf("failed to read response body: %v", err)
+// 		}
+// fmt.Println("There-----:::", string(body))
+
+// 		var assessmentData []interface{}
+// 		err = json.Unmarshal(body, &assessmentData)
+//     	if err != nil {
+//     		fmt.Println("Error unmarshaling JSON:", err)
+//     		return err
+//     	}
+// fmt.Println("here+++:::", assessmentData)
+		// Log response details
+		// fmt.Sprintf("Assessments received",
+		// 	"status", resp.Status,
+		// 	"body", string(body))
+		hbcAssessments := []string{}
+	// *********************
+
 	data.User = userName
 	data.Role = role
 	data.Optionz = Get_Client_Optionz()
 	data.Form = client
 	data.FormChild1 = cE
 	data.FormChild2 = st
+	data.FormChild3 = hbcAssessments
+	if (client.AdmWard.String == strconv.Itoa(3)) {
+		data.IsHomeBasedCare = true
+	}
+	fmt.Println("client data: %s", client)
 
 	// Set user's facility ID for auto-selection in dropdown
 	userFacility := GetCurrentFacility(c, db, sl, store)
@@ -246,6 +298,28 @@ func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 	} else {
 		data.UserFacilityID = ""
 	}
+//testing for voice
+// Send SMS notification to DSFP if district is provided
+func Call(){
+	if client.HbcPhone != "" {
+		// Get district ID from district name
+		HbcPhone, err := models.ClientByHBCPhone(db, client.HbcPhone)
+		if err != nil {
+			sl.Error("Failed to get client by HBC Phone", "hbc_phone", client.HbcPhone, "error", err)
+		} 
+				if err := voiceService.MakeVoiceCall(client.HbcPhone); err != nil {
+					sl.Error("Failed to make voice call", "error", err)
+					// Don't return error here, as the form was still saved successfully
+				} else {
+					sl.Info("Call made to the HBC Client", client.HbcPhone, "hbc_phone")
+				}
+			
+		}
+	}
+
+	// Redirect to success page with case code
+	return c.Redirect(fmt.Sprintf("/vhf-cif/success?case_code=%s", client.HbcPhone.String))
+	//end voice test
 
 	DoZaLogging("INFO", "Load Client form", err)
 	return GenerateHTML(c, db, data, "form_patients")
@@ -324,6 +398,8 @@ func HandlerCasesSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 		Site:             ParseNullInt(c.FormValue("site")),
 		Status:           ParseNullString(c.FormValue("status")),
 		OutbreakID:       outbreakID,
+		HbcPhone:         ParseNullString(c.FormValue("hbc_phone")),
+		HbcFollowup:      ParseNullString(c.FormValue("hbc_followup")),
 	}
 
 	//visID, _ := utilities.GetSequentialVisitID()
