@@ -149,14 +149,14 @@
                         <li class="nav-item">
                             <a class="nav-link" id="labs-tab" data-toggle="tab" href="#labs" role="tab" aria-controls="labs" aria-selected="false">Status</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" id="dis-tab" data-toggle="tab" href="#dis" role="tab" aria-controls="dis" aria-selected="false">Discharge</a>
-                        </li>
                         {{ if .IsHomeBasedCare }}
                         <li class="nav-item">
                             <a class="nav-link" id="hbc-tab" data-toggle="tab" href="#hbc" role="tab" aria-controls="hbc" aria-selected="false">Home Based Care</a>
                         </li>
                         {{ end }}
+                        <li class="nav-item">
+                            <a class="nav-link" id="dis-tab" data-toggle="tab" href="#dis" role="tab" aria-controls="dis" aria-selected="false">Discharge</a>
+                        </li>
                     </ul>
                     <div class="tab-content" id="myTabContent">
                         <div class="tab-pane fade" id="hbc" role="tabpanel" aria-labelledby="hbc-tab">
@@ -168,7 +168,7 @@
                                     {{ if eq .Form.HbcFollowup.String "sms" }}
                                     <a href="http://localhost:3000/sms?to={{ .Form.HbcPhone.String }}&message=test%20message" class="col-sm-5 btn btn-success" style="float: right; padding-top: 10px;">Send daily followup survey</a>
                                     {{ else if eq .Form.HbcFollowup.String "ivr" }}
-                                    <a href="http://localhost:3001/call?phone={{ .Form.HbcPhone.String }}" class="col-sm-5 btn btn-success" style="float: right; padding-top: 10px;">Send daily followup survey</a>
+                                    <a onclick="startCall()" class="col-sm-5 btn btn-success" style="float: right; padding-top: 10px;">Send daily followup survey</a>
                                     {{ else }}
                                     <a href="http://localhost:3000/whatsapp?phone={{ .Form.HbcPhone.String }}" class="col-sm-5 btn btn-success" style="float: right; padding-top: 10px;">Send daily followup survey</a>
                                     {{ end }}
@@ -201,15 +201,15 @@
                                                             {{ range $key, $value := .FormChild3 }}
                                                             <tr>
                                                                 <!-- <td>{{ $key }}</td> -->
-                                                                <td>{{ $value.completed_at }}</td>
-                                                                <td>{{ $value.phone_number }}</td>
-                                                                <td>{{ $value.platform }}</td>
-                                                                <td>{{ $value.general_status }}</td>
-                                                                <td>{{ $value.pain_level }}</td>
-                                                                <td>{{ $value.sensitive_lesions }}</td>
-                                                                <td>{{ $value.comorbidities }}</td>
-                                                                <td>{{ $value.new_lesions }}</td>
-                                                                <td>{{ $value.exposure_alert }}</td>
+                                                                <td>{{ $value.CreatedAt }}</td>
+                                                                <td>{{ $value.PhoneNumber }}</td>
+                                                                <td>{{ $value.Platform }}</td>
+                                                                <td>{{ $value.PatientCondition }}</td>
+                                                                <td>{{ $value.PainLevel }}</td>
+                                                                <td>{{ $value.NewLesions }}</td>
+                                                                <td>{{ $value.Comorbidities }}</td>
+                                                                <td>{{ $value.LesionsDry }}</td>
+                                                                <td>{{ $value.ExposureAlert }}</td>
                                                             </tr>
                                                             {{ end }}
                                                         {{ end }}
@@ -1197,6 +1197,24 @@ function hidePregnantFields() {
     } else {
         pregnant.style.display = 'block';
     }   
+}
+
+function startCall() {
+    // const phone = prompt("Enter phone number:");
+    // if (!phone) return;
+
+    fetch(`/call?phone={{ .Form.HbcPhone.String }}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === "call initiated") {
+                alert("Call in progress...");
+            } else {
+                alert("Call failed: " + data.error);
+            }
+        })
+        .catch((error) => {
+            alert("Error: " + error);
+        });
 }
 
 //Hide adm_from if transfer is not Yes

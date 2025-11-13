@@ -37,9 +37,12 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 	app.Get("/surveys", func(c *fiber.Ctx) error {
 		return handlers.HandlerGetSurveys(c, db, sl)
 	})
-
+	// IVR voice calls routes
 	app.Get("/call", func(c *fiber.Ctx) error {
-		return models.SendCall(c)
+		return models.SendCall(c, db, sl)
+	})
+	app.Post("/voice/callback", func(c *fiber.Ctx) error {
+		return models.HandleVoiceCallback(c, db)
 	})
 	
 	app.Get("/login", func(c *fiber.Ctx) error {

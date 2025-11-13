@@ -43,7 +43,7 @@ func GetSurveys(db *sql.DB) ([]Survey, error) {
 
 // Get survey_questions by survey ID
 func GetQuestionsBySurvey(db *sql.DB, surveyID int) ([]SurveyQuestion, error) {
-	rows, err := db.Query("SELECT id, survey_id, question_no, question, created_at, updated_at FROM subcounties WHERE survey_id = $1 ORDER BY question_no", surveyID)
+	rows, err := db.Query("SELECT id, survey_id, question_no, question, created_at, updated_at FROM survey_questions WHERE survey_id = $1 ORDER BY question_no", surveyID)
 	if err != nil {
 		return nil, err
 	}

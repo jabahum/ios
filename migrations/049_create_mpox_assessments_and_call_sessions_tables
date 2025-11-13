@@ -1,0 +1,39 @@
+CREATE TABLE IF NOT EXISTS call_sessions (
+    id SERIAL PRIMARY KEY,
+    phone_number VARCHAR(15) NOT NULL,
+    duration_in_seconds INTEGER,
+    amount INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS mpox_assessments (
+    id SERIAL PRIMARY KEY,
+    client_id INTEGER DEFAULT NULL,
+    call_session_id INTEGER DEFAULT NULL,
+    platform VARCHAR(10) DEFAULT NULL,
+    phone_number VARCHAR(15) DEFAULT NULL,
+    patient_condition INTEGER DEFAULT NULL,
+    pain_level INTEGER DEFAULT NULL,
+    new_lesions BOOLEAN DEFAULT NULL,
+    comorbidities BOOLEAN DEFAULT NULL,
+    lesions_dry BOOLEAN DEFAULT NULL,
+    exposure_alert BOOLEAN DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Add foreign key constraint to the mpox_assessments table
+ALTER TABLE mpox_assessments
+ADD CONSTRAINT fk_call_session_id
+FOREIGN KEY (call_session_id)
+REFERENCES call_sessions (id)
+ON DELETE SET NULL
+ON UPDATE CASCADE;
+
+ALTER TABLE mpox_assessments
+ADD CONSTRAINT fk_client_id
+FOREIGN KEY (client_id)
+REFERENCES clients (id)
+ON DELETE SET NULL
+ON UPDATE CASCADE;
