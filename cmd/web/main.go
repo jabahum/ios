@@ -183,7 +183,7 @@ func main() {
 	// Log Voice configuration
 	mlogger.Info("Initializing Voice service",
 		"voice_url", voiceConfig.VoiceURL)
-	
+
 	voiceService := services.NewVoiceService(voiceConfig)
 
 	// TEMPORARY: Reset philip user password
@@ -264,13 +264,16 @@ func main() {
 // connect to database
 func getDB(config handlers.Config, sl *slog.Logger) *sql.DB {
 	// Use proper PostgreSQL connection string format
-	// connStr := fmt.Sprintf("host=localhost port=5432 user=%s password=%s dbname=%s sslmode=disable",
-		// config.Ux, config.Px, config.Dx)
-	connStr := fmt.Sprintf("host=db port=5432 user=%s password=%s dbname=%s sslmode=disable",
-		config.Ux, config.Px, config.Dx)
+	// For local development, use localhost. For Docker, use "db"
+	dbHost := os.Getenv("DB_HOST")
+	if dbHost == "" {
+		dbHost = "localhost" // Default to localhost for local development
+	}
 
-	// sl.Info("Connecting to database", "host", "localhost", "user", config.Ux, "database", config.Dx)
-	sl.Info("Connecting to database", "host", "db", "user", config.Ux, "database", config.Dx)
+	connStr := fmt.Sprintf("host=%s port=5432 user=%s password=%s dbname=%s sslmode=disable",
+		dbHost, config.Ux, config.Px, config.Dx)
+
+	sl.Info("Connecting to database", "host", dbHost, "user", config.Ux, "database", config.Dx)
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {

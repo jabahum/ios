@@ -4,22 +4,22 @@ import (
 	"database/sql"
 	// "case/internal/database"
 	// "case/internal/models"
-	"github.com/gofiber/fiber/v2"
+	"bytes"
+	"encoding/json"
+	"encoding/xml"
 	"fmt"
-	"net/http"
 	"io"
-	"strings"
-	"os"
 	"log"
 	"log/slog"
-	"time"
-	"sync"
-	"strconv"
-	"encoding/xml"
-	"encoding/json"
-    "bytes"
 	"math"
+	"net/http"
+	"os"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
 
+	"github.com/gofiber/fiber/v2"
 )
 
 // Session represents call state
@@ -34,26 +34,26 @@ type Session struct {
 
 // Africa's Talking callback request
 type VoiceCallback struct {
-	SessionID    string `json:"sessionId"`
-	CallSessionState string `json:"callSessionState"`
-	CallerNumber string `json:"callerNumber"`
-	DtmfDigits   string `json:"dtmfDigits"`
-	Direction    string `json:"direction"`
-	Carrier      string `json:"callerCarrierName"`
-	CountryCode  string `json:"callerCountryCode"`
+	SessionID         string `json:"sessionId"`
+	CallSessionState  string `json:"callSessionState"`
+	CallerNumber      string `json:"callerNumber"`
+	DtmfDigits        string `json:"dtmfDigits"`
+	Direction         string `json:"direction"`
+	Carrier           string `json:"callerCarrierName"`
+	CountryCode       string `json:"callerCountryCode"`
 	DurationInSeconds string `json:"durationInSeconds"`
-	Amount string            `json:"amount"`
+	Amount            string `json:"amount"`
 }
 
 // Africa's Talking XML response structures
 type ATResponse struct {
-	XMLName xml.Name `xml:"Response"`
+	XMLName   xml.Name   `xml:"Response"`
 	GetDigits *GetDigits `xml:"GetDigits,omitempty"`
 	Say       *Say       `xml:"Say,omitempty"`
 }
 
 type GetDigits struct {
-	Timeout     int    `xml:"timeout,attr"`
+	Timeout int `xml:"timeout,attr"`
 	// FinishOnKey string `xml:"finishOnKey,attr"`
 	NumDigits   int    `xml:"numDigits,attr"`
 	CallbackUrl string `xml:"callbackUrl,attr"`
@@ -67,34 +67,34 @@ type Say struct {
 }
 
 type MpoxAssessment struct {
-	ID int `json:"id"`
-	ClientId int `json:"client_id"`
-	CallSessionId int `json:"call_session_id"`
-	Platform string `json:"platform"`
-	Comorbidities bool `json:"comorbidities"`
-	CompletedAt string `json:"completed_at"`
-	ExposureAlert bool `json:"exposure_alert"`
-	PatientCondition string `json:"patient_condition"`
-	NewLesions bool `json:"new_lesions"`
-	PainLevel int `json:"pain_level"`
-	PatientName string `json:"patient_name"`
-	PhoneNumber string `json:"phone_number"`
-	LesionsDry bool `json:"lesions_dry"`
-	SessionId string `json:"session_id"`
-	CreatedAt time.Time `json:"created_at"`
+	ID               int       `json:"id"`
+	ClientId         int       `json:"client_id"`
+	CallSessionId    int       `json:"call_session_id"`
+	Platform         string    `json:"platform"`
+	Comorbidities    bool      `json:"comorbidities"`
+	CompletedAt      string    `json:"completed_at"`
+	ExposureAlert    bool      `json:"exposure_alert"`
+	PatientCondition string    `json:"patient_condition"`
+	NewLesions       bool      `json:"new_lesions"`
+	PainLevel        int       `json:"pain_level"`
+	PatientName      string    `json:"patient_name"`
+	PhoneNumber      string    `json:"phone_number"`
+	LesionsDry       bool      `json:"lesions_dry"`
+	SessionId        string    `json:"session_id"`
+	CreatedAt        time.Time `json:"created_at"`
 }
 
 type CallSession struct {
 	PhoneNumber       string `json:"phone_number"`
-	DurationInSeconds int `json:"duration_in_seconds"`
-	Amount            int `json:"amount"`
+	DurationInSeconds int    `json:"duration_in_seconds"`
+	Amount            int    `json:"amount"`
 }
 
 var stepPrompts = map[int]string{}
 
 func SendCall(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 	phoneNumber := c.Query("phone")
-	var phone =[...]string{phoneNumber}
+	var phone = [...]string{phoneNumber}
 
 	surveyID := 1 // Mpox survey id = 1, need to do a db call here to get active survey or maybe use outbreak id.
 
@@ -106,7 +106,7 @@ func SendCall(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 		})
 	}
 
-	for _,value := range qns {
+	for _, value := range qns {
 		stepPrompts[value.QuestionNo] = value.Question
 	}
 
@@ -116,24 +116,24 @@ func SendCall(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 	method := "POST"
 
 	// Build payload
-    payloadData := map[string]interface{}{
-        "from":     os.Getenv("AT_PHONE"),
-        "to":       phone,
-        "username": os.Getenv("AT_USERNAME"),
-    }
+	payloadData := map[string]interface{}{
+		"from":     os.Getenv("AT_PHONE"),
+		"to":       phone,
+		"username": os.Getenv("AT_USERNAME"),
+	}
 
-    payloadBytes, err := json.Marshal(payloadData)
-    if err != nil {
-        log.Fatal("Error marshaling payload:", err)
-    }
+	payloadBytes, err := json.Marshal(payloadData)
+	if err != nil {
+		log.Fatal("Error marshaling payload:", err)
+	}
 
-    payload := bytes.NewReader(payloadBytes)
+	payload := bytes.NewReader(payloadBytes)
 	// *********
 
 	// Debug print
 	fmt.Println("Final JSON payload:", string(payloadBytes))
 
-	client := &http.Client {}
+	client := &http.Client{}
 
 	req, err := http.NewRequest(method, url, payload)
 
@@ -212,7 +212,7 @@ func HandleVoiceCallback(c *fiber.Ctx, db *sql.DB) error {
 		if callback.CallSessionState == "Completed" {
 			client, _ := ClientByHBCPhone(c.Context(), db, callback.CallerNumber[1:])
 			saveMpoxResponse(session, callback.Amount, callback.DurationInSeconds, db, client)
-			deleteSession(session.SessionID)					
+			deleteSession(session.SessionID)
 		} else {
 			// Assessment not complete
 			// Start or continue current step
@@ -271,7 +271,7 @@ func deleteSession(sessionID string) {
 func processInput(session *Session, input string) bool {
 	input = strings.TrimSpace(input)
 	step := session.CurrentStep
-	
+
 	switch step {
 	case 1: // Patient Condition (1-5)
 		if input >= "1" && input <= "5" {
@@ -290,7 +290,7 @@ func processInput(session *Session, input string) bool {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -298,7 +298,7 @@ func getStepKey(step int) string {
 	keys := map[int]string{
 		3: "new_lesions",
 		4: "comorbidities",
-		5: "lesions_dry", 
+		5: "lesions_dry",
 		6: "exposure_alert",
 	}
 	return keys[step]
@@ -306,7 +306,7 @@ func getStepKey(step int) string {
 
 func createGetDigitsResponse(step int, patientName string, isRetry bool) ATResponse {
 	text := fmt.Sprintf(stepPrompts[step])
-	
+
 	if isRetry {
 		text = "I didn't understand your response. " + text
 	}
@@ -318,10 +318,10 @@ func createGetDigitsResponse(step int, patientName string, isRetry bool) ATRespo
 
 	return ATResponse{
 		GetDigits: &GetDigits{
-			Timeout:     8,
+			Timeout: 8,
 			// FinishOnKey: "#",
 			NumDigits:   numDigits,
-			CallbackUrl: "https://pxvs54rm-3001.uks1.devtunnels.ms/voice/callback", // Replace with your domain 
+			CallbackUrl: "https://localhost:3000/voice/callback", // Replace with your domain
 			Say: Say{
 				Voice:    "woman",
 				PlayBeep: "true",
@@ -334,9 +334,9 @@ func createGetDigitsResponse(step int, patientName string, isRetry bool) ATRespo
 func createCompletionResponse() ATResponse {
 	return ATResponse{
 		Say: &Say{
-			Voice: "woman",
+			Voice:    "woman",
 			PlayBeep: "false",
-			Text:  "Thank you for completing your daily Mpox check-in. Your responses have been recorded and a health worker will contact you if needed. Stay safe.",
+			Text:     "Thank you for completing your daily Mpox check-in. Your responses have been recorded and a health worker will contact you if needed. Stay safe.",
 		},
 	}
 }
@@ -344,7 +344,7 @@ func createCompletionResponse() ATResponse {
 func saveMpoxResponse(session *Session, amount string, duration string, db *sql.DB, client *Client) {
 	painLevel, _ := strconv.Atoi(session.Responses["pain_level"])
 	fmt.Println("\n Mpox Responses for Session:<>%v \n", session.Responses)
-	
+
 	// Create structured response
 	response := map[string]interface{}{
 		"session_id":        session.SessionID,
@@ -363,25 +363,25 @@ func saveMpoxResponse(session *Session, amount string, duration string, db *sql.
 	}
 
 	fmt.Printf("Mpox Assessment Complete: %+v", response)
-	
+
 	// Check for urgent conditions and send alerts
 	if session.Responses["patient_condition"] == "3" || // Feel worse
-	   session.Responses["patient_condition"] == "5" || // Need health worker
-	   painLevel >= 8 ||                             // High pain
-	   session.Responses["exposure_alert"] == "1" {  // Exposure risk
-		
+		session.Responses["patient_condition"] == "5" || // Need health worker
+		painLevel >= 8 || // High pain
+		session.Responses["exposure_alert"] == "1" { // Exposure risk
+
 		sendUrgentAlert(session.PatientName, session.PhoneNumber, response)
 	}
-	
+
 	// In production: save to database
 	// db.Create(&MpoxResponse{...})
 	jsonBytes, _ := json.Marshal(response)
 	var assessmentData MpoxAssessment
 	// convert jsonBytes to Json and bind it to assessmentData
-    err := json.Unmarshal(jsonBytes, &assessmentData)
-    if err != nil {
-        panic(err)
-    }
+	err := json.Unmarshal(jsonBytes, &assessmentData)
+	if err != nil {
+		panic(err)
+	}
 
 	amt, err := strconv.ParseFloat(amount, 64)
 	if err != nil {
@@ -397,8 +397,8 @@ func saveMpoxResponse(session *Session, amount string, duration string, db *sql.
 		return
 	}
 
-	query1 := `INSERT INTO mpox_assessments `+
-		`(client_id, call_session_id, platform, phone_number, patient_condition, pain_level, new_lesions, comorbidities, lesions_dry, exposure_alert) `+ 
+	query1 := `INSERT INTO mpox_assessments ` +
+		`(client_id, call_session_id, platform, phone_number, patient_condition, pain_level, new_lesions, comorbidities, lesions_dry, exposure_alert) ` +
 		`VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 	// save assessment to database
 	_, err1 := db.Exec(query1, client.ID, callID, assessmentData.Platform, assessmentData.PhoneNumber, assessmentData.PatientCondition, assessmentData.PainLevel, assessmentData.NewLesions, assessmentData.Comorbidities, assessmentData.LesionsDry, assessmentData.ExposureAlert)
@@ -412,7 +412,7 @@ func saveMpoxResponse(session *Session, amount string, duration string, db *sql.
 
 func sendUrgentAlert(patientName, phoneNumber string, response map[string]interface{}) {
 	fmt.Printf("🚨 URGENT ALERT: Patient %s (%s) requires immediate attention", patientName, phoneNumber)
-	
+
 	// In production, implement:
 	// - SMS to health worker: sendSMS(healthWorkerNumber, alertMessage)
 	// - Email notification: sendEmail(healthWorkerEmail, alertDetails)
