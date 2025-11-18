@@ -321,7 +321,7 @@ func createGetDigitsResponse(step int, patientName string, isRetry bool) ATRespo
 			Timeout: 8,
 			// FinishOnKey: "#",
 			NumDigits:   numDigits,
-			CallbackUrl: "https://localhost:3000/voice/callback", // Replace with your domain
+			CallbackUrl: "https://pxvs54rm-3001.uks1.devtunnels.ms/voice/callback", // Replace with your domain
 			Say: Say{
 				Voice:    "woman",
 				PlayBeep: "true",
