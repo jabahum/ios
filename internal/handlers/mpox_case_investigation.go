@@ -378,6 +378,198 @@ func HandlerMpoxCIFSubmit(c *fiber.Ctx, db *sql.DB, logger *slog.Logger) error {
 	return c.Redirect("/mpox-cif/success?case_id=" + caseInvestigation.CaseID)
 }
 
+// HandlerMpoxCIFView handles viewing an mpox CIF
+func HandlerMpoxCIFView(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	idParam := c.Params("id")
+	if idParam == "" {
+		return c.Status(400).SendString("Case ID required")
+	}
+
+	// Determine if this is a numeric ID (primary key) or case_id (string)
+	// Try numeric first (database id), then fall back to case_id
+	var ci *models.MpoxCaseInvestigation
+	var caseID string
+	
+	ci = &models.MpoxCaseInvestigation{}
+	// Try querying by numeric ID first
+	if idInt, err := strconv.Atoi(idParam); err == nil {
+		// It's a numeric ID - query by primary key
+		if err := db.QueryRow(`SELECT id, case_id, date, case_status, case_classification FROM mpox_case_investigation WHERE id = $1`, idInt).
+			Scan(&ci.ID, &ci.CaseID, &ci.Date, &ci.CaseStatus, &ci.CaseClassification); err != nil {
+			if err == sql.ErrNoRows {
+				return c.Status(404).SendString("CIF not found")
+			}
+			sl.Error("Failed to load case investigation", "error", err, "id", idParam)
+			return c.Status(500).SendString("Failed to load case")
+		}
+		caseID = ci.CaseID
+	} else {
+		// It's a string - query by case_id
+		caseID = idParam
+		if err := db.QueryRow(`SELECT id, case_id, date, case_status, case_classification FROM mpox_case_investigation WHERE case_id = $1`, caseID).
+			Scan(&ci.ID, &ci.CaseID, &ci.Date, &ci.CaseStatus, &ci.CaseClassification); err != nil {
+			if err == sql.ErrNoRows {
+				return c.Status(404).SendString("CIF not found")
+			}
+			sl.Error("Failed to load case investigation", "error", err, "case_id", caseID)
+			return c.Status(500).SendString("Failed to load case")
+		}
+	}
+	
+	// Now use caseID to fetch related data
+	var demo *models.MpoxPatientDemographics
+	var clin *models.MpoxClinicianInfo
+	var exp *models.MpoxCaseExposureHistory
+	var man *models.MpoxClinicalManifestations
+	var travel *models.MpoxTravelHistory
+	var lab *models.MpoxLabInvestigation
+
+	demo = &models.MpoxPatientDemographics{}
+	if err := db.QueryRow(`SELECT id, case_id, health_facility_case_id, surname, other_names, sex, date_of_birth, age, parish, sub_county, physical_address, contact_telephone, occupation, nationality, vaccination_status, date_of_vaccination, next_of_kin, next_of_kin_contact, marital_status, if_dead_date_of_death, admission_date, onset_date, rash_onset_date FROM mpox_patient_demographics WHERE case_id = $1`, caseID).
+		Scan(&demo.ID, &demo.CaseID, &demo.HealthFacilityCaseID, &demo.Surname, &demo.OtherNames, &demo.Sex, &demo.DateOfBirth, &demo.Age, &demo.Parish, &demo.SubCounty, &demo.PhysicalAddress, &demo.ContactTelephone, &demo.Occupation, &demo.Nationality, &demo.VaccinationStatus, &demo.DateOfVaccination, &demo.NextOfKin, &demo.NextOfKinContact, &demo.MaritalStatus, &demo.IfDeadDateOfDeath, &demo.AdmissionDate, &demo.OnsetDate, &demo.RashOnsetDate); err != nil {
+		demo = nil
+	}
+
+	clin = &models.MpoxClinicianInfo{}
+	if err := db.QueryRow(`SELECT id, case_id, clinician_name, clinician_contact, facility_name, clinician_email, facility_district, pdpid_number, admission_date, ward FROM mpox_clinician_info WHERE case_id = $1`, caseID).
+		Scan(&clin.ID, &clin.CaseID, &clin.ClinicianName, &clin.ClinicianContact, &clin.FacilityName, &clin.ClinicianEmail, &clin.FacilityDistrict, &clin.PDPIDNumber, &clin.AdmissionDate, &clin.Ward); err != nil {
+		clin = nil
+	}
+
+	exp = &models.MpoxCaseExposureHistory{}
+	if err := db.QueryRow(`SELECT id, case_id, traveled_country_reported_mpox, close_contact_mpox, intl_travel, contact_animals, domestic_wild_animals, sexual_exposure FROM mpox_case_exposure_history WHERE case_id = $1`, caseID).
+		Scan(&exp.ID, &exp.CaseID, &exp.TraveledCountryReportedMpox, &exp.CloseContactMpox, &exp.IntlTravel, &exp.ContactAnimals, &exp.DomesticWildAnimals, &exp.SexualExposure); err != nil {
+		exp = nil
+	}
+
+	man = &models.MpoxClinicalManifestations{}
+	if err := db.QueryRow(`SELECT id, case_id, onset_date, fever, fever_temperature, lymphadenopathy, symptoms, symptom_other_specify, nausea_vomiting, pregnant, pregnant_trimester, vaccinated, vaccination_date, rash, rash_onset_date, rash_distribution, rash_type, underlying_illness, underlying_illness_details FROM mpox_clinical_manifestations WHERE case_id = $1`, caseID).
+		Scan(&man.ID, &man.CaseID, &man.OnsetDate, &man.Fever, &man.FeverTemperature, &man.Lymphadenopathy, &man.Symptoms, &man.SymptomOtherSpecify, &man.NauseaVomiting, &man.Pregnant, &man.PregnantTrimester, &man.Vaccinated, &man.VaccinationDate, &man.Rash, &man.RashOnsetDate, &man.RashDistribution, &man.RashType, &man.UnderlyingIllness, &man.UnderlyingIllnessDetails); err != nil {
+		man = nil
+	}
+
+	travel = &models.MpoxTravelHistory{}
+	if err := db.QueryRow(`SELECT id, case_id, travel_outside_uganda, country_visited, location_visited, date_arrival, date_departure, activities_location FROM mpox_travel_history WHERE case_id = $1`, caseID).
+		Scan(&travel.ID, &travel.CaseID, &travel.TravelOutsideUganda, &travel.CountryVisited, &travel.LocationVisited, &travel.DateArrival, &travel.DateDeparture, &travel.ActivitiesLocation); err != nil {
+		travel = nil
+	}
+
+	lab = &models.MpoxLabInvestigation{}
+	if err := db.QueryRow(`SELECT id, case_id, lab_id, sample_collected, sample_other_specify, test_requested, test_other_specify, date_sample_collection, time_sample_collection, date_sample_dispatch, sample_collector_name, sample_collector_phone, date_sample_reception, time_sample_reception, sample_recipient_name, sample_recipient_phone, genomic_characterization, clade, accession_number FROM mpox_lab_investigation WHERE case_id = $1`, caseID).
+		Scan(&lab.ID, &lab.CaseID, &lab.LabID, &lab.SampleCollected, &lab.SampleOtherSpecify, &lab.TestRequested, &lab.TestOtherSpecify, &lab.DateSampleCollection, &lab.TimeSampleCollection, &lab.DateSampleDispatch, &lab.SampleCollectorName, &lab.SampleCollectorPhone, &lab.DateSampleReception, &lab.TimeSampleReception, &lab.SampleRecipientName, &lab.SampleRecipientPhone, &lab.GenomicCharacterization, &lab.Clade, &lab.AccessionNumber); err != nil {
+		lab = nil
+	}
+
+	data := NewTemplateData(c, store)
+	data.Form = fiber.Map{
+		"Case":           ci,
+		"Demographics":   demo,
+		"Clinician":      clin,
+		"Exposure":       exp,
+		"Manifestations": man,
+		"TravelHistory":  travel,
+		"Laboratory":     lab,
+		"IsView":         true,
+	}
+	return GenerateHTML(c, db, data, "mpox_cif")
+}
+
+// HandlerMpoxCIFEdit handles editing an mpox CIF
+func HandlerMpoxCIFEdit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	idParam := c.Params("id")
+	if idParam == "" {
+		return c.Status(400).SendString("Case ID required")
+	}
+
+	// Determine if this is a numeric ID (primary key) or case_id (string)
+	var ci *models.MpoxCaseInvestigation
+	var caseID string
+	
+	ci = &models.MpoxCaseInvestigation{}
+	// Try querying by numeric ID first
+	if idInt, err := strconv.Atoi(idParam); err == nil {
+		// It's a numeric ID - query by primary key
+		if err := db.QueryRow(`SELECT id, case_id, date, case_status, case_classification FROM mpox_case_investigation WHERE id = $1`, idInt).
+			Scan(&ci.ID, &ci.CaseID, &ci.Date, &ci.CaseStatus, &ci.CaseClassification); err != nil {
+			if err == sql.ErrNoRows {
+				return c.Status(404).SendString("CIF not found")
+			}
+			sl.Error("Failed to load case investigation", "error", err, "id", idParam)
+			return c.Status(500).SendString("Failed to load case")
+		}
+		caseID = ci.CaseID
+	} else {
+		// It's a string - query by case_id
+		caseID = idParam
+		if err := db.QueryRow(`SELECT id, case_id, date, case_status, case_classification FROM mpox_case_investigation WHERE case_id = $1`, caseID).
+			Scan(&ci.ID, &ci.CaseID, &ci.Date, &ci.CaseStatus, &ci.CaseClassification); err != nil {
+			if err == sql.ErrNoRows {
+				return c.Status(404).SendString("CIF not found")
+			}
+			sl.Error("Failed to load case investigation", "error", err, "case_id", caseID)
+			return c.Status(500).SendString("Failed to load case")
+		}
+	}
+	
+	// Now use caseID to fetch related data
+	var demo *models.MpoxPatientDemographics
+	var clin *models.MpoxClinicianInfo
+	var exp *models.MpoxCaseExposureHistory
+	var man *models.MpoxClinicalManifestations
+	var travel *models.MpoxTravelHistory
+	var lab *models.MpoxLabInvestigation
+
+	demo = &models.MpoxPatientDemographics{}
+	if err := db.QueryRow(`SELECT id, case_id, health_facility_case_id, surname, other_names, sex, date_of_birth, age, parish, sub_county, physical_address, contact_telephone, occupation, nationality, vaccination_status, date_of_vaccination, next_of_kin, next_of_kin_contact, marital_status, if_dead_date_of_death, admission_date, onset_date, rash_onset_date FROM mpox_patient_demographics WHERE case_id = $1`, caseID).
+		Scan(&demo.ID, &demo.CaseID, &demo.HealthFacilityCaseID, &demo.Surname, &demo.OtherNames, &demo.Sex, &demo.DateOfBirth, &demo.Age, &demo.Parish, &demo.SubCounty, &demo.PhysicalAddress, &demo.ContactTelephone, &demo.Occupation, &demo.Nationality, &demo.VaccinationStatus, &demo.DateOfVaccination, &demo.NextOfKin, &demo.NextOfKinContact, &demo.MaritalStatus, &demo.IfDeadDateOfDeath, &demo.AdmissionDate, &demo.OnsetDate, &demo.RashOnsetDate); err != nil {
+		demo = nil
+	}
+
+	clin = &models.MpoxClinicianInfo{}
+	if err := db.QueryRow(`SELECT id, case_id, clinician_name, clinician_contact, facility_name, clinician_email, facility_district, pdpid_number, admission_date, ward FROM mpox_clinician_info WHERE case_id = $1`, caseID).
+		Scan(&clin.ID, &clin.CaseID, &clin.ClinicianName, &clin.ClinicianContact, &clin.FacilityName, &clin.ClinicianEmail, &clin.FacilityDistrict, &clin.PDPIDNumber, &clin.AdmissionDate, &clin.Ward); err != nil {
+		clin = nil
+	}
+
+	exp = &models.MpoxCaseExposureHistory{}
+	if err := db.QueryRow(`SELECT id, case_id, traveled_country_reported_mpox, close_contact_mpox, intl_travel, contact_animals, domestic_wild_animals, sexual_exposure FROM mpox_case_exposure_history WHERE case_id = $1`, caseID).
+		Scan(&exp.ID, &exp.CaseID, &exp.TraveledCountryReportedMpox, &exp.CloseContactMpox, &exp.IntlTravel, &exp.ContactAnimals, &exp.DomesticWildAnimals, &exp.SexualExposure); err != nil {
+		exp = nil
+	}
+
+	man = &models.MpoxClinicalManifestations{}
+	if err := db.QueryRow(`SELECT id, case_id, onset_date, fever, fever_temperature, lymphadenopathy, symptoms, symptom_other_specify, nausea_vomiting, pregnant, pregnant_trimester, vaccinated, vaccination_date, rash, rash_onset_date, rash_distribution, rash_type, underlying_illness, underlying_illness_details FROM mpox_clinical_manifestations WHERE case_id = $1`, caseID).
+		Scan(&man.ID, &man.CaseID, &man.OnsetDate, &man.Fever, &man.FeverTemperature, &man.Lymphadenopathy, &man.Symptoms, &man.SymptomOtherSpecify, &man.NauseaVomiting, &man.Pregnant, &man.PregnantTrimester, &man.Vaccinated, &man.VaccinationDate, &man.Rash, &man.RashOnsetDate, &man.RashDistribution, &man.RashType, &man.UnderlyingIllness, &man.UnderlyingIllnessDetails); err != nil {
+		man = nil
+	}
+
+	travel = &models.MpoxTravelHistory{}
+	if err := db.QueryRow(`SELECT id, case_id, travel_outside_uganda, country_visited, location_visited, date_arrival, date_departure, activities_location FROM mpox_travel_history WHERE case_id = $1`, caseID).
+		Scan(&travel.ID, &travel.CaseID, &travel.TravelOutsideUganda, &travel.CountryVisited, &travel.LocationVisited, &travel.DateArrival, &travel.DateDeparture, &travel.ActivitiesLocation); err != nil {
+		travel = nil
+	}
+
+	lab = &models.MpoxLabInvestigation{}
+	if err := db.QueryRow(`SELECT id, case_id, lab_id, sample_collected, sample_other_specify, test_requested, test_other_specify, date_sample_collection, time_sample_collection, date_sample_dispatch, sample_collector_name, sample_collector_phone, date_sample_reception, time_sample_reception, sample_recipient_name, sample_recipient_phone, genomic_characterization, clade, accession_number FROM mpox_lab_investigation WHERE case_id = $1`, caseID).
+		Scan(&lab.ID, &lab.CaseID, &lab.LabID, &lab.SampleCollected, &lab.SampleOtherSpecify, &lab.TestRequested, &lab.TestOtherSpecify, &lab.DateSampleCollection, &lab.TimeSampleCollection, &lab.DateSampleDispatch, &lab.SampleCollectorName, &lab.SampleCollectorPhone, &lab.DateSampleReception, &lab.TimeSampleReception, &lab.SampleRecipientName, &lab.SampleRecipientPhone, &lab.GenomicCharacterization, &lab.Clade, &lab.AccessionNumber); err != nil {
+		lab = nil
+	}
+
+	data := NewTemplateData(c, store)
+	data.Form = fiber.Map{
+		"Case":           ci,
+		"Demographics":   demo,
+		"Clinician":      clin,
+		"Exposure":       exp,
+		"Manifestations": man,
+		"TravelHistory":  travel,
+		"Laboratory":     lab,
+		"IsEdit":         true,
+		"case_id":        caseID,
+	}
+	return GenerateHTML(c, db, data, "mpox_cif")
+}
+
 func HandlerMpoxCIFSuccess(c *fiber.Ctx, db *sql.DB, logger *slog.Logger, store *session.Store) error {
 	caseID := c.Query("case_id")
 	data := NewTemplateData(c, store)

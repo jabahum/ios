@@ -1,0 +1,871 @@
+{{ define "layout" }}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Profile</title>
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css" onerror="this.onerror=null;var link=document.createElement('link');link.id='bootstrap-css-fallback';link.rel='stylesheet';link.href='https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css';document.head.appendChild(link);">
+    <script src="/static/js/bootstrap-fallback.js" defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f5f7fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .patient-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .patient-header h1 {
+            margin: 0 0 15px 0;
+            font-weight: 600;
+            font-size: 2rem;
+        }
+        
+        .patient-header .info-item {
+            margin-right: 30px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        
+        .patient-header .info-item strong {
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        
+        .profile-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid #e9ecef;
+        }
+        
+        .profile-card h3 {
+            color: #495057;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .info-row {
+            display: flex;
+            margin-bottom: 8px;
+            padding: 8px 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 3px solid #667eea;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+            min-width: 200px;
+            margin-right: 15px;
+        }
+        
+        .info-value {
+            color: #212529;
+            flex: 1;
+        }
+        
+        .nav-tabs {
+            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 25px;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            color: #6c757d;
+            font-weight: 500;
+            padding: 15px 25px;
+            margin-right: 5px;
+        }
+        
+        .nav-tabs .nav-link.active {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            background: transparent;
+        }
+        
+        .nav-tabs .nav-link:hover {
+            border-color: transparent;
+            color: #667eea;
+        }
+        
+        .table {
+            margin-top: 15px;
+        }
+        
+        .table thead th {
+            background-color: #667eea;
+            color: white;
+            font-weight: 600;
+            border: none;
+            padding: 12px;
+        }
+        
+        .table tbody tr {
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .badge {
+            padding: 6px 12px;
+            font-weight: 500;
+        }
+        
+        .action-buttons {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .btn-action {
+            margin-right: 10px;
+            padding: 10px 20px;
+            font-weight: 500;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation -->
+    {{if .IsAuthenticated}}
+    <div class="top-ribbon" style="background-color: #007bff; color: white; padding: 8px 15px; margin-bottom: 10px;">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <a href="/home" class="text-white me-3" style="text-decoration: none;"><strong>Case Management System</strong></a>
+                <a href="/cases" class="text-white me-3" style="text-decoration: none;"><i class="fas fa-users"></i> Cases</a>
+                {{if hasPermission .UserPermissions "outbreaks" "read"}}
+                <a href="/outbreaks" class="text-white me-3" style="text-decoration: none;"><i class="fas fa-virus"></i> Outbreaks</a>
+                {{end}}
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-light me-2" onclick="window.history.back()"><i class="fas fa-arrow-left"></i> Back</button>
+                <span class="me-3"><i class="fas fa-user"></i> {{.User}}</span>
+                <a href="/logout" class="text-white me-3" style="text-decoration: none;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </div>
+    </div>
+    {{end}}
+
+    <div class="container-fluid" style="max-width: 1400px; margin: 10px auto; padding: 0 15px;">
+        <!-- Patient Header -->
+        <div class="patient-header">
+            <h1>
+                <i class="fas fa-user-circle me-2"></i>
+                {{ if .Form.Firstname.Valid }}{{ .Form.Firstname.String }}{{ end }}
+                {{ if .Form.Lastname.Valid }}{{ .Form.Lastname.String }}{{ end }}
+            </h1>
+            <div>
+                <span class="info-item">
+                    <strong><i class="fas fa-id-card"></i> Case ID:</strong>
+                    {{ if .Form.CaseNo.Valid }}
+                        {{ .Form.CaseNo.String }}
+                    {{ else }}
+                        {{ .Form.ID }}
+                    {{ end }}
+                </span>
+                <span class="info-item">
+                    <strong><i class="fas fa-calendar-alt"></i> Age:</strong>
+                    {{ if .Form.Age.Valid }}
+                        {{ .Form.Age.Float64 }} years
+                    {{ else if .Form.DateOfBirth.Valid }}
+                        {{ CalculateAgeFromString .Form.DateOfBirth.String }} years
+                    {{ else }}
+                        N/A
+                    {{ end }}
+                </span>
+                <span class="info-item">
+                    <strong><i class="fas fa-virus"></i> Outbreak:</strong>
+                    {{ if .OutbreakName }}{{ .OutbreakName }}{{ else }}Outbreak #{{ .OutbreakID }}{{ end }}
+                </span>
+                {{ if .Form.Status.Valid }}
+                <span class="info-item">
+                    {{ if .Form.Status.Valid }}
+                    <strong><i class="fas fa-info-circle"></i> Status:</strong>
+                    <span class="badge" style="background: rgba(255,255,255,0.3); color: white;">
+                        {{ .Form.Status.String }}
+                    </span>
+                    {{ end }}
+                </span>
+                {{ end }}
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-tabs" id="profileTab" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="biodata-tab" data-toggle="tab" href="#biodata" role="tab" aria-controls="biodata" aria-selected="true">
+                    <i class="fas fa-user"></i> Biodata
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="encounters-tab" data-toggle="tab" href="#encounters" role="tab" aria-controls="encounters" aria-selected="false">
+                    <i class="fas fa-stethoscope"></i> Encounters
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="status-tab" data-toggle="tab" href="#status" role="tab" aria-controls="status" aria-selected="false">
+                    <i class="fas fa-clipboard-check"></i> Status History
+                </a>
+            </li>
+            {{ if .IsHomeBasedCare }}
+            <li class="nav-item">
+                <a class="nav-link" id="hbc-tab" data-toggle="tab" href="#hbc" role="tab" aria-controls="hbc" aria-selected="false">
+                    <i class="fas fa-home"></i> Home Based Care
+                </a>
+            </li>
+            {{ end }}
+            {{ if .HasMpoxAdmission }}
+            <li class="nav-item">
+                <a class="nav-link" id="admission-tab" data-toggle="tab" href="#admission" role="tab" aria-controls="admission" aria-selected="false">
+                    <i class="fas fa-hospital"></i> Admission Details
+                </a>
+            </li>
+            {{ end }}
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="profileTabContent">
+            <!-- Biodata Tab -->
+            <div class="tab-pane fade show active" id="biodata" role="tabpanel" aria-labelledby="biodata-tab">
+                <div class="profile-card">
+                    <h3><i class="fas fa-id-card me-2"></i>Personal Information</h3>
+                    <div class="info-row">
+                        <span class="info-label">First Name:</span>
+                        <span class="info-value">{{ if .Form.Firstname.Valid }}{{ .Form.Firstname.String }}{{ else }}N/A{{ end }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Last Name:</span>
+                        <span class="info-value">{{ if .Form.Lastname.Valid }}{{ .Form.Lastname.String }}{{ else }}N/A{{ end }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Other Name:</span>
+                        <span class="info-value">{{ if .Form.Othername.Valid }}{{ .Form.Othername.String }}{{ else }}N/A{{ end }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Gender:</span>
+                        <span class="info-value">
+                            {{ if .Form.Gender.Valid }}
+                                {{ $genderKey := printf "%d" .Form.Gender.Int64 }}
+                                {{ $sexMap := index .Optionz "sex" }}
+                                {{ if $sexMap }}
+                                    {{ if index $sexMap $genderKey }}
+                                        {{ index $sexMap $genderKey }}
+                                    {{ else }}
+                                        {{ .Form.Gender.Int64 }}
+                                    {{ end }}
+                                {{ else }}
+                                    {{ .Form.Gender.Int64 }}
+                                {{ end }}
+                            {{ else }}
+                                N/A
+                            {{ end }}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Date of Birth:</span>
+                        <span class="info-value">{{ if .Form.DateOfBirth.Valid }}{{ .Form.DateOfBirth.String }}{{ else }}N/A{{ end }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Age:</span>
+                        <span class="info-value">
+                            {{ if .Form.Age.Valid }}
+                                {{ .Form.Age.Float64 }} years
+                            {{ else if .Form.DateOfBirth.Valid }}
+                                {{ CalculateAgeFromString .Form.DateOfBirth.String }} years
+                            {{ else }}
+                                N/A
+                            {{ end }}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Marital Status:</span>
+                        <span class="info-value">
+                            {{ if .Form.Marital.Valid }}
+                                {{ $maritalKey := printf "%d" .Form.Marital.Int64 }}
+                                {{ $maritalMap := index .Optionz "marital" }}
+                                {{ if $maritalMap }}
+                                    {{ if index $maritalMap $maritalKey }}
+                                        {{ index $maritalMap $maritalKey }}
+                                    {{ else }}
+                                        {{ .Form.Marital.Int64 }}
+                                    {{ end }}
+                                {{ else }}
+                                    {{ .Form.Marital.Int64 }}
+                                {{ end }}
+                            {{ else }}
+                                N/A
+                            {{ end }}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">National ID:</span>
+                        <span class="info-value">{{ if .Form.Nin.Valid }}{{ .Form.Nin.String }}{{ else }}N/A{{ end }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Nationality:</span>
+                        <span class="info-value">
+                            {{ if .Form.Nationality.Valid }}
+                                {{ $nationalityKey := printf "%d" .Form.Nationality.Int64 }}
+                                {{ $nationalityMap := index .Optionz "nationality" }}
+                                {{ if $nationalityMap }}
+                                    {{ if index $nationalityMap $nationalityKey }}
+                                        {{ index $nationalityMap $nationalityKey }}
+                                    {{ else }}
+                                        {{ .Form.Nationality.Int64 }}
+                                    {{ end }}
+                                {{ else }}
+                                    {{ .Form.Nationality.Int64 }}
+                                {{ end }}
+                            {{ else }}
+                                N/A
+                            {{ end }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="profile-card">
+                    <h3><i class="fas fa-hospital me-2"></i>Admission & Treatment</h3>
+                    <div class="info-row">
+                        <span class="info-label">Admission Date:</span>
+                        <span class="info-value">{{ if .Form.AdmDate.Valid }}{{ .Form.AdmDate.String }}{{ else }}N/A{{ end }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Treatment Site:</span>
+                        <span class="info-value">{{ if .Form.Site.Valid }}{{ GetDBLabel "facilities" "name" "id" .Form.Site.Int64 }}{{ else }}N/A{{ end }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Admission Ward:</span>
+                        <span class="info-value">{{ if .Form.AdmWard.Valid }}{{ .Form.AdmWard.String }}{{ else }}N/A{{ end }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Baseline Status:</span>
+                        <span class="info-value">{{ if .Form.Status.Valid }}{{ .Form.Status.String }}{{ else }}N/A{{ end }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Occupation:</span>
+                        <span class="info-value">
+                            {{ if .Form.Occupation.Valid }}
+                                {{ $occupKey := printf "%d" .Form.Occupation.Int64 }}
+                                {{ $occupMap := index .Optionz "occup" }}
+                                {{ if $occupMap }}
+                                    {{ if index $occupMap $occupKey }}
+                                        {{ index $occupMap $occupKey }}
+                                    {{ else }}
+                                        {{ .Form.Occupation.Int64 }}
+                                    {{ end }}
+                                {{ else }}
+                                    {{ .Form.Occupation.Int64 }}
+                                {{ end }}
+                            {{ else }}
+                                N/A
+                            {{ end }}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Symptom Onset Date:</span>
+                        <span class="info-value">{{ if .Form.DateSymptomOnset.Valid }}{{ .Form.DateSymptomOnset.String }}{{ else }}N/A{{ end }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Isolation Date:</span>
+                        <span class="info-value">{{ if .Form.DateIsolation.Valid }}{{ .Form.DateIsolation.String }}{{ else }}N/A{{ end }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Pregnant:</span>
+                        <span class="info-value">{{ if .Form.Pregnant.Valid }}{{ if eq .Form.Pregnant.Int64 1 }}Yes{{ else }}No{{ end }}{{ else }}N/A{{ end }}</span>
+                    </div>
+                </div>
+
+                <div class="profile-card">
+                    <h3><i class="fas fa-barcode me-2"></i>Identifiers</h3>
+                    <div class="info-row">
+                        <span class="info-label">Lab Number:</span>
+                        <span class="info-value">{{ if .Form.LabNo.Valid }}{{ .Form.LabNo.String }}{{ else }}N/A{{ end }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">CIF Number:</span>
+                        <span class="info-value">{{ if .Form.CifNo.Valid }}{{ .Form.CifNo.String }}{{ else }}N/A{{ end }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Case Number:</span>
+                        <span class="info-value">{{ if .Form.CaseNo.Valid }}{{ .Form.CaseNo.String }}{{ else }}N/A{{ end }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">ETU Number:</span>
+                        <span class="info-value">{{ if .Form.EtuNo.Valid }}{{ .Form.EtuNo.String }}{{ else }}N/A{{ end }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Encounters Tab -->
+            <div class="tab-pane fade" id="encounters" role="tabpanel" aria-labelledby="encounters-tab">
+                {{ if .FormChild1 }}
+                    {{ if gt (len .FormChild1) 0 }}
+                        {{ range $key, $encDetail := .FormChild1 }}
+                        <div class="profile-card" style="margin-bottom: 30px; border-left: 4px solid #007bff;">
+                            <div style="border-bottom: 2px solid #e9ecef; padding-bottom: 15px; margin-bottom: 20px;">
+                                <h4 style="color: #007bff; margin: 0;">
+                                    <i class="fas fa-calendar-alt me-2"></i>
+                                    Encounter #{{ add $key 1 }}
+                                    {{ if $encDetail.Encounter.EncounterDate.Valid }}
+                                        - {{ $encDetail.Encounter.EncounterDate.String }}
+                                        {{ if $encDetail.Encounter.EncounterTime.Valid }}
+                                            {{ $encDetail.Encounter.EncounterTime.String }}
+                                        {{ end }}
+                                    {{ end }}
+                                </h4>
+                                <div style="margin-top: 10px; color: #6c757d;">
+                                    <strong>Provider:</strong> 
+                                    {{ if $encDetail.Encounter.EmployeeFname.Valid }}{{ $encDetail.Encounter.EmployeeFname.String }}{{ end }}
+                                    {{ if $encDetail.Encounter.EmployeeLname.Valid }}{{ $encDetail.Encounter.EmployeeLname.String }}{{ end }}
+                                    {{ if $encDetail.Encounter.ClinicalTeam.Valid }}
+                                        | <strong>Team:</strong> {{ $encDetail.Encounter.ClinicalTeam.String }}
+                                    {{ end }}
+                                </div>
+                            </div>
+
+                            {{ if $encDetail.Clinical }}
+                            <div style="margin-bottom: 20px;">
+                                <h5 style="color: #495057; border-bottom: 1px solid #dee2e6; padding-bottom: 8px;">
+                                    <i class="fas fa-user-md me-2"></i>Clinical Presentation
+                                </h5>
+                                <div style="padding: 15px; background: #f8f9fa; border-radius: 5px; line-height: 1.8;">
+                                    <p><strong>Presenting Symptoms:</strong>
+                                    {{ $hasSymptoms := false }}
+                                    {{ if and $encDetail.Clinical.Fever.Valid (eq $encDetail.Clinical.Fever.Int64 1) }}Fever{{ $hasSymptoms = true }}{{ end }}
+                                    {{ if and $encDetail.Clinical.Fatigue.Valid (eq $encDetail.Clinical.Fatigue.Int64 1) }}{{ if $hasSymptoms }}, {{ end }}Fatigue{{ $hasSymptoms = true }}{{ end }}
+                                    {{ if and $encDetail.Clinical.Weakness.Valid (eq $encDetail.Clinical.Weakness.Int64 1) }}{{ if $hasSymptoms }}, {{ end }}Weakness{{ $hasSymptoms = true }}{{ end }}
+                                    {{ if and $encDetail.Clinical.Headache.Valid (eq $encDetail.Clinical.Headache.Int64 1) }}{{ if $hasSymptoms }}, {{ end }}Headache{{ $hasSymptoms = true }}{{ end }}
+                                    {{ if and $encDetail.Clinical.Cough.Valid (eq $encDetail.Clinical.Cough.Int64 1) }}{{ if $hasSymptoms }}, {{ end }}Cough{{ $hasSymptoms = true }}{{ end }}
+                                    {{ if and $encDetail.Clinical.DifficultyBreathing.Valid (eq $encDetail.Clinical.DifficultyBreathing.Int64 1) }}{{ if $hasSymptoms }}, {{ end }}Difficulty Breathing{{ $hasSymptoms = true }}{{ end }}
+                                    {{ if and $encDetail.Clinical.Nausea.Valid (eq $encDetail.Clinical.Nausea.Int64 1) }}{{ if $hasSymptoms }}, {{ end }}Nausea{{ $hasSymptoms = true }}{{ end }}
+                                    {{ if and $encDetail.Clinical.Vomiting.Valid (eq $encDetail.Clinical.Vomiting.Int64 1) }}{{ if $hasSymptoms }}, {{ end }}Vomiting{{ $hasSymptoms = true }}{{ end }}
+                                    {{ if and $encDetail.Clinical.Diarrhoea.Valid (eq $encDetail.Clinical.Diarrhoea.Int64 1) }}{{ if $hasSymptoms }}, {{ end }}Diarrhoea{{ $hasSymptoms = true }}{{ end }}
+                                    {{ if and $encDetail.Clinical.AbdominalPain.Valid (eq $encDetail.Clinical.AbdominalPain.Int64 1) }}{{ if $hasSymptoms }}, {{ end }}Abdominal Pain{{ $hasSymptoms = true }}{{ end }}
+                                    {{ if and $encDetail.Clinical.SoreThroat.Valid (eq $encDetail.Clinical.SoreThroat.Int64 1) }}{{ if $hasSymptoms }}, {{ end }}Sore Throat{{ $hasSymptoms = true }}{{ end }}
+                                    {{ if and $encDetail.Clinical.ChestPain.Valid (eq $encDetail.Clinical.ChestPain.Int64 1) }}{{ if $hasSymptoms }}, {{ end }}Chest Pain{{ $hasSymptoms = true }}{{ end }}
+                                    {{ if and $encDetail.Clinical.JointPain.Valid (eq $encDetail.Clinical.JointPain.Int64 1) }}{{ if $hasSymptoms }}, {{ end }}Joint Pain{{ $hasSymptoms = true }}{{ end }}
+                                    {{ if and $encDetail.Clinical.Myalgia.Valid (eq $encDetail.Clinical.Myalgia.Int64 1) }}{{ if $hasSymptoms }}, {{ end }}Myalgia{{ $hasSymptoms = true }}{{ end }}
+                                    {{ if not $hasSymptoms }}<em>No specific symptoms recorded.</em>{{ end }}
+                                    </p>
+
+                                    {{ if and $encDetail.Clinical.Bleeding.Valid (eq $encDetail.Clinical.Bleeding.Int64 1) }}
+                                        <p><strong>Bleeding:</strong> Present
+                                        {{ if or (and $encDetail.Clinical.BleedingNose.Valid (eq $encDetail.Clinical.BleedingNose.Int64 1)) (and $encDetail.Clinical.BleedingMouth.Valid (eq $encDetail.Clinical.BleedingMouth.Int64 1)) (and $encDetail.Clinical.BleedingRectum.Valid (eq $encDetail.Clinical.BleedingRectum.Int64 1)) }}
+                                            ({{ if and $encDetail.Clinical.BleedingNose.Valid (eq $encDetail.Clinical.BleedingNose.Int64 1) }}Nose{{ end }}{{ if and $encDetail.Clinical.BleedingMouth.Valid (eq $encDetail.Clinical.BleedingMouth.Int64 1) }}{{ if and $encDetail.Clinical.BleedingNose.Valid (eq $encDetail.Clinical.BleedingNose.Int64 1) }}, {{ end }}Mouth{{ end }}{{ if and $encDetail.Clinical.BleedingRectum.Valid (eq $encDetail.Clinical.BleedingRectum.Int64 1) }}{{ if or (and $encDetail.Clinical.BleedingNose.Valid (eq $encDetail.Clinical.BleedingNose.Int64 1)) (and $encDetail.Clinical.BleedingMouth.Valid (eq $encDetail.Clinical.BleedingMouth.Int64 1)) }}, {{ end }}Rectum{{ end }})
+                                        {{ end }}
+                                        </p>
+                                    {{ end }}
+
+                                    {{ if and $encDetail.Clinical.Shock.Valid (eq $encDetail.Clinical.Shock.Int64 1) }}
+                                        <p><strong>Shock:</strong> Present</p>
+                                    {{ end }}
+                                    {{ if and $encDetail.Clinical.Dehydration.Valid (eq $encDetail.Clinical.Dehydration.Int64 1) }}
+                                        <p><strong>Dehydration:</strong> Present</p>
+                                    {{ end }}
+                                    {{ if and $encDetail.Clinical.Meningitis.Valid (eq $encDetail.Clinical.Meningitis.Int64 1) }}
+                                        <p><strong>Meningitis:</strong> Present</p>
+                                    {{ end }}
+                                    {{ if and $encDetail.Clinical.Confusion.Valid (eq $encDetail.Clinical.Confusion.Int64 1) }}
+                                        <p><strong>Confusion:</strong> Present</p>
+                                    {{ end }}
+                                    {{ if and $encDetail.Clinical.Seizure.Valid (eq $encDetail.Clinical.Seizure.Int64 1) }}
+                                        <p><strong>Seizure:</strong> Present</p>
+                                    {{ end }}
+                                    {{ if and $encDetail.Clinical.Coma.Valid (eq $encDetail.Clinical.Coma.Int64 1) }}
+                                        <p><strong>Coma:</strong> Present</p>
+                                    {{ end }}
+                                </div>
+                            </div>
+                            {{ end }}
+
+                            {{ if $encDetail.Vital }}
+                            <div style="margin-bottom: 20px;">
+                                <h5 style="color: #495057; border-bottom: 1px solid #dee2e6; padding-bottom: 8px;">
+                                    <i class="fas fa-heartbeat me-2"></i>Vital Signs
+                                </h5>
+                                <div style="padding: 15px; background: #f8f9fa; border-radius: 5px; line-height: 1.8;">
+                                    {{ if $encDetail.Vital.Temperature.Valid }}
+                                        <p><strong>Temperature:</strong> {{ $encDetail.Vital.Temperature.Float64 }}°C</p>
+                                    {{ end }}
+                                    {{ if $encDetail.Vital.HeartRate.Valid }}
+                                        <p><strong>Heart Rate:</strong> {{ $encDetail.Vital.HeartRate.Float64 }} bpm</p>
+                                    {{ end }}
+                                    {{ if $encDetail.Vital.BpSystolic.Valid }}
+                                        <p><strong>Blood Pressure:</strong> {{ $encDetail.Vital.BpSystolic.Float64 }}/{{ if $encDetail.Vital.BpDiastolic.Valid }}{{ $encDetail.Vital.BpDiastolic.Float64 }}{{ else }}--{{ end }} mmHg</p>
+                                    {{ end }}
+                                    {{ if $encDetail.Vital.RespiratoryRate.Valid }}
+                                        <p><strong>Respiratory Rate:</strong> {{ $encDetail.Vital.RespiratoryRate.Float64 }} /min</p>
+                                    {{ end }}
+                                    {{ if $encDetail.Vital.Saturation.Valid }}
+                                        <p><strong>Oxygen Saturation:</strong> {{ $encDetail.Vital.Saturation.Float64 }}%</p>
+                                    {{ end }}
+                                    {{ if $encDetail.Vital.Weight.Valid }}
+                                        <p><strong>Weight:</strong> {{ $encDetail.Vital.Weight.Float64 }} kg</p>
+                                    {{ end }}
+                                    {{ if $encDetail.Vital.Height.Valid }}
+                                        <p><strong>Height:</strong> {{ $encDetail.Vital.Height.Float64 }} cm</p>
+                                    {{ end }}
+                                    {{ if $encDetail.Vital.MentalStatus.Valid }}
+                                        <p><strong>Mental Status:</strong> {{ $encDetail.Vital.MentalStatus.String }}</p>
+                                    {{ end }}
+                                </div>
+                            </div>
+                            {{ end }}
+
+                            {{ if $encDetail.Lab }}
+                            <div style="margin-bottom: 20px;">
+                                <h5 style="color: #495057; border-bottom: 1px solid #dee2e6; padding-bottom: 8px;">
+                                    <i class="fas fa-flask me-2"></i>Laboratory Results
+                                </h5>
+                                <div style="padding: 15px; background: #f8f9fa; border-radius: 5px; line-height: 1.8;">
+                                    {{ if $encDetail.Lab.EbolaRdtResults.Valid }}
+                                        <p><strong>Ebola RDT:</strong> {{ $encDetail.Lab.EbolaRdtResults.String }}</p>
+                                    {{ end }}
+                                    {{ if $encDetail.Lab.EbolaPcrGp.Valid }}
+                                        <p><strong>Ebola PCR (GP):</strong> {{ if eq $encDetail.Lab.EbolaPcrGp.Int64 1 }}Positive{{ else if eq $encDetail.Lab.EbolaPcrGp.Int64 2 }}Negative{{ else }}ND{{ end }}</p>
+                                    {{ end }}
+                                    {{ if $encDetail.Lab.MalariaRdtResult.Valid }}
+                                        <p><strong>Malaria RDT:</strong> {{ $encDetail.Lab.MalariaRdtResult.String }}</p>
+                                    {{ end }}
+                                    {{ if $encDetail.Lab.Haemoglobin.Valid }}
+                                        <p><strong>Haemoglobin:</strong> {{ $encDetail.Lab.Haemoglobin.Float64 }} g/dL</p>
+                                    {{ end }}
+                                    {{ if $encDetail.Lab.WbcCount.Valid }}
+                                        <p><strong>White Blood Cell Count:</strong> {{ $encDetail.Lab.WbcCount.Float64 }} /μL</p>
+                                    {{ end }}
+                                    {{ if $encDetail.Lab.Platelets.Valid }}
+                                        <p><strong>Platelets:</strong> {{ $encDetail.Lab.Platelets.Float64 }} /μL</p>
+                                    {{ end }}
+                                    {{ if $encDetail.Lab.Creatinine.Valid }}
+                                        <p><strong>Creatinine:</strong> {{ $encDetail.Lab.Creatinine.Float64 }} mg/dL</p>
+                                    {{ end }}
+                                </div>
+                            </div>
+                            {{ end }}
+
+                            {{ if and (not $encDetail.Clinical) (not $encDetail.Vital) (not $encDetail.Lab) }}
+                            <div style="padding: 15px; background: #fff3cd; border-radius: 5px; color: #856404;">
+                                <i class="fas fa-info-circle me-2"></i>No clinical data recorded for this encounter.
+                            </div>
+                            {{ end }}
+                        </div>
+                        {{ end }}
+                    {{ else }}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>No encounters recorded yet.
+                    </div>
+                    {{ end }}
+                {{ else }}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>No encounters recorded yet.
+                </div>
+                {{ end }}
+            </div>
+
+            <!-- Status History Tab -->
+            <div class="tab-pane fade" id="status" role="tabpanel" aria-labelledby="status-tab">
+                <div class="profile-card">
+                    <h3><i class="fas fa-clipboard-check me-2"></i>Status History</h3>
+                    {{ if .FormChild2 }}
+                        {{ if gt (len .FormChild2) 0 }}
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{ range $key, $value := .FormChild2 }}
+                                <tr>
+                                    <td>{{ if $value.StatusDate.Valid }}{{ $value.StatusDate.String }}{{ else }}N/A{{ end }}</td>
+                                    <td>
+                                        {{ if $value.Status.Valid }}
+                                            <span class="badge badge-primary">{{ $value.Status.String }}</span>
+                                        {{ else }}
+                                            N/A
+                                        {{ end }}
+                                    </td>
+                                    <td>{{ if $value.StatusNotes.Valid }}{{ $value.StatusNotes.String }}{{ else }}No notes{{ end }}</td>
+                                </tr>
+                                {{ end }}
+                            </tbody>
+                        </table>
+                        {{ else }}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>No status updates recorded yet.
+                        </div>
+                        {{ end }}
+                    {{ else }}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>No status updates recorded yet.
+                    </div>
+                    {{ end }}
+                </div>
+            </div>
+
+            <!-- Home Based Care Tab -->
+            {{ if .IsHomeBasedCare }}
+            <div class="tab-pane fade" id="hbc" role="tabpanel" aria-labelledby="hbc-tab">
+                <div class="profile-card">
+                    <h3><i class="fas fa-home me-2"></i>Home Based Care Assessments</h3>
+                    {{ if .FormChild3 }}
+                        {{ if gt (len .FormChild3) 0 }}
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date & Time</th>
+                                    <th>Contact</th>
+                                    <th>Channel</th>
+                                    <th>Condition</th>
+                                    <th>Pain Level</th>
+                                    <th>New Lesions</th>
+                                    <th>Comorbidities</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{ range $key, $value := .FormChild3 }}
+                                <tr>
+                                    <td>{{ $value.CreatedAt.Format "2006-01-02 15:04" }}</td>
+                                    <td>{{ $value.PhoneNumber }}</td>
+                                    <td>
+                                        {{ if eq $value.Platform "IVR" }}
+                                            <span class="badge bg-primary">IVR</span>
+                                        {{ else if eq $value.Platform "SMS" }}
+                                            <span class="badge bg-info">SMS</span>
+                                        {{ else if eq $value.Platform "WhatsApp" }}
+                                            <span class="badge bg-success">WhatsApp</span>
+                                        {{ else }}
+                                            <span class="badge bg-secondary">{{ $value.Platform }}</span>
+                                        {{ end }}
+                                    </td>
+                                    <td>
+                                        {{ $condition := $value.PatientCondition }}
+                                        {{ if eq $condition "better" }}
+                                            <span class="badge bg-success">Better</span>
+                                        {{ else if eq $condition "worse" }}
+                                            <span class="badge bg-danger">Worse</span>
+                                        {{ else if eq $condition "same" }}
+                                            <span class="badge bg-warning">Same</span>
+                                        {{ else }}
+                                            <span class="badge bg-secondary">{{ $condition }}</span>
+                                        {{ end }}
+                                    </td>
+                                    <td>
+                                        {{ $pain := $value.PainLevel }}
+                                        {{ if gt $pain 0 }}
+                                            {{ if ge $pain 7 }}
+                                                <span class="badge bg-danger" title="Severe Pain">🔴 {{ $pain }}/10</span>
+                                            {{ else if ge $pain 4 }}
+                                                <span class="badge bg-warning" title="Moderate Pain">🟡 {{ $pain }}/10</span>
+                                            {{ else }}
+                                                <span class="badge bg-success" title="Mild Pain">🟢 {{ $pain }}/10</span>
+                                            {{ end }}
+                                        {{ else }}
+                                            <span class="text-muted">Not reported</span>
+                                        {{ end }}
+                                    </td>
+                                    <td>
+                                        {{ if $value.NewLesions }}
+                                            <span class="badge bg-danger">⚠️ Yes</span>
+                                        {{ else }}
+                                            <span class="badge bg-success">✓ No</span>
+                                        {{ end }}
+                                    </td>
+                                    <td>
+                                        {{ if $value.Comorbidities }}
+                                            <span class="badge bg-warning">⚠️ Yes</span>
+                                        {{ else }}
+                                            <span class="badge bg-success">✓ No</span>
+                                        {{ end }}
+                                    </td>
+                                </tr>
+                                {{ end }}
+                            </tbody>
+                        </table>
+                        {{ else }}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>No Home Based Care assessments found.
+                        </div>
+                        {{ end }}
+                    {{ else }}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>No Home Based Care assessments found.
+                    </div>
+                    {{ end }}
+                </div>
+            </div>
+            {{ end }}
+
+            <!-- Admission Details Tab -->
+            {{ if .HasMpoxAdmission }}
+            <div class="tab-pane fade" id="admission" role="tabpanel" aria-labelledby="admission-tab">
+                {{ if .FormChild4 }}
+                    {{ $admission := .FormChild4 }}
+                    {{ if $admission.Demographics }}
+                    {{ $demo := $admission.Demographics }}
+                    <div class="profile-card" style="margin-bottom: 30px; border-left: 4px solid #28a745;">
+                        <h3 style="color: #28a745; border-bottom: 2px solid #28a745; padding-bottom: 10px; margin-bottom: 20px;">
+                            <i class="fas fa-user-md me-2"></i>Admission Demographics
+                        </h3>
+                        <div style="padding: 15px; background: #f8f9fa; border-radius: 5px; line-height: 1.8;">
+                            {{ if $demo.Sex.Valid }}
+                                <p><strong>Sex:</strong> {{ $demo.Sex.String }}</p>
+                            {{ end }}
+                            {{ if and $demo.DateOfBirth.Valid $demo.DateOfBirth.Time }}
+                                <p><strong>Date of Birth:</strong> {{ $demo.DateOfBirth.Time.Format "2006-01-02" }}</p>
+                            {{ end }}
+                            {{ if $demo.AgeYears.Valid }}
+                                <p><strong>Age:</strong> {{ $demo.AgeYears.Int64 }} years
+                                {{ if $demo.AgeMonths.Valid }}{{ $demo.AgeMonths.Int64 }} months{{ end }}
+                                {{ if $demo.AgeDays.Valid }}{{ $demo.AgeDays.Int64 }} days{{ end }}
+                                </p>
+                            {{ end }}
+                            {{ if $demo.HealthCareWorker.Valid }}
+                                <p><strong>Health Care Worker:</strong> {{ $demo.HealthCareWorker.String }}</p>
+                            {{ end }}
+                            {{ if $demo.LaboratoryWorker.Valid }}
+                                <p><strong>Laboratory Worker:</strong> {{ $demo.LaboratoryWorker.String }}</p>
+                            {{ end }}
+                            {{ if $demo.PPEStatus.Valid }}
+                                <p><strong>PPE Status:</strong> {{ $demo.PPEStatus.String }}</p>
+                            {{ end }}
+                            {{ if $demo.Tribe.Valid }}
+                                <p><strong>Tribe:</strong> {{ $demo.Tribe.String }}</p>
+                            {{ end }}
+                            {{ if $demo.Pregnant.Valid }}
+                                <p><strong>Pregnant:</strong> {{ if $demo.Pregnant.Bool }}Yes{{ else }}No{{ end }}
+                                {{ if and $demo.Pregnant.Bool $demo.GestationalWeeks.Valid }}
+                                    ({{ $demo.GestationalWeeks.Int64 }} weeks)
+                                {{ end }}
+                                </p>
+                            {{ end }}
+                            {{ if $demo.Occupation.Valid }}
+                                <p><strong>Occupation:</strong> {{ $demo.Occupation.String }}</p>
+                            {{ end }}
+                            {{ if $demo.SiteOfFirstEncounter.Valid }}
+                                <p><strong>Site of First Encounter:</strong> {{ $demo.SiteOfFirstEncounter.String }}
+                                {{ if $demo.SiteOfFirstEncounterOther.Valid }}
+                                    ({{ $demo.SiteOfFirstEncounterOther.String }})
+                                {{ end }}
+                                </p>
+                            {{ end }}
+                        </div>
+                    </div>
+                    {{ end }}
+
+                    {{ if $admission.Exposure }}
+                    {{ $exposure := $admission.Exposure }}
+                    <div class="profile-card" style="margin-bottom: 30px;">
+                        <h3><i class="fas fa-exclamation-triangle me-2"></i>Exposure History</h3>
+                        <div style="padding: 15px; background: #f8f9fa; border-radius: 5px; line-height: 1.8;">
+                            {{ if $exposure.KnownLink.Valid }}
+                                <p><strong>Known Link to Case:</strong> {{ if $exposure.KnownLink.Bool }}Yes{{ else }}No{{ end }}</p>
+                            {{ end }}
+                            {{ if $exposure.SexuallyActive.Valid }}
+                                <p><strong>Sexually Active:</strong> {{ if $exposure.SexuallyActive.Bool }}Yes{{ else }}No{{ end }}</p>
+                            {{ end }}
+                            {{ if $exposure.SexOfPartners.Valid }}
+                                <p><strong>Sex of Partners:</strong> {{ $exposure.SexOfPartners.String }}</p>
+                            {{ end }}
+                            {{ if $exposure.RecentTravel.Valid }}
+                                <p><strong>Recent Travel:</strong> {{ if $exposure.RecentTravel.Bool }}Yes{{ else }}No{{ end }}</p>
+                            {{ end }}
+                            {{ if $exposure.TravelHighRisk.Valid }}
+                                <p><strong>High Risk Travel:</strong> {{ if $exposure.TravelHighRisk.Bool }}Yes{{ else }}No{{ end }}</p>
+                            {{ end }}
+                            {{ if $exposure.TravelDetails.Valid }}
+                                <p><strong>Travel Details:</strong> {{ $exposure.TravelDetails.String }}</p>
+                            {{ end }}
+                        </div>
+                    </div>
+                    {{ end }}
+
+                    {{ if $admission.Vitals }}
+                    {{ $vitals := $admission.Vitals }}
+                    <div class="profile-card" style="margin-bottom: 30px;">
+                        <h3><i class="fas fa-heartbeat me-2"></i>Admission Vital Signs</h3>
+                        <div style="padding: 15px; background: #f8f9fa; border-radius: 5px; line-height: 1.8;">
+                            {{ if and $vitals.SymptomOnset.Valid $vitals.SymptomOnset.Time }}
+                                <p><strong>Symptom Onset Date:</strong> {{ $vitals.SymptomOnset.Time.Format "2006-01-02" }}</p>
+                            {{ end }}
+                            {{ if $vitals.Fever.Valid }}
+                                <p><strong>Fever:</strong> {{ if $vitals.Fever.Bool }}Present{{ else }}Absent{{ end }}</p>
+                            {{ end }}
+                            {{ if $vitals.Temperature.Valid }}
+                                <p><strong>Temperature:</strong> {{ $vitals.Temperature.Float64 }}°C</p>
+                            {{ end }}
+                            {{ if $vitals.HeartRate.Valid }}
+                                <p><strong>Heart Rate:</strong> {{ $vitals.HeartRate.Int64 }} bpm</p>
+                            {{ end }}
+                            {{ if $vitals.RespiratoryRate.Valid }}
+                                <p><strong>Respiratory Rate:</strong> {{ $vitals.RespiratoryRate.Int64 }} /min</p>
+                            {{ end }}
+                            {{ if $vitals.BpSystolic.Valid }}
+                                <p><strong>Blood Pressure:</strong> {{ $vitals.BpSystolic.Int64 }}/{{ if $vitals.BpDiastolic.Valid }}{{ $vitals.BpDiastolic.Int64 }}{{ else }}--{{ end }} mmHg</p>
+                            {{ end }}
+                            {{ if $vitals.Dehydration.Valid }}
+                                <p><strong>Dehydration:</strong> {{ if $vitals.Dehydration.Bool }}Present{{ else }}Absent{{ end }}</p>
+                            {{ end }}
+                            {{ if $vitals.AVPU.Valid }}
+                                <p><strong>AVPU:</strong> {{ $vitals.AVPU.String }}</p>
+                            {{ end }}
+                            {{ if $vitals.WeightKg.Valid }}
+                                <p><strong>Weight:</strong> {{ $vitals.WeightKg.Float64 }} kg</p>
+                            {{ end }}
+                            {{ if $vitals.HeightCm.Valid }}
+                                <p><strong>Height:</strong> {{ $vitals.HeightCm.Float64 }} cm</p>
+                            {{ end }}
+                        </div>
+                    </div>
+                    {{ end }}
+                {{ else }}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>Admission details not available.
+                    </div>
+                {{ end }}
+            </div>
+            {{ end }}
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <a href="/cases/new/{{ .Form.ID }}" class="btn btn-primary btn-action">
+                <i class="fas fa-edit"></i> Edit Patient
+            </a>
+            <a href="/cases" class="btn btn-secondary btn-action">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+            {{ if eq .OutbreakID 6 }}
+            <a href="/cases/encounters/mpox-admission/new/{{ .Form.ID }}" class="btn btn-success btn-action">
+                <i class="fas fa-plus"></i> New Admission
+            </a>
+            {{ end }}
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+{{ end }}
+

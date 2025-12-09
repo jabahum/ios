@@ -180,6 +180,7 @@ type TemplateData struct {
 	IsIDPos         bool
 	OutbreakID      int
 	IsOutbreakID    bool
+	OutbreakName    string // Add OutbreakName field
 	AdmissionID     int
 	IsAdmissionID   bool
 	ClientID        int    // Add ClientID field for templates
@@ -468,6 +469,7 @@ func CreateTemplateFunctions(c *fiber.Ctx, db *sql.DB) template.FuncMap {
 		"first":                First,
 		"safe":                 func(s string) template.HTML { return template.HTML(s) },
 		"mul":                  func(a, b float64) float64 { return a * b },
+		"add":                  func(a, b int) int { return a + b },
 		// Convert values to int64 for templates
 		"toInt64": func(v interface{}) int64 {
 			switch t := v.(type) {
@@ -496,6 +498,41 @@ func CreateTemplateFunctions(c *fiber.Ctx, db *sql.DB) template.FuncMap {
 		},
 		"GetDBLabel": func(table, namesFld, indexFld string, indexID int64) string {
 			return GetDBLabel(c, db, table, namesFld, indexFld, indexID)
+		},
+		"CalculateAge": func(dob time.Time) float64 {
+			if dob.IsZero() {
+				return 0
+			}
+			now := time.Now()
+			age := now.Year() - dob.Year()
+			if now.YearDay() < dob.YearDay() {
+				age--
+			}
+			return float64(age)
+		},
+		"CalculateAgeFromString": func(dobStr string) float64 {
+			if dobStr == "" {
+				return 0
+			}
+			// Try common date formats
+			formats := []string{"2006-01-02", "2006-01-02T15:04:05Z", "2006-01-02 15:04:05", "02/01/2006", "01/02/2006"}
+			var dob time.Time
+			var err error
+			for _, format := range formats {
+				dob, err = time.Parse(format, dobStr)
+				if err == nil {
+					break
+				}
+			}
+			if err != nil || dob.IsZero() {
+				return 0
+			}
+			now := time.Now()
+			age := now.Year() - dob.Year()
+			if now.YearDay() < dob.YearDay() {
+				age--
+			}
+			return float64(age)
 		},
 		"hasPrefix": func(s, prefix string) bool {
 			return strings.HasPrefix(s, prefix)

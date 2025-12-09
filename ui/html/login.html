@@ -5,100 +5,287 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Page</title>
-    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <title>Login - Case Management System</title>
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css" onerror="this.onerror=null;var link=document.createElement('link');link.id='bootstrap-css-fallback';link.rel='stylesheet';link.href='https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css';document.head.appendChild(link);">
+    <script src="/static/js/bootstrap-fallback.js" defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
-            background-color: #ffffff;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: #333;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            padding: 0;
         }
-        .navbar {
-            background-color: #343a40;
-            padding: 1rem;
+        
+        .top-ribbon {
+            background-color: #007bff;
+            border-bottom: 1px solid #0056b3;
+            padding: 15px 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            color: #fff;
+            width: 100%;
         }
+        
         .navbar-brand {
-            color: white;
+            color: white !important;
             font-size: 1.5rem;
+            font-weight: 600;
             text-decoration: none;
-            margin-right: 2rem;
+            display: inline-flex;
+            align-items: center;
         }
-        .nav-link {
-            color: rgba(255,255,255,.8);
-            text-decoration: none;
-            margin-right: 1rem;
+        
+        .navbar-brand:hover {
+            color: rgba(255,255,255,0.9) !important;
         }
-        .nav-link:hover {
-            color: white;
+        
+        .navbar-brand i {
+            margin-right: 10px;
+            font-size: 1.3rem;
         }
+        
         .main-content {
             flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 2rem;
+            padding: 2rem 1rem;
         }
-        .login-container {
+        
+        .login-card {
             width: 100%;
-            max-width: 400px;
-            padding: 20px;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            background-color: #f8f9fa;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 450px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
         }
-        .login-container h2 {
+        
+        .login-card-header {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .login-card-header h2 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 1.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .login-card-header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+        
+        .login-card-body {
+            padding: 30px;
+        }
+        
+        .form-group {
             margin-bottom: 20px;
-            text-align: center;
         }
+        
+        .form-label {
+            font-weight: 500;
+            color: #495057;
+            margin-bottom: 8px;
+            display: block;
+        }
+        
         .form-control {
-            margin-bottom: 15px;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
         }
-        .btn-primary {
+        
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+        
+        .input-icon {
+            position: relative;
+        }
+        
+        .input-icon i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            z-index: 1;
+        }
+        
+        .input-icon .form-control {
+            padding-left: 45px;
+        }
+        
+        .btn-login {
             width: 100%;
+            padding: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            border: none;
+            color: white;
+            transition: all 0.3s ease;
+            margin-top: 10px;
         }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.4);
+            color: white;
+        }
+        
+        .btn-login:active {
+            transform: translateY(0);
+        }
+        
         .login-footer {
-            margin-top: 20px;
+            margin-top: 25px;
             text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
         }
+        
+        .login-footer p {
+            margin: 0;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
         .login-footer a {
-            text-decoration: none;
             color: #007bff;
+            text-decoration: none;
+            font-weight: 500;
+            margin: 0 5px;
         }
+        
         .login-footer a:hover {
             text-decoration: underline;
+            color: #0056b3;
+        }
+        
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0;
+            color: #6c757d;
+            font-size: 0.85rem;
+        }
+        
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .divider span {
+            padding: 0 15px;
+        }
+        
+        @media (max-width: 576px) {
+            .login-card {
+                margin: 20px;
+            }
+            
+            .login-card-header,
+            .login-card-body {
+                padding: 20px;
+            }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <a href="/" class="navbar-brand">Case Management System</a>
-        <!-- <div class="nav-links">
-            <a href="/vhf-cif" class="nav-link">VHF CIF</a>
-            <a href="/help" class="nav-link">Help</a>
-        </div> -->
-    </nav>
+    <!-- Top Ribbon -->
+    <div class="top-ribbon">
+        <div class="container-fluid">
+            <a href="/" class="navbar-brand">
+                <i class="fas fa-virus"></i>
+                Case Management System
+            </a>
+        </div>
+    </div>
 
+    <!-- Main Content -->
     <div class="main-content">
-        <div class="login-container">
-            <h2>Login</h2>
-            <form method="post" action="/login" name="login" id="login">
-                <div class="mb-3">
-                    <label for="username" class="form-label">Username</label>
-                    <input type="text" class="form-control" name="username" id="username" placeholder="Enter your username" required>
+        <div class="login-card">
+            <div class="login-card-header">
+                <h2>
+                    <i class="fas fa-sign-in-alt"></i>
+                    Welcome Back
+                </h2>
+                <p>Sign in to access the Outbreak Management System</p>
+            </div>
+            <div class="login-card-body">
+                <form method="post" action="/login" name="login" id="login">
+                    <div class="form-group">
+                        <label for="username" class="form-label">
+                            <i class="fas fa-user me-2"></i>Username
+                        </label>
+                        <div class="input-icon">
+                            <i class="fas fa-user"></i>
+                            <input type="text" 
+                                   class="form-control" 
+                                   name="username" 
+                                   id="username" 
+                                   placeholder="Enter your username" 
+                                   required
+                                   autocomplete="username">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock me-2"></i>Password
+                        </label>
+                        <div class="input-icon">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" 
+                                   class="form-control" 
+                                   name="password" 
+                                   id="password" 
+                                   placeholder="Enter your password" 
+                                   required
+                                   autocomplete="current-password">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-login">
+                        <i class="fas fa-sign-in-alt me-2"></i>
+                        Login
+                    </button>
+                </form>
+                
+                <div class="login-footer">
+                    <p>
+                        Need help? 
+                        <a href="/forget">
+                            <i class="fas fa-question-circle"></i> Forgot Password
+                        </a> | 
+                        <a href="/help">
+                            <i class="fas fa-info-circle"></i> Help
+                        </a>
+                    </p>
                 </div>
-                <div class="mb-3">
-                    <label for="password" class="form-label">Password</label>
-                    <input type="password" class="form-control" name="password" id="password" placeholder="Enter your password" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Login</button>
-            </form>
-            <div class="login-footer">
-                <p>Forgot my username or password? <a href="/forget">Sign Up</a> | <a href="/help">help</a> </p>
             </div>
         </div>
     </div>

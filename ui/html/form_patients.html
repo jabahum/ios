@@ -7,112 +7,210 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Patient Form</title>
-    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css" onerror="this.onerror=null;var link=document.createElement('link');link.id='bootstrap-css-fallback';link.rel='stylesheet';link.href='https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css';document.head.appendChild(link);">
+    <script src="/static/js/bootstrap-fallback.js" defer></script>
     <link rel="stylesheet" href="/static/app/cdn/css/flatpickr.min.css" type="text/css">
     <style>
         body {
-            background-color: #ffffff;
+            background-color: #f5f7fa;
             color: #333;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             padding: 20px;
+        }
+        
+        .form-container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 1px solid #e9ecef;
         }
         
         .table-container {
             margin-top: 20px;
         }
         .table {
-            font-size: 0.85rem; /* Smaller font size */
+            font-size: 0.9rem;
         }
         .table th, .table td {
-            padding: 6px 8px; /* Reduce padding */
+            padding: 12px;
         }
         .btn-sm {
-            font-size: 0.75rem; /* Smaller buttons */
-            padding: 4px 6px;
+            font-size: 0.875rem;
+            padding: 6px 12px;
         }        
         .action-btn {
             display: inline-block;
         }
-        .form-container {
-            margin: 20px auto;
-            padding: 20px;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            background-color: #f8f9fa;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
         .top-ribbon {
-            background-color: #f8f9fa;
-            border-bottom: 1px solid #e9ecef;
-            padding: 10px;
+            background-color: #ffffff;
+            border-bottom: 2px solid #e9ecef;
+            padding: 15px 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
         .side-menu {
-            background-color: #f8f9fa;
+            background-color: #ffffff;
             border-right: 1px solid #e9ecef;
-            height: 100vh;
-            padding-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
         .menu-item {
-            padding: 10px 20px;
+            padding: 8px 12px;
             display: block;
-            color: #333;
+            color: #495057;
             text-decoration: none;
+            border-radius: 5px;
+            margin-bottom: 3px;
+            transition: all 0.3s;
+            font-size: 0.9rem;
         }
         .menu-item:hover {
-            background-color: #e9ecef;
+            background-color: #667eea;
+            color: white;
+            text-decoration: none;
         }
         .content {
-            padding: 20px;
+            padding: 10px;
+        }
+        body {
+            padding: 10px;
+        }
+        .container-fluid {
+            padding: 0 10px;
+        }
+        .side-menu {
+            padding: 10px;
+            min-width: 180px;
+            max-width: 200px;
+        }
+        .col-md-9 {
+            padding-left: 10px;
+            padding-right: 10px;
         }
         .col-md-3 {
-            max-width: 200px;
+            padding-left: 5px;
+            padding-right: 5px;
+        }
+        .nav-tabs {
+            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 25px;
+        }
+        .nav-tabs .nav-link {
+            border: none;
+            color: #6c757d;
+            font-weight: 500;
+            padding: 12px 25px;
+            margin-right: 5px;
+        }
+        .nav-tabs .nav-link.active {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            background: transparent;
+        }
+        .nav-tabs .nav-link:hover {
+            border-color: transparent;
+            color: #667eea;
+        }
+        .tab-content {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 1px solid #e9ecef;
         }
         .paper-look {
             font-family: "Courier New", Courier, monospace;
             font-size: 12px;
             background: #fff9e3;
             border: 1px solid #e2c490;
-            padding: 10px;
+            padding: 15px;
             margin: 10px 0;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            min-height: 150px; /* Adjust this value to set the minimum height */
-            max-height: 500px; /* Adjust this value as needed */
-            overflow-y: auto; /* This makes the div scrollable */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            min-height: 150px;
+            max-height: 500px;
+            overflow-y: auto;
+            border-radius: 5px;
         }
         .full-width {
             width: 100%;
+        }
+        .form-control, .form-select {
+            border-radius: 5px;
+            border: 1px solid #ced4da;
+            padding: 8px 12px;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        h1 {
+            color: #495057;
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        .tab-content {
+            padding: 15px;
+        }
+        .card-body {
+            padding: 15px;
+        }
+        .form-row, .row {
+            margin-bottom: 10px;
+        }
+        .col-sm-5, .col-sm-7, .col-md-4, .col-md-8 {
+            padding-left: 5px;
+            padding-right: 5px;
+        }
+        .card {
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-radius: 10px;
+        }
+        .card-header {
+            background-color: #667eea;
+            color: white;
+            font-weight: 600;
+            border-radius: 10px 10px 0 0 !important;
         }
     </style>
     
 </head>
 <body>
-    <!-- Top Ribbon -->
-    <div class="top-ribbon d-flex justify-content-between">
-        <div class="ms-3">
-            <a href="/home" class="me-3">Home</a>
-            <a href="/about" class="me-3">About</a>
-            <a href="#">Contact</a>
-        </div>
-        <div class="me-3">
-            <a href="/logout" class="me-3">Logout</a>
-            <a href="#">My Account</a>
+    <!-- Top Navigation -->
+    {{if .IsAuthenticated}}
+    <div class="top-ribbon" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; padding: 10px 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <a href="/home" class="text-white me-3" style="text-decoration: none; font-weight: 600;"><strong>Case Management System</strong></a>
+                {{ if .IsIDPos }}
+                <span class="me-3" style="opacity: 0.9;">
+                    <i class="fas fa-user-circle"></i> 
+                    {{ if .Form.Firstname.Valid }}{{ .Form.Firstname.String }}{{ end }}
+                    {{ if .Form.Lastname.Valid }}{{ .Form.Lastname.String }}{{ end }}
+                    {{ if .Form.CaseNo.Valid }}<small>({{ .Form.CaseNo.String }})</small>{{ end }}
+                </span>
+                {{ end }}
+                <a href="/cases" class="text-white me-3" style="text-decoration: none;"><i class="fas fa-users"></i> Cases</a>
+                {{if hasPermission .UserPermissions "outbreaks" "read"}}
+                <a href="/outbreaks" class="text-white me-3" style="text-decoration: none;"><i class="fas fa-virus"></i> Outbreaks</a>
+                {{end}}
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-light me-2" onclick="window.history.back()"><i class="fas fa-arrow-left"></i> Back</button>
+                <span class="me-3"><i class="fas fa-user"></i> {{.User}}</span>
+                <a href="/logout" class="text-white me-3" style="text-decoration: none;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
         </div>
     </div>
+    {{end}}
 
     <div class="container-fluid">
         <div class="row">
-            <!-- Left-Hand Side Menu -->
-            <!-- <div class="col-md-3 side-menu">
-                {{if .IsIDPos }}
-                <a href="/cases/encounters/new/{{.Form.ID}}/?dte=0000-00-00&outbreak_id={{.OutbreakID}}" class="menu-item">New Encounter</a>
-                <a href="/cases/patientreport/{{.Form.ID}}" class="menu-item">Report</a>
-                {{end}}
-                <a href="/patienthelp" class="menu-item">Help</a>
-                <button type="button" id="cancelButton" class="btn btn-sm btn-success mt-3">Close</button>
-            </div> -->
-
-            <!-- Show encounter forms depending on the outbreak ID -->
-            <div class="col-md-3 side-menu">
+            <!-- Left-Hand Side Menu - Compact -->
+            <div class="col-md-2 side-menu" style="max-width: 160px;">
             {{if .IsIDPos}}
                 {{if eq .OutbreakID 1}}
                     <a href="/cases/encounters/new/{{.Form.ID}}/?dte=0000-00-00&outbreak_id={{.OutbreakID}}" class="menu-item">New Encounter</a>
@@ -130,9 +228,67 @@
             <a href="/cases" class="menu-item">Cases</a>
             </div>
             <!-- Main Content -->
-            <div class="col-md-9">
+            <div class="col-md-10">
                 <div class="content">
-                    <h1>Patient Form</h1>
+                    <!-- Patient Header -->
+                    {{ if .IsIDPos }}
+                    <div class="card mb-3 shadow-sm" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; border: none;">
+                        <div class="card-body" style="padding: 15px;">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h3 class="mb-2" style="color: white; font-weight: 600; font-size: 1.5rem;">
+                                        <i class="fas fa-user-circle me-2"></i>
+                                        {{ if .Form.Firstname.Valid }}{{ .Form.Firstname.String }}{{ end }}
+                                        {{ if .Form.Lastname.Valid }}{{ .Form.Lastname.String }}{{ end }}
+                                    </h3>
+                                    <div class="d-flex flex-wrap gap-3" style="gap: 15px; font-size: 0.95rem;">
+                                        <div>
+                                            <i class="fas fa-id-card me-1"></i><strong>Case ID:</strong> 
+                                            {{ if .Form.CaseNo.Valid }}
+                                                {{ .Form.CaseNo.String }}
+                                            {{ else }}
+                                                {{ .Form.ID }}
+                                            {{ end }}
+                                        </div>
+                                        <div>
+                                            <i class="fas fa-calendar-alt me-1"></i><strong>Age:</strong>
+                                            {{ if .Form.Age.Valid }}
+                                                {{ .Form.Age.Float64 }} years
+                                            {{ else if .Form.DateOfBirth.Valid }}
+                                                {{ CalculateAgeFromString .Form.DateOfBirth.String }} years
+                                            {{ else }}
+                                                N/A
+                                            {{ end }}
+                                        </div>
+                                        <div>
+                                            <i class="fas fa-virus me-1"></i><strong>Outbreak:</strong> {{ if .OutbreakName }}{{ .OutbreakName }}{{ else }}Outbreak #{{ .OutbreakID }}{{ end }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    {{ if .Form.Status.Valid }}
+                                    <span class="badge badge-lg" style="font-size: 14px; padding: 8px 16px; background: rgba(255,255,255,0.3);">
+                                        {{ .Form.Status.String }}
+                                    </span>
+                                    {{ end }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {{ else }}
+                    <div class="card mb-3 shadow-sm" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; border: none;">
+                        <div class="card-body" style="padding: 15px;">
+                            <h3 class="mb-2" style="color: white; font-weight: 600; font-size: 1.5rem;">
+                                <i class="fas fa-user-plus me-2"></i>New Patient
+                            </h3>
+                            <div class="mt-2" style="font-size: 0.95rem;">
+                                <i class="fas fa-virus me-1"></i><strong>Outbreak:</strong> {{ if .OutbreakName }}{{ .OutbreakName }}{{ else }}Outbreak #{{ .OutbreakID }}{{ end }}
+                            </div>
+                        </div>
+                    </div>
+                    {{ end }}
+
+                    <h1 class="mb-4">Patient Form</h1>
 
                     <ul class="nav nav-tabs" id="myTab" role="tablist">
                         <li class="nav-item">
@@ -180,19 +336,18 @@
                                         <div class="card">
                                             <div class="card-header">Follow ups</div>
                                             <div class="card-body" style="max-height: 400px; overflow-y: auto;">
-                                                <table class="table table-striped">
-                                                    <thead>
+                                                <table class="table table-striped table-bordered">
+                                                    <thead class="table-light">
                                                         <tr>
-                                                            <!-- <th>#</th> -->
-                                                            <th>Date</th>
-                                                            <th>Phone</th>
+                                                            <th>Date & Time</th>
+                                                            <th>Contact</th>
                                                             <th>Channel</th>
                                                             <th>Patient Condition</th>
-                                                            <th>Pain Level</th>
+                                                            <th>Pain Level<br/><small>(1-10 scale)</small></th>
                                                             <th>New Lesions</th>
-                                                            <th>Comorbidities</th>
-                                                            <th>Lesions Dry</th>
-                                                            <th>Neighbours Exposed</th>
+                                                            <th>Comorbidities<br/><small>Present</small></th>
+                                                            <th>Lesions Status</th>
+                                                            <th>Exposure Alert</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -200,18 +355,73 @@
                                                         {{ if .FormChild3 }}
                                                             {{ range $key, $value := .FormChild3 }}
                                                             <tr>
-                                                                <!-- <td>{{ $key }}</td> -->
-                                                                <td>{{ $value.CreatedAt }}</td>
+                                                                <td><strong>{{ $value.CreatedAt }}</strong></td>
                                                                 <td>{{ $value.PhoneNumber }}</td>
-                                                                <td>{{ $value.Platform }}</td>
-                                                                <td>{{ $value.PatientCondition }}</td>
-                                                                <td>{{ $value.PainLevel }}</td>
-                                                                <td>{{ $value.NewLesions }}</td>
-                                                                <td>{{ $value.Comorbidities }}</td>
-                                                                <td>{{ $value.LesionsDry }}</td>
-                                                                <td>{{ $value.ExposureAlert }}</td>
+                                                                <td>
+                                                                    <span class="badge {{ if eq $value.Platform "IVR" }}bg-primary{{ else if eq $value.Platform "SMS" }}bg-info{{ else }}bg-success{{ end }}">
+                                                                        {{ $value.Platform }}
+                                                                    </span>
+                                                                </td>
+                                                                <td>
+                                                                    {{ $condition := $value.PatientCondition }}
+                                                                    {{ if eq $condition "better" }}
+                                                                        <span class="badge bg-success">Better</span>
+                                                                    {{ else if eq $condition "worse" }}
+                                                                        <span class="badge bg-danger">Worse</span>
+                                                                    {{ else if eq $condition "same" }}
+                                                                        <span class="badge bg-warning">Same</span>
+                                                                    {{ else }}
+                                                                        <span class="badge bg-secondary">{{ $condition }}</span>
+                                                                    {{ end }}
+                                                                </td>
+                                                                <td>
+                                                                    {{ $pain := $value.PainLevel }}
+                                                                    {{ if gt $pain 0 }}
+                                                                        {{ if ge $pain 7 }}
+                                                                            <span class="badge bg-danger" title="Severe Pain">🔴 {{ $pain }}/10</span>
+                                                                        {{ else if ge $pain 4 }}
+                                                                            <span class="badge bg-warning" title="Moderate Pain">🟡 {{ $pain }}/10</span>
+                                                                        {{ else }}
+                                                                            <span class="badge bg-success" title="Mild Pain">🟢 {{ $pain }}/10</span>
+                                                                        {{ end }}
+                                                                    {{ else }}
+                                                                        <span class="text-muted">Not reported</span>
+                                                                    {{ end }}
+                                                                </td>
+                                                                <td>
+                                                                    {{ if eq $value.NewLesions true }}
+                                                                        <span class="badge bg-danger">⚠️ Yes</span>
+                                                                    {{ else }}
+                                                                        <span class="badge bg-success">✓ No</span>
+                                                                    {{ end }}
+                                                                </td>
+                                                                <td>
+                                                                    {{ if eq $value.Comorbidities true }}
+                                                                        <span class="badge bg-warning">⚠️ Yes</span>
+                                                                    {{ else }}
+                                                                        <span class="badge bg-success">✓ No</span>
+                                                                    {{ end }}
+                                                                </td>
+                                                                <td>
+                                                                    {{ if eq $value.LesionsDry true }}
+                                                                        <span class="badge bg-success">✓ Dry (Healing)</span>
+                                                                    {{ else }}
+                                                                        <span class="badge bg-warning">⚠️ Not Dry</span>
+                                                                    {{ end }}
+                                                                </td>
+                                                                <td>
+                                                                    {{ if eq $value.ExposureAlert true }}
+                                                                        <span class="badge bg-danger">🚨 Alert</span>
+                                                                    {{ else }}
+                                                                        <span class="badge bg-success">✓ No Alert</span>
+                                                                    {{ end }}
+                                                                </td>
                                                             </tr>
                                                             {{ end }}
+                                                        {{ else }}
+                                                            <tr>
+                                                                <td colspan="9" class="text-center text-muted">No follow-up assessments recorded yet</td>
+                                                            </tr>
                                                         {{ end }}
                                                     </tbody>
                                                 </table>
@@ -284,74 +494,64 @@
                                 <form method="post" action="/cases/save" id="caseForm">
                                     <div class="row registration-input-row">    
                                         <div class="col-lg-4">
-                                            <div class="row">
-                                                <label class="col-sm-3 col-form-label col-form-label-sm" for="firstname">First Name</label>
+                                            <div class="row mb-3">
+                                                <label class="col-sm-3 col-form-label" for="firstname"><strong>First Name</strong> <span class="text-danger">*</span></label>
                                                 <div class="col-sm-7">
-                                                    <input class="form-control form-control-sm patient-input" value="{{.Form.Firstname.String}}" id="firstname" name="firstname" type="text" required/>
+                                                    <input class="form-control" value="{{if .Form.Firstname.Valid}}{{.Form.Firstname.String}}{{end}}" id="firstname" name="firstname" type="text" required/>
                                                 </div>
                                             </div>
-                                            <div class="row">
-                                                <label class="col-sm-3 col-form-label col-form-label-sm" for="lastname">Surname</label>
+                                            <div class="row mb-3">
+                                                <label class="col-sm-3 col-form-label" for="lastname"><strong>Surname</strong> <span class="text-danger">*</span></label>
                                                 <div class="col-sm-7">
-                                                    <input class="form-control form-control-sm patient-input" value="{{.Form.Lastname.String}}" id="lastname" name="lastname" type="text" required/>
+                                                    <input class="form-control" value="{{if .Form.Lastname.Valid}}{{.Form.Lastname.String}}{{end}}" id="lastname" name="lastname" type="text" required/>
                                                 </div>
                                             </div>
-                                            <div class="row">
-                                                <label class="col-sm-3 col-form-label col-form-label-sm" for="othername">Other Name </label>
+                                            <div class="row mb-3">
+                                                <label class="col-sm-3 col-form-label" for="othername"><strong>Other Name</strong></label>
                                                 <div class="col-sm-7">
-                                                    <input class="form-control form-control-sm patient-input" value="{{.Form.Othername.String}}" id="othername" name="othername" type="text"/>
+                                                    <input class="form-control" value="{{if .Form.Othername.Valid}}{{.Form.Othername.String}}{{end}}" id="othername" name="othername" type="text"/>
                                                 </div>
                                             </div>
-                                            <div class="row">
-                                                <label class="col-sm-3 col-form-label col-form-label-sm" for="gender">Gender </label>
+                                            <div class="row mb-3">
+                                                <label class="col-sm-3 col-form-label" for="gender"><strong>Gender</strong> <span class="text-danger">*</span></label>
                                                 <div class="col-sm-7">
-                                                    <select class="form-control-sm patient-input form-select"  name="gender" id="gender" aria-label="Gender" required onchange="hidePregnantFields()">
+                                                    <select class="form-select" name="gender" id="gender" aria-label="Gender" required onchange="hidePregnantFields()">
+                                                        <option value="">-- Select Gender --</option>
                                                         {{ range $key, $value := index .Optionz "sex" }}  
-                                                            <option value="{{ $key }}">{{ $value }}</option>
+                                                            <option value="{{ $key }}" {{if and $.Form.Gender.Valid (eq (printf "%d" $.Form.Gender.Int64) $key)}}selected{{end}}>{{ $value }}</option>
                                                         {{ end }}
                                                     </select>
-                                                    <script>
-                                                    document.addEventListener("DOMContentLoaded", function() {
-                                                        document.getElementById("gender").value = "{{.Form.Gender.Int64}}";
-                                                    });
-                                                    </script>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-lg-4">
-                                            <div class="row">
-                                                <label class="col-sm-3 col-form-label col-form-label-sm" for="date_of_birth">Date of Birth</label>
+                                            <div class="row mb-3">
+                                                <label class="col-sm-3 col-form-label" for="date_of_birth"><strong>Date of Birth</strong></label>
                                                 <div class="col-sm-7">
-                                                    <input class="form-control form-control-sm patient-input datetimepicker" value="{{.Form.DateOfBirth.String}}" id="date_of_birth" name="date_of_birth" type="date" placeholder="yyyy-mm-dd" data-options='{"disableMobile":true,"dateFormat":"Y-m-d"}'/>
+                                                    <input class="form-control datetimepicker" value="{{if .Form.DateOfBirth.Valid}}{{.Form.DateOfBirth.String}}{{end}}" id="date_of_birth" name="date_of_birth" type="date" placeholder="yyyy-mm-dd" data-options='{"disableMobile":true,"dateFormat":"Y-m-d"}'/>
                                                 </div>
                                             </div>
-                                            <div class="row">
-                                                <label class="col-sm-3 col-form-label col-form-label-sm" for="age">Age</label>
+                                            <div class="row mb-3">
+                                                <label class="col-sm-3 col-form-label" for="age"><strong>Age</strong></label>
                                                 <div class="col-sm-7">
-                                                    <input class="form-control form-control-sm patient-input" value="{{.Form.Age.Float64}}" id="age" name="age" type="text"/>
+                                                    <input class="form-control" value="{{if .Form.Age.Valid}}{{.Form.Age.Float64}}{{end}}" id="age" name="age" type="number" step="0.1" min="0"/>
                                                 </div>
                                             </div>
-                                            <div class="row">
-                                                <label class="col-sm-3 col-form-label col-form-label-sm" for="marital">Marital State</label>
+                                            <div class="row mb-3">
+                                                <label class="col-sm-3 col-form-label" for="marital"><strong>Marital State</strong></label>
                                                 <div class="col-sm-7">
-                                                    <!--<input class="form-control form-control-sm patient-input" id="marital_status" name="marital_status" type="text"/>-->
-                                                    <select class="form-control-sm patient-input form-select"  name="marital" id="marital" aria-label="Marital Status">
+                                                    <select class="form-select" name="marital" id="marital" aria-label="Marital Status">
+                                                        <option value="">-- Select Marital Status --</option>
                                                         {{ range $key, $value := index .Optionz "marital" }}  
-                                                            <option value="{{ $key }}">{{ $value }}</option>
+                                                            <option value="{{ $key }}" {{if and $.Form.Marital.Valid (eq (printf "%d" $.Form.Marital.Int64) $key)}}selected{{end}}>{{ $value }}</option>
                                                         {{ end }}
                                                     </select>
-                                                    <script>
-                                                    document.addEventListener("DOMContentLoaded", function() {
-                                                        document.getElementById("marital").value = "{{ .Form.Marital.Int64 }}";
-                                                    });
-
-                                                    </script>
                                                 </div>
                                             </div>
                                             <div class="row">
                                                 <label class="col-sm-3 col-form-label col-form-label-sm" for="nin">NIN</label>
                                                 <div class="col-sm-7">
-                                                    <input class="form-control form-control-sm patient-input" value="{{.Form.Nin.String}}" id="nin" name="nin" type="text"/>
+                                                    <input class="form-control" value="{{if .Form.Nin.Valid}}{{.Form.Nin.String}}{{end}}" id="nin" name="nin" type="text"/>
                                                 </div>
                                             </div>
                                         </div>
@@ -359,23 +559,18 @@
                                             <div class="row">
                                                 <label class="col-sm-3 col-form-label col-form-label-sm" for="nationality">Nationality</label>
                                                 <div class="col-sm-7">
-                                                    <select class="form-control-sm patient-input form-select" name="nationality" id="nationality" aria-label="Nationality">
+                                                    <select class="form-select" name="nationality" id="nationality" aria-label="Nationality">
+                                                    <option value="">-- Select Nationality --</option>
                                                     {{ range $key, $value := index .Optionz "nationality" }}  
-                                                        <option value="{{ $key }}">{{ $value }}</option>
+                                                        <option value="{{ $key }}" {{if and $.Form.Nationality.Valid (eq (printf "%d" $.Form.Nationality.Int64) $key)}}selected{{end}}>{{ $value }}</option>
                                                     {{ end }}
                                                     </select>
-                                                    <script>
-                                                    document.addEventListener("DOMContentLoaded", function() {
-                                                        document.getElementById("nationality").value = "{{.Form.Nationality.Int64}}";
-                                                    });
-
-                                                    </script>
                                                 </div>
                                             </div>
                                             <div class="row">
                                                 <label class="col-sm-3 col-form-label col-form-label-sm" for="adm_date">Admin. Date</label>
                                                 <div class="col-sm-7">
-                                                    <input class="form-control form-control-sm patient-input datetimepicker" value="{{.Form.AdmDate.String}}" id="adm_date" name="adm_date" type="date" placeholder="yyyy-mm-dd" data-options='{"disableMobile":true,"dateFormat":"Y-m-d"}' required/>
+                                                    <input class="form-control datetimepicker" value="{{if .Form.AdmDate.Valid}}{{.Form.AdmDate.String}}{{end}}" id="adm_date" name="adm_date" type="date" placeholder="yyyy-mm-dd" data-options='{"disableMobile":true,"dateFormat":"Y-m-d"}' required/>
                                                 
                                                 </div>
                                             </div>
@@ -383,17 +578,12 @@
                                             <div class="row">
                                                 <label class="col-sm-3 col-form-label col-form-label-sm" for="transfer">Transfered?</label>
                                                 <div class="col-sm-7">
-                                                    <select class="form-control-sm patient-input form-select" name="transfer" id="transfer" aria-label="Transfer" onchange="hideAdmFrom()">
+                                                    <select class="form-select" name="transfer" id="transfer" aria-label="Transfer" onchange="hideAdmFrom()">
+                                                        <option value="">-- Select --</option>
                                                         {{ range $key, $value := index .Optionz "yn_extra" }}  
-                                                            <option value="{{ $key }}">{{ $value }}</option>
+                                                            <option value="{{ $key }}" {{if and $.Form.Transfer.Valid (eq (printf "%d" $.Form.Transfer.Int64) $key)}}selected{{end}}>{{ $value }}</option>
                                                         {{ end }}
                                                     </select>
-                                                    <script>
-                                                    document.addEventListener("DOMContentLoaded", function() {
-                                                        document.getElementById("transfer").value = "{{.Form.Transfer.Int64}}";
-                                                    });
-
-                                                    </script>
                                                 </div>
                                             </div>
                                             <div class="row d-none" id="adm_from_where">
@@ -447,9 +637,9 @@
                                     <hr style="width: 100%;"/>  
                                     <div class="row registration-input-row">
                                         <div class="col-lg-4">
-                                            <div class="row">
-                                                <label class="col-sm-4 col-form-label col-form-label-sm" for="adm_date">Treatment Site</label>
-                                                <div class="col-sm-6">
+                                            <div class="row mb-3">
+                                                <label class="col-sm-4 col-form-label" for="site"><strong>Treatment Site</strong></label>
+                                                <div class="col-sm-8">
                                                     {{ if .Form.Site.Valid }}
                                                         {{ GetFacilityOptions (printf "%d" .Form.Site.Int64) "site" "Treatment Site" }}
                                                     {{ else if ne .UserFacilityID "" }}
@@ -457,14 +647,11 @@
                                                     {{ else }}
                                                         {{ GetFacilityOptions "" "site" "Treatment Site" }}
                                                     {{ end }}
-                                                    
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <div class="row">
-                                                <label class="col-sm-4 col-form-label col-form-label-sm" for="adm_date">Baseline Status</label>
-                                                <div class="col-sm-6">
+                                            <div class="row mb-3">
+                                                <label class="col-sm-4 col-form-label" for="status"><strong>Baseline Status</strong></label>
+                                                <div class="col-sm-8">
                                                     {{ GetOptionField "Status" "status" "Baseline Status" .Form.Status.String 0 1 | safe }}
                                                 </div>
                                             </div>
@@ -480,16 +667,11 @@
                                                 <label class="col-sm-3 col-form-label col-form-label-sm" for="occupation">Occupation</label>
                                                 <div class="col-sm-7">
                                                     <select class="form-control-sm patient-input form-select" name="occupation" id="occupation" aria-label="Occupation">
+                                                        <option value="">-- Select Occupation --</option>
                                                         {{ range $key, $value := index .Optionz "occup" }}  
-                                                            <option value="{{ $key }}">{{ $value }}</option>
+                                                            <option value="{{ $key }}" {{if and $.Form.Occupation.Valid (eq (printf "%d" $.Form.Occupation.Int64) $key)}}selected{{end}}>{{ $value }}</option>
                                                         {{ end }}
                                                     </select>
-                                                    <script>
-                                                    document.addEventListener("DOMContentLoaded", function() {
-                                                        document.getElementById("occupation").value = "{{.Form.Occupation.Int64}}";
-                                                    });
-
-                                                    </script>
                                                 </div>
                                             </div>
                                             <div class="row">
@@ -514,20 +696,15 @@
                                             </div>
                                         </div>
                                         <div class="col-lg-4">
-                                            <div class="row">
-                                                <label class="col-sm-5 col-form-label col-form-label-sm" for="pregnant">Pregnant?</label>
+                                            <div class="row mb-3" id="pregnant-row">
+                                                <label class="col-sm-5 col-form-label" for="pregnant" id="pregnant-label"><strong>Pregnant?</strong></label>
                                                 <div class="col-sm-5">
-                                                    <select class="form-control-sm patient-input form-select" name="pregnant" id="pregnant" aria-label="Pregnant">
+                                                    <select class="form-select" name="pregnant" id="pregnant" aria-label="Pregnant">
+                                                        <option value="">-- Select --</option>
                                                         {{ range $key, $value := index .Optionz "preg" }}  
-                                                            <option value="{{ $key }}">{{ $value }}</option>
+                                                            <option value="{{ $key }}" {{if and $.Form.Pregnant.Valid (eq (printf "%d" $.Form.Pregnant.Int64) $key)}}selected{{end}}>{{ $value }}</option>
                                                         {{ end }}
                                                     </select>
-                                                    <script>
-                                                    document.addEventListener("DOMContentLoaded", function() {
-                                                        document.getElementById("pregnant").value = "{{.Form.Pregnant.Int64}}";
-                                                    });
-
-                                                    </script>
                                                 </div>
                                             </div>
                                             <div class="row">
@@ -585,94 +762,70 @@
                                             <div class="row">
                                                 <label class="col-sm-5 col-form-label col-form-label-sm" >Comorbid conditions</label>
                                             </div>
-                                            <div class="row">
-                                                <label class="col-sm-5 col-form-label col-form-label-sm" for="tb">Tuberculosis</label>
+                                            <div class="row mb-3">
+                                                <label class="col-sm-5 col-form-label" for="tb"><strong>Tuberculosis</strong></label>
                                                 <div class="col-sm-5">
-                                                    <select class="form-control-sm patient-input form-select" name="tb" id="tb" aria-label="Tuberculosis">
+                                                    <select class="form-select" name="tb" id="tb" aria-label="Tuberculosis">
+                                                        <option value="">-- Select --</option>
                                                         {{ range $key, $value := index .Optionz "yn_extra" }}  
-                                                            <option value="{{ $key }}">{{ $value }}</option>
+                                                            <option value="{{ $key }}" {{if and $.Form.Tb.Valid (eq (printf "%d" $.Form.Tb.Int64) $key)}}selected{{end}}>{{ $value }}</option>
                                                         {{ end }}
                                                     </select>
-                                                    <script>
-                                                    document.addEventListener("DOMContentLoaded", function() {
-                                                        document.getElementById("tb").value = "{{.Form.Tb.Int64}}";
-                                                    });
-                                                    </script>
                                                 </div>
                                             </div>
                                             <div class="row">
                                                 <label class="col-sm-5 col-form-label col-form-label-sm" for="asplenia">Asplenia</label>
                                                 <div class="col-sm-5">
-                                                    <select class="form-control-sm patient-input form-select" name="asplenia" id="asplenia" aria-label="Asplenia">
+                                                    <select class="form-select" name="asplenia" id="asplenia" aria-label="Asplenia">
+                                                        <option value="">-- Select --</option>
                                                         {{ range $key, $value := index .Optionz "yn_extra" }}  
-                                                            <option value="{{ $key }}">{{ $value }}</option>
+                                                            <option value="{{ $key }}" {{if and $.Form.Asplenia.Valid (eq (printf "%d" $.Form.Asplenia.Int64) $key)}}selected{{end}}>{{ $value }}</option>
                                                         {{ end }}
                                                     </select>
-                                                    <script>
-                                                    document.addEventListener("DOMContentLoaded", function() {
-                                                        document.getElementById("asplenia").value = "{{.Form.Asplenia.Int64}}";
-                                                    });
-                                                    </script>
                                                 </div>
                                             </div>
                                             <div class="row">
                                                 <label class="col-sm-5 col-form-label col-form-label-sm" for="hep">Hepatitis</label>
                                                 <div class="col-sm-5">
-                                                    <select class="form-control-sm patient-input form-select" name="hep" id="hep" aria-label="Hepatitis">
+                                                    <select class="form-select" name="hep" id="hep" aria-label="Hepatitis">
+                                                        <option value="">-- Select --</option>
                                                         {{ range $key, $value := index .Optionz "yn_extra" }}  
-                                                            <option value="{{ $key }}">{{ $value }}</option>
+                                                            <option value="{{ $key }}" {{if and $.Form.Hep.Valid (eq (printf "%d" $.Form.Hep.Int64) $key)}}selected{{end}}>{{ $value }}</option>
                                                         {{ end }}
                                                     </select>
-                                                    <script>
-                                                    document.addEventListener("DOMContentLoaded", function() {
-                                                        document.getElementById("hep").value = "{{.Form.Hep.Int64}}";
-                                                    });
-                                                    </script>
                                                 </div>
                                             </div>
                                             <div class="row">
                                                 <label class="col-sm-5 col-form-label col-form-label-sm" for="diabetes">Diabetes</label>
                                                 <div class="col-sm-5">
-                                                    <select class="form-control-sm patient-input form-select" name="diabetes" id="diabetes" aria-label="Diabetes">
+                                                    <select class="form-select" name="diabetes" id="diabetes" aria-label="Diabetes">
+                                                        <option value="">-- Select --</option>
                                                         {{ range $key, $value := index .Optionz "yn_extra" }}  
-                                                            <option value="{{ $key }}">{{ $value }}</option>
+                                                            <option value="{{ $key }}" {{if and $.Form.Diabetes.Valid (eq (printf "%d" $.Form.Diabetes.Int64) $key)}}selected{{end}}>{{ $value }}</option>
                                                         {{ end }}
                                                     </select>
-                                                    <script>
-                                                    document.addEventListener("DOMContentLoaded", function() {
-                                                        document.getElementById("diabetes").value = "{{.Form.Diabetes.Int64}}";
-                                                    });
-                                                    </script>
                                                 </div>
                                             </div>
                                             <div class="row">
                                                 <label class="col-sm-5 col-form-label col-form-label-sm" for="hiv">HIV</label>
                                                 <div class="col-sm-5">
-                                                    <select class="form-control-sm patient-input form-select" name="hiv" id="hiv" aria-label="Adm Ward">
+                                                    <select class="form-select" name="hiv" id="hiv" aria-label="HIV">
+                                                        <option value="">-- Select --</option>
                                                         {{ range $key, $value := index .Optionz "yn_extra" }}  
-                                                            <option value="{{ $key }}">{{ $value }}</option>
+                                                            <option value="{{ $key }}" {{if and $.Form.Hiv.Valid (eq (printf "%d" $.Form.Hiv.Int64) $key)}}selected{{end}}>{{ $value }}</option>
                                                         {{ end }}
                                                     </select>
-                                                    <script>
-                                                    document.addEventListener("DOMContentLoaded", function() {
-                                                        document.getElementById("hiv").value = "{{.Form.Hiv.Int64}}";
-                                                    });
-                                                    </script>
                                                 </div>
                                             </div>
                                             <div class="row">
                                                 <label class="col-sm-5 col-form-label col-form-label-sm" for="liver">Chronic Liver disease</label>
                                                 <div class="col-sm-5">
-                                                    <select class="form-control-sm patient-input form-select" name="liver" id="liver" aria-label="Adm Ward">
+                                                    <select class="form-select" name="liver" id="liver" aria-label="Chronic Liver Disease">
+                                                        <option value="">-- Select --</option>
                                                         {{ range $key, $value := index .Optionz "yn_extra" }}  
-                                                            <option value="{{ $key }}">{{ $value }}</option>
+                                                            <option value="{{ $key }}" {{if and $.Form.Liver.Valid (eq (printf "%d" $.Form.Liver.Int64) $key)}}selected{{end}}>{{ $value }}</option>
                                                         {{ end }}
                                                     </select>
-                                                    <script>
-                                                    document.addEventListener("DOMContentLoaded", function() {
-                                                        document.getElementById("liver").value = "{{.Form.Liver.Int64}}";
-                                                    });
-                                                    </script>
                                                 </div>
                                             </div>
                                         </div>
@@ -684,31 +837,23 @@
                                             <div class="row">
                                                 <label class="col-sm-5 col-form-label col-form-label-sm" for="malignancy">Malignancy/Chemotherapy</label>
                                                 <div class="col-sm-5">
-                                                    <select class="form-control-sm patient-input form-select" name="malignancy" id="malignancy" aria-label="Adm Ward">
+                                                    <select class="form-select" name="malignancy" id="malignancy" aria-label="Malignancy">
+                                                        <option value="">-- Select --</option>
                                                         {{ range $key, $value := index .Optionz "yn_extra" }}  
-                                                            <option value="{{ $key }}">{{ $value }}</option>
+                                                            <option value="{{ $key }}" {{if and $.Form.Malignancy.Valid (eq (printf "%d" $.Form.Malignancy.Int64) $key)}}selected{{end}}>{{ $value }}</option>
                                                         {{ end }}
                                                     </select>
-                                                    <script>
-                                                    document.addEventListener("DOMContentLoaded", function() {
-                                                        document.getElementById("malignancy").value = "{{.Form.Malignancy.Int64}}";
-                                                    });
-                                                    </script>
                                                 </div>
                                             </div>
                                             <div class="row">
                                                 <label class="col-sm-5 col-form-label col-form-label-sm" for="heart">Chronic heart failure</label>
                                                 <div class="col-sm-5">
-                                                    <select class="form-control-sm patient-input form-select" name="heart" id="heart" aria-label="Heart">
+                                                    <select class="form-select" name="heart" id="heart" aria-label="Chronic Heart Failure">
+                                                        <option value="">-- Select --</option>
                                                         {{ range $key, $value := index .Optionz "yn_extra" }}  
-                                                            <option value="{{ $key }}">{{ $value }}</option>
+                                                            <option value="{{ $key }}" {{if and $.Form.Heart.Valid (eq (printf "%d" $.Form.Heart.Int64) $key)}}selected{{end}}>{{ $value }}</option>
                                                         {{ end }}
                                                     </select>
-                                                    <script>
-                                                    document.addEventListener("DOMContentLoaded", function() {
-                                                        document.getElementById("heart").value = "{{.Form.Heart.Int64}}";
-                                                    });
-                                                    </script>
                                                 </div>
                                             </div>
                                             <div class="row">
@@ -717,46 +862,34 @@
                                             <div class="row">
                                                 <label class="col-sm-5 col-form-label col-form-label-sm" for="pulmonary">Chronic pulmonary disease</label>
                                                 <div class="col-sm-5">
-                                                    <select class="form-control-sm patient-input form-select" name="pulmonary" id="pulmonary" aria-label="Adm Ward">
+                                                    <select class="form-select" name="pulmonary" id="pulmonary" aria-label="Chronic Pulmonary Disease">
+                                                        <option value="">-- Select --</option>
                                                         {{ range $key, $value := index .Optionz "yn_extra" }}  
-                                                            <option value="{{ $key }}">{{ $value }}</option>
+                                                            <option value="{{ $key }}" {{if and $.Form.Pulmonary.Valid (eq (printf "%d" $.Form.Pulmonary.Int64) $key)}}selected{{end}}>{{ $value }}</option>
                                                         {{ end }}
                                                     </select>
-                                                    <script>
-                                                    document.addEventListener("DOMContentLoaded", function() {
-                                                        document.getElementById("pulmonary").value = "{{.Form.Pulmonary.Int64}}";
-                                                    });
-                                                    </script>
                                                 </div>
                                             </div>
                                             <div class="row">
                                                 <label class="col-sm-5 col-form-label col-form-label-sm" for="kidney">Chronic kidney disease</label>
                                                 <div class="col-sm-5">
-                                                    <select class="form-control-sm patient-input form-select" name="kidney" id="kidney" aria-label="Adm Ward">
+                                                    <select class="form-select" name="kidney" id="kidney" aria-label="Chronic Kidney Disease">
+                                                        <option value="">-- Select --</option>
                                                         {{ range $key, $value := index .Optionz "yn_extra" }}  
-                                                            <option value="{{ $key }}">{{ $value }}</option>
+                                                            <option value="{{ $key }}" {{if and $.Form.Kidney.Valid (eq (printf "%d" $.Form.Kidney.Int64) $key)}}selected{{end}}>{{ $value }}</option>
                                                         {{ end }}
                                                     </select>
-                                                    <script>
-                                                    document.addEventListener("DOMContentLoaded", function() {
-                                                        document.getElementById("kidney").value = "{{.Form.Kidney.Int64}}";
-                                                    });
-                                                    </script>
                                                 </div>
                                             </div>
                                             <div class="row">
                                                 <label class="col-sm-5 col-form-label col-form-label-sm" for="neurologic">Chronic neurologic condition</label>
                                                 <div class="col-sm-5">
-                                                    <select class="form-control-sm patient-input form-select" name="neurologic" id="neurologic" aria-label="Adm Ward">
+                                                    <select class="form-select" name="neurologic" id="neurologic" aria-label="Chronic Neurologic Condition">
+                                                        <option value="">-- Select --</option>
                                                         {{ range $key, $value := index .Optionz "yn_extra" }}  
-                                                            <option value="{{ $key }}">{{ $value }}</option>
+                                                            <option value="{{ $key }}" {{if and $.Form.Neurologic.Valid (eq (printf "%d" $.Form.Neurologic.Int64) $key)}}selected{{end}}>{{ $value }}</option>
                                                         {{ end }}
                                                     </select>
-                                                    <script>
-                                                    document.addEventListener("DOMContentLoaded", function() {
-                                                        document.getElementById("neurologic").value = "{{.Form.Neurologic.Int64}}";
-                                                    });
-                                                    </script>
                                                 </div>
                                             </div>
                                             <div class="row">
@@ -859,12 +992,13 @@
                                             </td>
                                             <td><input type="date" id="status_date" name="status_date"></td>
                                             <td>
-                                                <select id="za_status" name="za_status">
+                                                <select id="za_status" name="za_status" onchange="handleStatusChange()">
                                                     <option value="">-no status-</option>
                                                     <option value="Admitted">Admitted</option>
                                                     <option value="Cured">Cured</option>
                                                     <option value="Died">Died</option>
                                                     <option value="Run Away">Run Away</option>
+                                                    <option value="Transfer">Transfer</option>
                                                 </select>
                                             </td>
                                             <td><input type="text" id="status_notes" name="status_notes"></td>
@@ -873,6 +1007,34 @@
                                                 <button type="button" id="new-btn" class="btn btn-warning btn-sm">*New</button>
                                             </td>
                                         </form>
+                                    </tr>
+                                    <!-- Transfer Fields - Hidden by default -->
+                                    <tr id="transfer-fields-row" style="display: none;">
+                                        <td colspan="6">
+                                            <div class="card" style="background-color: #f8f9fa; padding: 15px;">
+                                                <h6>Transfer Information</h6>
+                                                <div class="row">
+                                                    <div class="col-md-4">
+                                                        <label for="transfer_site">Site:</label>
+                                                        {{ if .Form.Site.Valid }}
+                                                            {{ GetFacilityOptions (printf "%d" .Form.Site.Int64) "transfer_site" "Transfer Site" }}
+                                                        {{ else if ne .UserFacilityID "" }}
+                                                            {{ GetFacilityOptions .UserFacilityID "transfer_site" "Transfer Site" }}
+                                                        {{ else }}
+                                                            {{ GetFacilityOptions "" "transfer_site" "Transfer Site" }}
+                                                        {{ end }}
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label for="transfer_status">Status:</label>
+                                                        {{ GetOptionField "Status" "transfer_status" "Transfer Status" .Form.Status.String 0 1 | safe }}
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label for="treatment_program">Treatment Program:</label>
+                                                        {{ GetOptionField "Status" "treatment_program" "Treatment Program" "" 0 1 | safe }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
                                     </tr>
                                 </thead>
                                 <tbody id="status-table-body">
@@ -1074,6 +1236,20 @@
         $("#status_id").val("");
     });
 
+    // Handle status change to show/hide transfer fields
+    function handleStatusChange() {
+        const status = $("#za_status").val();
+        const transferRow = $("#transfer-fields-row");
+        if (status === "Transfer") {
+            transferRow.show();
+        } else {
+            transferRow.hide();
+        }
+    }
+
+    // Initialize on page load
+    handleStatusChange();
+
     $(document).on("click", "#save-btn", function() {
         let formData = {
             status_id: $("#status_id").val(),
@@ -1083,6 +1259,13 @@
             client_id: clientId
         };
 
+        // Add transfer fields if status is Transfer
+        if ($("#za_status").val() === "Transfer") {
+            formData.transfer_site = $("#transfer_site").val();
+            formData.transfer_status = $("#transfer_status").val();
+            formData.treatment_program = $("#treatment_program").val();
+        }
+
         $.ajax({
             url: "/api/status/save",
             type: "POST",
@@ -1091,6 +1274,7 @@
             success: function() {
                 loadStatusRecords(clientId);
                 $("#status-form")[0].reset();
+                $("#transfer-fields-row").hide();
             },
             error: function(xhr) {
                 console.error("Error saving data:", xhr.responseText);
@@ -1191,13 +1375,69 @@ function showError(message) {
 //Hide pregnancy-related fields if gender is not female
 function hidePregnantFields() {
     const gender = document.getElementById('gender');
-    const pregnant = document.getElementById('pregnant');
-    if (!gender.value || gender.value === 'Male') {
-        pregnant.style.display = 'none';
+    if (!gender) return;
+    
+    const pregnantRow = document.getElementById('pregnant-row');
+    const pregnantField = document.getElementById('pregnant');
+    
+    if (!pregnantRow) return;
+    
+    const genderValue = gender.value;
+    const selectedOption = gender.options[gender.selectedIndex];
+    const genderText = selectedOption ? selectedOption.text.toLowerCase() : '';
+    
+    // Check if gender is Female
+    // Based on Get_Client_Optionz: "1" = Male, "2" = Female
+    // Show pregnancy field if gender is Female (value "2" or text contains "female")
+    const isFemale = genderText.includes('female') || genderValue === '2';
+    
+    if (isFemale) {
+        // Show the field
+        pregnantRow.style.display = '';
     } else {
-        pregnant.style.display = 'block';
-    }   
+        // Hide the field
+        pregnantRow.style.display = 'none';
+        if (pregnantField) {
+            pregnantField.value = '';
+            // Also reset to first option (empty)
+            if (pregnantField.options && pregnantField.options.length > 0) {
+                pregnantField.selectedIndex = 0;
+            }
+        }
+    }
 }
+
+// Add hideAdmFrom function if it doesn't exist
+if (typeof hideAdmFrom === 'undefined') {
+    function hideAdmFrom() {
+        const transfer = document.getElementById('transfer');
+        const admFromWhere = document.getElementById('adm_from_where');
+        if (!transfer || !admFromWhere) return;
+        
+        const transferValue = transfer.value;
+        const transferText = transfer.options[transfer.selectedIndex] ? transfer.options[transfer.selectedIndex].text.toLowerCase() : '';
+        const isYes = transferText.includes('yes') || transferValue !== '' && transferValue !== '0' && transferValue !== '';
+        
+        if (isYes) {
+            admFromWhere.classList.remove('d-none');
+        } else {
+            admFromWhere.classList.add('d-none');
+        }
+    }
+}
+
+// Initialize skip logic on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize pregnancy field visibility
+    setTimeout(function() {
+        if (document.getElementById('gender')) {
+            hidePregnantFields();
+        }
+        if (document.getElementById('transfer')) {
+            hideAdmFrom();
+        }
+    }, 100);
+});
 
 function startCall() {
     // const phone = prompt("Enter phone number:");
@@ -1217,22 +1457,39 @@ function startCall() {
         });
 }
 
-//Hide adm_from if transfer is not Yes
+//Hide adm_from if transfer is not Yes - Enhanced
 document.addEventListener('DOMContentLoaded', function () {
-  const transfer = document.getElementById('transfer');
-  const admFromWhere = document.getElementById('adm_from_where');
+    const transfer = document.getElementById('transfer');
+    const admFromWhere = document.getElementById('adm_from_where');
 
-  if (!transfer || !admFromWhere) return;
+    if (!transfer || !admFromWhere) return;
 
-  function updateAdmFromWhere() {
-    const v = (transfer.value || '').trim().toLowerCase();
-    // show only when value is exactly "yes"
-    const shouldShow = v === 'Yes';
-    admFromWhere.classList.toggle('d-none', !shouldShow);
-  }
+    function updateAdmFromWhere() {
+        const transferValue = transfer.value;
+        const selectedOption = transfer.options[transfer.selectedIndex];
+        const optionText = selectedOption ? selectedOption.text.toLowerCase().trim() : '';
+        
+        // Show if option text contains "yes" or value indicates yes (not empty/0)
+        const shouldShow = optionText.includes('yes') || 
+                          (transferValue !== '' && transferValue !== '0' && transferValue !== null && transferValue !== undefined);
+        
+        if (shouldShow) {
+            admFromWhere.classList.remove('d-none');
+        } else {
+            admFromWhere.classList.add('d-none');
+        }
+    }
 
-  updateAdmFromWhere();                 // on page load
-  transfer.addEventListener('change', updateAdmFromWhere); // on change
+    // Initialize on page load after values are set
+    setTimeout(function() {
+        updateAdmFromWhere();
+    }, 150);
+    
+    // Update on change
+    transfer.addEventListener('change', updateAdmFromWhere);
+    
+    // Also update when hideAdmFrom is called
+    window.hideAdmFrom = updateAdmFromWhere;
 });
 </script>
 

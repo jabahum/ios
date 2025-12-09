@@ -114,6 +114,12 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 	app.Post("/measles_cif", func(c *fiber.Ctx) error {
 		return handlers.HandlerMeaslesCIF(c, db, store)
 	})
+	app.Get("/measles_cif/view/:id", func(c *fiber.Ctx) error {
+		return handlers.HandlerMeaslesCIFView(c, db, sl, store, config)
+	})
+	app.Get("/measles_cif/edit/:id", func(c *fiber.Ctx) error {
+		return handlers.HandlerMeaslesCIFEdit(c, db, sl, store, config)
+	})
 
 	// Polio CIF routes (public) - must be defined BEFORE the protected routes group
 	app.Get("/polio-cif", func(c *fiber.Ctx) error {
@@ -124,6 +130,12 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 	})
 	app.Get("/polio-cif/success", func(c *fiber.Ctx) error {
 		return handlers.HandlerPolioCIFSuccess(c, db, sl, store, config)
+	})
+	app.Get("/polio-cif/view/:id", func(c *fiber.Ctx) error {
+		return handlers.HandlerPolioCIFView(c, db, sl, store, config)
+	})
+	app.Get("/polio-cif/edit/:id", func(c *fiber.Ctx) error {
+		return handlers.HandlerPolioCIFEdit(c, db, sl, store, config)
 	})
 
 	// Location API routes
@@ -1038,6 +1050,12 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 	app.Get("/mpox-cif/success", func(c *fiber.Ctx) error {
 		return handlers.HandlerMpoxCIFSuccess(c, db, sl, store)
 	})
+	app.Get("/mpox-cif/view/:id", func(c *fiber.Ctx) error {
+		return handlers.HandlerMpoxCIFView(c, db, sl, store, config)
+	})
+	app.Get("/mpox-cif/edit/:id", func(c *fiber.Ctx) error {
+		return handlers.HandlerMpoxCIFEdit(c, db, sl, store, config)
+	})
 
 	// API endpoints for dropdown data (protected)
 	protectedAPI := app.Group("/api")
@@ -1401,6 +1419,9 @@ func RouteEmployees(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.
 
 func RouteCases(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config, smsService *services.SMSService, voiceService *services.VoiceService) {
 	// Add RBAC permission checks for case management
+	v.Get("/profile/:i", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerPatientProfile(c, db, sl, store, config, smsService, voiceService)
+	})
 	v.Get("/new/:i", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
 		return handlers.HandlerCasesForm(c, db, sl, store, config, smsService, voiceService)
 	})

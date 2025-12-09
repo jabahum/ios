@@ -285,3 +285,146 @@ func parseInt(s string) int {
 	fmt.Sscanf(s, "%d", &i)
 	return i
 }
+
+// HandlerMeaslesCIFView handles viewing a measles CIF
+func HandlerMeaslesCIFView(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	pid := c.Params("id")
+	if pid == "" {
+		return c.Status(400).SendString("Patient ID required")
+	}
+
+	// Fetch patient data
+	var patient models.MeaslesPatient
+	err := db.QueryRow(`SELECT patient_id, measles_code, patient_name, sex, dob, created_at FROM measles_patients WHERE patient_id = $1`, pid).
+		Scan(&patient.PatientID, &patient.MeaslesCode, &patient.PatientName, &patient.Sex, &patient.DOB, &patient.CreatedAt)
+	if err == sql.ErrNoRows {
+		return c.Status(404).SendString("CIF not found")
+	}
+	if err != nil {
+		sl.Error("Failed to load patient", "error", err, "patient_id", pid)
+		return c.Status(500).SendString("Failed to load patient")
+	}
+
+	// Fetch all related data
+	var demo *models.MeaslesDemographics
+	var inv *models.MeaslesInvestigators
+	var hist *models.MeaslesClinicalHistory
+	var res *models.MeaslesResults
+	var spec *models.MeaslesSpecimens
+
+	demo = &models.MeaslesDemographics{}
+	if err := db.QueryRow(`SELECT id, patient_id, onset_district, reporting_unit, age_months, head_of_household, guardian_occupation, home_district, subcounty, parish, lc1_zone, lc1_chairman, lc1_tel FROM measles_demographics WHERE patient_id = $1`, patient.PatientID).
+		Scan(&demo.ID, &demo.PatientID, &demo.OnsetDistrict, &demo.ReportingUnit, &demo.AgeMonths, &demo.HeadOfHousehold, &demo.GuardianOccupation, &demo.HomeDistrict, &demo.Subcounty, &demo.Parish, &demo.LC1Zone, &demo.LC1Chairman, &demo.LC1Tel); err != nil {
+		demo = nil
+	}
+
+	inv = &models.MeaslesInvestigators{}
+	if err := db.QueryRow(`SELECT id, patient_id, investigator_name, investigator_title, investigator_date FROM measles_investigators WHERE patient_id = $1`, patient.PatientID).
+		Scan(&inv.ID, &inv.PatientID, &inv.InvestigatorName, &inv.InvestigatorTitle, &inv.InvestigatorDate); err != nil {
+		inv = nil
+	}
+
+	hist = &models.MeaslesClinicalHistory{}
+	if err := db.QueryRow(`SELECT id, patient_id, fever, fever_onset, temperature, rash, rash_onset, cough, red_eyes, running_nose, other_complications, complications_specify, outcome, vitamin_a, vitamin_a_doses, immunisation_card_seen, measles_doses, last_measles_vaccination, vaccination_reason, diagnosis FROM measles_clinical_history WHERE patient_id = $1`, patient.PatientID).
+		Scan(&hist.ID, &hist.PatientID, &hist.Fever, &hist.FeverOnset, &hist.Temperature, &hist.Rash, &hist.RashOnset, &hist.Cough, &hist.RedEyes, &hist.RunningNose, &hist.OtherComplications, &hist.ComplicationsSpecify, &hist.Outcome, &hist.VitaminA, &hist.VitaminADoses, &hist.ImmunisationCardSeen, &hist.MeaslesDoses, &hist.LastMeaslesVaccination, &hist.VaccinationReason, &hist.Diagnosis); err != nil {
+		hist = nil
+	}
+
+	res = &models.MeaslesResults{}
+	if err := db.QueryRow(`SELECT id, patient_id, serology_igm, serology_date, serology_epi_sent_date, virus_isolation_urine, virus_isolation_date, final_classification, results_sent_date FROM measles_results WHERE patient_id = $1`, patient.PatientID).
+		Scan(&res.ID, &res.PatientID, &res.SerologyIgM, &res.SerologyDate, &res.SerologyEpiSentDate, &res.VirusIsolationUrine, &res.VirusIsolationDate, &res.FinalClassification, &res.ResultsSentDate); err != nil {
+		res = nil
+	}
+
+	spec = &models.MeaslesSpecimens{}
+	if err := db.QueryRow(`SELECT id, patient_id, blood_collection_date, blood_sent_date, blood_received_date, blood_condition, urine_collection_date, urine_sent_date, urine_received_date, urine_condition, form_sent_date, form_received_date FROM measles_specimens WHERE patient_id = $1`, patient.PatientID).
+		Scan(&spec.ID, &spec.PatientID, &spec.BloodCollectionDate, &spec.BloodSentDate, &spec.BloodReceivedDate, &spec.BloodCondition, &spec.UrineCollectionDate, &spec.UrineSentDate, &spec.UrineReceivedDate, &spec.UrineCondition, &spec.FormSentDate, &spec.FormReceivedDate); err != nil {
+		spec = nil
+	}
+
+	// Render template
+	data := NewTemplateData(c, store)
+	data.Form = fiber.Map{
+		"Patient":          patient,
+		"Demographics":     demo,
+		"Investigators":    inv,
+		"ClinicalHistory":  hist,
+		"Results":          res,
+		"Specimens":        spec,
+		"IsView":           true,
+	}
+	data.Optionz = Get_Client_Optionz()
+	return GenerateHTML(c, db, data, "measles_cif")
+}
+
+// HandlerMeaslesCIFEdit handles editing a measles CIF
+func HandlerMeaslesCIFEdit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	pid := c.Params("id")
+	if pid == "" {
+		return c.Status(400).SendString("Patient ID required")
+	}
+
+	// Fetch patient data (same as view)
+	var patient models.MeaslesPatient
+	err := db.QueryRow(`SELECT patient_id, measles_code, patient_name, sex, dob, created_at FROM measles_patients WHERE patient_id = $1`, pid).
+		Scan(&patient.PatientID, &patient.MeaslesCode, &patient.PatientName, &patient.Sex, &patient.DOB, &patient.CreatedAt)
+	if err == sql.ErrNoRows {
+		return c.Status(404).SendString("CIF not found")
+	}
+	if err != nil {
+		sl.Error("Failed to load patient", "error", err, "patient_id", pid)
+		return c.Status(500).SendString("Failed to load patient")
+	}
+
+	// Fetch all related data (same as view)
+	var demo *models.MeaslesDemographics
+	var inv *models.MeaslesInvestigators
+	var hist *models.MeaslesClinicalHistory
+	var res *models.MeaslesResults
+	var spec *models.MeaslesSpecimens
+
+	demo = &models.MeaslesDemographics{}
+	if err := db.QueryRow(`SELECT id, patient_id, onset_district, reporting_unit, age_months, head_of_household, guardian_occupation, home_district, subcounty, parish, lc1_zone, lc1_chairman, lc1_tel FROM measles_demographics WHERE patient_id = $1`, patient.PatientID).
+		Scan(&demo.ID, &demo.PatientID, &demo.OnsetDistrict, &demo.ReportingUnit, &demo.AgeMonths, &demo.HeadOfHousehold, &demo.GuardianOccupation, &demo.HomeDistrict, &demo.Subcounty, &demo.Parish, &demo.LC1Zone, &demo.LC1Chairman, &demo.LC1Tel); err != nil {
+		demo = nil
+	}
+
+	inv = &models.MeaslesInvestigators{}
+	if err := db.QueryRow(`SELECT id, patient_id, investigator_name, investigator_title, investigator_date FROM measles_investigators WHERE patient_id = $1`, patient.PatientID).
+		Scan(&inv.ID, &inv.PatientID, &inv.InvestigatorName, &inv.InvestigatorTitle, &inv.InvestigatorDate); err != nil {
+		inv = nil
+	}
+
+	hist = &models.MeaslesClinicalHistory{}
+	if err := db.QueryRow(`SELECT id, patient_id, fever, fever_onset, temperature, rash, rash_onset, cough, red_eyes, running_nose, other_complications, complications_specify, outcome, vitamin_a, vitamin_a_doses, immunisation_card_seen, measles_doses, last_measles_vaccination, vaccination_reason, diagnosis FROM measles_clinical_history WHERE patient_id = $1`, patient.PatientID).
+		Scan(&hist.ID, &hist.PatientID, &hist.Fever, &hist.FeverOnset, &hist.Temperature, &hist.Rash, &hist.RashOnset, &hist.Cough, &hist.RedEyes, &hist.RunningNose, &hist.OtherComplications, &hist.ComplicationsSpecify, &hist.Outcome, &hist.VitaminA, &hist.VitaminADoses, &hist.ImmunisationCardSeen, &hist.MeaslesDoses, &hist.LastMeaslesVaccination, &hist.VaccinationReason, &hist.Diagnosis); err != nil {
+		hist = nil
+	}
+
+	res = &models.MeaslesResults{}
+	if err := db.QueryRow(`SELECT id, patient_id, serology_igm, serology_date, serology_epi_sent_date, virus_isolation_urine, virus_isolation_date, final_classification, results_sent_date FROM measles_results WHERE patient_id = $1`, patient.PatientID).
+		Scan(&res.ID, &res.PatientID, &res.SerologyIgM, &res.SerologyDate, &res.SerologyEpiSentDate, &res.VirusIsolationUrine, &res.VirusIsolationDate, &res.FinalClassification, &res.ResultsSentDate); err != nil {
+		res = nil
+	}
+
+	spec = &models.MeaslesSpecimens{}
+	if err := db.QueryRow(`SELECT id, patient_id, blood_collection_date, blood_sent_date, blood_received_date, blood_condition, urine_collection_date, urine_sent_date, urine_received_date, urine_condition, form_sent_date, form_received_date FROM measles_specimens WHERE patient_id = $1`, patient.PatientID).
+		Scan(&spec.ID, &spec.PatientID, &spec.BloodCollectionDate, &spec.BloodSentDate, &spec.BloodReceivedDate, &spec.BloodCondition, &spec.UrineCollectionDate, &spec.UrineSentDate, &spec.UrineReceivedDate, &spec.UrineCondition, &spec.FormSentDate, &spec.FormReceivedDate); err != nil {
+		spec = nil
+	}
+
+	// Render template with edit mode
+	data := NewTemplateData(c, store)
+	data.Form = fiber.Map{
+		"Patient":          patient,
+		"Demographics":     demo,
+		"Investigators":    inv,
+		"ClinicalHistory":  hist,
+		"Results":          res,
+		"Specimens":        spec,
+		"IsEdit":           true,
+		"MeaslesCode":      patient.MeaslesCode,
+	}
+	data.Optionz = Get_Client_Optionz()
+	return GenerateHTML(c, db, data, "measles_cif")
+}

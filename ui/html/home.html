@@ -3,17 +3,17 @@
     <div class="row">
         <div class="col-12">
             {{if .Form}}
-            <div class="alert alert-info">
-                <h6>Current Outbreak</h6>
+            <div class="alert alert-info mb-4">
+                <h6 class="mb-2"><i class="fas fa-virus me-2"></i>Current Outbreak</h6>
                 <p class="mb-0">
                     <strong>{{.Form.Name.String}}</strong><br>
-                    {{.Form.Description.String}}<br>
+                    {{if .Form.Description.Valid}}{{.Form.Description.String}}<br>{{end}}
                     Started: {{humanDate .Form.StartDate.Time}}
                 </p>
             </div>
             {{else}}
-            <div class="alert alert-warning">
-                <h6>No Outbreak Selected</h6>
+            <div class="alert alert-warning mb-4">
+                <h6 class="mb-2"><i class="fas fa-exclamation-triangle me-2"></i>No Outbreak Selected</h6>
                 <p class="mb-0">
                     As an administrator, you can access all outbreaks and manage the system. 
                     <a href="/outbreaks" class="alert-link">Click here to view and manage outbreaks</a>.
@@ -21,7 +21,7 @@
             </div>
             {{end}}
 
-                    <!-- Patient Management Section -->
+            <!-- Patient Management Section -->
                     {{if or (hasPermission .UserPermissions "cases" "read") (hasPermission .UserPermissions "cases" "create") (hasPermission .UserPermissions "vhf" "read") (hasPermission .UserPermissions "vhf" "create") (hasPermission .UserPermissions "alerts" "read") (hasPermission .UserPermissions "alerts" "create")}}
                     <h4 class="mt-4 mb-4 text-primary">
                         <i class="fas fa-user-injured me-2"></i>Patient Management
@@ -80,11 +80,8 @@
                         {{end}}
                     </div>
                     {{end}}
-                </div>
-            </div>
-        </div>
 
-                    <!-- CIF Data Section -->
+            <!-- CIF Data Section -->
                     {{if or (hasPermission .UserPermissions "cif" "read") (hasPermission .UserPermissions "vhf_cif_reports" "read") (hasPermission .UserPermissions "mpox_cases" "create") (hasPermission .UserPermissions "measles_cif_reports" "read") (hasPermission .UserPermissions "polio_cif_reports" "read")}}
                     <h4 class="mt-5 mb-4 text-info">
                         <i class="fas fa-file-medical me-2"></i>CIF Data Management
@@ -167,369 +164,352 @@
                             </div>
                         </div>
                         {{end}}
-                    <!-- Laboratory Management Section -->
-                    {{if or (hasPermission .UserPermissions "lab" "read") (hasPermission .UserPermissions "lab" "create") (hasPermission .UserPermissions "lab_results" "read")}}
-                    <h4 class="mt-4 mb-3 text-info">Laboratory Management</h4>
-                    <div class="row">
-                        {{if or (hasPermission .UserPermissions "lab" "read") (hasPermission .UserPermissions "lab" "create")}}
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-flask text-info"></i> Laboratory
-                                    </h5>
-                                    <p class="card-text">Manage laboratory results and tests</p>
-                                    <a href="/lab" class="btn btn-info">View Lab Results</a>
-                                </div>
-                            </div>
-                        </div>
-                        {{end}}
-                        
-                        {{if hasPermission .UserPermissions "lab_results" "read"}}
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-microscope text-warning"></i> Lab Investigations
-                                    </h5>
-                                    <p class="card-text">View laboratory investigations</p>
-                                    <a href="/lab/investigations" class="btn btn-warning">View Investigations</a>
-                                </div>
-                            </div>
-                        </div>
-                        {{end}}
-                        
-                        {{if hasPermission .UserPermissions "lab_sample_types" "read"}}
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-vial text-secondary"></i> Sample Types
-                                    </h5>
-                                    <p class="card-text">Manage laboratory sample types</p>
-                                    <a href="/lab/sample-types" class="btn btn-secondary">Manage Samples</a>
-                                </div>
-                            </div>
-                        </div>
-                        {{end}}
                     </div>
                     {{end}}
 
-                    <!-- User & Employee Management Section -->
-                    {{if or (hasPermission .UserPermissions "users" "read") (hasPermission .UserPermissions "users" "create") (hasPermission .UserPermissions "employees" "read") (hasPermission .UserPermissions "employees" "create")}}
-                    <h4 class="mt-4 mb-3 text-success">User & Employee Management</h4>
-                    <div class="row">
-                        {{if or (hasPermission .UserPermissions "users" "read") (hasPermission .UserPermissions "users" "create")}}
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-users text-success"></i> Users
-                                    </h5>
-                                    <p class="card-text">Manage system users and permissions</p>
-                                    <a href="/users" class="btn btn-success">Manage Users</a>
-                                </div>
-                            </div>
+            <!-- Laboratory Management Section -->
+            {{if or (hasPermission .UserPermissions "lab" "read") (hasPermission .UserPermissions "lab" "create") (hasPermission .UserPermissions "lab_results" "read")}}
+            <h4 class="mt-5 mb-4 text-info">
+                <i class="fas fa-flask me-2"></i>Laboratory Management
+            </h4>
+            <div class="row">
+                {{if or (hasPermission .UserPermissions "lab" "read") (hasPermission .UserPermissions "lab" "create")}}
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="dashboard-card">
+                        <div class="card-icon text-info">
+                            <i class="fas fa-flask"></i>
                         </div>
-                        {{end}}
-
-                        {{if or (hasPermission .UserPermissions "users" "read") (hasPermission .UserPermissions "users" "create")}}
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-users text-success"></i> RBAC Dashboard
-                                    </h5>
-                                    <p class="card-text">Manage system users and permissions</p>
-                                    <a href="/rbac-dashboard" class="btn btn-success">Manage Users</a>
-                                </div>
-                            </div>
-                        </div>
-                        {{end}}
-                        
-                        {{if or (hasPermission .UserPermissions "employees" "read") (hasPermission .UserPermissions "employees" "create")}}
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-user-tie text-warning"></i> Employees
-                                    </h5>
-                                    <p class="card-text">Manage employee records and assignments</p>
-                                    <a href="/employees" class="btn btn-warning">Manage Employees</a>
-                                </div>
-                            </div>
-                        </div>
-                        {{end}}
-                        
-                        <!-- <div class="col-md-4 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-key text-secondary"></i> Password Change
-                                    </h5>
-                                    <p class="card-text">Change your password</p>
-                                    <a href="/change-password" class="btn btn-secondary">Change Password</a>
-                                </div>
-                            </div>
-                        </div> -->
+                        <div class="card-title">Laboratory</div>
+                        <div class="card-description">Manage laboratory results and tests</div>
+                        <a href="/lab" class="btn btn-info">View Lab Results</a>
                     </div>
-                    {{end}}
-
-                    <!-- Outbreak & Role Management Section -->
-                    {{if or (hasPermission .UserPermissions "outbreaks" "read") (hasPermission .UserPermissions "outbreaks" "create") (hasPermission .UserPermissions "roles" "read") (hasPermission .UserPermissions "roles" "create")}}
-                    <h4 class="mt-4 mb-3 text-info">Outbreak & Role Management</h4>
-                    <div class="row">
-                        {{if or (hasPermission .UserPermissions "outbreaks" "read") (hasPermission .UserPermissions "outbreaks" "create")}}
-                        <div class="col-md-3 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-virus text-warning"></i> Manage Outbreaks
-                                    </h5>
-                                    <p class="card-text">Create and manage outbreaks</p>
-                                    <a href="/outbreaks" class="btn btn-warning">Manage Outbreaks</a>
-                                </div>
-                            </div>
+                </div>
+                {{end}}
+                
+                {{if hasPermission .UserPermissions "lab_results" "read"}}
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="dashboard-card">
+                        <div class="card-icon text-warning">
+                            <i class="fas fa-microscope"></i>
                         </div>
-                        
-                        <div class="col-md-3 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-shield-alt text-info"></i> Outbreak Assignments
-                                    </h5>
-                                    <p class="card-text">Assign users to outbreaks</p>
-                                    <a href="/outbreaks/assignments" class="btn btn-info">Manage Assignments</a>
-                                </div>
-                            </div>
-                        </div>
-                        {{end}}
-                        
-                        {{if or (hasPermission .UserPermissions "roles" "read") (hasPermission .UserPermissions "roles" "create")}}
-                        <div class="col-md-3 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-user-md text-primary"></i> Patient Roles
-                                    </h5>
-                                    <p class="card-text">Manage patient care roles</p>
-                                    <a href="/patient-roles" class="btn btn-primary">Manage Roles</a>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-3 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-user-shield text-dark"></i> System Roles
-                                    </h5>
-                                    <p class="card-text">Manage system roles and permissions</p>
-                                    <a href="/roles" class="btn btn-dark">Manage Roles</a>
-                                </div>
-                            </div>
-                        </div>
-                        {{end}}
+                        <div class="card-title">Lab Investigations</div>
+                        <div class="card-description">View laboratory investigations</div>
+                        <a href="/lab/investigations" class="btn btn-warning">View Investigations</a>
                     </div>
-                    {{end}}
-
-                    <!-- Reports & Analytics Section -->
-                    {{if or (hasPermission .UserPermissions "reports" "read") (hasPermission .UserPermissions "statistics" "read") (hasPermission .UserPermissions "export" "read")}}
-                    <h4 class="mt-4 mb-3 text-purple">Reports & Analytics</h4>
-                    <div class="row">
-                        {{if hasPermission .UserPermissions "reports" "read"}}
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-chart-bar text-purple"></i> Reports
-                                    </h5>
-                                    <p class="card-text">Generate and view reports</p>
-                                    <a href="/reports" class="btn btn-purple">View Reports</a>
-                                </div>
-                            </div>
+                </div>
+                {{end}}
+                
+                {{if hasPermission .UserPermissions "lab_sample_types" "read"}}
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="dashboard-card">
+                        <div class="card-icon text-secondary">
+                            <i class="fas fa-vial"></i>
                         </div>
-                        {{end}}
-                        
-                        {{if hasPermission .UserPermissions "statistics" "read"}}
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-chart-line text-success"></i> Statistics
-                                    </h5>
-                                    <p class="card-text">View system statistics</p>
-                                    <a href="/employees/statistics" class="btn btn-success">View Stats</a>
-                                </div>
-                            </div>
-                        </div>
-                        {{end}}
-                        
-                        {{if hasPermission .UserPermissions "export" "read"}}
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-download text-info"></i> Export Data
-                                    </h5>
-                                    <p class="card-text">Export employee and case data</p>
-                                    <a href="/employees/export" class="btn btn-info">Export Data</a>
-                                </div>
-                            </div>
-                        </div>
-                        {{end}}
+                        <div class="card-title">Sample Types</div>
+                        <div class="card-description">Manage laboratory sample types</div>
+                        <a href="/lab/sample-types" class="btn btn-secondary">Manage Samples</a>
                     </div>
-                    {{end}}
+                </div>
+                {{end}}
+            </div>
+            {{end}}
 
-                    <!-- Inventory Management Section -->
-                    {{if or (hasPermission .UserPermissions "inventory" "read") (hasPermission .UserPermissions "inventory" "create") (hasPermission .UserPermissions "donations" "read")}}
-                    <h4 class="mt-4 mb-3 text-warning">Inventory Management</h4>
-                    <div class="row">
-                        {{if or (hasPermission .UserPermissions "inventory" "read") (hasPermission .UserPermissions "inventory" "create")}}
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-boxes text-warning"></i> Inventory
-                                    </h5>
-                                    <p class="card-text">Manage inventory items and stock</p>
-                                    <a href="/inventory" class="btn btn-warning">Manage Inventory</a>
-                                </div>
-                            </div>
+            <!-- User & Employee Management Section -->
+            {{if or (hasPermission .UserPermissions "users" "read") (hasPermission .UserPermissions "users" "create") (hasPermission .UserPermissions "employees" "read") (hasPermission .UserPermissions "employees" "create")}}
+            <h4 class="mt-5 mb-4 text-success">
+                <i class="fas fa-users me-2"></i>User & Employee Management
+            </h4>
+            <div class="row">
+                {{if or (hasPermission .UserPermissions "users" "read") (hasPermission .UserPermissions "users" "create")}}
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="dashboard-card">
+                        <div class="card-icon text-success">
+                            <i class="fas fa-users"></i>
                         </div>
-                        {{end}}
-                        
-                        {{if hasPermission .UserPermissions "donations" "read"}}
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-gift text-success"></i> Donations
-                                    </h5>
-                                    <p class="card-text">Manage donations and donors</p>
-                                    <a href="/inventory/donations" class="btn btn-success">Manage Donations</a>
-                                </div>
-                            </div>
-                        </div>
-                        {{end}}
-                        
-                        {{if hasPermission .UserPermissions "inventory" "read"}}
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-chart-pie text-info"></i> Stock Reports
-                                    </h5>
-                                    <p class="card-text">View inventory reports and analytics</p>
-                                    <a href="/inventory/reports" class="btn btn-info">View Reports</a>
-                                </div>
-                            </div>
-                        </div>
-                        {{end}}
+                        <div class="card-title">Users</div>
+                        <div class="card-description">Manage system users and permissions</div>
+                        <a href="/users" class="btn btn-success">Manage Users</a>
                     </div>
-                    {{end}}
+                </div>
+                {{end}}
 
-                    <!-- Quick Actions Section -->
-                    {{if or (hasPermission .UserPermissions "cases" "create") (hasPermission .UserPermissions "vhf" "create")}}
-                    <h4 class="mt-4 mb-3 text-warning">Quick Actions</h4>
-                    <div class="row">
-                        {{if hasPermission .UserPermissions "cases" "create"}}
-                        <div class="col-md-6 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-plus-circle text-success"></i> Add New Case
-                                    </h5>
-                                    <p class="card-text">Register a new patient case</p>
-                                    <a href="/cases/new/0" class="btn btn-success">Add Case</a>
-                                </div>
-                            </div>
+                {{if or (hasPermission .UserPermissions "users" "read") (hasPermission .UserPermissions "users" "create")}}
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="dashboard-card">
+                        <div class="card-icon text-primary">
+                            <i class="fas fa-users-cog"></i>
                         </div>
-                        {{end}}
-                        
-                        {{if hasPermission .UserPermissions "vhf" "create"}}
-                        <div class="col-md-6 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-plus-circle text-danger"></i> Add VHF Case
-                                    </h5>
-                                    <p class="card-text">Register a new VHF case</p>
-                                    <a href="/vhf-cif" class="btn btn-danger">Add VHF Case</a>
-                                </div>
-                            </div>
-                        </div>
-                        {{end}}
+                        <div class="card-title">RBAC Dashboard</div>
+                        <div class="card-description">Manage roles, permissions, and access</div>
+                        <a href="/rbac-dashboard" class="btn btn-primary">Access Dashboard</a>
                     </div>
-                    {{end}}
-
-                    <!-- System Administration Section -->
-                    {{if or (hasPermission .UserPermissions "rbac" "read") (hasPermission .UserPermissions "rbac" "create") (hasPermission .UserPermissions "permissions" "read") (hasPermission .UserPermissions "permissions" "create")}}
-                    <h4 class="mt-4 mb-3 text-primary">System Administration</h4>
-                    <div class="row">
-                        {{if or (hasPermission .UserPermissions "rbac" "read") (hasPermission .UserPermissions "rbac" "create")}}
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-users-cog"></i> RBAC Dashboard
-                                    </h5>
-                                    <p class="card-text">Manage roles, permissions, and user access</p>
-                                    <a href="/rbac-dashboard" class="btn btn-light">Access Dashboard</a>
-                                </div>
-                            </div>
+                </div>
+                {{end}}
+                
+                {{if or (hasPermission .UserPermissions "employees" "read") (hasPermission .UserPermissions "employees" "create")}}
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="dashboard-card">
+                        <div class="card-icon text-warning">
+                            <i class="fas fa-user-tie"></i>
                         </div>
-                        {{end}}
-                        
-                        {{if or (hasPermission .UserPermissions "roles" "read") (hasPermission .UserPermissions "roles" "create")}}
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-user-tag"></i> Role Management
-                                    </h5>
-                                    <p class="card-text">Create and manage user roles</p>
-                                    <a href="/roles" class="btn btn-light">Manage Roles</a>
-                                </div>
-                            </div>
-                        </div>
-                        {{end}}
-                        
-                        {{if or (hasPermission .UserPermissions "permissions" "read") (hasPermission .UserPermissions "permissions" "create")}}
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-key"></i> Permission Management
-                                    </h5>
-                                    <p class="card-text">Define system permissions</p>
-                                    <a href="/permissions" class="btn btn-light">Manage Permissions</a>
-                                </div>
-                            </div>
-                        </div>
-                        {{end}}
+                        <div class="card-title">Employees</div>
+                        <div class="card-description">Manage employee records and assignments</div>
+                        <a href="/employees" class="btn btn-warning">Manage Employees</a>
                     </div>
-                    {{end}}
+                </div>
+                {{end}}
+            </div>
+            {{end}}
 
-                    <!-- External Systems Section -->
-                    <h4 class="mt-4 mb-3 text-secondary">External Systems</h4>
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-database text-secondary"></i> GoData
-                                    </h5>
-                                    <p class="card-text">Integration with GoData outbreak management system</p>
-                                    <button type="button" class="btn btn-secondary" onclick="showComingSoon()">Coming Soon</button>
-                                </div>
-                            </div>
+            <!-- Outbreak & Role Management Section -->
+            {{if or (hasPermission .UserPermissions "outbreaks" "read") (hasPermission .UserPermissions "outbreaks" "create") (hasPermission .UserPermissions "roles" "read") (hasPermission .UserPermissions "roles" "create")}}
+            <h4 class="mt-5 mb-4 text-info">
+                <i class="fas fa-virus me-2"></i>Outbreak & Role Management
+            </h4>
+            <div class="row">
+                {{if or (hasPermission .UserPermissions "outbreaks" "read") (hasPermission .UserPermissions "outbreaks" "create")}}
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="dashboard-card">
+                        <div class="card-icon text-warning">
+                            <i class="fas fa-virus"></i>
                         </div>
+                        <div class="card-title">Manage Outbreaks</div>
+                        <div class="card-description">Create and manage outbreaks</div>
+                        <a href="/outbreaks" class="btn btn-warning">Manage Outbreaks</a>
                     </div>
-                    {{end}}
+                </div>
+                
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="dashboard-card">
+                        <div class="card-icon text-info">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="card-title">Outbreak Assignments</div>
+                        <div class="card-description">Assign users to outbreaks</div>
+                        <a href="/outbreaks/assignments" class="btn btn-info">Manage Assignments</a>
+                    </div>
+                </div>
+                {{end}}
+                
+                {{if or (hasPermission .UserPermissions "roles" "read") (hasPermission .UserPermissions "roles" "create")}}
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="dashboard-card">
+                        <div class="card-icon text-primary">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div class="card-title">Patient Roles</div>
+                        <div class="card-description">Manage patient care roles</div>
+                        <a href="/patient-roles" class="btn btn-primary">Manage Roles</a>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="dashboard-card">
+                        <div class="card-icon text-dark">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
+                        <div class="card-title">System Roles</div>
+                        <div class="card-description">Manage system roles and permissions</div>
+                        <a href="/roles" class="btn btn-dark">Manage Roles</a>
+                    </div>
+                </div>
+                {{end}}
+            </div>
+            {{end}}
 
+            <!-- Reports & Analytics Section -->
+            {{if or (hasPermission .UserPermissions "reports" "read") (hasPermission .UserPermissions "statistics" "read") (hasPermission .UserPermissions "export" "read")}}
+            <h4 class="mt-5 mb-4 text-purple">
+                <i class="fas fa-chart-bar me-2"></i>Reports & Analytics
+            </h4>
+            <div class="row">
+                {{if hasPermission .UserPermissions "reports" "read"}}
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="dashboard-card">
+                        <div class="card-icon text-purple">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div class="card-title">Reports</div>
+                        <div class="card-description">Generate and view reports</div>
+                        <a href="/reports" class="btn btn-purple">View Reports</a>
+                    </div>
+                </div>
+                {{end}}
+                
+                {{if hasPermission .UserPermissions "statistics" "read"}}
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="dashboard-card">
+                        <div class="card-icon text-success">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="card-title">Statistics</div>
+                        <div class="card-description">View system statistics</div>
+                        <a href="/employees/statistics" class="btn btn-success">View Stats</a>
+                    </div>
+                </div>
+                {{end}}
+                
+                {{if hasPermission .UserPermissions "export" "read"}}
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="dashboard-card">
+                        <div class="card-icon text-info">
+                            <i class="fas fa-download"></i>
+                        </div>
+                        <div class="card-title">Export Data</div>
+                        <div class="card-description">Export employee and case data</div>
+                        <a href="/employees/export" class="btn btn-info">Export Data</a>
+                    </div>
+                </div>
+                {{end}}
+            </div>
+            {{end}}
+
+            <!-- Inventory Management Section -->
+            {{if or (hasPermission .UserPermissions "inventory" "read") (hasPermission .UserPermissions "inventory" "create") (hasPermission .UserPermissions "donations" "read")}}
+            <h4 class="mt-5 mb-4 text-warning">
+                <i class="fas fa-boxes me-2"></i>Inventory Management
+            </h4>
+            <div class="row">
+                {{if or (hasPermission .UserPermissions "inventory" "read") (hasPermission .UserPermissions "inventory" "create")}}
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="dashboard-card">
+                        <div class="card-icon text-warning">
+                            <i class="fas fa-boxes"></i>
+                        </div>
+                        <div class="card-title">Inventory</div>
+                        <div class="card-description">Manage inventory items and stock</div>
+                        <a href="/inventory" class="btn btn-warning">Manage Inventory</a>
+                    </div>
+                </div>
+                {{end}}
+                
+                {{if hasPermission .UserPermissions "donations" "read"}}
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="dashboard-card">
+                        <div class="card-icon text-success">
+                            <i class="fas fa-gift"></i>
+                        </div>
+                        <div class="card-title">Donations</div>
+                        <div class="card-description">Manage donations and donors</div>
+                        <a href="/inventory/donations" class="btn btn-success">Manage Donations</a>
+                    </div>
+                </div>
+                {{end}}
+                
+                {{if hasPermission .UserPermissions "inventory" "read"}}
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="dashboard-card">
+                        <div class="card-icon text-info">
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                        <div class="card-title">Stock Reports</div>
+                        <div class="card-description">View inventory reports and analytics</div>
+                        <a href="/inventory/reports" class="btn btn-info">View Reports</a>
+                    </div>
+                </div>
+                {{end}}
+            </div>
+            {{end}}
+
+            <!-- Quick Actions Section -->
+            {{if or (hasPermission .UserPermissions "cases" "create") (hasPermission .UserPermissions "vhf" "create")}}
+            <h4 class="mt-5 mb-4 text-success">
+                <i class="fas fa-bolt me-2"></i>Quick Actions
+            </h4>
+            <div class="row">
+                {{if hasPermission .UserPermissions "cases" "create"}}
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="dashboard-card">
+                        <div class="card-icon text-success">
+                            <i class="fas fa-plus-circle"></i>
+                        </div>
+                        <div class="card-title">Add New Case</div>
+                        <div class="card-description">Register a new patient case</div>
+                        <a href="/cases/new/0" class="btn btn-success">Add Case</a>
+                    </div>
+                </div>
+                {{end}}
+                
+                {{if hasPermission .UserPermissions "vhf" "create"}}
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="dashboard-card">
+                        <div class="card-icon text-danger">
+                            <i class="fas fa-virus"></i>
+                        </div>
+                        <div class="card-title">Add VHF Case</div>
+                        <div class="card-description">Register a new VHF case</div>
+                        <a href="/vhf-cif" class="btn btn-danger">Add VHF Case</a>
+                    </div>
+                </div>
+                {{end}}
+            </div>
+            {{end}}
+
+            <!-- System Administration Section -->
+            {{if or (hasPermission .UserPermissions "rbac" "read") (hasPermission .UserPermissions "rbac" "create") (hasPermission .UserPermissions "permissions" "read") (hasPermission .UserPermissions "permissions" "create")}}
+            <h4 class="mt-5 mb-4 text-primary">
+                <i class="fas fa-cog me-2"></i>System Administration
+            </h4>
+            <div class="row">
+                {{if or (hasPermission .UserPermissions "rbac" "read") (hasPermission .UserPermissions "rbac" "create")}}
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="dashboard-card">
+                        <div class="card-icon text-primary">
+                            <i class="fas fa-users-cog"></i>
+                        </div>
+                        <div class="card-title">RBAC Dashboard</div>
+                        <div class="card-description">Manage roles, permissions, and user access</div>
+                        <a href="/rbac-dashboard" class="btn btn-primary">Access Dashboard</a>
+                    </div>
+                </div>
+                {{end}}
+                
+                {{if or (hasPermission .UserPermissions "roles" "read") (hasPermission .UserPermissions "roles" "create")}}
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="dashboard-card">
+                        <div class="card-icon text-info">
+                            <i class="fas fa-user-tag"></i>
+                        </div>
+                        <div class="card-title">Role Management</div>
+                        <div class="card-description">Create and manage user roles</div>
+                        <a href="/roles" class="btn btn-info">Manage Roles</a>
+                    </div>
+                </div>
+                {{end}}
+                
+                {{if or (hasPermission .UserPermissions "permissions" "read") (hasPermission .UserPermissions "permissions" "create")}}
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="dashboard-card">
+                        <div class="card-icon text-success">
+                            <i class="fas fa-key"></i>
+                        </div>
+                        <div class="card-title">Permission Management</div>
+                        <div class="card-description">Define system permissions</div>
+                        <a href="/permissions" class="btn btn-success">Manage Permissions</a>
+                    </div>
+                </div>
+                {{end}}
+            </div>
+            {{end}}
+
+            <!-- External Systems Section -->
+            {{if hasPermission .UserPermissions "external_systems" "read"}}
+            <h4 class="mt-4 mb-3 text-secondary">
+                <i class="fas fa-plug me-2"></i>External Systems
+            </h4>
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="dashboard-card">
+                        <div class="card-icon text-secondary">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <div class="card-title">GoData</div>
+                        <div class="card-description">Integration with GoData outbreak management system</div>
+                        <button type="button" class="btn btn-secondary" onclick="showComingSoon()">Coming Soon</button>
+                    </div>
                 </div>
             </div>
+            {{end}}
         </div>
     </div>
 </div>

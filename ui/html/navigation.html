@@ -452,12 +452,12 @@
     width: 280px;
     background: #f8f9fa;
     border-right: 1px solid #dee2e6;
-    height: 100vh;
+    height: calc(100vh - 100px);
     overflow-y: auto;
     position: fixed;
     left: 0;
-    top: 0;
-    z-index: 1000;
+    top: 100px;
+    z-index: 997;
 }
 
 .nav-header {
@@ -549,6 +549,7 @@
 .main-content {
     margin-left: 280px;
     padding: 1rem;
+    margin-top: 100px;
 }
 
 /* Responsive */
@@ -556,6 +557,8 @@
     .sidebar-nav {
         transform: translateX(-100%);
         transition: transform 0.3s ease;
+        top: 50px;
+        height: calc(100vh - 50px);
     }
     
     .sidebar-nav.show {
@@ -564,6 +567,7 @@
     
     .main-content {
         margin-left: 0;
+        margin-top: 50px;
     }
 }
 </style>

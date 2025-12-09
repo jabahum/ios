@@ -5,6 +5,7 @@ package models
 import (
 	"context"
 	"database/sql"
+	"strings"
 )
 
 // Client represents a row from 'public.clients'.
@@ -172,6 +173,7 @@ func (c *Client) Delete(ctx context.Context, db DB) error {
 // Generated from index 'clients_pkey'.
 func ClientByID(ctx context.Context, db DB, id int) (*Client, error) {
 	// query
+	// First, try to query with hbc_phone and hbc_followup columns
 	const sqlstr = `SELECT ` +
 		`id, uuid, firstname, lastname, othername, gender, date_of_birth, age, marital, nin, nationality, adm_date, adm_from, lab_no, cif_no, etu_no, case_no, occupation, occupation_aza, date_symptom_onset, date_isolation, pregnant, adm_ward, tb, asplenia, hep, diabetes, hiv, liver, malignancy, heart, pulmonary, kidney, neurologic, other, status, enter_on, enter_by, edit_on, edit_by, transfer, site, outbreak_id, hbc_phone, hbc_followup ` +
 		`FROM public.clients ` +
@@ -181,8 +183,25 @@ func ClientByID(ctx context.Context, db DB, id int) (*Client, error) {
 	c := Client{
 		_exists: true,
 	}
-	if err := db.QueryRowContext(ctx, sqlstr, id).Scan(&c.ID, &c.UUID, &c.Firstname, &c.Lastname, &c.Othername, &c.Gender, &c.DateOfBirth, &c.Age, &c.Marital, &c.Nin, &c.Nationality, &c.AdmDate, &c.AdmFrom, &c.LabNo, &c.CifNo, &c.EtuNo, &c.CaseNo, &c.Occupation, &c.OccupationAza, &c.DateSymptomOnset, &c.DateIsolation, &c.Pregnant, &c.AdmWard, &c.Tb, &c.Asplenia, &c.Hep, &c.Diabetes, &c.Hiv, &c.Liver, &c.Malignancy, &c.Heart, &c.Pulmonary, &c.Kidney, &c.Neurologic, &c.Other, &c.Status, &c.EnterOn, &c.EnterBy, &c.EditOn, &c.EditBy, &c.Transfer, &c.Site, &c.OutbreakID, &c.HbcPhone, &c.HbcFollowup); err != nil {
-		return nil, logerror(err)
+	err := db.QueryRowContext(ctx, sqlstr, id).Scan(&c.ID, &c.UUID, &c.Firstname, &c.Lastname, &c.Othername, &c.Gender, &c.DateOfBirth, &c.Age, &c.Marital, &c.Nin, &c.Nationality, &c.AdmDate, &c.AdmFrom, &c.LabNo, &c.CifNo, &c.EtuNo, &c.CaseNo, &c.Occupation, &c.OccupationAza, &c.DateSymptomOnset, &c.DateIsolation, &c.Pregnant, &c.AdmWard, &c.Tb, &c.Asplenia, &c.Hep, &c.Diabetes, &c.Hiv, &c.Liver, &c.Malignancy, &c.Heart, &c.Pulmonary, &c.Kidney, &c.Neurologic, &c.Other, &c.Status, &c.EnterOn, &c.EnterBy, &c.EditOn, &c.EditBy, &c.Transfer, &c.Site, &c.OutbreakID, &c.HbcPhone, &c.HbcFollowup)
+	if err != nil {
+		// If error is due to missing hbc_phone or hbc_followup columns, retry without them
+		if strings.Contains(err.Error(), "hbc_phone") || strings.Contains(err.Error(), "hbc_followup") || 
+		   (strings.Contains(err.Error(), "column") && (strings.Contains(err.Error(), "does not exist") || strings.Contains(err.Error(), "unknown column"))) {
+			const sqlstr2 = `SELECT ` +
+				`id, uuid, firstname, lastname, othername, gender, date_of_birth, age, marital, nin, nationality, adm_date, adm_from, lab_no, cif_no, etu_no, case_no, occupation, occupation_aza, date_symptom_onset, date_isolation, pregnant, adm_ward, tb, asplenia, hep, diabetes, hiv, liver, malignancy, heart, pulmonary, kidney, neurologic, other, status, enter_on, enter_by, edit_on, edit_by, transfer, site, outbreak_id ` +
+				`FROM public.clients ` +
+				`WHERE id = $1`
+			err = db.QueryRowContext(ctx, sqlstr2, id).Scan(&c.ID, &c.UUID, &c.Firstname, &c.Lastname, &c.Othername, &c.Gender, &c.DateOfBirth, &c.Age, &c.Marital, &c.Nin, &c.Nationality, &c.AdmDate, &c.AdmFrom, &c.LabNo, &c.CifNo, &c.EtuNo, &c.CaseNo, &c.Occupation, &c.OccupationAza, &c.DateSymptomOnset, &c.DateIsolation, &c.Pregnant, &c.AdmWard, &c.Tb, &c.Asplenia, &c.Hep, &c.Diabetes, &c.Hiv, &c.Liver, &c.Malignancy, &c.Heart, &c.Pulmonary, &c.Kidney, &c.Neurologic, &c.Other, &c.Status, &c.EnterOn, &c.EnterBy, &c.EditOn, &c.EditBy, &c.Transfer, &c.Site, &c.OutbreakID)
+			if err != nil {
+				return nil, logerror(err)
+			}
+			// Set hbc fields to invalid since columns don't exist
+			c.HbcPhone = sql.NullString{Valid: false}
+			c.HbcFollowup = sql.NullString{Valid: false}
+		} else {
+			return nil, logerror(err)
+		}
 	}
 	return &c, nil
 }

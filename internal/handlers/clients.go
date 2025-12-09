@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 	// "io"
     // "encoding/json"
@@ -37,6 +38,16 @@ type EncounterPageData struct {
 		ID   int64  `json:"id"`
 		Name string `json:"name"`
 	}
+}
+
+// AdmissionData holds all admission-related information
+type AdmissionData struct {
+	Demographics *models.MpoxDemographics
+	Exposure     *models.MpoxExposureHistory
+	Vitals       *models.MpoxOnsetVitals
+	Comorbidities *models.MpoxComorbidities
+	Rash         *models.MpoxRashEvaluation
+	Labs         *models.MpoxLaboratoryInvestigations
 }
 
 // FullTreatmentData represents complete treatment data for templates
@@ -180,8 +191,9 @@ func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 	} else {
 		// Get the client
 		clientModel, err := models.ClientByID(c.Context(), db, id)
-		if err == nil {
+		if err == nil && clientModel != nil {
 			client = *clientModel
+			data.IsIDPos = true
 
 			// Check facility-based access control
 			userFacility := GetCurrentFacility(c, db, sl, store)
@@ -193,9 +205,12 @@ func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 					return c.Status(403).SendString("Access denied: You can only access cases from your assigned facility.")
 				}
 			}
+		} else {
+			// Client not found, treat as new
+			client.ID = 0
+			data.IsIDPos = false
+			sl.Warn("Client not found", "client_id", id, "error", err)
 		}
-
-		data.IsIDPos = true
 	}
 
 	// Get outbreak ID from session
@@ -211,33 +226,58 @@ func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 	// Set outbreak ID for new cases
 	data.OutbreakID = outbreakID.(int)
 	data.IsOutbreakID = data.OutbreakID > 0
+	
+	// Get outbreak name
+	outbreak, err := models.OutbreakByID(c.Context(), db, outbreakID.(int))
+	if err == nil && outbreak != nil {
+		if outbreak.Name.Valid {
+			data.OutbreakName = outbreak.Name.String
+		}
+	}
+	
 	if client.ID == 0 {
 		client.OutbreakID = sql.NullInt64{Int64: int64(outbreakID.(int)), Valid: true}
 	}
 
-	cE, err := models.ClientEncounterz(c.Context(), db, "client_id="+strconv.Itoa(id), outbreakID.(int))
-	if err != nil {
-		DoZaLogging("ERROR", "Failed to get encounters", err)
-	}
+	// Initialize empty slices to avoid nil issues
+	var cE []models.ClientEncounter = []models.ClientEncounter{}
+	var st []models.Status = []models.Status{}
+	var assessments []*models.MpoxAssessment = []*models.MpoxAssessment{}
+	
+	if id > 0 && client.ID > 0 {
+		cE, err = models.ClientEncounterz(c.Context(), db, "client_id="+strconv.Itoa(id), outbreakID.(int))
+		if err != nil {
+			DoZaLogging("ERROR", "Failed to get encounters", err)
+		}
+		if cE == nil {
+			cE = []models.ClientEncounter{}
+		}
 
-	st, err := models.Statuses(c.Context(), db, "client_id="+strconv.Itoa(id))
-	if err != nil {
-		DoZaLogging("ERROR", "Failed to get statuses", err)
-	}
+		st, err = models.Statuses(c.Context(), db, "client_id="+strconv.Itoa(id))
+		if err != nil {
+			DoZaLogging("ERROR", "Failed to get statuses", err)
+		}
+		if st == nil {
+			st = []models.Status{}
+		}
 
-	// Check if there is an Mpox admission for this client
-	hasAdmission := false
-	var admissionID int
-	err = db.QueryRow("SELECT id FROM mpox_demographics WHERE client_id = $1 LIMIT 1", client.ID).Scan(&admissionID)
-	if err == nil {
-		hasAdmission = true
-	}
-	data.HasMpoxAdmission = hasAdmission
-	data.MpoxAdmissionID = admissionID // int
+		// Check if there is an Mpox admission for this client
+		hasAdmission := false
+		var admissionID int
+		err = db.QueryRow("SELECT id FROM mpox_demographics WHERE client_id = $1 LIMIT 1", client.ID).Scan(&admissionID)
+		if err == nil {
+			hasAdmission = true
+		}
+		data.HasMpoxAdmission = hasAdmission
+		data.MpoxAdmissionID = admissionID // int
 
-	assessments, err := models.GetMpoxAssessmentsByClientID(context.Background(), db, client.ID)
-	if err != nil {
-		DoZaLogging("ERROR", "Failed to get Mpox assessments", err)
+		assessments, err = models.GetMpoxAssessmentsByClientID(context.Background(), db, client.ID)
+		if err != nil {
+			DoZaLogging("ERROR", "Failed to get Mpox assessments", err)
+		}
+		if assessments == nil {
+			assessments = []*models.MpoxAssessment{}
+		}
 	}
 	
 	data.User = userName
@@ -262,6 +302,224 @@ func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 
 	DoZaLogging("INFO", "Load Client form", err)
 	return GenerateHTML(c, db, data, "form_patients")
+}
+
+// HandlerPatientProfile handles the patient profile view with biodata and clinical notes
+func HandlerPatientProfile(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config, smsService *services.SMSService, voiceService *services.VoiceService) error {
+	DoZaLogging("INFO", "Starting Patient Profile", nil)
+
+	userID, userName := GetUser(c, sl, store)
+	role := security.GetRoleID(db, userID, "admin")
+	id, err := strconv.Atoi(c.Params("i"))
+	if err != nil || id < 1 {
+		return c.Status(400).SendString("Invalid patient ID")
+	}
+
+	data := NewTemplateData(c, store)
+
+	// Get the client
+	clientModel, err := models.ClientByID(c.Context(), db, id)
+	if err != nil {
+		sl.Warn("Failed to get patient", "client_id", id, "error", err)
+		// Try to check if it's a no rows error
+		if err == sql.ErrNoRows {
+			return c.Status(404).SendString("Patient not found")
+		}
+		return c.Status(500).SendString("Failed to retrieve patient: " + err.Error())
+	}
+	if clientModel == nil {
+		sl.Warn("Patient model is nil", "client_id", id)
+		return c.Status(404).SendString("Patient not found")
+	}
+	client := *clientModel
+	sl.Info("Patient found", "client_id", id, "patient_id", client.ID)
+
+	// Check facility-based access control
+	userFacility := GetCurrentFacility(c, db, sl, store)
+	if userFacility > 0 {
+		if client.Site.Int64 != int64(userFacility) {
+			sl.Error("User attempted to access case from different facility",
+				"user_id", userID, "user_facility", userFacility, "case_site", client.Site.Int64, "case_id", id)
+			return c.Status(403).SendString("Access denied: You can only access cases from your assigned facility.")
+		}
+	}
+
+	// Get outbreak ID from session
+	sess, err := store.Get(c)
+	if err != nil {
+		return c.Status(400).SendString("Failed to get session")
+	}
+	outbreakID := sess.Get("outbreak_id")
+	if outbreakID == nil {
+		return c.Status(400).SendString("No outbreak selected")
+	}
+
+	// Get outbreak name
+	outbreak, err := models.OutbreakByID(c.Context(), db, outbreakID.(int))
+	if err == nil && outbreak != nil {
+		if outbreak.Name.Valid {
+			data.OutbreakName = outbreak.Name.String
+		}
+	}
+
+	// Get all related data
+	cE, err := models.ClientEncounterz(c.Context(), db, "client_id="+strconv.Itoa(id), outbreakID.(int))
+	if err != nil {
+		DoZaLogging("ERROR", "Failed to get encounters", err)
+		cE = []models.ClientEncounter{}
+	}
+
+	// Fetch clinical, vital, and lab data for each encounter
+	type EncounterDetail struct {
+		Encounter models.ClientEncounter
+		Clinical  *models.Clinical
+		Vital     *models.Vital
+		Lab       *models.Lab
+	}
+	var encounterDetails []EncounterDetail
+	for _, enc := range cE {
+		detail := EncounterDetail{Encounter: enc}
+		if enc.EncounterID > 0 {
+			// Fetch clinical data
+			clinical, err := models.ClinicalByEncounterID(c.Context(), db, enc.EncounterID)
+			if err == nil && clinical != nil {
+				detail.Clinical = clinical
+			}
+			// Fetch vital data
+			vital, err := models.VitalByEncounterID(c.Context(), db, enc.EncounterID)
+			if err == nil && vital != nil {
+				detail.Vital = vital
+			}
+			// Fetch lab data
+			lab, err := models.LabByEncounterID(c.Context(), db, enc.EncounterID)
+			if err == nil && lab != nil {
+				detail.Lab = lab
+			}
+		}
+		encounterDetails = append(encounterDetails, detail)
+	}
+
+	st, err := models.Statuses(c.Context(), db, "client_id="+strconv.Itoa(id))
+	if err != nil {
+		DoZaLogging("ERROR", "Failed to get statuses", err)
+		st = []models.Status{}
+	}
+
+	assessments, err := models.GetMpoxAssessmentsByClientID(context.Background(), db, client.ID)
+	if err != nil {
+		DoZaLogging("ERROR", "Failed to get Mpox assessments", err)
+		assessments = []*models.MpoxAssessment{}
+	}
+
+	// Fetch Mpox admission data if exists
+	hasAdmission := false
+	var admissionID int
+	err = db.QueryRow("SELECT id FROM mpox_demographics WHERE client_id = $1 LIMIT 1", client.ID).Scan(&admissionID)
+	if err == nil {
+		hasAdmission = true
+		sl.Info("Found admission record", "client_id", client.ID, "admission_id", admissionID)
+	} else {
+		if err != sql.ErrNoRows {
+			sl.Warn("Error checking for admission", "client_id", client.ID, "error", err)
+		}
+	}
+
+	// Create struct to hold admission data
+	var admissionData AdmissionData
+	
+	if hasAdmission {
+		// Fetch demographics
+		var demo models.MpoxDemographics
+		err = db.QueryRowContext(c.Context(), `
+			SELECT id, client_id, sex, date_of_birth, age_years, age_months, age_days,
+				health_care_worker, laboratory_worker, ppe_status, tribe, pregnant,
+				gestational_weeks, lmnp, recently_pregnant, pregnant_22_42,
+				tetanus_vaccination, occupation, site_of_first_encounter,
+				site_of_first_encounter_other, suspect_confirmed_case,
+				lymph_painful, lymph_location, lymph_other_detail,
+				lymph_pain_location, lymph_pain_other_detail, created_at, updated_at
+			FROM mpox_demographics WHERE id = $1
+		`, admissionID).Scan(
+			&demo.ID, &demo.ClientID, &demo.Sex, &demo.DateOfBirth, &demo.AgeYears, &demo.AgeMonths,
+			&demo.AgeDays, &demo.HealthCareWorker, &demo.LaboratoryWorker, &demo.PPEStatus, &demo.Tribe,
+			&demo.Pregnant, &demo.GestationalWeeks, &demo.LMNP, &demo.RecentlyPregnant, &demo.Pregnant22_42,
+			&demo.TetanusVaccination, &demo.Occupation, &demo.SiteOfFirstEncounter, &demo.SiteOfFirstEncounterOther,
+			&demo.SuspectConfirmedCase, &demo.LymphPainful, &demo.LymphLocation, &demo.LymphOtherDetail,
+			&demo.LymphPainLocation, &demo.LymphPainOtherDetail, &demo.CreatedAt, &demo.UpdatedAt)
+		if err == nil {
+			admissionData.Demographics = &demo
+			sl.Info("Loaded admission demographics", "admission_id", admissionID)
+			
+			// Fetch exposure history
+			var exp models.MpoxExposureHistory
+			err = db.QueryRowContext(c.Context(), `
+				SELECT id, demographics_id, known_link, sexually_active, sex_of_partners,
+					recent_travel, travel_high_risk, travel_details, created_at, updated_at
+				FROM mpox_exposure_history WHERE demographics_id = $1 LIMIT 1
+			`, admissionID).Scan(
+				&exp.ID, &exp.DemographicsID, &exp.KnownLink, &exp.SexuallyActive, &exp.SexOfPartners,
+				&exp.RecentTravel, &exp.TravelHighRisk, &exp.TravelDetails, &exp.CreatedAt, &exp.UpdatedAt)
+			if err == nil {
+				admissionData.Exposure = &exp
+				sl.Info("Loaded admission exposure history", "admission_id", admissionID)
+			} else if err != sql.ErrNoRows {
+				sl.Warn("Error fetching exposure history", "admission_id", admissionID, "error", err)
+			}
+			
+			// Fetch onset vitals
+			var vitals models.MpoxOnsetVitals
+			err = db.QueryRowContext(c.Context(), `
+				SELECT id, demographics_id, symptom_onset, fever, temperature, heart_rate, 
+					respiratory_rate, bp_systolic, bp_diastolic, dehydration, avpu, height_cm, weight_kg
+				FROM mpox_onset_vitals WHERE demographics_id = $1 LIMIT 1
+			`, admissionID).Scan(
+				&vitals.ID, &vitals.DemographicsID, &vitals.SymptomOnset, &vitals.Fever,
+				&vitals.Temperature, &vitals.HeartRate, &vitals.RespiratoryRate, &vitals.BpSystolic,
+				&vitals.BpDiastolic, &vitals.Dehydration, &vitals.AVPU, &vitals.HeightCm, &vitals.WeightKg)
+			if err == nil {
+				admissionData.Vitals = &vitals
+				sl.Info("Loaded admission vitals", "admission_id", admissionID)
+			} else if err != sql.ErrNoRows {
+				sl.Warn("Error fetching onset vitals", "admission_id", admissionID, "error", err)
+			}
+		} else {
+			sl.Error("Error fetching admission demographics", "admission_id", admissionID, "error", err)
+		}
+	}
+	
+	sl.Info("Admission data prepared", "has_admission", hasAdmission, "has_demo", admissionData.Demographics != nil)
+
+	data.User = userName
+	data.Role = role
+	data.Optionz = Get_Client_Optionz()
+	data.Form = client
+	data.FormChild1 = encounterDetails
+	data.FormChild2 = st
+	data.FormChild3 = assessments
+	if hasAdmission {
+		data.FormChild4 = admissionData
+	} else {
+		data.FormChild4 = nil
+	}
+	data.HasMpoxAdmission = hasAdmission
+	data.MpoxAdmissionID = admissionID
+	
+	// Debug logging
+	if hasAdmission {
+		sl.Info("Admission data status", 
+			"has_demo", admissionData.Demographics != nil,
+			"has_exposure", admissionData.Exposure != nil,
+			"has_vitals", admissionData.Vitals != nil,
+			"admission_id", admissionID)
+	}
+	data.OutbreakID = outbreakID.(int)
+	data.IsIDPos = true
+	if (client.AdmWard.String == strconv.Itoa(3)) {
+		data.IsHomeBasedCare = true
+	}
+
+	DoZaLogging("INFO", "Load Patient Profile", err)
+	return GenerateHTML(c, db, data, "patient_profile")
 }
 
 func HandlerCasesSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
@@ -1675,7 +1933,47 @@ func HandlerAPIPostStatus(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 	s.ClientID = ParseNullInt2(formData["client_id"])
 	s.StatusDate = ParseNullString2(formData["status_date"])
 	s.Status = ParseNullString2(formData["status"])
-	s.StatusNotes = ParseNullString2(formData["status_notes"])
+	
+	// Build status notes - include transfer info if status is Transfer
+	statusNotes := ParseNullString2(formData["status_notes"])
+	if s.Status.String == "Transfer" {
+		transferSite := ""
+		transferStatus := ""
+		treatmentProgram := ""
+		
+		if val, ok := formData["transfer_site"].(string); ok && val != "" {
+			transferSite = val
+		}
+		if val, ok := formData["transfer_status"].(string); ok && val != "" {
+			transferStatus = val
+		}
+		if val, ok := formData["treatment_program"].(string); ok && val != "" {
+			treatmentProgram = val
+		}
+		
+		transferInfo := ""
+		if transferSite != "" || transferStatus != "" || treatmentProgram != "" {
+			transferInfo = " [Transfer Details: "
+			if transferSite != "" {
+				transferInfo += "Site: " + transferSite + "; "
+			}
+			if transferStatus != "" {
+				transferInfo += "Status: " + transferStatus + "; "
+			}
+			if treatmentProgram != "" {
+				transferInfo += "Treatment Program: " + treatmentProgram + "; "
+			}
+			transferInfo = strings.TrimSuffix(transferInfo, "; ") + "]"
+		}
+		
+		if statusNotes.String != "" {
+			s.StatusNotes = sql.NullString{String: statusNotes.String + transferInfo, Valid: true}
+		} else {
+			s.StatusNotes = sql.NullString{String: strings.TrimPrefix(transferInfo, " "), Valid: true}
+		}
+	} else {
+		s.StatusNotes = statusNotes
+	}
 
 	s.UpdatedBy.Valid = true
 	s.UpdatedBy.Int64 = int64(userID)

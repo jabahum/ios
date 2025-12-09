@@ -415,6 +415,257 @@ func HandlerPolioCIFSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 	return c.Redirect(fmt.Sprintf("/polio-cif/success?case_id=%s", caseID))
 }
 
+// HandlerPolioCIFView handles viewing a polio CIF
+func HandlerPolioCIFView(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	idParam := c.Params("id")
+	if idParam == "" {
+		return c.Status(400).SendString("Case ID required")
+	}
+
+	// Determine if this is a numeric ID (primary key) or case_id (string)
+	var main models.PolioCaseInvestigation
+	var caseID string
+	
+	// Try querying by numeric ID first
+	if idInt, err := strconv.Atoi(idParam); err == nil {
+		// It's a numeric ID - query by primary key
+		if err := db.QueryRow(`SELECT id, case_id, epid_number, country, region_province, district, year_onset, case_number, received_date, created_at FROM polio_case_investigation WHERE id = $1`, idInt).
+			Scan(&main.ID, &main.CaseID, &main.EpidNumber, &main.Country, &main.RegionProvince, &main.District, &main.YearOnset, &main.CaseNumber, &main.ReceivedDate, &main.CreatedAt); err != nil {
+			if err == sql.ErrNoRows {
+				return c.Status(404).SendString("CIF not found")
+			}
+			sl.Error("Failed to load case investigation", "error", err, "id", idParam)
+			return c.Status(500).SendString("Failed to load case")
+		}
+		caseID = main.CaseID
+	} else {
+		// It's a string - query by case_id
+		caseID = idParam
+		if err := db.QueryRow(`SELECT id, case_id, epid_number, country, region_province, district, year_onset, case_number, received_date, created_at FROM polio_case_investigation WHERE case_id = $1`, caseID).
+			Scan(&main.ID, &main.CaseID, &main.EpidNumber, &main.Country, &main.RegionProvince, &main.District, &main.YearOnset, &main.CaseNumber, &main.ReceivedDate, &main.CreatedAt); err != nil {
+			if err == sql.ErrNoRows {
+				return c.Status(404).SendString("CIF not found")
+			}
+			sl.Error("Failed to load case investigation", "error", err, "case_id", caseID)
+			return c.Status(500).SendString("Failed to load case")
+		}
+	}
+
+	var ident *models.PolioIdentification
+	var notif *models.PolioNotificationInvestigation
+	var hosp *models.PolioHospitalization
+	var clin *models.PolioClinicalHistory
+	var imm *models.PolioImmunizationHistory
+	var stool *models.PolioStoolSpecimenCollection
+	var stoolRes *models.PolioStoolSpecimenResults
+	var follow *models.PolioFollowUpExamination
+	var history *models.PolioPatientHistory
+	var investigator *models.PolioInvestigator
+
+	ident = &models.PolioIdentification{}
+	if err := db.QueryRow(`SELECT id, case_id, district, region_province, address, village, city, nearest_health_facility, longitude, latitude, patient_name, father_mother, phone_number, date_of_birth, age_years, age_months, sex FROM polio_identification WHERE case_id = $1`, caseID).
+		Scan(&ident.ID, &ident.CaseID, &ident.District, &ident.RegionProvince, &ident.Address, &ident.Village, &ident.City, &ident.NearestHealthFacility, &ident.Longitude, &ident.Latitude, &ident.PatientName, &ident.FatherMother, &ident.PhoneNumber, &ident.DateOfBirth, &ident.AgeYears, &ident.AgeMonths, &ident.Sex); err != nil {
+		ident = nil
+	}
+
+	notif = &models.PolioNotificationInvestigation{}
+	if err := db.QueryRow(`SELECT id, case_id, notified_by, date_of_notification, date_of_investigation FROM polio_notification_investigation WHERE case_id = $1`, caseID).
+		Scan(&notif.ID, &notif.CaseID, &notif.NotifiedBy, &notif.DateOfNotification, &notif.DateOfInvestigation); err != nil {
+		notif = nil
+	}
+
+	hosp = &models.PolioHospitalization{}
+	if err := db.QueryRow(`SELECT id, case_id, hospitalized, date_of_admission, hospital_record_number, hospital_name_address FROM polio_hospitalization WHERE case_id = $1`, caseID).
+		Scan(&hosp.ID, &hosp.CaseID, &hosp.Hospitalized, &hosp.DateOfAdmission, &hosp.HospitalRecordNumber, &hosp.HospitalNameAddress); err != nil {
+		hosp = nil
+	}
+
+	clin = &models.PolioClinicalHistory{}
+	if err := db.QueryRow(`SELECT id, case_id, fever_at_onset, date_onset_of_fever, progressive_paralysis, date_onset_of_paralysis, flaccid_acute_paralysis, sensation_loss, sudden_onset, "asymmetric", left_arm_paralysis, right_arm_paralysis, left_leg_paralysis, right_leg_paralysis, diminished_reflexes, diminished_muscle_tone, muscle_wasting, muscle_weakness, respiratory_muscles, face, stiff_neck, convulsions, headache, vomiting, diarrhoea, other_sites, recent_injection, total_injections, injection_type, paralyzed_limb_sensitive, injection_facility_name, provisional_diagnosis, true_afp_case FROM polio_clinical_history WHERE case_id = $1`, caseID).
+		Scan(&clin.ID, &clin.CaseID, &clin.FeverAtOnset, &clin.DateOnsetOfFever, &clin.ProgressiveParalysis, &clin.DateOnsetOfParalysis, &clin.FlaccidAcuteParalysis, &clin.SensationLoss, &clin.SuddenOnset, &clin.Asymmetric, &clin.LeftArmParalysis, &clin.RightArmParalysis, &clin.LeftLegParalysis, &clin.RightLegParalysis, &clin.DiminishedReflexes, &clin.DiminishedMuscleTone, &clin.MuscleWasting, &clin.MuscleWeakness, &clin.RespiratoryMuscles, &clin.Face, &clin.StiffNeck, &clin.Convulsions, &clin.Headache, &clin.Vomiting, &clin.Diarrhoea, &clin.OtherSites, &clin.RecentInjection, &clin.TotalInjections, &clin.InjectionType, &clin.ParalyzedLimbSensitive, &clin.InjectionFacilityName, &clin.ProvisionalDiagnosis, &clin.TrueAFPCase); err != nil {
+		clin = nil
+	}
+
+	imm = &models.PolioImmunizationHistory{}
+	if err := db.QueryRow(`SELECT id, case_id, total_polio_doses, exclude_dose_at_birth, opv_dose_at_birth, opv_dose1, opv_dose2, opv_dose3, opv_dose4, opv_dose_more_than4, last_opv_dose, total_opv_sia, last_opv_sia, total_opv_ri, total_ipv_sia, total_ipv_ri, last_ipv_sia, source_of_ri_vaccination, unknown_zero_dose_reasons FROM polio_immunization_history WHERE case_id = $1`, caseID).
+		Scan(&imm.ID, &imm.CaseID, &imm.TotalPolioDoses, &imm.ExcludeDoseAtBirth, &imm.OPVDoseAtBirth, &imm.OPVDose1, &imm.OPVDose2, &imm.OPVDose3, &imm.OPVDose4, &imm.OPVDoseMoreThan4, &imm.LastOPVDose, &imm.TotalOPVSIA, &imm.LastOPVSIA, &imm.TotalOPVRI, &imm.TotalIPVSIA, &imm.TotalIPVRI, &imm.LastIPVSIA, &imm.SourceOfRIVaccination, &imm.UnknownZeroDoseReasons); err != nil {
+		imm = nil
+	}
+
+	stool = &models.PolioStoolSpecimenCollection{}
+	if err := db.QueryRow(`SELECT id, case_id, date_first_specimen, date_second_specimen, date_specimen_sent_national, date_specimen_received_national, date_specimen_sent_lab FROM polio_stool_specimen_collection WHERE case_id = $1`, caseID).
+		Scan(&stool.ID, &stool.CaseID, &stool.DateFirstSpecimen, &stool.DateSecondSpecimen, &stool.DateSpecimenSentNational, &stool.DateSpecimenReceivedNational, &stool.DateSpecimenSentLab); err != nil {
+		stool = nil
+	}
+
+	stoolRes = &models.PolioStoolSpecimenResults{}
+	if err := db.QueryRow(`SELECT id, case_id, date_received_at_lab, specimen_status_at_reception, date_combined_cell_culture, date_results_sent_to_epi, date_results_received_at_epi, final_cell_culture_results, w1, w2, w3, discordant_sabin, sl1, sl2, sl3, r_npent, nev, date_sent_to_regional_lab, date_it_differentiation_sent, date_it_differentiation_received, date_isolate_sent_sequencing, date_seq_results_sent_program FROM polio_stool_specimen_results WHERE case_id = $1`, caseID).
+		Scan(&stoolRes.ID, &stoolRes.CaseID, &stoolRes.DateReceivedAtLab, &stoolRes.SpecimenStatusAtReception, &stoolRes.DateCombinedCellCulture, &stoolRes.DateResultsSentToEPI, &stoolRes.DateResultsReceivedAtEPI, &stoolRes.FinalCellCultureResults, &stoolRes.W1, &stoolRes.W2, &stoolRes.W3, &stoolRes.DiscordantSabin, &stoolRes.SL1, &stoolRes.SL2, &stoolRes.SL3, &stoolRes.RNPENT, &stoolRes.NEV, &stoolRes.DateSentToRegionalLab, &stoolRes.DateITDifferentiationSent, &stoolRes.DateITDifferentiationReceived, &stoolRes.DateIsolateSentSequencing, &stoolRes.DateSeqResultsSentProgram); err != nil {
+		stoolRes = nil
+	}
+
+	follow = &models.PolioFollowUpExamination{}
+	if err := db.QueryRow(`SELECT id, case_id, date_of_follow_up, residual_paralysis_la, residual_paralysis_ra, residual_paralysis_ll, residual_paralysis_rl, results_of_exam, immunocompromised_status, final_classification, cvdpv, avdpv, ivdpv, serotype FROM polio_follow_up_examination WHERE case_id = $1`, caseID).
+		Scan(&follow.ID, &follow.CaseID, &follow.DateOfFollowUp, &follow.ResidualParalysisLA, &follow.ResidualParalysisRA, &follow.ResidualParalysisLL, &follow.ResidualParalysisRL, &follow.ResultsOfExam, &follow.ImmunocompromisedStatus, &follow.FinalClassification, &follow.CVDPV, &follow.AVDPV, &follow.IVDPV, &follow.Serotype); err != nil {
+		follow = nil
+	}
+
+	history = &models.PolioPatientHistory{}
+	if err := db.QueryRow(`SELECT id, case_id, place1, duration1_months, duration1_days, place2, duration2_months, duration2_days, place3, duration3_months, duration3_days, place4, duration4_months, duration4_days FROM polio_patient_history WHERE case_id = $1`, caseID).
+		Scan(&history.ID, &history.CaseID, &history.Place1, &history.Duration1Months, &history.Duration1Days, &history.Place2, &history.Duration2Months, &history.Duration2Days, &history.Place3, &history.Duration3Months, &history.Duration3Days, &history.Place4, &history.Duration4Months, &history.Duration4Days); err != nil {
+		history = nil
+	}
+
+	investigator = &models.PolioInvestigator{}
+	if err := db.QueryRow(`SELECT id, case_id, investigator_name, investigator_title, unit, address, telephone FROM polio_investigator WHERE case_id = $1`, caseID).
+		Scan(&investigator.ID, &investigator.CaseID, &investigator.InvestigatorName, &investigator.InvestigatorTitle, &investigator.Unit, &investigator.Address, &investigator.Telephone); err != nil {
+		investigator = nil
+	}
+
+	data := NewTemplateData(c, store)
+	data.Form = fiber.Map{
+		"Case":            main,
+		"Identification":  ident,
+		"Notification":    notif,
+		"Hospitalization": hosp,
+		"ClinicalHistory": clin,
+		"Immunization":    imm,
+		"StoolCollection": stool,
+		"StoolResults":    stoolRes,
+		"FollowUp":        follow,
+		"PatientHistory":  history,
+		"Investigator":    investigator,
+		"IsView":          true,
+	}
+	return GenerateHTML(c, db, data, "polio_cif")
+}
+
+// HandlerPolioCIFEdit handles editing a polio CIF
+func HandlerPolioCIFEdit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	idParam := c.Params("id")
+	if idParam == "" {
+		return c.Status(400).SendString("Case ID required")
+	}
+
+	// Determine if this is a numeric ID (primary key) or case_id (string)
+	var main models.PolioCaseInvestigation
+	var caseID string
+	
+	// Try querying by numeric ID first
+	if idInt, err := strconv.Atoi(idParam); err == nil {
+		// It's a numeric ID - query by primary key
+		if err := db.QueryRow(`SELECT id, case_id, epid_number, country, region_province, district, year_onset, case_number, received_date, created_at FROM polio_case_investigation WHERE id = $1`, idInt).
+			Scan(&main.ID, &main.CaseID, &main.EpidNumber, &main.Country, &main.RegionProvince, &main.District, &main.YearOnset, &main.CaseNumber, &main.ReceivedDate, &main.CreatedAt); err != nil {
+			if err == sql.ErrNoRows {
+				return c.Status(404).SendString("CIF not found")
+			}
+			sl.Error("Failed to load case investigation", "error", err, "id", idParam)
+			return c.Status(500).SendString("Failed to load case")
+		}
+		caseID = main.CaseID
+	} else {
+		// It's a string - query by case_id
+		caseID = idParam
+		if err := db.QueryRow(`SELECT id, case_id, epid_number, country, region_province, district, year_onset, case_number, received_date, created_at FROM polio_case_investigation WHERE case_id = $1`, caseID).
+			Scan(&main.ID, &main.CaseID, &main.EpidNumber, &main.Country, &main.RegionProvince, &main.District, &main.YearOnset, &main.CaseNumber, &main.ReceivedDate, &main.CreatedAt); err != nil {
+			if err == sql.ErrNoRows {
+				return c.Status(404).SendString("CIF not found")
+			}
+			sl.Error("Failed to load case investigation", "error", err, "case_id", caseID)
+			return c.Status(500).SendString("Failed to load case")
+		}
+	}
+
+	var ident *models.PolioIdentification
+	var notif *models.PolioNotificationInvestigation
+	var hosp *models.PolioHospitalization
+	var clin *models.PolioClinicalHistory
+	var imm *models.PolioImmunizationHistory
+	var stool *models.PolioStoolSpecimenCollection
+	var stoolRes *models.PolioStoolSpecimenResults
+	var follow *models.PolioFollowUpExamination
+	var history *models.PolioPatientHistory
+	var investigator *models.PolioInvestigator
+
+	ident = &models.PolioIdentification{}
+	if err := db.QueryRow(`SELECT id, case_id, district, region_province, address, village, city, nearest_health_facility, longitude, latitude, patient_name, father_mother, phone_number, date_of_birth, age_years, age_months, sex FROM polio_identification WHERE case_id = $1`, caseID).
+		Scan(&ident.ID, &ident.CaseID, &ident.District, &ident.RegionProvince, &ident.Address, &ident.Village, &ident.City, &ident.NearestHealthFacility, &ident.Longitude, &ident.Latitude, &ident.PatientName, &ident.FatherMother, &ident.PhoneNumber, &ident.DateOfBirth, &ident.AgeYears, &ident.AgeMonths, &ident.Sex); err != nil {
+		ident = nil
+	}
+
+	notif = &models.PolioNotificationInvestigation{}
+	if err := db.QueryRow(`SELECT id, case_id, notified_by, date_of_notification, date_of_investigation FROM polio_notification_investigation WHERE case_id = $1`, caseID).
+		Scan(&notif.ID, &notif.CaseID, &notif.NotifiedBy, &notif.DateOfNotification, &notif.DateOfInvestigation); err != nil {
+		notif = nil
+	}
+
+	hosp = &models.PolioHospitalization{}
+	if err := db.QueryRow(`SELECT id, case_id, hospitalized, date_of_admission, hospital_record_number, hospital_name_address FROM polio_hospitalization WHERE case_id = $1`, caseID).
+		Scan(&hosp.ID, &hosp.CaseID, &hosp.Hospitalized, &hosp.DateOfAdmission, &hosp.HospitalRecordNumber, &hosp.HospitalNameAddress); err != nil {
+		hosp = nil
+	}
+
+	clin = &models.PolioClinicalHistory{}
+	if err := db.QueryRow(`SELECT id, case_id, fever_at_onset, date_onset_of_fever, progressive_paralysis, date_onset_of_paralysis, flaccid_acute_paralysis, sensation_loss, sudden_onset, "asymmetric", left_arm_paralysis, right_arm_paralysis, left_leg_paralysis, right_leg_paralysis, diminished_reflexes, diminished_muscle_tone, muscle_wasting, muscle_weakness, respiratory_muscles, face, stiff_neck, convulsions, headache, vomiting, diarrhoea, other_sites, recent_injection, total_injections, injection_type, paralyzed_limb_sensitive, injection_facility_name, provisional_diagnosis, true_afp_case FROM polio_clinical_history WHERE case_id = $1`, caseID).
+		Scan(&clin.ID, &clin.CaseID, &clin.FeverAtOnset, &clin.DateOnsetOfFever, &clin.ProgressiveParalysis, &clin.DateOnsetOfParalysis, &clin.FlaccidAcuteParalysis, &clin.SensationLoss, &clin.SuddenOnset, &clin.Asymmetric, &clin.LeftArmParalysis, &clin.RightArmParalysis, &clin.LeftLegParalysis, &clin.RightLegParalysis, &clin.DiminishedReflexes, &clin.DiminishedMuscleTone, &clin.MuscleWasting, &clin.MuscleWeakness, &clin.RespiratoryMuscles, &clin.Face, &clin.StiffNeck, &clin.Convulsions, &clin.Headache, &clin.Vomiting, &clin.Diarrhoea, &clin.OtherSites, &clin.RecentInjection, &clin.TotalInjections, &clin.InjectionType, &clin.ParalyzedLimbSensitive, &clin.InjectionFacilityName, &clin.ProvisionalDiagnosis, &clin.TrueAFPCase); err != nil {
+		clin = nil
+	}
+
+	imm = &models.PolioImmunizationHistory{}
+	if err := db.QueryRow(`SELECT id, case_id, total_polio_doses, exclude_dose_at_birth, opv_dose_at_birth, opv_dose1, opv_dose2, opv_dose3, opv_dose4, opv_dose_more_than4, last_opv_dose, total_opv_sia, last_opv_sia, total_opv_ri, total_ipv_sia, total_ipv_ri, last_ipv_sia, source_of_ri_vaccination, unknown_zero_dose_reasons FROM polio_immunization_history WHERE case_id = $1`, caseID).
+		Scan(&imm.ID, &imm.CaseID, &imm.TotalPolioDoses, &imm.ExcludeDoseAtBirth, &imm.OPVDoseAtBirth, &imm.OPVDose1, &imm.OPVDose2, &imm.OPVDose3, &imm.OPVDose4, &imm.OPVDoseMoreThan4, &imm.LastOPVDose, &imm.TotalOPVSIA, &imm.LastOPVSIA, &imm.TotalOPVRI, &imm.TotalIPVSIA, &imm.TotalIPVRI, &imm.LastIPVSIA, &imm.SourceOfRIVaccination, &imm.UnknownZeroDoseReasons); err != nil {
+		imm = nil
+	}
+
+	stool = &models.PolioStoolSpecimenCollection{}
+	if err := db.QueryRow(`SELECT id, case_id, date_first_specimen, date_second_specimen, date_specimen_sent_national, date_specimen_received_national, date_specimen_sent_lab FROM polio_stool_specimen_collection WHERE case_id = $1`, caseID).
+		Scan(&stool.ID, &stool.CaseID, &stool.DateFirstSpecimen, &stool.DateSecondSpecimen, &stool.DateSpecimenSentNational, &stool.DateSpecimenReceivedNational, &stool.DateSpecimenSentLab); err != nil {
+		stool = nil
+	}
+
+	stoolRes = &models.PolioStoolSpecimenResults{}
+	if err := db.QueryRow(`SELECT id, case_id, date_received_at_lab, specimen_status_at_reception, date_combined_cell_culture, date_results_sent_to_epi, date_results_received_at_epi, final_cell_culture_results, w1, w2, w3, discordant_sabin, sl1, sl2, sl3, r_npent, nev, date_sent_to_regional_lab, date_it_differentiation_sent, date_it_differentiation_received, date_isolate_sent_sequencing, date_seq_results_sent_program FROM polio_stool_specimen_results WHERE case_id = $1`, caseID).
+		Scan(&stoolRes.ID, &stoolRes.CaseID, &stoolRes.DateReceivedAtLab, &stoolRes.SpecimenStatusAtReception, &stoolRes.DateCombinedCellCulture, &stoolRes.DateResultsSentToEPI, &stoolRes.DateResultsReceivedAtEPI, &stoolRes.FinalCellCultureResults, &stoolRes.W1, &stoolRes.W2, &stoolRes.W3, &stoolRes.DiscordantSabin, &stoolRes.SL1, &stoolRes.SL2, &stoolRes.SL3, &stoolRes.RNPENT, &stoolRes.NEV, &stoolRes.DateSentToRegionalLab, &stoolRes.DateITDifferentiationSent, &stoolRes.DateITDifferentiationReceived, &stoolRes.DateIsolateSentSequencing, &stoolRes.DateSeqResultsSentProgram); err != nil {
+		stoolRes = nil
+	}
+
+	follow = &models.PolioFollowUpExamination{}
+	if err := db.QueryRow(`SELECT id, case_id, date_of_follow_up, residual_paralysis_la, residual_paralysis_ra, residual_paralysis_ll, residual_paralysis_rl, results_of_exam, immunocompromised_status, final_classification, cvdpv, avdpv, ivdpv, serotype FROM polio_follow_up_examination WHERE case_id = $1`, caseID).
+		Scan(&follow.ID, &follow.CaseID, &follow.DateOfFollowUp, &follow.ResidualParalysisLA, &follow.ResidualParalysisRA, &follow.ResidualParalysisLL, &follow.ResidualParalysisRL, &follow.ResultsOfExam, &follow.ImmunocompromisedStatus, &follow.FinalClassification, &follow.CVDPV, &follow.AVDPV, &follow.IVDPV, &follow.Serotype); err != nil {
+		follow = nil
+	}
+
+	history = &models.PolioPatientHistory{}
+	if err := db.QueryRow(`SELECT id, case_id, place1, duration1_months, duration1_days, place2, duration2_months, duration2_days, place3, duration3_months, duration3_days, place4, duration4_months, duration4_days FROM polio_patient_history WHERE case_id = $1`, caseID).
+		Scan(&history.ID, &history.CaseID, &history.Place1, &history.Duration1Months, &history.Duration1Days, &history.Place2, &history.Duration2Months, &history.Duration2Days, &history.Place3, &history.Duration3Months, &history.Duration3Days, &history.Place4, &history.Duration4Months, &history.Duration4Days); err != nil {
+		history = nil
+	}
+
+	investigator = &models.PolioInvestigator{}
+	if err := db.QueryRow(`SELECT id, case_id, investigator_name, investigator_title, unit, address, telephone FROM polio_investigator WHERE case_id = $1`, caseID).
+		Scan(&investigator.ID, &investigator.CaseID, &investigator.InvestigatorName, &investigator.InvestigatorTitle, &investigator.Unit, &investigator.Address, &investigator.Telephone); err != nil {
+		investigator = nil
+	}
+
+	data := NewTemplateData(c, store)
+	data.Form = fiber.Map{
+		"Case":            main,
+		"Identification":  ident,
+		"Notification":    notif,
+		"Hospitalization": hosp,
+		"ClinicalHistory": clin,
+		"Immunization":    imm,
+		"StoolCollection": stool,
+		"StoolResults":    stoolRes,
+		"FollowUp":        follow,
+		"PatientHistory":  history,
+		"Investigator":    investigator,
+		"IsEdit":          true,
+		"Title":           "Polio Case Investigation Form",
+	}
+	return GenerateHTML(c, db, data, "polio_cif")
+}
+
 // HandlerPolioCIFSuccess handles the success page after Polio CIF submission
 func HandlerPolioCIFSuccess(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
 	caseID := c.Query("case_id")
