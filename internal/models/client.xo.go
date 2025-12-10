@@ -103,12 +103,25 @@ func (c *Client) Update(ctx context.Context, db DB) error {
 		return logerror(&ErrUpdateFailed{ErrMarkedForDeletion})
 	}
 	// update with composite primary key
+	// First, try to update with hbc_phone and hbc_followup columns
 	const sqlstr = `UPDATE public.clients SET ` +
 		`uuid = $1, firstname = $2, lastname = $3, othername = $4, gender = $5, date_of_birth = $6, age = $7, marital = $8, nin = $9, nationality = $10, adm_date = $11, adm_from = $12, lab_no = $13, cif_no = $14, etu_no = $15, case_no = $16, occupation = $17, occupation_aza = $18, date_symptom_onset = $19, date_isolation = $20, pregnant = $21, adm_ward = $22, tb = $23, asplenia = $24, hep = $25, diabetes = $26, hiv = $27, liver = $28, malignancy = $29, heart = $30, pulmonary = $31, kidney = $32, neurologic = $33, other = $34, status = $35, enter_on = $36, enter_by = $37, edit_on = $38, edit_by = $39, transfer = $40, site = $41, outbreak_id = $42, hbc_phone = $43, hbc_followup = $44 ` +
 		`WHERE id = $45`
 	// run
 	logf(sqlstr, c.UUID, c.Firstname, c.Lastname, c.Othername, c.Gender, c.DateOfBirth, c.Age, c.Marital, c.Nin, c.Nationality, c.AdmDate, c.AdmFrom, c.LabNo, c.CifNo, c.EtuNo, c.CaseNo, c.Occupation, c.OccupationAza, c.DateSymptomOnset, c.DateIsolation, c.Pregnant, c.AdmWard, c.Tb, c.Asplenia, c.Hep, c.Diabetes, c.Hiv, c.Liver, c.Malignancy, c.Heart, c.Pulmonary, c.Kidney, c.Neurologic, c.Other, c.Status, c.EnterOn, c.EnterBy, c.EditOn, c.EditBy, c.Transfer, c.Site, c.OutbreakID, c.ID)
 	if _, err := db.ExecContext(ctx, sqlstr, c.UUID, c.Firstname, c.Lastname, c.Othername, c.Gender, c.DateOfBirth, c.Age, c.Marital, c.Nin, c.Nationality, c.AdmDate, c.AdmFrom, c.LabNo, c.CifNo, c.EtuNo, c.CaseNo, c.Occupation, c.OccupationAza, c.DateSymptomOnset, c.DateIsolation, c.Pregnant, c.AdmWard, c.Tb, c.Asplenia, c.Hep, c.Diabetes, c.Hiv, c.Liver, c.Malignancy, c.Heart, c.Pulmonary, c.Kidney, c.Neurologic, c.Other, c.Status, c.EnterOn, c.EnterBy, c.EditOn, c.EditBy, c.Transfer, c.Site, c.OutbreakID, c.HbcPhone, c.HbcFollowup, c.ID); err != nil {
+		// If error is due to missing hbc_phone or hbc_followup columns, retry without them
+		if strings.Contains(err.Error(), "hbc_phone") || strings.Contains(err.Error(), "hbc_followup") || 
+		   (strings.Contains(err.Error(), "column") && (strings.Contains(err.Error(), "does not exist") || strings.Contains(err.Error(), "unknown column"))) {
+			const sqlstr2 = `UPDATE public.clients SET ` +
+				`uuid = $1, firstname = $2, lastname = $3, othername = $4, gender = $5, date_of_birth = $6, age = $7, marital = $8, nin = $9, nationality = $10, adm_date = $11, adm_from = $12, lab_no = $13, cif_no = $14, etu_no = $15, case_no = $16, occupation = $17, occupation_aza = $18, date_symptom_onset = $19, date_isolation = $20, pregnant = $21, adm_ward = $22, tb = $23, asplenia = $24, hep = $25, diabetes = $26, hiv = $27, liver = $28, malignancy = $29, heart = $30, pulmonary = $31, kidney = $32, neurologic = $33, other = $34, status = $35, enter_on = $36, enter_by = $37, edit_on = $38, edit_by = $39, transfer = $40, site = $41, outbreak_id = $42 ` +
+				`WHERE id = $43`
+			logf(sqlstr2, c.UUID, c.Firstname, c.Lastname, c.Othername, c.Gender, c.DateOfBirth, c.Age, c.Marital, c.Nin, c.Nationality, c.AdmDate, c.AdmFrom, c.LabNo, c.CifNo, c.EtuNo, c.CaseNo, c.Occupation, c.OccupationAza, c.DateSymptomOnset, c.DateIsolation, c.Pregnant, c.AdmWard, c.Tb, c.Asplenia, c.Hep, c.Diabetes, c.Hiv, c.Liver, c.Malignancy, c.Heart, c.Pulmonary, c.Kidney, c.Neurologic, c.Other, c.Status, c.EnterOn, c.EnterBy, c.EditOn, c.EditBy, c.Transfer, c.Site, c.OutbreakID, c.ID)
+			if _, err2 := db.ExecContext(ctx, sqlstr2, c.UUID, c.Firstname, c.Lastname, c.Othername, c.Gender, c.DateOfBirth, c.Age, c.Marital, c.Nin, c.Nationality, c.AdmDate, c.AdmFrom, c.LabNo, c.CifNo, c.EtuNo, c.CaseNo, c.Occupation, c.OccupationAza, c.DateSymptomOnset, c.DateIsolation, c.Pregnant, c.AdmWard, c.Tb, c.Asplenia, c.Hep, c.Diabetes, c.Hiv, c.Liver, c.Malignancy, c.Heart, c.Pulmonary, c.Kidney, c.Neurologic, c.Other, c.Status, c.EnterOn, c.EnterBy, c.EditOn, c.EditBy, c.Transfer, c.Site, c.OutbreakID, c.ID); err2 != nil {
+				return logerror(err2)
+			}
+			return nil
+		}
 		return logerror(err)
 	}
 	return nil

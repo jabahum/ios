@@ -627,14 +627,18 @@ func HandlerCasesSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 	if client.ID == 0 {
 		err := client.Insert(c.Context(), db)
 		if err != nil {
-			fmt.Println(err.Error())
+			sl.Error("Failed to insert client", "error", err)
+			return c.Status(500).SendString("Failed to save patient: " + err.Error())
 		}
+		sl.Info("Client inserted successfully", "client_id", client.ID)
 	} else {
 		client.SetAsExists()
 		err := client.Update(c.Context(), db)
 		if err != nil {
-			fmt.Println(err.Error())
+			sl.Error("Failed to update client", "error", err, "client_id", client.ID)
+			return c.Status(500).SendString("Failed to update patient: " + err.Error())
 		}
+		sl.Info("Client updated successfully", "client_id", client.ID)
 	}
 
 	urlx := "/cases/new/" + strconv.Itoa(client.ID)
