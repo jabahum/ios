@@ -352,7 +352,7 @@ func createGetDigitsResponse(step int, patientName string, language string, isRe
 			Timeout: 8,
 			// FinishOnKey: "#",
 			NumDigits:   numDigits,
-			CallbackUrl: "https://pxvs54rm-3001.uks1.devtunnels.ms/voice/callback", // Replace with your domain
+			CallbackUrl: "https://response.health.go.ug/voice/callback", // "https://pxvs54rm-3001.uks1.devtunnels.ms/voice/callback", // Replace with your domain
 			// Say: Say{
 			// 	Voice:    "woman",
 			// 	PlayBeep: "true",
