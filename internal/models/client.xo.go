@@ -55,6 +55,7 @@ type Client struct {
 	OutbreakID       sql.NullInt64   `json:"outbreak_id"`        // outbreak_id
 	HbcPhone         sql.NullString  `json:"hbc_phone"`          // hbc_phone
 	HbcFollowup      sql.NullString  `json:"hbc_followup"`       // hbc_followup
+	HbcLanguage      sql.NullInt64   `json:"hbc_language"`       // hbc_language
 	// xo fields
 	_exists, _deleted bool
 }
@@ -80,13 +81,13 @@ func (c *Client) Insert(ctx context.Context, db DB) error {
 	}
 	// insert (primary key generated and returned by database)
 	const sqlstr = `INSERT INTO public.clients (` +
-		`uuid, firstname, lastname, othername, gender, date_of_birth, age, marital, nin, nationality, adm_date, adm_from, lab_no, cif_no, etu_no, case_no, occupation, occupation_aza, date_symptom_onset, date_isolation, pregnant, adm_ward, tb, asplenia, hep, diabetes, hiv, liver, malignancy, heart, pulmonary, kidney, neurologic, other, status, enter_on, enter_by, edit_on, edit_by, transfer, site, outbreak_id, hbc_phone, hbc_followup` +
+		`uuid, firstname, lastname, othername, gender, date_of_birth, age, marital, nin, nationality, adm_date, adm_from, lab_no, cif_no, etu_no, case_no, occupation, occupation_aza, date_symptom_onset, date_isolation, pregnant, adm_ward, tb, asplenia, hep, diabetes, hiv, liver, malignancy, heart, pulmonary, kidney, neurologic, other, status, enter_on, enter_by, edit_on, edit_by, transfer, site, outbreak_id, hbc_phone, hbc_followup, hbc_language` +
 		`) VALUES (` +
-		`$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44` +
+		`$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45` +
 		`) RETURNING id`
 	// run
 	logf(sqlstr, c.UUID, c.Firstname, c.Lastname, c.Othername, c.Gender, c.DateOfBirth, c.Age, c.Marital, c.Nin, c.Nationality, c.AdmDate, c.AdmFrom, c.LabNo, c.CifNo, c.EtuNo, c.CaseNo, c.Occupation, c.OccupationAza, c.DateSymptomOnset, c.DateIsolation, c.Pregnant, c.AdmWard, c.Tb, c.Asplenia, c.Hep, c.Diabetes, c.Hiv, c.Liver, c.Malignancy, c.Heart, c.Pulmonary, c.Kidney, c.Neurologic, c.Other, c.Status, c.EnterOn, c.EnterBy, c.EditOn, c.EditBy, c.Transfer, c.Site, c.OutbreakID)
-	if err := db.QueryRowContext(ctx, sqlstr, c.UUID, c.Firstname, c.Lastname, c.Othername, c.Gender, c.DateOfBirth, c.Age, c.Marital, c.Nin, c.Nationality, c.AdmDate, c.AdmFrom, c.LabNo, c.CifNo, c.EtuNo, c.CaseNo, c.Occupation, c.OccupationAza, c.DateSymptomOnset, c.DateIsolation, c.Pregnant, c.AdmWard, c.Tb, c.Asplenia, c.Hep, c.Diabetes, c.Hiv, c.Liver, c.Malignancy, c.Heart, c.Pulmonary, c.Kidney, c.Neurologic, c.Other, c.Status, c.EnterOn, c.EnterBy, c.EditOn, c.EditBy, c.Transfer, c.Site, c.OutbreakID, c.HbcPhone, c.HbcFollowup).Scan(&c.ID); err != nil {
+	if err := db.QueryRowContext(ctx, sqlstr, c.UUID, c.Firstname, c.Lastname, c.Othername, c.Gender, c.DateOfBirth, c.Age, c.Marital, c.Nin, c.Nationality, c.AdmDate, c.AdmFrom, c.LabNo, c.CifNo, c.EtuNo, c.CaseNo, c.Occupation, c.OccupationAza, c.DateSymptomOnset, c.DateIsolation, c.Pregnant, c.AdmWard, c.Tb, c.Asplenia, c.Hep, c.Diabetes, c.Hiv, c.Liver, c.Malignancy, c.Heart, c.Pulmonary, c.Kidney, c.Neurologic, c.Other, c.Status, c.EnterOn, c.EnterBy, c.EditOn, c.EditBy, c.Transfer, c.Site, c.OutbreakID, c.HbcPhone, c.HbcFollowup, c.HbcLanguage).Scan(&c.ID); err != nil {
 		return logerror(err)
 	}
 	// set exists
@@ -105,11 +106,11 @@ func (c *Client) Update(ctx context.Context, db DB) error {
 	// update with composite primary key
 	// First, try to update with hbc_phone and hbc_followup columns
 	const sqlstr = `UPDATE public.clients SET ` +
-		`uuid = $1, firstname = $2, lastname = $3, othername = $4, gender = $5, date_of_birth = $6, age = $7, marital = $8, nin = $9, nationality = $10, adm_date = $11, adm_from = $12, lab_no = $13, cif_no = $14, etu_no = $15, case_no = $16, occupation = $17, occupation_aza = $18, date_symptom_onset = $19, date_isolation = $20, pregnant = $21, adm_ward = $22, tb = $23, asplenia = $24, hep = $25, diabetes = $26, hiv = $27, liver = $28, malignancy = $29, heart = $30, pulmonary = $31, kidney = $32, neurologic = $33, other = $34, status = $35, enter_on = $36, enter_by = $37, edit_on = $38, edit_by = $39, transfer = $40, site = $41, outbreak_id = $42, hbc_phone = $43, hbc_followup = $44 ` +
-		`WHERE id = $45`
+		`uuid = $1, firstname = $2, lastname = $3, othername = $4, gender = $5, date_of_birth = $6, age = $7, marital = $8, nin = $9, nationality = $10, adm_date = $11, adm_from = $12, lab_no = $13, cif_no = $14, etu_no = $15, case_no = $16, occupation = $17, occupation_aza = $18, date_symptom_onset = $19, date_isolation = $20, pregnant = $21, adm_ward = $22, tb = $23, asplenia = $24, hep = $25, diabetes = $26, hiv = $27, liver = $28, malignancy = $29, heart = $30, pulmonary = $31, kidney = $32, neurologic = $33, other = $34, status = $35, enter_on = $36, enter_by = $37, edit_on = $38, edit_by = $39, transfer = $40, site = $41, outbreak_id = $42, hbc_phone = $43, hbc_followup = $44, hbc_language = $45 ` +
+		`WHERE id = $46`
 	// run
 	logf(sqlstr, c.UUID, c.Firstname, c.Lastname, c.Othername, c.Gender, c.DateOfBirth, c.Age, c.Marital, c.Nin, c.Nationality, c.AdmDate, c.AdmFrom, c.LabNo, c.CifNo, c.EtuNo, c.CaseNo, c.Occupation, c.OccupationAza, c.DateSymptomOnset, c.DateIsolation, c.Pregnant, c.AdmWard, c.Tb, c.Asplenia, c.Hep, c.Diabetes, c.Hiv, c.Liver, c.Malignancy, c.Heart, c.Pulmonary, c.Kidney, c.Neurologic, c.Other, c.Status, c.EnterOn, c.EnterBy, c.EditOn, c.EditBy, c.Transfer, c.Site, c.OutbreakID, c.ID)
-	if _, err := db.ExecContext(ctx, sqlstr, c.UUID, c.Firstname, c.Lastname, c.Othername, c.Gender, c.DateOfBirth, c.Age, c.Marital, c.Nin, c.Nationality, c.AdmDate, c.AdmFrom, c.LabNo, c.CifNo, c.EtuNo, c.CaseNo, c.Occupation, c.OccupationAza, c.DateSymptomOnset, c.DateIsolation, c.Pregnant, c.AdmWard, c.Tb, c.Asplenia, c.Hep, c.Diabetes, c.Hiv, c.Liver, c.Malignancy, c.Heart, c.Pulmonary, c.Kidney, c.Neurologic, c.Other, c.Status, c.EnterOn, c.EnterBy, c.EditOn, c.EditBy, c.Transfer, c.Site, c.OutbreakID, c.HbcPhone, c.HbcFollowup, c.ID); err != nil {
+	if _, err := db.ExecContext(ctx, sqlstr, c.UUID, c.Firstname, c.Lastname, c.Othername, c.Gender, c.DateOfBirth, c.Age, c.Marital, c.Nin, c.Nationality, c.AdmDate, c.AdmFrom, c.LabNo, c.CifNo, c.EtuNo, c.CaseNo, c.Occupation, c.OccupationAza, c.DateSymptomOnset, c.DateIsolation, c.Pregnant, c.AdmWard, c.Tb, c.Asplenia, c.Hep, c.Diabetes, c.Hiv, c.Liver, c.Malignancy, c.Heart, c.Pulmonary, c.Kidney, c.Neurologic, c.Other, c.Status, c.EnterOn, c.EnterBy, c.EditOn, c.EditBy, c.Transfer, c.Site, c.OutbreakID, c.HbcPhone, c.HbcFollowup, c.HbcLanguage, c.ID); err != nil {
 		// If error is due to missing hbc_phone or hbc_followup columns, retry without them
 		if strings.Contains(err.Error(), "hbc_phone") || strings.Contains(err.Error(), "hbc_followup") || 
 		   (strings.Contains(err.Error(), "column") && (strings.Contains(err.Error(), "does not exist") || strings.Contains(err.Error(), "unknown column"))) {
@@ -188,7 +189,7 @@ func ClientByID(ctx context.Context, db DB, id int) (*Client, error) {
 	// query
 	// First, try to query with hbc_phone and hbc_followup columns
 	const sqlstr = `SELECT ` +
-		`id, uuid, firstname, lastname, othername, gender, date_of_birth, age, marital, nin, nationality, adm_date, adm_from, lab_no, cif_no, etu_no, case_no, occupation, occupation_aza, date_symptom_onset, date_isolation, pregnant, adm_ward, tb, asplenia, hep, diabetes, hiv, liver, malignancy, heart, pulmonary, kidney, neurologic, other, status, enter_on, enter_by, edit_on, edit_by, transfer, site, outbreak_id, hbc_phone, hbc_followup ` +
+		`id, uuid, firstname, lastname, othername, gender, date_of_birth, age, marital, nin, nationality, adm_date, adm_from, lab_no, cif_no, etu_no, case_no, occupation, occupation_aza, date_symptom_onset, date_isolation, pregnant, adm_ward, tb, asplenia, hep, diabetes, hiv, liver, malignancy, heart, pulmonary, kidney, neurologic, other, status, enter_on, enter_by, edit_on, edit_by, transfer, site, outbreak_id, hbc_phone, hbc_followup, hbc_language ` +
 		`FROM public.clients ` +
 		`WHERE id = $1`
 	// run
@@ -196,7 +197,7 @@ func ClientByID(ctx context.Context, db DB, id int) (*Client, error) {
 	c := Client{
 		_exists: true,
 	}
-	err := db.QueryRowContext(ctx, sqlstr, id).Scan(&c.ID, &c.UUID, &c.Firstname, &c.Lastname, &c.Othername, &c.Gender, &c.DateOfBirth, &c.Age, &c.Marital, &c.Nin, &c.Nationality, &c.AdmDate, &c.AdmFrom, &c.LabNo, &c.CifNo, &c.EtuNo, &c.CaseNo, &c.Occupation, &c.OccupationAza, &c.DateSymptomOnset, &c.DateIsolation, &c.Pregnant, &c.AdmWard, &c.Tb, &c.Asplenia, &c.Hep, &c.Diabetes, &c.Hiv, &c.Liver, &c.Malignancy, &c.Heart, &c.Pulmonary, &c.Kidney, &c.Neurologic, &c.Other, &c.Status, &c.EnterOn, &c.EnterBy, &c.EditOn, &c.EditBy, &c.Transfer, &c.Site, &c.OutbreakID, &c.HbcPhone, &c.HbcFollowup)
+	err := db.QueryRowContext(ctx, sqlstr, id).Scan(&c.ID, &c.UUID, &c.Firstname, &c.Lastname, &c.Othername, &c.Gender, &c.DateOfBirth, &c.Age, &c.Marital, &c.Nin, &c.Nationality, &c.AdmDate, &c.AdmFrom, &c.LabNo, &c.CifNo, &c.EtuNo, &c.CaseNo, &c.Occupation, &c.OccupationAza, &c.DateSymptomOnset, &c.DateIsolation, &c.Pregnant, &c.AdmWard, &c.Tb, &c.Asplenia, &c.Hep, &c.Diabetes, &c.Hiv, &c.Liver, &c.Malignancy, &c.Heart, &c.Pulmonary, &c.Kidney, &c.Neurologic, &c.Other, &c.Status, &c.EnterOn, &c.EnterBy, &c.EditOn, &c.EditBy, &c.Transfer, &c.Site, &c.OutbreakID, &c.HbcPhone, &c.HbcFollowup, &c.HbcLanguage)
 	if err != nil {
 		// If error is due to missing hbc_phone or hbc_followup columns, retry without them
 		if strings.Contains(err.Error(), "hbc_phone") || strings.Contains(err.Error(), "hbc_followup") || 
@@ -212,6 +213,7 @@ func ClientByID(ctx context.Context, db DB, id int) (*Client, error) {
 			// Set hbc fields to invalid since columns don't exist
 			c.HbcPhone = sql.NullString{Valid: false}
 			c.HbcFollowup = sql.NullString{Valid: false}
+			c.HbcLanguage = sql.NullInt64{Valid: false}
 		} else {
 			return nil, logerror(err)
 		}
@@ -221,7 +223,7 @@ func ClientByID(ctx context.Context, db DB, id int) (*Client, error) {
 //get client hbc phone
 func ClientByHBCPhone(ctx context.Context, db DB, hbc_phone string) (*Client, error) {
 	const sqlstr = `SELECT ` +
-		`id, uuid, firstname, lastname, othername, gender, date_of_birth, age, marital, nin, nationality, adm_date, adm_from, lab_no, cif_no, etu_no, case_no, occupation, occupation_aza, date_symptom_onset, date_isolation, pregnant, adm_ward, tb, asplenia, hep, diabetes, hiv, liver, malignancy, heart, pulmonary, kidney, neurologic, other, status, enter_on, enter_by, edit_on, edit_by, transfer, site, outbreak_id, hbc_phone, hbc_followup ` +
+		`id, uuid, firstname, lastname, othername, gender, date_of_birth, age, marital, nin, nationality, adm_date, adm_from, lab_no, cif_no, etu_no, case_no, occupation, occupation_aza, date_symptom_onset, date_isolation, pregnant, adm_ward, tb, asplenia, hep, diabetes, hiv, liver, malignancy, heart, pulmonary, kidney, neurologic, other, status, enter_on, enter_by, edit_on, edit_by, transfer, site, outbreak_id, hbc_phone, hbc_followup, hbc_language ` +
 		`FROM public.clients ` +
 		`WHERE hbc_phone = $1`
 	//RUN
@@ -229,7 +231,7 @@ func ClientByHBCPhone(ctx context.Context, db DB, hbc_phone string) (*Client, er
 	c := Client{
 		_exists: true,
 	}
-	if err := db.QueryRowContext(ctx, sqlstr, hbc_phone).Scan(&c.ID, &c.UUID, &c.Firstname, &c.Lastname, &c.Othername, &c.Gender, &c.DateOfBirth, &c.Age, &c.Marital, &c.Nin, &c.Nationality, &c.AdmDate, &c.AdmFrom, &c.LabNo, &c.CifNo, &c.EtuNo, &c.CaseNo, &c.Occupation, &c.OccupationAza, &c.DateSymptomOnset, &c.DateIsolation, &c.Pregnant, &c.AdmWard, &c.Tb, &c.Asplenia, &c.Hep, &c.Diabetes, &c.Hiv, &c.Liver, &c.Malignancy, &c.Heart, &c.Pulmonary, &c.Kidney, &c.Neurologic, &c.Other, &c.Status, &c.EnterOn, &c.EnterBy, &c.EditOn, &c.EditBy, &c.Transfer, &c.Site, &c.OutbreakID, &c.HbcPhone, &c.HbcFollowup); err != nil {
+	if err := db.QueryRowContext(ctx, sqlstr, hbc_phone).Scan(&c.ID, &c.UUID, &c.Firstname, &c.Lastname, &c.Othername, &c.Gender, &c.DateOfBirth, &c.Age, &c.Marital, &c.Nin, &c.Nationality, &c.AdmDate, &c.AdmFrom, &c.LabNo, &c.CifNo, &c.EtuNo, &c.CaseNo, &c.Occupation, &c.OccupationAza, &c.DateSymptomOnset, &c.DateIsolation, &c.Pregnant, &c.AdmWard, &c.Tb, &c.Asplenia, &c.Hep, &c.Diabetes, &c.Hiv, &c.Liver, &c.Malignancy, &c.Heart, &c.Pulmonary, &c.Kidney, &c.Neurologic, &c.Other, &c.Status, &c.EnterOn, &c.EnterBy, &c.EditOn, &c.EditBy, &c.Transfer, &c.Site, &c.OutbreakID, &c.HbcPhone, &c.HbcFollowup, &c.HbcLanguage); err != nil {
 		return nil, logerror(err)
 	}
 	return &c, nil

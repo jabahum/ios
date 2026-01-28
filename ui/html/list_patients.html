@@ -114,6 +114,9 @@
         <h1>Patient Listing</h1>
         <div class="d-flex justify-content-between align-itejjms-center my-3">
             <button class="btn btn-sm btn-primary" onclick="location.href='/cases/new/0'">Add New Patient</button>
+            {{ if eq .OutbreakID 6 }}
+            <a onclick="startCall()" class="col-sm-5 btn btn-success" style="float: right; padding-top: 10px;">Call survey participants</a>
+            {{ end }}
             <button class="btn btn-sm btn-success" onclick="location.href='/outbreaks'">Change Outbreak</button>
         </div>
         <div class="table-container">
@@ -292,7 +295,25 @@
       row.classList.add('custom-selected');
     }
 
+    
+    function startCall() {
+        // const phone = prompt("Enter phone number:");
+        // if (!phone) return;
 
+        fetch(`/call?phone={{ .FormChild1 }}`)
+        // fetch(`/call?phone=256774521459, 256784259384`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "call initiated") {
+                    alert("Call in progress...");
+                } else {
+                    alert("Call failed: " + data.error);
+                }
+            })
+            .catch((error) => {
+                alert("Error: " + error);
+            });
+    }
     
 
     </script>

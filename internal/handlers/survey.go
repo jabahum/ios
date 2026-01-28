@@ -9,10 +9,11 @@ import (
 	"case/internal/models"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/session"
 )
 
 // HandlerGetSurveys returns all surveys
-func HandlerGetSurveys(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
+func HandlerGetSurveys(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store) error {
 	fmt.Println("here!!!!!")
 	surveys, err := models.GetSurveys(db)
 	if err != nil {
@@ -21,7 +22,12 @@ func HandlerGetSurveys(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 		})
 	}
 
-	return c.JSON(surveys)
+	data := NewTemplateData(c, store)
+	data.Form = surveys
+
+	// return c.JSON(surveys)
+	DoZaLogging("INFO", "Load Surveys", err)
+	return GenerateHTML(c, db, data, "list_surveys")
 }
 
 // HandlerGetQuestionsBySurvey returns survey_questions for a given survey

@@ -676,6 +676,8 @@
                                     <th>Pain Level</th>
                                     <th>New Lesions</th>
                                     <th>Comorbidities</th>
+                                    <th>Lesions Status</th>
+                                    <th>Exposure Alert</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -684,11 +686,11 @@
                                     <td>{{ $value.CreatedAt.Format "2006-01-02 15:04" }}</td>
                                     <td>{{ $value.PhoneNumber }}</td>
                                     <td>
-                                        {{ if eq $value.Platform "IVR" }}
+                                        {{ if eq $value.Platform "ivr" }}
                                             <span class="badge bg-primary">IVR</span>
-                                        {{ else if eq $value.Platform "SMS" }}
+                                        {{ else if eq $value.Platform "sms" }}
                                             <span class="badge bg-info">SMS</span>
-                                        {{ else if eq $value.Platform "WhatsApp" }}
+                                        {{ else if eq $value.Platform "whatsapp" }}
                                             <span class="badge bg-success">WhatsApp</span>
                                         {{ else }}
                                             <span class="badge bg-secondary">{{ $value.Platform }}</span>
@@ -696,28 +698,28 @@
                                     </td>
                                     <td>
                                         {{ $condition := $value.PatientCondition }}
-                                        {{ if eq $condition "better" }}
-                                            <span class="badge bg-success">Better</span>
-                                        {{ else if eq $condition "worse" }}
-                                            <span class="badge bg-danger">Worse</span>
-                                        {{ else if eq $condition "same" }}
-                                            <span class="badge bg-warning">Same</span>
+                                        {{ if eq $condition "1" }}
+                                            <span class="badge bg-success">No new symptoms</span>
+                                        {{ else if eq $condition "2" }}
+                                            <span class="badge bg-danger">Yes new symptoms</span>
+                                        {{ else if eq $condition "3" }}
+                                            <span class="badge bg-danger">I feel worse</span>
+                                        {{ else if eq $condition "4" }}
+                                            <span class="badge bg-success">I feel better</span>
+                                        {{ else if eq $condition "5" }}
+                                            <span class="badge bg-warning">Need to speak to healthworker</span>
                                         {{ else }}
                                             <span class="badge bg-secondary">{{ $condition }}</span>
                                         {{ end }}
                                     </td>
                                     <td>
                                         {{ $pain := $value.PainLevel }}
-                                        {{ if gt $pain 0 }}
-                                            {{ if ge $pain 7 }}
-                                                <span class="badge bg-danger" title="Severe Pain">🔴 {{ $pain }}/10</span>
-                                            {{ else if ge $pain 4 }}
-                                                <span class="badge bg-warning" title="Moderate Pain">🟡 {{ $pain }}/10</span>
-                                            {{ else }}
-                                                <span class="badge bg-success" title="Mild Pain">🟢 {{ $pain }}/10</span>
-                                            {{ end }}
+                                        {{ if ge $pain 7 }}
+                                            <span class="badge bg-danger" title="Severe Pain">🔴 {{ $pain }}/10</span>
+                                        {{ else if ge $pain 4 }}
+                                            <span class="badge bg-warning" title="Moderate Pain">🟡 {{ $pain }}/10</span>
                                         {{ else }}
-                                            <span class="text-muted">Not reported</span>
+                                            <span class="badge bg-success" title="Mild Pain">🟢 {{ $pain }}/10</span>
                                         {{ end }}
                                     </td>
                                     <td>
@@ -732,6 +734,20 @@
                                             <span class="badge bg-warning">⚠️ Yes</span>
                                         {{ else }}
                                             <span class="badge bg-success">✓ No</span>
+                                        {{ end }}
+                                    </td>
+                                    <td>
+                                        {{ if eq $value.LesionsDry true }}
+                                            <span class="badge bg-success">✓ Dry (Healing)</span>
+                                        {{ else }}
+                                            <span class="badge bg-warning">⚠️ Not Dry</span>
+                                        {{ end }}
+                                    </td>
+                                    <td>
+                                        {{ if eq $value.ExposureAlert true }}
+                                            <span class="badge bg-danger">🚨 Alert</span>
+                                        {{ else }}
+                                            <span class="badge bg-success">✓ No Alert</span>
                                         {{ end }}
                                     </td>
                                 </tr>

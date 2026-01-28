@@ -27,9 +27,11 @@ type Session struct {
 	SessionID    string            `json:"session_id"`
 	PhoneNumber  string            `json:"phone_number"`
 	PatientName  string            `json:"patient_name"`
+	Language	 string            `json:"language"`
 	CurrentStep  int               `json:"current_step"`
 	Responses    map[string]string `json:"responses"`
 	LastActivity time.Time         `json:"last_activity"`
+	ClientID	 int               `json:"client_id"`
 }
 
 // Africa's Talking callback request
@@ -50,6 +52,7 @@ type ATResponse struct {
 	XMLName   xml.Name   `xml:"Response"`
 	GetDigits *GetDigits `xml:"GetDigits,omitempty"`
 	Say       *Say       `xml:"Say,omitempty"`
+	Play      *Play      `xml:"Play,omitempty"`
 }
 
 type GetDigits struct {
@@ -57,13 +60,18 @@ type GetDigits struct {
 	// FinishOnKey string `xml:"finishOnKey,attr"`
 	NumDigits   int    `xml:"numDigits,attr"`
 	CallbackUrl string `xml:"callbackUrl,attr"`
-	Say         Say    `xml:"Say"`
+	// Say         Say    `xml:"Say"`
+	Play		Play   `xml:"Play"`
 }
 
 type Say struct {
 	Voice    string `xml:"voice,attr"`
 	PlayBeep string `xml:"playBeep,attr"`
 	Text     string `xml:",chardata"`
+}
+
+type Play struct {
+	Url string `xml:"url,attr"`
 }
 
 type MpoxAssessment struct {
@@ -94,7 +102,10 @@ var stepPrompts = map[int]string{}
 
 func SendCall(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 	phoneNumber := c.Query("phone")
-	var phone = [...]string{phoneNumber}
+	fmt.Println("phone number received:", phoneNumber)
+	// var phone = [...]string{phoneNumber}
+	phone := strings.Split(phoneNumber, ", ") // Split by comma and space to get individual numbers
+	fmt.Println("phone number:", phone)
 
 	surveyID := 1 // Mpox survey id = 1, need to do a db call here to get active survey or maybe use outbreak id.
 
@@ -144,6 +155,7 @@ func SendCall(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("apiKey", os.Getenv("AT_API_KEY"))
 	req.Header.Add("Content-Type", "application/json")
+	// req.Header.Add("Cache-Control", "no-cache")
 
 	res, err := client.Do(req)
 	if err != nil {
@@ -178,6 +190,8 @@ var (
 
 func HandleVoiceCallback(c *fiber.Ctx, db *sql.DB) error {
 	var callback VoiceCallback
+	var clientLanguage int64 = 1 // default to English
+	var clientID int
 	if err := c.BodyParser(&callback); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid JSON",
@@ -187,36 +201,43 @@ func HandleVoiceCallback(c *fiber.Ctx, db *sql.DB) error {
 	fmt.Printf("Callback: SessionID=%s, Phone=%s, DTMF=%s ",
 		callback.SessionID, callback.CallerNumber, callback.DtmfDigits)
 
+	if callback.CallSessionState == "Answered" {
+		client, _ := ClientByHBCPhone(c.Context(), db, callback.CallerNumber[1:])
+		clientLanguage = client.HbcLanguage.Int64
+		clientID = client.ID
+	}
+
 	// Get or create session
-	session := getOrCreateSession(callback.SessionID, callback.CallerNumber)
+	session := getOrCreateSession(callback.SessionID, callback.CallerNumber, clientLanguage, clientID) // session created with client's preferred language, and saved in session. After that session language is used for that client for that session.
 	var response ATResponse
 
 	// Process DTMF input
 	if callback.DtmfDigits != "" {
 		if !processInput(session, callback.DtmfDigits) {
 			// Invalid input - retry current step
-			response = createGetDigitsResponse(session.CurrentStep, session.PatientName, true)
+			response = createGetDigitsResponse(session.CurrentStep, session.PatientName, session.Language, true)
 		} else {
 			// Valid input - move to next step
 			session.CurrentStep++
 			if session.CurrentStep > 6 {
+				fmt.Printf("<<<<<??????Session responses before completion response: %+v\n", session.Responses)
 				// Assessment complete
 				response = createCompletionResponse()
 			} else {
 				// Continue to next step
-				response = createGetDigitsResponse(session.CurrentStep, session.PatientName, false)
+				response = createGetDigitsResponse(session.CurrentStep, session.PatientName, session.Language, false)
 			}
 		}
 	} else {
 		// Assessment complete
 		if callback.CallSessionState == "Completed" {
-			client, _ := ClientByHBCPhone(c.Context(), db, callback.CallerNumber[1:])
-			saveMpoxResponse(session, callback.Amount, callback.DurationInSeconds, db, client)
+			fmt.Printf(">>>>>Session responses at call completion: %+v\n", session.Responses)
+			saveMpoxResponse(session, callback.Amount, callback.DurationInSeconds, db)
 			deleteSession(session.SessionID)
 		} else {
 			// Assessment not complete
 			// Start or continue current step
-			response = createGetDigitsResponse(session.CurrentStep, session.PatientName, false)
+			response = createGetDigitsResponse(session.CurrentStep, session.PatientName, session.Language, false)
 		}
 	}
 
@@ -234,7 +255,7 @@ func HandleVoiceCallback(c *fiber.Ctx, db *sql.DB) error {
 	return c.SendString(`<?xml version="1.0" encoding="UTF-8"?>` + string(output))
 }
 
-func getOrCreateSession(sessionID, phoneNumber string) *Session {
+func getOrCreateSession(sessionID, phoneNumber string, languageID int64, clientID int) *Session {
 	mutex.Lock()
 	defer mutex.Unlock()
 
@@ -242,14 +263,22 @@ func getOrCreateSession(sessionID, phoneNumber string) *Session {
 		return session
 	}
 
+	languages := map[int64]string{
+		1: "english",
+		2: "luganda",
+		3: "other",
+	}
+
 	// Create new session - get patient name from DB in production
 	session := &Session{
 		SessionID:    sessionID,
 		PhoneNumber:  phoneNumber,
 		PatientName:  "Patient", // Fetch from database: getPatientName(phoneNumber)
+		Language:     languages[languageID], // Default language; fetch from DB if needed
 		CurrentStep:  1,
 		Responses:    make(map[string]string),
 		LastActivity: time.Now(),
+		ClientID:    clientID,
 	}
 
 	sessions[sessionID] = session
@@ -304,8 +333,10 @@ func getStepKey(step int) string {
 	return keys[step]
 }
 
-func createGetDigitsResponse(step int, patientName string, isRetry bool) ATResponse {
+func createGetDigitsResponse(step int, patientName string, language string, isRetry bool) ATResponse {
 	text := fmt.Sprintf(stepPrompts[step])
+	voice_url := "https://pxvs54rm-3001.uks1.devtunnels.ms/audios/"+language+"/"+strconv.Itoa(step)+".wav"
+	fmt.Println("Voice URL for step", step, ":", voice_url)
 
 	if isRetry {
 		text = "I didn't understand your response. " + text
@@ -322,10 +353,13 @@ func createGetDigitsResponse(step int, patientName string, isRetry bool) ATRespo
 			// FinishOnKey: "#",
 			NumDigits:   numDigits,
 			CallbackUrl: "https://pxvs54rm-3001.uks1.devtunnels.ms/voice/callback", // Replace with your domain
-			Say: Say{
-				Voice:    "woman",
-				PlayBeep: "true",
-				Text:     text,
+			// Say: Say{
+			// 	Voice:    "woman",
+			// 	PlayBeep: "true",
+			// 	Text:     text,
+			// },
+			Play: Play{
+				Url: voice_url,
 			},
 		},
 	}
@@ -341,9 +375,9 @@ func createCompletionResponse() ATResponse {
 	}
 }
 
-func saveMpoxResponse(session *Session, amount string, duration string, db *sql.DB, client *Client) {
+func saveMpoxResponse(session *Session, amount string, duration string, db *sql.DB) {
 	painLevel, _ := strconv.Atoi(session.Responses["pain_level"])
-	fmt.Println("\n Mpox Responses for Session:<>%v \n", session.Responses)
+	fmt.Printf("\n Mpox Responses for Session:<>%v \n", session.Responses)
 
 	// Create structured response
 	response := map[string]interface{}{
@@ -393,7 +427,7 @@ func saveMpoxResponse(session *Session, amount string, duration string, db *sql.
 	query := `INSERT INTO call_sessions (phone_number, duration_in_seconds, amount) VALUES ($1, $2, $3) RETURNING id`
 	err = db.QueryRow(query, assessmentData.PhoneNumber, duration, intAmount).Scan(&callID)
 	if err != nil {
-		fmt.Println("Error saving call session: %v", err)
+		fmt.Printf("Error saving call session: %v", err)
 		return
 	}
 
@@ -401,9 +435,9 @@ func saveMpoxResponse(session *Session, amount string, duration string, db *sql.
 		`(client_id, call_session_id, platform, phone_number, patient_condition, pain_level, new_lesions, comorbidities, lesions_dry, exposure_alert) ` +
 		`VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 	// save assessment to database
-	_, err1 := db.Exec(query1, client.ID, callID, assessmentData.Platform, assessmentData.PhoneNumber, assessmentData.PatientCondition, assessmentData.PainLevel, assessmentData.NewLesions, assessmentData.Comorbidities, assessmentData.LesionsDry, assessmentData.ExposureAlert)
+	_, err1 := db.Exec(query1, session.ClientID, callID, assessmentData.Platform, assessmentData.PhoneNumber, assessmentData.PatientCondition, assessmentData.PainLevel, assessmentData.NewLesions, assessmentData.Comorbidities, assessmentData.LesionsDry, assessmentData.ExposureAlert)
 	if err1 != nil {
-		fmt.Println("Error saving mpox assessment: %v", err)
+		fmt.Printf("Error saving mpox assessment: %v", err1)
 		return
 	}
 

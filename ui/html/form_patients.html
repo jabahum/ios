@@ -380,7 +380,7 @@
                                                             <th>Contact</th>
                                                             <th>Channel</th>
                                                             <th>Patient Condition</th>
-                                                            <th>Pain Level<br/><small>(1-10 scale)</small></th>
+                                                            <th>Pain Level<br/><small>(0-10 scale)</small></th>
                                                             <th>New Lesions</th>
                                                             <th>Comorbidities<br/><small>Present</small></th>
                                                             <th>Lesions Status</th>
@@ -392,37 +392,37 @@
                                                         {{ if .FormChild3 }}
                                                             {{ range $key, $value := .FormChild3 }}
                                                             <tr>
-                                                                <td><strong>{{ $value.CreatedAt }}</strong></td>
+                                                                <td>{{ $value.CreatedAt.Format "2006-01-02 15:04" }}</td>
                                                                 <td>{{ $value.PhoneNumber }}</td>
                                                                 <td>
-                                                                    <span class="badge {{ if eq $value.Platform "IVR" }}bg-primary{{ else if eq $value.Platform "SMS" }}bg-info{{ else }}bg-success{{ end }}">
+                                                                    <span style="text-transform: uppercase" class="badge {{ if eq $value.Platform "ivr" }}bg-primary{{ else if eq $value.Platform "SMS" }}bg-info{{ else }}bg-success{{ end }}">
                                                                         {{ $value.Platform }}
                                                                     </span>
                                                                 </td>
                                                                 <td>
                                                                     {{ $condition := $value.PatientCondition }}
-                                                                    {{ if eq $condition "better" }}
-                                                                        <span class="badge bg-success">Better</span>
-                                                                    {{ else if eq $condition "worse" }}
-                                                                        <span class="badge bg-danger">Worse</span>
-                                                                    {{ else if eq $condition "same" }}
-                                                                        <span class="badge bg-warning">Same</span>
+                                                                    {{ if eq $condition "1" }}
+                                                                        <span class="badge bg-success">No new symptoms</span>
+                                                                    {{ else if eq $condition "2" }}
+                                                                        <span class="badge bg-danger">Yes new symptoms</span>
+                                                                    {{ else if eq $condition "3" }}
+                                                                        <span class="badge bg-danger">I feel worse</span>
+                                                                    {{ else if eq $condition "4" }}
+                                                                        <span class="badge bg-success">I feel better</span>
+                                                                    {{ else if eq $condition "5" }}
+                                                                        <span class="badge bg-warning">Need to speak to healthworker</span>
                                                                     {{ else }}
                                                                         <span class="badge bg-secondary">{{ $condition }}</span>
                                                                     {{ end }}
                                                                 </td>
                                                                 <td>
                                                                     {{ $pain := $value.PainLevel }}
-                                                                    {{ if gt $pain 0 }}
-                                                                        {{ if ge $pain 7 }}
-                                                                            <span class="badge bg-danger" title="Severe Pain">🔴 {{ $pain }}/10</span>
-                                                                        {{ else if ge $pain 4 }}
-                                                                            <span class="badge bg-warning" title="Moderate Pain">🟡 {{ $pain }}/10</span>
-                                                                        {{ else }}
-                                                                            <span class="badge bg-success" title="Mild Pain">🟢 {{ $pain }}/10</span>
-                                                                        {{ end }}
+                                                                    {{ if ge $pain 7 }}
+                                                                        <span class="badge bg-danger" title="Severe Pain">🔴 {{ $pain }}/10</span>
+                                                                    {{ else if ge $pain 4 }}
+                                                                        <span class="badge bg-warning" title="Moderate Pain">🟡 {{ $pain }}/10</span>
                                                                     {{ else }}
-                                                                        <span class="text-muted">Not reported</span>
+                                                                        <span class="badge bg-success" title="Mild Pain">🟢 {{ $pain }}/10</span>
                                                                     {{ end }}
                                                                 </td>
                                                                 <td>
@@ -787,6 +787,17 @@
                                                 <label class="col-sm-5 col-form-label col-form-label-sm" for="hbc_phone">HBC Phone No:</label>
                                                 <div class="col-sm-5">
                                                     <input class="form-control form-control-sm patient-input" value="{{.Form.HbcPhone.String}}" id="hbc_phone" name="hbc_phone" type="text"/>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <label class="col-sm-5 col-form-label col-form-label-sm" for="hbc_language">HBC Language</label>
+                                                <div class="col-sm-5">
+                                                    <select class="form-select" name="hbc_language" id="hbc_language" aria-label="HBC Language">
+                                                    <option value="">-- Select HBC Language --</option>
+                                                    {{ range $key, $value := index .Optionz "language" }}  
+                                                        <option value="{{ $key }}" {{if and $.Form.HbcLanguage.Valid (eq (printf "%d" $.Form.HbcLanguage.Int64) $key)}}selected{{end}}>{{ $value }}</option>
+                                                    {{ end }}
+                                                    </select>
                                                 </div>
                                             </div>
                                         </div>

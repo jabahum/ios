@@ -434,6 +434,7 @@ func NewTemplateDataWithDB(c *fiber.Ctx, store *session.Store, db *sql.DB) *Temp
 	optionz["ward"] = map[string]string{"": " -- ", "1": "Ward", "2": "IDU"}
 	optionz["result1"] = map[string]string{"": " -- ", "1": "Pos", "2": "Neg", "3": "indeterminate"}
 	optionz["result2"] = map[string]string{"": " -- ", "1": "Pos", "2": "Neg", "3": "ND"}
+	// Optionz["language"] = map[string]string{"": " -- ", "1": "English", "2": "Luganda", "3": "Other"}
 
 	// Get current outbreak ID from session
 	outbreakID := GetCurrentOutbreak(c, store)
@@ -1542,6 +1543,7 @@ func Get_Client_Optionz() map[string]map[string]string {
 	opt["ward"] = map[string]string{"": " -- ", "1": "Ward", "2": "Infectious Diseases Unit", "3": "Home Based Care"}
 	opt["result1"] = map[string]string{"": " -- ", "1": "Pos", "2": "Neg", "3": "indeterminate"}
 	opt["result2"] = map[string]string{"": " -- ", "1": "Pos", "2": "Neg", "3": "ND"}
+	opt["language"] = map[string]string{"": " -- ", "1": "English", "2": "Luganda", "3": "Other"}
 	return opt
 }
 

@@ -1,0 +1,954 @@
+{{ define "content" }}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+            <div class="position-sticky pt-3">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <td>ID</td>
+                            <td>Name</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{ range .Form }}
+                        <tr>
+                            <td>{{ .ID }}</td>
+                            <td>{{ .Title }}</td>
+                        </tr>
+                        {{ end }}
+                    </tbody>
+                </table>
+            </div>
+        </nav>
+
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Surveys Management Dashboard</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-group me-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshData()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab content -->
+            <div class="tab-content">
+                <!-- Dashboard Tab -->
+                <div class="tab-pane fade show active" id="dashboard">
+                    <div class="row">
+                        <div class="col-md-3 mb-4">
+                            <div class="card stats-card dashboard-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h5 class="text-muted fw-normal mt-0" title="Total Users">Total Users</h5>
+                                            <h3 class="mt-3 mb-3" id="totalUsers">-</h3>
+                                        </div>
+                                        <div class="avatar-sm">
+                                            <span class="avatar-title bg-soft-primary rounded">
+                                                <i class="fas fa-users font-20 text-primary"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 mb-4">
+                            <div class="card stats-card dashboard-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h5 class="text-muted fw-normal mt-0" title="Total Roles">Total Roles</h5>
+                                            <h3 class="mt-3 mb-3" id="totalRoles">-</h3>
+                                        </div>
+                                        <div class="avatar-sm">
+                                            <span class="avatar-title bg-soft-success rounded">
+                                                <i class="fas fa-user-tag font-20 text-success"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 mb-4">
+                            <div class="card stats-card dashboard-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h5 class="text-muted fw-normal mt-0" title="Total Permissions">Total Permissions</h5>
+                                            <h3 class="mt-3 mb-3" id="totalPermissions">-</h3>
+                                        </div>
+                                        <div class="avatar-sm">
+                                            <span class="avatar-title bg-soft-warning rounded">
+                                                <i class="fas fa-key font-20 text-warning"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 mb-4">
+                            <div class="card stats-card dashboard-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h5 class="text-muted fw-normal mt-0" title="Active Assignments">Active Assignments</h5>
+                                            <h3 class="mt-3 mb-3" id="activeAssignments">-</h3>
+                                        </div>
+                                        <div class="avatar-sm">
+                                            <span class="avatar-title bg-soft-info rounded">
+                                                <i class="fas fa-link font-20 text-info"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card dashboard-card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Recent Roles</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="recentRoles">Loading...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card dashboard-card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">System Permissions</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="systemPermissions">Loading...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Roles Tab -->
+                <div class="tab-pane fade" id="roles">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">System Roles</h5>
+                            <button type="button" class="btn btn-primary" onclick="showCreateRoleModal()">
+                                <i class="fas fa-plus"></i> Create Role
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Role Name</th>
+                                            <th>Description</th>
+                                            <th>User Count</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="rolesTableBody">
+                                        <tr>
+                                            <td colspan="4" class="text-center">Loading...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Permissions Tab -->
+                <div class="tab-pane fade" id="permissions">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">System Permissions</h5>
+                            <button type="button" class="btn btn-primary" onclick="showCreatePermissionModal()">
+                                <i class="fas fa-plus"></i> Create Permission
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Resource</th>
+                                            <th>Actions</th>
+                                            <th>Role Count</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="permissionsTableBody">
+                                        <tr>
+                                            <td colspan="4" class="text-center">Loading...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Tab -->
+                <div class="tab-pane fade" id="users">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">User Role Assignments</h5>
+                            <button type="button" class="btn btn-primary" onclick="showAssignRoleModal()">
+                                <i class="fas fa-plus"></i> Assign Role
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Username</th>
+                                            <th>Assigned Roles</th>
+                                            <th>Permissions</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="usersTableBody">
+                                        <tr>
+                                            <td colspan="4" class="text-center">Loading...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Migration Tab -->
+                <div class="tab-pane fade" id="migration">
+                    <div class="card migration-status">
+                        <div class="card-header">
+                            <h5 class="mb-0">Migration Status</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="migrationStatus">Loading migration status...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Modals -->
+<!-- Create Role Modal -->
+<div class="modal fade" id="createRoleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Role</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createRoleForm">
+                    <div class="mb-3">
+                        <label for="roleName" class="form-label">Role Name</label>
+                        <input type="text" class="form-control" id="roleName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="roleDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="roleDescription" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Permissions</label>
+                        <div id="permissionsList">
+                            <!-- Permissions will be loaded here -->
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="createRole()">Create Role</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Permission Modal -->
+<div class="modal fade" id="createPermissionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Permission</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createPermissionForm">
+                    <div class="mb-3">
+                        <label for="permissionResource" class="form-label">Resource</label>
+                        <input type="text" class="form-control" id="permissionResource" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="permissionAction" class="form-label">Action</label>
+                        <select class="form-control" id="permissionAction" required>
+                            <option value="">Select Action</option>
+                            <option value="create">Create</option>
+                            <option value="read">Read</option>
+                            <option value="update">Update</option>
+                            <option value="delete">Delete</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="createPermission()">Create Permission</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Role Modal -->
+<div class="modal fade" id="assignRoleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Assign Role to User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="assignRoleForm">
+                    <div class="mb-3">
+                        <label for="assignUser" class="form-label">User</label>
+                        <select class="form-control" id="assignUser" required>
+                            <option value="">Select User</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="assignRole" class="form-label">Role</label>
+                        <select class="form-control" id="assignRole" required>
+                            <option value="">Select Role</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="assignRole()">Assign Role</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Role Modal -->
+<div class="modal fade" id="editRoleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Role</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <input type="hidden" id="editRoleId">
+                    <div class="mb-3">
+                        <label for="editRoleName" class="form-label">Role Name</label>
+                        <input type="text" class="form-control" id="editRoleName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editRoleDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="editRoleDescription" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="updateRole()">Update Role</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Permission Modal -->
+<div class="modal fade" id="editPermissionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Permission</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <input type="hidden" id="editPermissionId">
+                    <div class="mb-3">
+                        <label for="editPermissionResource" class="form-label">Resource</label>
+                        <input type="text" class="form-control" id="editPermissionResource" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editPermissionAction" class="form-label">Action</label>
+                        <input type="text" class="form-control" id="editPermissionAction" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="updatePermission()">Update Permission</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit User Roles Modal -->
+<div class="modal fade" id="editUserRolesModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit User Roles</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <input type="hidden" id="editUserId">
+                    <div class="mb-3">
+                        <label class="form-label">Select Roles</label>
+                        <div id="editUserRolesList">
+                            <!-- Roles will be loaded dynamically -->
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="updateUserRoles()">Update User Roles</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .dashboard-card {
+        transition: transform 0.2s;
+    }
+    .dashboard-card:hover {
+        transform: translateY(-2px);
+    }
+    .permission-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+    .permission-item {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 1rem;
+    }
+    .permission-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+    .role-badge {
+        font-size: 0.75rem;
+    }
+    .stats-card {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+    }
+    .migration-status {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+    }
+</style>
+
+<script>
+// JavaScript functions for RBAC dashboard functionality
+function refreshData() {
+    loadDashboardStats();
+    loadRoles();
+    loadPermissions();
+    loadUsers();
+    loadMigrationStatus();
+}
+
+function loadDashboardStats() {
+    // Load dashboard statistics
+    fetch('/api/rbac/stats')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('totalUsers').textContent = data.totalUsers || 0;
+            document.getElementById('totalRoles').textContent = data.totalRoles || 0;
+            document.getElementById('totalPermissions').textContent = data.totalPermissions || 0;
+            document.getElementById('activeAssignments').textContent = data.activeAssignments || 0;
+        })
+        .catch(error => {
+            console.error('Error loading dashboard stats:', error);
+        });
+}
+
+function loadRoles() {
+    // Load roles data
+    fetch('/api/rbac/roles')
+        .then(response => response.json())
+        .then(data => {
+            const rolesHtml = data.roles.map(role =>
+                `<tr>
+                    <td>${role.name}</td>
+                    <td>${role.description || 'No description'}</td>
+                    <td>${role.userCount || 0}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="editRole(${role.id})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteRole(${role.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>`
+            ).join('');
+            
+            document.getElementById('rolesTableBody').innerHTML = 
+                rolesHtml || '<tr><td colspan="4" class="text-center">No roles found</td></tr>';
+        })
+        .catch(error => {
+            console.error('Error loading roles:', error);
+        });
+}
+
+function loadPermissions() {
+    // Load permissions data
+    fetch('/api/rbac/permissions')
+        .then(response => response.json())
+        .then(data => {
+            const permissionsHtml = data.permissions.map(permission =>
+                `<tr>
+                    <td>${permission.resource}</td>
+                    <td>${permission.action}</td>
+                    <td>${permission.roleCount || 0}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="editPermission(${permission.id})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deletePermission(${permission.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>`
+            ).join('');
+            
+            document.getElementById('permissionsTableBody').innerHTML = 
+                permissionsHtml || '<tr><td colspan="4" class="text-center">No permissions found</td></tr>';
+        })
+        .catch(error => {
+            console.error('Error loading permissions:', error);
+        });
+}
+
+function loadUsers() {
+    // Load users data
+    fetch('/api/rbac/users')
+        .then(response => response.json())
+        .then(data => {
+            const usersHtml = data.users.map(user =>
+                `<tr>
+                    <td>${user.username}</td>
+                    <td>${user.roles.join(', ') || 'No roles assigned'}</td>
+                    <td>${user.permissions.join(', ') || 'No permissions'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="editUserRoles(${user.id})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </td>
+                </tr>`
+            ).join('');
+            
+            document.getElementById('usersTableBody').innerHTML = 
+                usersHtml || '<tr><td colspan="4" class="text-center">No users found</td></tr>';
+        })
+        .catch(error => {
+            console.error('Error loading users:', error);
+        });
+}
+
+function loadMigrationStatus() {
+    // Load migration status
+    fetch('/api/rbac/migration-status')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('migrationStatus').innerHTML = `
+                <div class="alert alert-info">
+                    <h6>Migration Status</h6>
+                    <p>Total users migrated: ${data.migratedUsers || 0}</p>
+                    <p>Total roles created: ${data.createdRoles || 0}</p>
+                    <p>Total permissions assigned: ${data.assignedPermissions || 0}</p>
+                </div>
+            `;
+        })
+        .catch(error => {
+            console.error('Error loading migration status:', error);
+        });
+}
+
+// Modal functions
+function showCreateRoleModal() {
+    // Load permissions for role creation
+    fetch('/api/rbac/permissions')
+        .then(response => response.json())
+        .then(data => {
+            const permissionsList = document.getElementById('permissionsList');
+            permissionsList.innerHTML = data.permissions.map(permission =>
+                `<div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="${permission.id}" id="perm_${permission.id}">
+                    <label class="form-check-label" for="perm_${permission.id}">
+                        ${permission.resource} - ${permission.action}
+                    </label>
+                </div>`
+            ).join('');
+        });
+    
+    const modal = new bootstrap.Modal(document.getElementById('createRoleModal'));
+    modal.show();
+}
+
+function showCreatePermissionModal() {
+    const modal = new bootstrap.Modal(document.getElementById('createPermissionModal'));
+    modal.show();
+}
+
+function showAssignRoleModal() {
+    // Load users and roles for assignment
+    Promise.all([
+        fetch('/api/rbac/users').then(response => response.json()),
+        fetch('/api/rbac/roles').then(response => response.json())
+    ]).then(([usersData, rolesData]) => {
+        const userSelect = document.getElementById('assignUser');
+        const roleSelect = document.getElementById('assignRole');
+        
+        userSelect.innerHTML = '<option value="">Select User</option>' +
+            usersData.users.map(user => 
+                `<option value="${user.id}">${user.username}</option>`
+            ).join('');
+        
+        roleSelect.innerHTML = '<option value="">Select Role</option>' +
+            rolesData.roles.map(role => 
+                `<option value="${role.id}">${role.name}</option>`
+            ).join('');
+    });
+    
+    const modal = new bootstrap.Modal(document.getElementById('assignRoleModal'));
+    modal.show();
+}
+
+// CRUD functions
+function createRole() {
+    const roleName = document.getElementById('roleName').value;
+    const roleDescription = document.getElementById('roleDescription').value;
+    const selectedPermissions = Array.from(document.querySelectorAll('#permissionsList input:checked'))
+        .map(checkbox => checkbox.value);
+    
+    fetch('/api/rbac/roles', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            name: roleName,
+            description: roleDescription,
+            permissions: selectedPermissions
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('createRoleModal')).hide();
+            refreshData();
+            alert('Role created successfully!');
+        } else {
+            const errorMessage = data.message || 'Unknown error occurred';
+            alert('Error creating role: ' + errorMessage);
+        }
+    })
+    .catch(error => {
+        console.error('Error creating role:', error);
+        alert('Error creating role: Network or server error');
+    });
+}
+
+function createPermission() {
+    const resource = document.getElementById('permissionResource').value;
+    const action = document.getElementById('permissionAction').value;
+    
+    fetch('/api/rbac/permissions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            resource: resource,
+            action: action
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('createPermissionModal')).hide();
+            refreshData();
+            alert('Permission created successfully!');
+        } else {
+            const errorMessage = data.message || 'Unknown error occurred';
+            alert('Error creating permission: ' + errorMessage);
+        }
+    })
+    .catch(error => {
+        console.error('Error creating permission:', error);
+        alert('Error creating permission: Network or server error');
+    });
+}
+
+function assignRole() {
+    const userId = parseInt(document.getElementById('assignUser').value);
+    const roleId = parseInt(document.getElementById('assignRole').value);
+    
+    // Validate that we have valid integers
+    if (isNaN(userId) || isNaN(roleId)) {
+        alert('Error: Please select both a user and a role');
+        return;
+    }
+    
+    fetch('/api/rbac/user-roles', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            user_id: userId,
+            role_id: roleId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('assignRoleModal')).hide();
+            refreshData();
+            // Show success message
+            alert('Role assigned successfully!');
+        } else {
+            // Handle error with proper message
+            const errorMessage = data.message || 'Unknown error occurred';
+            alert('Error assigning role: ' + errorMessage);
+        }
+    })
+    .catch(error => {
+        console.error('Error assigning role:', error);
+        alert('Error assigning role: Network or server error');
+    });
+}
+
+// Edit functions
+function editRole(roleId) {
+    // Fetch role details and populate edit modal
+    fetch(`/api/rbac/roles/${roleId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Populate edit modal with role data
+                document.getElementById('editRoleId').value = roleId;
+                document.getElementById('editRoleName').value = data.role.name;
+                document.getElementById('editRoleDescription').value = data.role.description || '';
+                
+                // Show edit modal
+                const editModal = new bootstrap.Modal(document.getElementById('editRoleModal'));
+                editModal.show();
+            } else {
+                alert('Error loading role details: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error loading role:', error);
+            alert('Error loading role details');
+        });
+}
+
+function editPermission(permissionId) {
+    // Fetch permission details and populate edit modal
+    fetch(`/api/rbac/permissions/${permissionId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Populate edit modal with permission data
+                document.getElementById('editPermissionId').value = permissionId;
+                document.getElementById('editPermissionResource').value = data.permission.resource;
+                document.getElementById('editPermissionAction').value = data.permission.action;
+                
+                // Show edit modal
+                const editModal = new bootstrap.Modal(document.getElementById('editPermissionModal'));
+                editModal.show();
+            } else {
+                alert('Error loading permission details: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error loading permission:', error);
+            alert('Error loading permission details');
+        });
+}
+
+function editUserRoles(userId) {
+    // First, fetch all available roles
+    fetch('/api/rbac/roles')
+        .then(response => response.json())
+        .then(rolesData => {
+            // Then fetch user's current roles
+            return fetch(`/api/rbac/users/${userId}/roles`)
+                .then(response => response.json())
+                .then(userRolesData => {
+                    return { rolesData, userRolesData };
+                });
+        })
+        .then(({ rolesData, userRolesData }) => {
+            if (userRolesData.success) {
+                // Populate edit modal with user roles data
+                document.getElementById('editUserId').value = userId;
+                
+                // Create checkboxes for all available roles
+                const rolesList = document.getElementById('editUserRolesList');
+                const rolesHtml = rolesData.roles.map(role => {
+                    const isChecked = userRolesData.roles.some(userRole => userRole.id === role.id);
+                    return `
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" 
+                                   id="edit_role_${role.id}" value="${role.id}" 
+                                   ${isChecked ? 'checked' : ''}>
+                            <label class="form-check-label" for="edit_role_${role.id}">
+                                ${role.name} - ${role.description || 'No description'}
+                            </label>
+                        </div>
+                    `;
+                }).join('');
+                
+                rolesList.innerHTML = rolesHtml;
+                
+                // Show edit modal
+                const editModal = new bootstrap.Modal(document.getElementById('editUserRolesModal'));
+                editModal.show();
+            } else {
+                alert('Error loading user roles: ' + (userRolesData.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error loading user roles:', error);
+            alert('Error loading user roles');
+        });
+}
+
+// Update functions
+function updateRole() {
+    const roleId = document.getElementById('editRoleId').value;
+    const roleName = document.getElementById('editRoleName').value;
+    const roleDescription = document.getElementById('editRoleDescription').value;
+    
+    fetch(`/api/rbac/roles/${roleId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            name: roleName,
+            description: roleDescription
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('editRoleModal')).hide();
+            refreshData();
+            alert('Role updated successfully!');
+        } else {
+            const errorMessage = data.message || 'Unknown error occurred';
+            alert('Error updating role: ' + errorMessage);
+        }
+    })
+    .catch(error => {
+        console.error('Error updating role:', error);
+        alert('Error updating role: Network or server error');
+    });
+}
+
+function updatePermission() {
+    const permissionId = document.getElementById('editPermissionId').value;
+    const resource = document.getElementById('editPermissionResource').value;
+    const action = document.getElementById('editPermissionAction').value;
+    
+    fetch(`/api/rbac/permissions/${permissionId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            resource: resource,
+            action: action
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('editPermissionModal')).hide();
+            refreshData();
+            alert('Permission updated successfully!');
+        } else {
+            const errorMessage = data.message || 'Unknown error occurred';
+            alert('Error updating permission: ' + errorMessage);
+        }
+    })
+    .catch(error => {
+        console.error('Error updating permission:', error);
+        alert('Error updating permission: Network or server error');
+    });
+}
+
+function updateUserRoles() {
+    const userId = document.getElementById('editUserId').value;
+    const selectedRoles = Array.from(document.querySelectorAll('#editUserRolesModal input[type="checkbox"]:checked'))
+        .map(checkbox => parseInt(checkbox.value));
+    
+    fetch(`/api/rbac/users/${userId}/roles`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            roles: selectedRoles
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('editUserRolesModal')).hide();
+            refreshData();
+            alert('User roles updated successfully!');
+        } else {
+            const errorMessage = data.message || 'Unknown error occurred';
+            alert('Error updating user roles: ' + errorMessage);
+        }
+    })
+    .catch(error => {
+        console.error('Error updating user roles:', error);
+        alert('Error updating user roles: Network or server error');
+    });
+}
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    refreshData();
+});
+</script>
+{{ end }} 

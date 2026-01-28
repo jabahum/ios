@@ -152,6 +152,9 @@ func main() {
 	app.Static("/", "./ui")
 	// app.Static("/static", "../../ui/static")
 
+	// Serve audio files
+	app.Static("/audios", "./audios")
+
 	// Add Logger middleware
 	app.Use(logger.New())
 

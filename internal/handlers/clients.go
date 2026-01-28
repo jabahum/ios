@@ -597,6 +597,7 @@ func HandlerCasesSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 		OutbreakID:       outbreakID,
 		HbcPhone:         ParseNullString(c.FormValue("hbc_phone")),
 		HbcFollowup:      ParseNullString(c.FormValue("hbc_followup")),
+		HbcLanguage:      ParseNullInt(c.FormValue("hbc_language")),
 	}
 
 	//visID, _ := utilities.GetSequentialVisitID()
@@ -669,6 +670,7 @@ func HandlerCasesList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 		data.Optionz["ward"] = map[string]string{"": " -- ", "1": "Ward", "2": "ICU"}
 		data.Optionz["result1"] = map[string]string{"": " -- ", "1": "Pos", "2": "Neg", "3": "indeterminate"}
 		data.Optionz["result2"] = map[string]string{"": " -- ", "1": "Pos", "2": "Neg", "3": "ND"}
+		data.Optionz["language"] = map[string]string{"": " -- ", "1": "English", "2": "Luganda", "3": "Other"}
 	}
 
 	fmt.Println("loading case list page")
@@ -713,7 +715,23 @@ func HandlerCasesList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 		}
 	}
 
+	var phoneNumbers []string
+	for _, client := range clients {
+		fmt.Println("Client ID: ", client.ID, "Adm ward:", client.AdmWard.String, " HBC Followup: ", client.HbcFollowup.String, " HBC Phone: ", client.HbcPhone.String)
+		if client.HbcFollowup.String == "ivr" && client.HbcPhone.String != "" {
+			phoneNumbers = append(phoneNumbers, client.HbcPhone.String)
+		}
+	}
+	phoneString := strings.Join(phoneNumbers, ", ")
+	// fmt.Println("IVR Phone Numbers String: ", phoneString)
+	// fmt.Println("IVR Phone Numbers original: ", phoneNumbers)
+	// var ivrPhoneNumbers []string
+	// ivrPhoneNumbers = append(ivrPhoneNumbers, phoneString)
+	// fmt.Println("IVR Phone Numbers Slice: ", ivrPhoneNumbers)
+	// fmt.Println("IVR Phone Numbers: ", ivrPhoneNumbers)
+
 	data.Form = clients
+	data.FormChild1 = phoneString
 
 	return GenerateHTML(c, db, data, "list_patients")
 }
