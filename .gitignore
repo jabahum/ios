@@ -1,3 +1,4 @@
 **/config.json
-cmd/web/config.json
-configs.json
+
+/scripts
+.env

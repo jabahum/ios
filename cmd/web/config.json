@@ -1,30 +1,48 @@
 {
-    "Port"           : "0.0.0.0:3000",
-    "ReadTimeout"    : 10,
-    "WriteTimeout"   : 600,
-    "Static"         : "public",
-    "DBHost"         : "localhost",
-    "Ux"             : "postgres",
-    "Px"             : "pwaiswa",
-    "Dx"             : "ios",
-    "LogFile"        : "app.log",
-    "LogData"        : "data.log",
-    "Facility"       : "1",
-    "SMSUser"        : "case_management",
-    "SMSPassword"    : "C@s3mgt@2025",
-    "SMSURL"         : "https://dispatcher2-mtracpro.health.go.ug",
-    "DHIS2API": {
-        "BaseURL": "https://eidsr.health.go.ug/api",
-        "Username": "pwaiswa",
-        "Password": "Waiswa@2020"
-    },
-    "AlertsAPI": {
-        "BaseURL": "https://alerts.health.go.ug/api/v1",
-        "Username": "pwaiswa",
-        "Password": "leaves"
-    },
-    "VoiceURL"       : "https://voice.africastalking.com/call",
-    "AT_PHONE": "+256323200977",
-    "AT_USERNAME": "hbc_user",
-    "AT_API_KEY": "atsk_61b9c1263274354777a72f520c72f965d0eb34a6f95e79c81e11477066a7ca05733aa31e"
+  "Port": "0.0.0.0:3000",
+  "ReadTimeout": 10,
+  "WriteTimeout": 600,
+  "Static": "public",
+
+  "Ux": "postgres",
+  "Px": "pwaiswa",
+  "Dx": "ios",
+
+  "LogFile": "app.log",
+  "LogData": "data.log",
+  "Facility": "1",
+
+  "SMSUser": "case_management",
+  "SMSPassword": "C@s3mgt@2025",
+  "SMSURL": "https://dispatcher2-mtracpro.health.go.ug",
+  "VoiceURL": "https://voice.africastalking.com/call",
+
+  "DHIS2API": {
+    "BaseURL": "https://eidsr.health.go.ug/api",
+    "Username": "pwaiswa",
+    "Password": "Waiswa@2020"
+  },
+
+  "AlertsAPI": {
+    "BaseURL": "https://alerts.health.go.ug/api/v1",
+    "Username": "pwaiswa",
+    "Password": "leaves"
+  },
+
+  "Auth": {
+    "Enabled": true,
+    "KeycloakInternalURL": "http://keycloak:8080",
+    "KeycloakPublicURL": "http://localhost:8081",
+    "KeycloakBaseURL": "http://keycloak:8080",
+    "KeycloakRealm": "moh-realm",
+    "ClientID": "integrated-outbreak-system",
+    "ClientSecret": "ios-secret",
+    "RedirectURI": "http://localhost:3001/auth/callback",
+    "AdminClientID": "integrated-outbreak-system-admin",
+    "AdminClientSecret": "ios-admin-secret",
+    "CookieDomain": "localhost",
+    "CookieSecure": false,
+    "SuccessRedirect": "/home",
+    "LogoutRedirect": "/login"
+  }
 }

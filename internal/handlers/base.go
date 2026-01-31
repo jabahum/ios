@@ -146,6 +146,23 @@ func GetRoleHierarchy() []string {
 	}
 }
 
+type AuthConfig struct {
+	Enabled             bool   `json:"Enabled"`
+	KeycloakInternalURL string `json:"KeycloakInternalURL"`
+	KeycloakPublicURL   string `json:"KeycloakPublicURL"`
+	KeycloakBaseURL     string `json:"KeycloakBaseURL"`
+	KeycloakRealm       string `json:"KeycloakRealm"`
+	ClientID            string `json:"ClientID"`
+	ClientSecret        string `json:"ClientSecret"`
+	AdminClientID       string `json:"AdminClientID"`
+	AdminClientSecret   string `json:"AdminClientSecret"`
+	RedirectURI         string `json:"RedirectURI"`
+	SuccessRedirect     string `json:"SuccessRedirect"`
+	LogoutRedirect      string `json:"LogoutRedirect"`
+	CookieDomain        string `json:"CookieDomain"`
+	CookieSecure        bool   `json:"CookieSecure"`
+}
+
 type Config struct {
 	Address      string `json:"Port"`
 	ReadTimeout  int64  `json:"ReadTimeout"`
@@ -171,7 +188,8 @@ type Config struct {
 		Username string `json:"Username"`
 		Password string `json:"Password"`
 	} `json:"AlertsAPI"`
-	VoiceURL     string `json:"VoiceURL"`
+	VoiceURL string     `json:"VoiceURL"`
+	Auth     AuthConfig `json:"Auth"`
 }
 
 type TemplateData struct {
