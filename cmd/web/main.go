@@ -19,6 +19,7 @@ import (
 
 	_ "case/cmd/web/docs" // Swagger documentation
 	"case/internal/handlers"
+	"case/internal/keycloak"
 	"case/internal/models"
 	"case/internal/routes"
 	"case/internal/services"
@@ -193,6 +194,108 @@ func main() {
 
 	voiceService := services.NewVoiceService(voiceConfig)
 
+	if config.Auth.Enabled {
+		mlogger.Info("Initializing Keycloak (OIDC + Admin)",
+			"internal_url", config.Auth.KeycloakInternalURL,
+			"public_url", config.Auth.KeycloakPublicURL,
+			"realm", config.Auth.KeycloakRealm,
+			"client_id", config.Auth.ClientID,
+			"admin_client_id", config.Auth.AdminClientID,
+		)
+
+		kc, err := keycloak.NewClient(
+			config.Auth.KeycloakInternalURL,
+			config.Auth.KeycloakPublicURL,
+			config.Auth.KeycloakRealm,
+			config.Auth.ClientID,
+			config.Auth.ClientSecret,
+		)
+		if err != nil {
+			mlogger.Error("Failed to initialize Keycloak user client", "error", err)
+			panic(err)
+		}
+
+		mlogger.Info("Keycloak user client initialized successfully")
+
+		adminKC, err := keycloak.NewAdminClient(
+			config.Auth.KeycloakInternalURL,
+			config.Auth.KeycloakRealm,
+			config.Auth.AdminClientID,
+			config.Auth.AdminClientSecret,
+		)
+		if err != nil {
+			mlogger.Error("Failed to initialize Keycloak admin client", "error", err)
+			panic(err)
+		}
+
+		mlogger.Info("Keycloak admin client initialized successfully")
+
+		clientUUID, err := adminKC.GetClientUUID(config.Auth.ClientID)
+		if err != nil {
+			log.Fatal("Failed to resolve Keycloak client UUID:", err)
+		}
+
+		if err := keycloak.BootstrapRBAC(
+			context.Background(),
+			adminKC,
+			clientUUID,
+		); err != nil {
+			log.Fatal("Keycloak RBAC bootstrap failed:", err)
+		}
+
+		adminUserID, err := adminKC.EnsureUser(
+			context.Background(),
+			"admin",
+			"admin@system.local",
+			"System",
+			"Administrator",
+			true,
+		)
+		if err != nil {
+			log.Fatal("Failed to ensure admin user:", err)
+		}
+
+		if err := adminKC.EnsureClientRoles(
+			config.Auth.ClientID,
+			[]string{
+				"admin",
+			},
+		); err != nil {
+			log.Fatal("Failed to ensure client roles:", err)
+		}
+
+		// Assign admin role to admin user
+		if err := adminKC.EnsureClientRoleAssigned(
+			adminUserID,
+			config.Auth.ClientID,
+			"admin",
+		); err != nil {
+			log.Fatal("Failed to assign admin client role:", err)
+		}
+
+		mlogger.Info("Keycloak RBAC bootstrap completed")
+		userService := models.NewUserService(db)
+
+		authHandler := handlers.NewAuthHandler(
+			kc,
+			db,
+			store,
+			userService,
+			config.Auth,
+			mlogger,
+		)
+
+		auth := app.Group("/auth")
+		auth.Get("/login", authHandler.Login)
+		auth.Get("/callback", authHandler.Callback)
+		auth.Post("/refresh", authHandler.Refresh)
+		auth.Post("/logout", authHandler.Logout)
+		auth.Get("/me", authHandler.Me)
+
+	} else {
+		mlogger.Warn("Keycloak authentication disabled")
+	}
+
 	// TEMPORARY: Reset philip user password
 	app.Get("/reset-philip", func(c *fiber.Ctx) error {
 		// Reset philip user password to "123456"
@@ -270,16 +373,27 @@ func main() {
 
 // connect to database
 func getDB(config handlers.Config, sl *slog.Logger) *sql.DB {
-	// Use PostgreSQL connection details from config.json only
-	dbHost := config.DBHost
+
+	dbHost := os.Getenv("DB_HOST")
 	if dbHost == "" {
-		dbHost = "localhost" // Fallback default if DBHost not set
+		dbHost = "localhost"
 	}
 
-	connStr := fmt.Sprintf("host=%s port=5432 user=%s password=%s dbname=%s sslmode=disable",
-		dbHost, config.Ux, config.Px, config.Dx)
+	dbPort := os.Getenv("DB_PORT")
+	if dbPort == "" {
+		dbPort = "5432"
+	}
 
-	sl.Info("Connecting to database", "host", dbHost, "user", config.Ux, "database", config.Dx)
+	connStr := fmt.Sprintf(
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		dbHost,
+		dbPort,
+		config.Ux,
+		config.Px,
+		config.Dx,
+	)
+
+	fmt.Println("Opening database connection...")
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -287,13 +401,16 @@ func getDB(config handlers.Config, sl *slog.Logger) *sql.DB {
 		panic(fmt.Sprintf("Cannot open database connection: %v", err))
 	}
 
-	// Test the connection
-	if err = db.Ping(); err != nil {
-		sl.Error("Failed to ping database", "error", err.Error())
-		panic(fmt.Sprintf("Cannot reach database: %v", err))
+	fmt.Println("Pinging database...")
+
+	if err := db.Ping(); err != nil {
+		fmt.Println("❌ db.Ping failed")
+		fmt.Println("   error:", err)
+		panic(err)
 	}
 
-	sl.Info("Successfully connected to database")
+	fmt.Println("✅ Database connection established")
+
 	return db
 }
 
