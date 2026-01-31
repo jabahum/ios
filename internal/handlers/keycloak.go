@@ -49,7 +49,7 @@ func NewAuthHandler(
  * Routes
  * ----------------------------- */
 
-// GET /api/v1/auth/login
+// GET /api/auth/login
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	state := utils.RandomString(32)
 	codeVerifier := utils.RandomString(64)
@@ -70,7 +70,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	return c.Redirect(loginURL, fiber.StatusFound)
 }
 
-// GET /api/v1/auth/callback
+// GET /api/auth/callback
 func (h *AuthHandler) Callback(c *fiber.Ctx) error {
 	code := c.Query("code")
 	state := c.Query("state")
@@ -166,7 +166,7 @@ func (h *AuthHandler) Callback(c *fiber.Ctx) error {
 	return c.Redirect("/home", fiber.StatusFound)
 }
 
-// POST /api/v1/auth/refresh
+// POST /api/auth/refresh
 func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 	refreshToken := c.Cookies("refresh_token")
 	if refreshToken == "" {
@@ -198,7 +198,7 @@ func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true})
 }
 
-// POST /api/v1/auth/logout
+// POST /api/auth/logout
 func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 	refreshToken := c.Cookies("refresh_token")
 	if refreshToken != "" {
@@ -217,7 +217,7 @@ func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 	return c.Redirect("/login")
 }
 
-// GET /api/v1/auth/me
+// GET /api/auth/me
 func (h *AuthHandler) Me(c *fiber.Ctx) error {
 	accessToken := c.Cookies("access_token")
 	if accessToken == "" {
