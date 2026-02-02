@@ -1625,13 +1625,13 @@ func GetCurrentFacility(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 		}
 	}
 
-	// Fallback to database query
+	// Fallback to database query (user_employee links users to employee; employee.facility is facility_id)
 	var facilityID sql.NullInt64
 	err = db.QueryRowContext(c.Context(), `
 		SELECT e.facility 
 		FROM employee e
 		JOIN users u ON e.employee_id = u.user_employee
-		WHERE u.user_id = $1 AND e.employee_status = 'active'
+		WHERE u.user_id = $1 AND (LOWER(TRIM(COALESCE(e.employee_status, ''))) = 'active' OR e.employee_status IS NULL)
 	`, userID).Scan(&facilityID)
 	if err != nil {
 		if err != sql.ErrNoRows {

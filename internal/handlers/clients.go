@@ -6,7 +6,6 @@ import (
 	"case/internal/services"
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -697,9 +696,9 @@ func HandlerCasesList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 	if isAdmin {
 		sl.Info("Admin user - bypassing facility filter", "user_id", userID)
 	} else {
-		// If user has a facility assigned, filter by that facility
+		// If user has a facility assigned, filter by that facility (include NULL site so unassigned cases in outbreak appear)
 		if userFacility > 0 {
-			filter += fmt.Sprintf(" AND site = %d", userFacility)
+			filter += fmt.Sprintf(" AND (site = %d OR site IS NULL)", userFacility)
 			sl.Info("Filtering cases by user facility", "user_id", userID, "facility_id", userFacility)
 		} else {
 			sl.Info("No facility assigned to user, showing all cases for outbreak", "user_id", userID)
@@ -708,11 +707,11 @@ func HandlerCasesList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 
 	clients, err := models.Clients(c.Context(), db, filter)
 	if err != nil {
-		if errors.Is(err, models.ErrNoRecord) {
-			fmt.Println("error loading case list: ", err.Error())
-		} else {
-			fmt.Println("error loading case list: ", err.Error())
-		}
+		sl.Error("Error loading case list", "error", err, "outbreak_id", outbreakID, "user_facility", userFacility)
+		clients = []models.Client{}
+	}
+	if clients == nil {
+		clients = []models.Client{}
 	}
 
 	var phoneNumbers []string

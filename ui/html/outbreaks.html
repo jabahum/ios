@@ -84,14 +84,16 @@
 function selectOutbreak(outbreakId) {
     fetch('/outbreaks/select/' + outbreakId, {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
             'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
         }
     })
     .then(response => {
         if (response.ok) {
-            // Redirect to cases page after successful selection
-            window.location.href = '/cases';
+            // Redirect to cases list so cases for this outbreak and facility load
+            window.location.href = '/cases/list';
         } else {
             alert('Failed to select outbreak');
         }
