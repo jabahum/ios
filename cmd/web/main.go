@@ -8,6 +8,7 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"runtime"
 
 	"github.com/gofiber/fiber/v2"
@@ -148,9 +149,12 @@ func main() {
 		})
 	})
 
-	// Serve static files
-	app.Static("/", "./ui")
-	// app.Static("/static", "../../ui/static")
+	// Serve static files (support running from project root or cmd/web)
+	uiRoot := "ui"
+	if _, err := os.Stat(uiRoot); os.IsNotExist(err) {
+		uiRoot = filepath.Join("..", "ui")
+	}
+	app.Static("/", uiRoot)
 
 	// Serve audio files
 	app.Static("/audios", "./audios")

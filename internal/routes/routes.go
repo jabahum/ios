@@ -1231,6 +1231,16 @@ func AuthRequired(store *session.Store) fiber.Handler {
 		path := c.Path()
 		log.Printf("DEBUG: AuthRequired checking path: %s", path)
 
+		// Allow static assets (CSS, JS, etc.) so public pages like vhf-cif and mpox-cif can load Bootstrap
+		if strings.HasPrefix(path, "/static") {
+			log.Printf("DEBUG: Path %s matches public prefix /static", path)
+			return c.Next()
+		}
+		// Allow API used by public CIF forms (e.g. facilities, locations)
+		if strings.HasPrefix(path, "/api/facilities") || strings.HasPrefix(path, "/api/locations") {
+			return c.Next()
+		}
+
 		for _, route := range publicRoutes {
 			if matchesRoute(path, route) {
 				log.Printf("DEBUG: Path %s matches public route %s", path, route)
