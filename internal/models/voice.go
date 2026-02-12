@@ -98,6 +98,13 @@ type CallSession struct {
 	Amount            int    `json:"amount"`
 }
 
+// Config represents the application configuration
+type Config struct {
+	AT_PHONE	 string `json:"AT_PHONE"`
+	AT_USERNAME  string `json:"AT_USERNAME"`
+	AT_API_KEY   string `json:"AT_API_KEY"`
+}
+
 var stepPrompts = map[int]string{}
 
 func SendCall(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
@@ -121,16 +128,23 @@ func SendCall(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 		stepPrompts[value.QuestionNo] = value.Question
 	}
 
-	fmt.Println("steps %v", stepPrompts)
+	fmt.Printf("steps %v", stepPrompts)
+
+	// Load configuration
+	config, err := loadConfig()
+	if err != nil {
+		log.Fatal("Error loading config:", err)
+	}
+	fmt.Printf("Config loaded: %+v\n", config)
 
 	url := "https://voice.africastalking.com/call"
 	method := "POST"
 
 	// Build payload
 	payloadData := map[string]interface{}{
-		"from":     os.Getenv("AT_PHONE"),
+		"from":     config.AT_PHONE, //os.Getenv("AT_PHONE"),
 		"to":       phone,
-		"username": os.Getenv("AT_USERNAME"),
+		"username": config.AT_USERNAME, //os.Getenv("AT_USERNAME"),
 	}
 
 	payloadBytes, err := json.Marshal(payloadData)
@@ -153,7 +167,7 @@ func SendCall(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 		return err
 	}
 	req.Header.Add("Accept", "application/json")
-	req.Header.Add("apiKey", os.Getenv("AT_API_KEY"))
+	req.Header.Add("apiKey", config.AT_API_KEY) // os.Getenv("AT_API_KEY"))
 	req.Header.Add("Content-Type", "application/json")
 	// req.Header.Add("Cache-Control", "no-cache")
 
@@ -335,7 +349,7 @@ func getStepKey(step int) string {
 
 func createGetDigitsResponse(step int, patientName string, language string, isRetry bool) ATResponse {
 	text := fmt.Sprintf(stepPrompts[step])
-	voice_url := "https://pxvs54rm-3001.uks1.devtunnels.ms/audios/"+language+"/"+strconv.Itoa(step)+".wav"
+	voice_url := "https://response.health.go.ug/audios/"+language+"/0"+strconv.Itoa(step)+".wav"
 	fmt.Println("Voice URL for step", step, ":", voice_url)
 
 	if isRetry {
@@ -453,3 +467,20 @@ func sendUrgentAlert(patientName, phoneNumber string, response map[string]interf
 	// - Push notification: sendPushNotification(alertData)
 	// - Create support ticket: createTicket(patientData, response)
 }
+
+func loadConfig() (*Config, error) {
+	// Read config file
+	configData, err := os.ReadFile("cmd/web/config.json")
+	if err != nil {
+		return nil, fmt.Errorf("error reading config file: %v", err)
+	}
+
+	var config Config
+	err = json.Unmarshal(configData, &config)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing config file: %v", err)
+	}
+
+	return &config, nil
+}
+

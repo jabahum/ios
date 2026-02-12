@@ -16,6 +16,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/session"
 
 	_ "github.com/lib/pq"
+        _ "github.com/joho/godotenv/autoload"
 
 	_ "case/cmd/web/docs" // Swagger documentation
 	"case/internal/handlers"
