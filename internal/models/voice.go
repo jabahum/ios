@@ -24,12 +24,13 @@ import (
 
 // Session represents call state
 type Session struct {
+	sync.Mutex
 	SessionID    string            `json:"session_id"`
 	PhoneNumber  string            `json:"phone_number"`
 	PatientName  string            `json:"patient_name"`
 	Language	 string            `json:"language"`
 	CurrentStep  int               `json:"current_step"`
-	Responses    map[string]string `json:"responses"`
+	Responses    MpoxAssessment    `json:"responses"`
 	LastActivity time.Time         `json:"last_activity"`
 	ClientID	 int               `json:"client_id"`
 }
@@ -82,7 +83,7 @@ type MpoxAssessment struct {
 	Comorbidities    bool      `json:"comorbidities"`
 	CompletedAt      string    `json:"completed_at"`
 	ExposureAlert    bool      `json:"exposure_alert"`
-	PatientCondition string    `json:"patient_condition"`
+	PatientCondition int       `json:"patient_condition"`
 	NewLesions       bool      `json:"new_lesions"`
 	PainLevel        int       `json:"pain_level"`
 	PatientName      string    `json:"patient_name"`
@@ -96,6 +97,13 @@ type CallSession struct {
 	PhoneNumber       string `json:"phone_number"`
 	DurationInSeconds int    `json:"duration_in_seconds"`
 	Amount            int    `json:"amount"`
+}
+
+// Config represents the application configuration
+type Config struct {
+	AT_PHONE	 string `json:"AT_PHONE"`
+	AT_USERNAME  string `json:"AT_USERNAME"`
+	AT_API_KEY   string `json:"AT_API_KEY"`
 }
 
 var stepPrompts = map[int]string{}
@@ -123,14 +131,21 @@ func SendCall(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 
 	fmt.Println("steps %v", stepPrompts)
 
+	// Load configuration
+	config, err := loadConfig()
+	if err != nil {
+		log.Fatal("Error loading config:", err)
+	}
+	fmt.Printf("Config loaded: %+v\n", config)
+
 	url := "https://voice.africastalking.com/call"
 	method := "POST"
 
 	// Build payload
 	payloadData := map[string]interface{}{
-		"from":     os.Getenv("AT_PHONE"),
+		"from":     config.AT_PHONE, //os.Getenv("AT_PHONE"),
 		"to":       phone,
-		"username": os.Getenv("AT_USERNAME"),
+		"username": config.AT_USERNAME, //os.Getenv("AT_USERNAME"),
 	}
 
 	payloadBytes, err := json.Marshal(payloadData)
@@ -153,9 +168,8 @@ func SendCall(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 		return err
 	}
 	req.Header.Add("Accept", "application/json")
-	req.Header.Add("apiKey", os.Getenv("AT_API_KEY"))
+	req.Header.Add("apiKey", config.AT_API_KEY) // os.Getenv("AT_API_KEY"))
 	req.Header.Add("Content-Type", "application/json")
-	// req.Header.Add("Cache-Control", "no-cache")
 
 	res, err := client.Do(req)
 	if err != nil {
@@ -202,6 +216,7 @@ func HandleVoiceCallback(c *fiber.Ctx, db *sql.DB) error {
 		callback.SessionID, callback.CallerNumber, callback.DtmfDigits)
 
 	if callback.CallSessionState == "Answered" {
+		// fmt.Println(">>>>> Call answered")
 		client, _ := ClientByHBCPhone(c.Context(), db, callback.CallerNumber[1:])
 		clientLanguage = client.HbcLanguage.Int64
 		clientID = client.ID
@@ -209,10 +224,12 @@ func HandleVoiceCallback(c *fiber.Ctx, db *sql.DB) error {
 
 	// Get or create session
 	session := getOrCreateSession(callback.SessionID, callback.CallerNumber, clientLanguage, clientID) // session created with client's preferred language, and saved in session. After that session language is used for that client for that session.
+	// fmt.Printf("Session: %+v\n", session)
 	var response ATResponse
 
 	// Process DTMF input
 	if callback.DtmfDigits != "" {
+		// fmt.Printf(">>>>Processing input for step %d: %s\n", session.CurrentStep, callback.DtmfDigits)
 		if !processInput(session, callback.DtmfDigits) {
 			// Invalid input - retry current step
 			response = createGetDigitsResponse(session.CurrentStep, session.PatientName, session.Language, true)
@@ -220,11 +237,12 @@ func HandleVoiceCallback(c *fiber.Ctx, db *sql.DB) error {
 			// Valid input - move to next step
 			session.CurrentStep++
 			if session.CurrentStep > 6 {
-				fmt.Printf("<<<<<??????Session responses before completion response: %+v\n", session.Responses)
+				// fmt.Printf("<<<<<??????Session responses before completion response: %+v\n", session.Responses)
 				// Assessment complete
 				response = createCompletionResponse()
 			} else {
 				// Continue to next step
+				// fmt.Printf("<<<<<[[[]]]>>>>Session responses so far: %+v\n", session.Responses)
 				response = createGetDigitsResponse(session.CurrentStep, session.PatientName, session.Language, false)
 			}
 		}
@@ -276,7 +294,7 @@ func getOrCreateSession(sessionID, phoneNumber string, languageID int64, clientI
 		PatientName:  "Patient", // Fetch from database: getPatientName(phoneNumber)
 		Language:     languages[languageID], // Default language; fetch from DB if needed
 		CurrentStep:  1,
-		Responses:    make(map[string]string),
+		Responses:    MpoxAssessment{},
 		LastActivity: time.Now(),
 		ClientID:    clientID,
 	}
@@ -304,18 +322,32 @@ func processInput(session *Session, input string) bool {
 	switch step {
 	case 1: // Patient Condition (1-5)
 		if input >= "1" && input <= "5" {
-			session.Responses["patient_condition"] = input
+			session.Responses.PatientCondition, _ = strconv.Atoi(input)
 			return true
 		}
 	case 2: // Pain level (0-10)
 		if level, err := strconv.Atoi(input); err == nil && level >= 0 && level <= 10 {
-			session.Responses["pain_level"] = input
+			session.Responses.PainLevel = level
 			return true
 		}
-	case 3, 4, 5, 6: // Y/N questions (1=Yes, 2=No)
+	case 3: // New Lesions
 		if input == "1" || input == "2" {
-			stepKey := getStepKey(step)
-			session.Responses[stepKey] = input
+			session.Responses.NewLesions = (input == "1")
+			return true
+		}
+	case 4: // Comorbidities
+		if input == "1" || input == "2" {
+			session.Responses.Comorbidities = (input == "1")
+			return true
+		}
+	case 5: // Lesions Dry
+		if input == "1" || input == "2" {
+			session.Responses.LesionsDry = (input == "1")
+			return true
+		}
+	case 6: // Exposure Alert
+		if input == "1" || input == "2" {
+			session.Responses.ExposureAlert = (input == "1")
 			return true
 		}
 	}
@@ -335,7 +367,7 @@ func getStepKey(step int) string {
 
 func createGetDigitsResponse(step int, patientName string, language string, isRetry bool) ATResponse {
 	text := fmt.Sprintf(stepPrompts[step])
-	voice_url := "https://pxvs54rm-3001.uks1.devtunnels.ms/audios/"+language+"/"+strconv.Itoa(step)+".wav"
+	voice_url := "https://response.health.go.ug/audios/"+language+"/0"+strconv.Itoa(step)+".wav"
 	fmt.Println("Voice URL for step", step, ":", voice_url)
 
 	if isRetry {
@@ -350,14 +382,8 @@ func createGetDigitsResponse(step int, patientName string, language string, isRe
 	return ATResponse{
 		GetDigits: &GetDigits{
 			Timeout: 8,
-			// FinishOnKey: "#",
 			NumDigits:   numDigits,
-			CallbackUrl: "https://response.health.go.ug/voice/callback", // "https://pxvs54rm-3001.uks1.devtunnels.ms/voice/callback", // Replace with your domain
-			// Say: Say{
-			// 	Voice:    "woman",
-			// 	PlayBeep: "true",
-			// 	Text:     text,
-			// },
+			CallbackUrl: "https://response.health.go.ug/voice/callback", //"https://pxvs54rm-3001.uks1.devtunnels.ms/voice/callback", // Replace with your domain
 			Play: Play{
 				Url: voice_url,
 			},
@@ -376,75 +402,66 @@ func createCompletionResponse() ATResponse {
 }
 
 func saveMpoxResponse(session *Session, amount string, duration string, db *sql.DB) {
-	painLevel, _ := strconv.Atoi(session.Responses["pain_level"])
-	fmt.Printf("\n Mpox Responses for Session:<>%v \n", session.Responses)
+	// 1. Parse amount to float64 and then to int	
+	amt, _ := strconv.ParseFloat(amount, 64)
+	intAmount := int(math.Round(amt)) // Convert to int for DB consistency
 
-	// Create structured response
-	response := map[string]interface{}{
-		"session_id":        session.SessionID,
-		"phone_number":      session.PhoneNumber,
-		"patient_name":      session.PatientName,
-		"patient_condition": session.Responses["patient_condition"],
-		"pain_level":        painLevel,
-		"new_lesions":       session.Responses["new_lesions"] == "1",
-		"comorbidities":     session.Responses["comorbidities"] == "1",
-		"lesions_dry":       session.Responses["lesions_dry"] == "1",
-		"exposure_alert":    session.Responses["exposure_alert"] == "1",
-		"completed_at":      time.Now(),
-		"amount":            amount,
-		"duration":          duration,
-		"platform":          "ivr",
+	// 2. Map directly to your struct (No JSON overhead)
+	assessmentData := MpoxAssessment{
+		Platform:         "ivr",
+		PhoneNumber:      session.PhoneNumber,
+		// Pull values directly from the fixed memory slots
+		PatientCondition: session.Responses.PatientCondition,
+		PainLevel:        session.Responses.PainLevel,
+		NewLesions:       session.Responses.NewLesions,
+		Comorbidities:    session.Responses.Comorbidities,
+		LesionsDry:       session.Responses.LesionsDry,
+		ExposureAlert:    session.Responses.ExposureAlert,
 	}
 
-	fmt.Printf("Mpox Assessment Complete: %+v", response)
+	fmt.Printf("Mpox Assessment Prepared: %+v\n", assessmentData)
 
-	// Check for urgent conditions and send alerts
-	if session.Responses["patient_condition"] == "3" || // Feel worse
-		session.Responses["patient_condition"] == "5" || // Need health worker
-		painLevel >= 8 || // High pain
-		session.Responses["exposure_alert"] == "1" { // Exposure risk
-
-		sendUrgentAlert(session.PatientName, session.PhoneNumber, response)
+	// 3. Urgent Alert Logic
+	if session.Responses.PatientCondition == 3 || session.Responses.PatientCondition == 5 || session.Responses.PainLevel >= 8 || assessmentData.ExposureAlert {
+		// Pass the struct directly
+		sendUrgentAlert(session.PatientName, session.PhoneNumber)
 	}
 
-	// In production: save to database
-	// db.Create(&MpoxResponse{...})
-	jsonBytes, _ := json.Marshal(response)
-	var assessmentData MpoxAssessment
-	// convert jsonBytes to Json and bind it to assessmentData
-	err := json.Unmarshal(jsonBytes, &assessmentData)
-	if err != nil {
-		panic(err)
-	}
-
-	amt, err := strconv.ParseFloat(amount, 64)
-	if err != nil {
-		return
-	}
-	intAmount := math.Round(amt)
-
+	// 4. Save Call Session
 	var callID int
-	query := `INSERT INTO call_sessions (phone_number, duration_in_seconds, amount) VALUES ($1, $2, $3) RETURNING id`
-	err = db.QueryRow(query, assessmentData.PhoneNumber, duration, intAmount).Scan(&callID)
+	queryCall := `INSERT INTO call_sessions (phone_number, duration_in_seconds, amount) 
+	              VALUES ($1, $2, $3) RETURNING id`
+	
+	err := db.QueryRow(queryCall, assessmentData.PhoneNumber, duration, intAmount).Scan(&callID)
 	if err != nil {
-		fmt.Printf("Error saving call session: %v", err)
+		log.Printf("Error saving call session: %v", err)
 		return
 	}
 
-	query1 := `INSERT INTO mpox_assessments ` +
-		`(client_id, call_session_id, platform, phone_number, patient_condition, pain_level, new_lesions, comorbidities, lesions_dry, exposure_alert) ` +
-		`VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
-	// save assessment to database
-	_, err1 := db.Exec(query1, session.ClientID, callID, assessmentData.Platform, assessmentData.PhoneNumber, assessmentData.PatientCondition, assessmentData.PainLevel, assessmentData.NewLesions, assessmentData.Comorbidities, assessmentData.LesionsDry, assessmentData.ExposureAlert)
-	if err1 != nil {
-		fmt.Printf("Error saving mpox assessment: %v", err1)
-		return
-	}
+	// 5. Save Assessment (Using the verified callID and session.ClientID)
+	queryAss := `INSERT INTO mpox_assessments 
+		(client_id, call_session_id, platform, phone_number, patient_condition, pain_level, new_lesions, comorbidities, lesions_dry, exposure_alert) 
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
+	
+	_, err = db.Exec(queryAss, 
+		session.ClientID, 
+		callID, 
+		assessmentData.Platform, 
+		assessmentData.PhoneNumber, 
+		assessmentData.PatientCondition, 
+		assessmentData.PainLevel, 
+		assessmentData.NewLesions, 
+		assessmentData.Comorbidities, 
+		assessmentData.LesionsDry, 
+		assessmentData.ExposureAlert,
+	)
 
-	return
+	if err != nil {
+		log.Printf("Error saving mpox assessment: %v", err)
+	}
 }
 
-func sendUrgentAlert(patientName, phoneNumber string, response map[string]interface{}) {
+func sendUrgentAlert(patientName, phoneNumber string) {
 	fmt.Printf("🚨 URGENT ALERT: Patient %s (%s) requires immediate attention", patientName, phoneNumber)
 
 	// In production, implement:
@@ -452,4 +469,20 @@ func sendUrgentAlert(patientName, phoneNumber string, response map[string]interf
 	// - Email notification: sendEmail(healthWorkerEmail, alertDetails)
 	// - Push notification: sendPushNotification(alertData)
 	// - Create support ticket: createTicket(patientData, response)
+}
+
+func loadConfig() (*Config, error) {
+	// Read config file
+	configData, err := os.ReadFile("cmd/web/config.json")
+	if err != nil {
+		return nil, fmt.Errorf("error reading config file: %v", err)
+	}
+
+	var config Config
+	err = json.Unmarshal(configData, &config)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing config file: %v", err)
+	}
+
+	return &config, nil
 }
