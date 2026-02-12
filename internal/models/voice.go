@@ -130,12 +130,16 @@ func SendCall(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 
 	fmt.Printf("steps %v", stepPrompts)
 
-	// Load configuration
+	// Load configuration from config.json without killing the server on error
 	config, err := loadConfig()
 	if err != nil {
-		log.Fatal("Error loading config:", err)
+		sl.Error("Error loading voice config", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status": "failed",
+			"error":  "Failed to load voice configuration",
+		})
 	}
-	fmt.Printf("Config loaded: %+v\n", config)
+	fmt.Printf("Voice config loaded: %+v\n", config)
 
 	url := "https://voice.africastalking.com/call"
 	method := "POST"
@@ -469,18 +473,34 @@ func sendUrgentAlert(patientName, phoneNumber string, response map[string]interf
 }
 
 func loadConfig() (*Config, error) {
-	// Read config file
-	configData, err := os.ReadFile("cmd/web/config.json")
-	if err != nil {
-		return nil, fmt.Errorf("error reading config file: %v", err)
+	// Try multiple possible locations for the config file so this works
+	// whether the binary is run from project root or from cmd/web.
+	paths := []string{
+		"cmd/web/config.json",
+		"config.json",
+		"../cmd/web/config.json",
+		"../../cmd/web/config.json",
 	}
 
-	var config Config
-	err = json.Unmarshal(configData, &config)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing config file: %v", err)
+	var lastErr error
+	for _, p := range paths {
+		data, err := os.ReadFile(p)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+
+		var cfg Config
+		if err := json.Unmarshal(data, &cfg); err != nil {
+			return nil, fmt.Errorf("error parsing config file %s: %w", p, err)
+		}
+		return &cfg, nil
 	}
 
-	return &config, nil
+	if lastErr != nil {
+		return nil, fmt.Errorf("error reading config file: %w", lastErr)
+	}
+
+	return nil, fmt.Errorf("config.json not found in expected locations")
 }
 

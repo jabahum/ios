@@ -16,7 +16,6 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/session"
 
 	_ "github.com/lib/pq"
-        _ "github.com/joho/godotenv/autoload"
 
 	_ "case/cmd/web/docs" // Swagger documentation
 	"case/internal/handlers"
@@ -271,11 +270,10 @@ func main() {
 
 // connect to database
 func getDB(config handlers.Config, sl *slog.Logger) *sql.DB {
-	// Use proper PostgreSQL connection string format
-	// For local development, use localhost. For Docker, use "db"
-	dbHost := os.Getenv("DB_HOST")
+	// Use PostgreSQL connection details from config.json only
+	dbHost := config.DBHost
 	if dbHost == "" {
-		dbHost = "localhost" // Default to localhost for local development
+		dbHost = "localhost" // Fallback default if DBHost not set
 	}
 
 	connStr := fmt.Sprintf("host=%s port=5432 user=%s password=%s dbname=%s sslmode=disable",
