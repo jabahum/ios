@@ -373,7 +373,7 @@ func getStepKey(step int) string {
 
 func createGetDigitsResponse(step int, patientName string, language string, isRetry bool) ATResponse {
 	text := fmt.Sprintf(stepPrompts[step])
-	voice_url := "https://pxvs54rm-3001.uks1.devtunnels.ms/audios/" + language + "/" + strconv.Itoa(step) + ".wav"
+	voice_url := "https://response.health.go.ug/audios/" + language + "/0" + strconv.Itoa(step) + ".wav"
 	fmt.Println("Voice URL for step", step, ":", voice_url)
 
 	if isRetry {
