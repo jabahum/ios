@@ -740,6 +740,13 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		appGroup.Get("/vhf/new", func(c *fiber.Ctx) error {
 			return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "vhf_cif")
 		})
+		// Register /cases/list and /cases BEFORE /cases/:outbreak_id so they match first (param route would otherwise catch "list")
+		appGroup.Get("/cases/list", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
+			return handlers.HandlerCasesList(c, db, sl, store, config)
+		})
+		appGroup.Get("/cases", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
+			return handlers.HandlerCasesList(c, db, sl, store, config)
+		})
 		appGroup.Get("/cases/new", func(c *fiber.Ctx) error { return handlers.HandlerCasesForm(c, db, sl, store, config, smsService, voiceService) })
 		appGroup.Get("/cases/:outbreak_id", func(c *fiber.Ctx) error {
 			// Set the outbreak ID in session and redirect to cases list

@@ -27,11 +27,11 @@ type Session struct {
 	SessionID    string            `json:"session_id"`
 	PhoneNumber  string            `json:"phone_number"`
 	PatientName  string            `json:"patient_name"`
-	Language	 string            `json:"language"`
+	Language     string            `json:"language"`
 	CurrentStep  int               `json:"current_step"`
 	Responses    map[string]string `json:"responses"`
 	LastActivity time.Time         `json:"last_activity"`
-	ClientID	 int               `json:"client_id"`
+	ClientID     int               `json:"client_id"`
 }
 
 // Africa's Talking callback request
@@ -61,7 +61,7 @@ type GetDigits struct {
 	NumDigits   int    `xml:"numDigits,attr"`
 	CallbackUrl string `xml:"callbackUrl,attr"`
 	// Say         Say    `xml:"Say"`
-	Play		Play   `xml:"Play"`
+	Play Play `xml:"Play"`
 }
 
 type Say struct {
@@ -157,7 +157,8 @@ func SendCall(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 	req.Header.Add("Content-Type", "application/json")
 	// req.Header.Add("Cache-Control", "no-cache")
 
-	res, err := client.Do(req)
+	var res *http.Response
+	res, err = client.Do(req)
 	if err != nil {
 		fmt.Println(err)
 		// return err
@@ -168,7 +169,8 @@ func SendCall(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 	}
 	defer res.Body.Close()
 
-	body, err := io.ReadAll(res.Body)
+	var body []byte
+	body, err = io.ReadAll(res.Body)
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -273,12 +275,12 @@ func getOrCreateSession(sessionID, phoneNumber string, languageID int64, clientI
 	session := &Session{
 		SessionID:    sessionID,
 		PhoneNumber:  phoneNumber,
-		PatientName:  "Patient", // Fetch from database: getPatientName(phoneNumber)
+		PatientName:  "Patient",             // Fetch from database: getPatientName(phoneNumber)
 		Language:     languages[languageID], // Default language; fetch from DB if needed
 		CurrentStep:  1,
 		Responses:    make(map[string]string),
 		LastActivity: time.Now(),
-		ClientID:    clientID,
+		ClientID:     clientID,
 	}
 
 	sessions[sessionID] = session
@@ -335,7 +337,7 @@ func getStepKey(step int) string {
 
 func createGetDigitsResponse(step int, patientName string, language string, isRetry bool) ATResponse {
 	text := fmt.Sprintf(stepPrompts[step])
-	voice_url := "https://pxvs54rm-3001.uks1.devtunnels.ms/audios/"+language+"/"+strconv.Itoa(step)+".wav"
+	voice_url := "https://pxvs54rm-3001.uks1.devtunnels.ms/audios/" + language + "/" + strconv.Itoa(step) + ".wav"
 	fmt.Println("Voice URL for step", step, ":", voice_url)
 
 	if isRetry {
