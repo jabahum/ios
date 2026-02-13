@@ -698,15 +698,15 @@
                                     </td>
                                     <td>
                                         {{ $condition := $value.PatientCondition }}
-                                        {{ if eq $condition "1" }}
+                                        {{ if eq $condition 1 }}
                                             <span class="badge bg-success">No new symptoms</span>
-                                        {{ else if eq $condition "2" }}
+                                        {{ else if eq $condition 2 }}
                                             <span class="badge bg-danger">Yes new symptoms</span>
-                                        {{ else if eq $condition "3" }}
+                                        {{ else if eq $condition 3 }}
                                             <span class="badge bg-danger">I feel worse</span>
-                                        {{ else if eq $condition "4" }}
+                                        {{ else if eq $condition 4 }}
                                             <span class="badge bg-success">I feel better</span>
-                                        {{ else if eq $condition "5" }}
+                                        {{ else if eq $condition 5 }}
                                             <span class="badge bg-warning">Need to speak to healthworker</span>
                                         {{ else }}
                                             <span class="badge bg-secondary">{{ $condition }}</span>
