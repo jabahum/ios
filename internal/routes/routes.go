@@ -91,7 +91,6 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 
 		return nil
 	})
-	
 	app.Get("/login", func(c *fiber.Ctx) error {
 		return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "login")
 	})

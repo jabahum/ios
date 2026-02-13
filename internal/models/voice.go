@@ -129,7 +129,18 @@ func SendCall(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 		stepPrompts[value.QuestionNo] = value.Question
 	}
 
-	fmt.Println("steps %v", stepPrompts)
+	fmt.Printf("steps %v", stepPrompts)
+
+	// Load configuration from config.json without killing the server on error
+	config, err := loadConfig()
+	if err != nil {
+		sl.Error("Error loading voice config", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status": "failed",
+			"error":  "Failed to load voice configuration",
+		})
+	}
+	fmt.Printf("Voice config loaded: %+v\n", config)
 
 	// Load configuration
 	config, err := loadConfig()

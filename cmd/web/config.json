@@ -3,6 +3,7 @@
     "ReadTimeout"    : 10,
     "WriteTimeout"   : 600,
     "Static"         : "public",
+    "DBHost"         : "localhost",
     "Ux"             : "postgres",
     "Px"             : "pwaiswa",
     "Dx"             : "ios",
