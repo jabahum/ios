@@ -47,51 +47,50 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 	app.Post("/voice/callback", func(c *fiber.Ctx) error {
 		return models.HandleVoiceCallback(c, db)
 	})
-	// app.Get("/audios/:filename", func(c *fiber.Ctx) error {
-	// 	log.Printf("DEBUG: Serving audio file: %s", c.Params("filename"))
-	// 	absPath, _ := filepath.Abs("./audios/"+c.Params("filename"))
-	// 	fmt.Println("Absolute path to audio file:", absPath)
-	// 	err := c.SendFile(absPath)
-	// 	if err != nil {
-	// 		log.Printf("ERROR: Failed to send audio file: %v", err)
-	// 		return err
-	// 	}
-	// 	return nil
-	// })
-	app.Get("/audios/:filename", func(c *fiber.Ctx) error {
-		wd, _ := os.Getwd()
-		fmt.Println("Server is running from:", wd)
-
-		filename,_ := url.QueryUnescape(c.Params("filename"))
-		log.Printf("DEBUG: Serving audio file: %s", filename)
-
-		// 1. Join paths safely and clean them to prevent directory traversal
-		targetPath := filepath.Join("./audios", filepath.Clean(filename))
-
-		// Set headers to help Africa's Talking manage the cache
-		// c.Set("Cache-Control", "public, max-age=60") // Cache for 24 hours
-		c.Set("Cache-Control", "no-cache, no-store, must-revalidate")
-		
-		// 2. Get absolute path for logging or specific system requirements
-		absPath, err := filepath.Abs(targetPath)
+	app.Get("/audios/*", func(c *fiber.Ctx) error {
+		// 1. Get the current working directory to anchor the search
+		wd, err := os.Getwd()
 		if err != nil {
-			return fiber.NewError(fiber.StatusInternalServerError, "Could not resolve path")
-		}
-		fmt.Println("Absolute path to audio file:", absPath)
-
-		if _, err := os.Stat(absPath); os.IsNotExist(err) {
-			fmt.Printf("CRITICAL: OS cannot see file at %s", absPath)
+			return fiber.NewError(fiber.StatusInternalServerError, "Could not determine working directory")
 		}
 
-		// 3. Send file and handle the error properly
-		if err := c.SendFile(absPath); err != nil {
-			log.Printf("ERROR: Failed to send audio file: %v", err)
-			// Pass error to Fiber's default error handler (usually returns 404 or 500)
+		// 2. Capture the full wildcard path (e.g., "english/01.wav")
+		// Fiber uses "*" as the parameter name for the wildcard
+		rawPath := c.Params("*")
+		filename, _ := url.QueryUnescape(rawPath)
+		
+		log.Printf("DEBUG: Requested path: %s", filename)
+
+		// 3. Construct the absolute path
+		// We join: [Current Working Dir] + [audios folder] + [the wildcard path]
+		// use this one for production.
+		absPath := filepath.Join(wd, "../..", "audios", filepath.Clean(filename))
+
+		// @jkage: use this one for development on docker
+		// absPath := filepath.Join(wd, "audios", filepath.Clean(filename))
+		
+		fmt.Println("Full system path to file:", absPath)
+
+		// 4. Set Headers for Africa's Talking (No-Cache)
+		c.Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		c.Set("Pragma", "no-cache")
+		c.Set("Expires", "0")
+
+		// 5. Verify file existence before sending
+		if info, err := os.Stat(absPath); os.IsNotExist(err) || info.IsDir() {
+			log.Printf("CRITICAL: File missing or is a directory: %s", absPath)
 			return fiber.NewError(fiber.StatusNotFound, "Audio file not found")
 		}
+
+		// 6. Send the file
+		// Fiber handles Content-Type (audio/wav) and Range requests automatically
+		if err := c.SendFile(absPath); err != nil {
+			log.Printf("ERROR: Failed to send audio file: %v", err)
+			return fiber.NewError(fiber.StatusInternalServerError, "Error transmitting file")
+		}
+
 		return nil
 	})
-	
 	app.Get("/login", func(c *fiber.Ctx) error {
 		return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "login")
 	})

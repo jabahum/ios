@@ -289,7 +289,7 @@ func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 	if (client.AdmWard.String == strconv.Itoa(3)) {
 		data.IsHomeBasedCare = true
 	}
-	fmt.Println("assessments data: %s", assessments)
+	// fmt.Printf("assessments data: %s", assessments)
 
 	// Set user's facility ID for auto-selection in dropdown
 	userFacility := GetCurrentFacility(c, db, sl, store)

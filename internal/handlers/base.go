@@ -151,6 +151,7 @@ type Config struct {
 	ReadTimeout  int64  `json:"ReadTimeout"`
 	WriteTimeout int64  `json:"WriteTimeout"`
 	Static       string `json:"Static"`
+	DBHost       string `json:"DBHost"`
 	Ux           string `json:"Ux"`
 	Px           string `json:"Px"`
 	Dx           string `json:"Dx"`

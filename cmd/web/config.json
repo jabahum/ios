@@ -3,6 +3,7 @@
     "ReadTimeout"    : 10,
     "WriteTimeout"   : 600,
     "Static"         : "public",
+    "DBHost"         : "localhost",
     "Ux"             : "postgres",
     "Px"             : "pwaiswa",
     "Dx"             : "ios",
@@ -22,5 +23,8 @@
         "Username": "pwaiswa",
         "Password": "leaves"
     },
-    "VoiceURL"       : "https://voice.africastalking.com/call"
+    "VoiceURL"       : "https://voice.africastalking.com/call",
+    "AT_PHONE": "+256323200977",
+    "AT_USERNAME": "hbc_user",
+    "AT_API_KEY": "atsk_61b9c1263274354777a72f520c72f965d0eb34a6f95e79c81e11477066a7ca05733aa31e"
 }
