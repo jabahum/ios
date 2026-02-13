@@ -63,7 +63,11 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 
 		// 3. Construct the absolute path
 		// We join: [Current Working Dir] + [audios folder] + [the wildcard path]
-		absPath := filepath.Join(wd, "../..","audios", filepath.Clean(filename))
+		// use this one for production.
+		absPath := filepath.Join(wd, "../..", "audios", filepath.Clean(filename))
+
+		// @jkage: use this one for development on docker
+		// absPath := filepath.Join(wd, "audios", filepath.Clean(filename))
 		
 		fmt.Println("Full system path to file:", absPath)
 
