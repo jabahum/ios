@@ -478,8 +478,20 @@ func sendUrgentAlert(patientName, phoneNumber string) {
 }
 
 func loadConfig() (*Config, error) {
-	// Read config file
-	configData, err := os.ReadFile("cmd/web/config.json")
+	// Try multiple possible config file locations (same as cmd/web/main.go)
+	configPaths := []string{
+		"config.json",
+		"cmd/web/config.json",
+		"../../cmd/web/config.json",
+	}
+	var configData []byte
+	var err error
+	for _, p := range configPaths {
+		configData, err = os.ReadFile(p)
+		if err == nil {
+			break
+		}
+	}
 	if err != nil {
 		return nil, fmt.Errorf("error reading config file: %v", err)
 	}
