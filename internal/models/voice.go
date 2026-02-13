@@ -142,13 +142,6 @@ func SendCall(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 	}
 	fmt.Printf("Voice config loaded: %+v\n", config)
 
-	// Load configuration
-	config, err := loadConfig()
-	if err != nil {
-		log.Fatal("Error loading config:", err)
-	}
-	fmt.Printf("Config loaded: %+v\n", config)
-
 	url := "https://voice.africastalking.com/call"
 	method := "POST"
 
