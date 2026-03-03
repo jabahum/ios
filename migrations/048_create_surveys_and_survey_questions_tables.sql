@@ -120,8 +120,7 @@ COPY public.survey_questions (id, survey_id, question_no, question, created_at, 
 3       1       3       Have you noticed new lesions today in sensitive areas like mouth, genitals, or eyes? Press 1 for Yes or 2 for No .      2025-10-17 06:38:07.790064        2025-10-17 06:38:07.790064
 4       1       4       Are you experiencing complications related to another illness such as HIV, diabetes, or high blood pressure? Press 1 for Yes or 2 for No .        2025-10-17 06:38:45.758979      2025-10-17 06:38:45.758979
 6       1       6       Has anyone in your home or neighbourhood developed Mpox-like symptoms in the last 24 hours? Press 1 for Yes or 2 for No .2025-10-17 06:40:52.136725       2025-10-17 06:40:52.136725
-5       1       5       Have all your lesions dried? Press 1 for Yes or 2 for No .      2025-10-17 06:39:25.012143      2025-10-17 06:39:25.012143
-\.
+5       1       5       Have all your lesions dried? Press 1 for Yes or 2 for No .      2025-10-17 06:39:25.012143      2025-10-17 06:39:25.012143\.
 
 
 --
