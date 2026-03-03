@@ -2,3 +2,8 @@
 
 /scripts
 .env
+
+.idea
+
+.DS_Store
+.vscode
