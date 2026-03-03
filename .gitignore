@@ -8,3 +8,21 @@ configs.json
 test_app
 test_build
 web.exe
+<<<<<<< HEAD
+=======
+/cmd/web/web.exe
+docker-compose.yml
+/init
+.env
+<<<<<<< HEAD
+/ios_rearranged
+.DS_Store
+.idea
+=======
+
+.idea
+
+.DS_Store
+.vscode
+>>>>>>> 05ff780 (add editor and IDE files and folders to ignore)
+>>>>>>> e93dcbb (add editor and IDE files and folders to ignore)
