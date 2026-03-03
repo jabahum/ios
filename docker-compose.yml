@@ -28,7 +28,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres-db-data:/var/lib/postgresql/data
-      - ./ios_october.sql:/docker-entrypoint-initdb.d/ios_october.sql:ro
+      - ./01_ios_october.sql:/docker-entrypoint-initdb.d/01_ios_october.sql:ro
+      - ./migrations/048_create_surveys_and_survey_questions_tables.sql:/docker-entrypoint-initdb.d/048_create_surveys_and_survey_questions_tables.sql:ro
     networks:
       - sso_network
 
