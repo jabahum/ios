@@ -8,3 +8,4 @@ configs.json
 test_app
 test_build
 web.exe
+/cmd/web/web.exe

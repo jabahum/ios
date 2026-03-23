@@ -224,6 +224,14 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 	app.Get("/api/cif/:id", func(c *fiber.Ctx) error {
 		return handlers.HandlerVhfCIFByID(c, db, sl, store, config)
 	})
+	// Swagger path /api/vhf/cif — register on app (not only AuthRequired group) so it matches production
+	// and localhost the same way as /api/cif. Handlers enforce session via GetUser → 401 JSON.
+	app.Get("/api/vhf/cif", func(c *fiber.Ctx) error {
+		return handlers.HandlerVhfCIFByCaseCode(c, db, sl, store, config)
+	})
+	app.Get("/api/vhf/cif/:id", func(c *fiber.Ctx) error {
+		return handlers.HandlerVhfCIFByID(c, db, sl, store, config)
+	})
 
 	// Public alias for creating cases to avoid 404 during Admit flow
 	app.Post("/api/cases", func(c *fiber.Ctx) error {
@@ -328,6 +336,23 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 	})
 	app.Post("/api/users/roles", middleware.PermissionRequired(store, db, sl, "users", "update"), func(c *fiber.Ctx) error {
 		return handlers.HandlerAssignUserRole(c, db, sl, store, config)
+	})
+
+	// Employee JSON API (same pattern as /api/users: PermissionRequired = session + RBAC; avoids relying only on AuthRequired group)
+	app.Get("/api/employees", middleware.PermissionRequired(store, db, sl, "employees", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerEmployeeListAPI(c, db, sl, store, config)
+	})
+	app.Get("/api/employees/:id", middleware.PermissionRequired(store, db, sl, "employees", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerGetEmployeeAPI(c, db, sl, store, config)
+	})
+	app.Post("/api/employees", middleware.PermissionRequired(store, db, sl, "employees", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerEmployeeSubmitAPI(c, db, sl, store, config)
+	})
+	app.Put("/api/employees/:id", middleware.PermissionRequired(store, db, sl, "employees", "update"), func(c *fiber.Ctx) error {
+		return handlers.HandlerEmployeeUpdateAPI(c, db, sl, store, config)
+	})
+	app.Delete("/api/employees/:id", middleware.PermissionRequired(store, db, sl, "employees", "delete"), func(c *fiber.Ctx) error {
+		return handlers.HandlerDeleteEmployeeAPI(c, db, sl, store, config)
 	})
 
 	app.Get("/api/resource-management/summary", middleware.PermissionRequired(store, db, sl, "resource_management", "read"), func(c *fiber.Ctx) error {
@@ -2220,22 +2245,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logg
 		return handlers.HandlerVHFLabSaveAPI(c, db, sl, store, config)
 	})
 
-	// Employee Management APIs (session + employees:* RBAC)
-	protected.Get("/api/employees", middleware.PermissionRequired(store, db, sl, "employees", "read"), func(c *fiber.Ctx) error {
-		return handlers.HandlerEmployeeListAPI(c, db, sl, store, config)
-	})
-	protected.Get("/api/employees/:id", middleware.PermissionRequired(store, db, sl, "employees", "read"), func(c *fiber.Ctx) error {
-		return handlers.HandlerGetEmployeeAPI(c, db, sl, store, config)
-	})
-	protected.Post("/api/employees", middleware.PermissionRequired(store, db, sl, "employees", "create"), func(c *fiber.Ctx) error {
-		return handlers.HandlerEmployeeSubmitAPI(c, db, sl, store, config)
-	})
-	protected.Put("/api/employees/:id", middleware.PermissionRequired(store, db, sl, "employees", "update"), func(c *fiber.Ctx) error {
-		return handlers.HandlerEmployeeUpdateAPI(c, db, sl, store, config)
-	})
-	protected.Delete("/api/employees/:id", middleware.PermissionRequired(store, db, sl, "employees", "delete"), func(c *fiber.Ctx) error {
-		return handlers.HandlerDeleteEmployeeAPI(c, db, sl, store, config)
-	})
+	// Employee JSON APIs: registered on app with PermissionRequired (see /api/users block).
 
 	// User Management APIs
 	protected.Get("/api/users", func(c *fiber.Ctx) error {
@@ -2311,13 +2321,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logg
 		return handlers.HandlerCaseDeleteAPI(c, db, sl, store, config)
 	})
 
-	// Disease-specific CIF APIs
-	// VHF
-	protected.Get("/api/vhf/cif/:id", func(c *fiber.Ctx) error { return handlers.HandlerVhfCIFByID(c, db, sl, store, config) })
-	protected.Get("/api/vhf/cif", func(c *fiber.Ctx) error { return handlers.HandlerVhfCIFByCaseCode(c, db, sl, store, config) })
-	// Backward-compatible aliases
-	protected.Get("/api/cif/:id", func(c *fiber.Ctx) error { return handlers.HandlerVhfCIFByID(c, db, sl, store, config) })
-	protected.Get("/api/cif", func(c *fiber.Ctx) error { return handlers.HandlerVhfCIFByCaseCode(c, db, sl, store, config) })
+	// Disease-specific CIF APIs (VHF /api/vhf/cif* and /api/cif* are on app — see top of SetRoute)
 	// Measles
 	protected.Get("/api/measles/cif/:id", func(c *fiber.Ctx) error { return handlers.HandlerMeaslesCIFByID(c, db, sl, store, config) })
 	protected.Get("/api/measles/cif", func(c *fiber.Ctx) error { return handlers.HandlerMeaslesCIFByCaseCode(c, db, sl, store, config) })
