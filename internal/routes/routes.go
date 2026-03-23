@@ -422,6 +422,23 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		return handlers.HandlerDeleteEmployeeAPI(c, db, sl, store, config)
 	})
 
+	// Departments (RBAC org table; same permission pattern as /api/roles)
+	app.Get("/api/departments", middleware.PermissionRequired(store, db, sl, "admin", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerDepartmentListAPI(c, db, sl)
+	})
+	app.Get("/api/departments/:id", middleware.PermissionRequired(store, db, sl, "admin", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerDepartmentGetAPI(c, db, sl)
+	})
+	app.Post("/api/departments", middleware.PermissionRequired(store, db, sl, "admin", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerDepartmentCreateAPI(c, db, sl)
+	})
+	app.Put("/api/departments/:id", middleware.PermissionRequired(store, db, sl, "admin", "update"), func(c *fiber.Ctx) error {
+		return handlers.HandlerDepartmentUpdateAPI(c, db, sl)
+	})
+	app.Delete("/api/departments/:id", middleware.PermissionRequired(store, db, sl, "admin", "delete"), func(c *fiber.Ctx) error {
+		return handlers.HandlerDepartmentDeleteAPI(c, db, sl)
+	})
+
 	app.Get("/api/resource-management/summary", middleware.PermissionRequired(store, db, sl, "resource_management", "read"), func(c *fiber.Ctx) error {
 		return handlers.HandlerResourceManagementSummaryAPI(c, db, store)
 	})
@@ -436,6 +453,15 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 	})
 	app.Get("/api/resource-management/resources", middleware.PermissionRequired(store, db, sl, "resource_management", "read"), func(c *fiber.Ctx) error {
 		return handlers.HandlerResourceManagementResourcesAPI(c, db, store)
+	})
+	app.Get("/api/resource-management/resource-categories", middleware.PermissionRequired(store, db, sl, "resource_management", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementResourceCategoriesAPI(c, db, store)
+	})
+	app.Get("/api/resource-management/resource-categories/:id", middleware.PermissionRequired(store, db, sl, "resource_management", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementResourceCategoryGetAPI(c, db, store)
+	})
+	app.Post("/api/resource-management/resource-categories", middleware.PermissionRequired(store, db, sl, "resource_management", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementResourceCategoryCreateAPI(c, db, store)
 	})
 	app.Get("/api/resource-management/requisitions", middleware.PermissionRequired(store, db, sl, "resource_management", "read"), func(c *fiber.Ctx) error {
 		return handlers.HandlerResourceManagementRequisitionsAPI(c, db, store)

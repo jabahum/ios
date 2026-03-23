@@ -1,5 +1,44 @@
 basePath: /
 definitions:
+  handlers.APIDepartmentWriteRequest:
+    properties:
+      description:
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      name:
+        example: Surveillance
+        type: string
+    type: object
+  handlers.APIEmployeeWriteRequest:
+    properties:
+      afi_district:
+        type: string
+      afi_facility:
+        type: string
+      afi_region:
+        type: string
+      employee_cadre:
+        type: string
+      employee_email:
+        example: jane@example.com
+        type: string
+      employee_fname:
+        example: Jane
+        type: string
+      employee_lname:
+        example: Doe
+        type: string
+      employee_phone:
+        type: string
+      employee_sex:
+        example: F
+        type: string
+      facility:
+        example: 1
+        type: integer
+    type: object
   handlers.APIOutbreakAssignRequest:
     properties:
       outbreak_id:
@@ -30,11 +69,183 @@ definitions:
         example: active
         type: string
     type: object
-  handlers.APIUserCreateRequest:
+  handlers.APIResourceCategoryWrite:
     properties:
-      department_id:
+      category_type:
+        example: ppe
+        type: string
+      description:
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      name:
+        example: PPE
+        type: string
+    type: object
+  handlers.APIResourceManagementActivityLogWrite:
+    properties:
+      activity_date:
+        example: "2025-03-01"
+        type: string
+      activity_description:
+        type: string
+      activity_type:
+        example: investigation
+        type: string
+      challenges:
+        type: string
+      deployment_id:
         example: 1
         type: integer
+      end_time:
+        example: "17:00"
+        type: string
+      location:
+        type: string
+      outcomes:
+        type: string
+      participants_count:
+        type: integer
+      recommendations:
+        type: string
+      resources_used:
+        type: string
+      start_time:
+        example: "09:00"
+        type: string
+    type: object
+  handlers.APIResourceManagementPillarWrite:
+    properties:
+      description:
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      name:
+        example: Surveillance
+        type: string
+      pillar_head_email:
+        type: string
+      pillar_head_id:
+        type: integer
+      pillar_head_name:
+        type: string
+      pillar_head_phone:
+        type: string
+    type: object
+  handlers.APIResourceManagementRRTDeploymentWrite:
+    properties:
+      actual_return_date:
+        type: string
+      assigned_driver:
+        type: string
+      assigned_vehicle:
+        type: string
+      deployment_date:
+        example: "2025-03-01"
+        type: string
+      deployment_notes:
+        type: string
+      deployment_purpose:
+        type: string
+      deployment_status:
+        example: deployed
+        type: string
+      expected_return_date:
+        type: string
+      outbreak_id:
+        example: 1
+        type: integer
+      team_id:
+        example: 1
+        type: integer
+    type: object
+  handlers.APIResourceManagementRRTTeamWrite:
+    properties:
+      base_location:
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      specializations:
+        items:
+          type: string
+        type: array
+      team_code:
+        example: RRT-C-01
+        type: string
+      team_lead_email:
+        type: string
+      team_lead_name:
+        example: Dr. A
+        type: string
+      team_lead_phone:
+        type: string
+      team_name:
+        example: RRT Central
+        type: string
+      team_size:
+        example: 5
+        type: integer
+      team_type:
+        example: medical
+        type: string
+    type: object
+  handlers.APIResourceManagementRequisitionWrite:
+    properties:
+      deployment_id:
+        type: integer
+      notes:
+        type: string
+      outbreak_id:
+        example: 1
+        type: integer
+      priority:
+        example: normal
+        type: string
+      requested_by:
+        type: integer
+      required_date:
+        example: "2025-03-15"
+        type: string
+      requisition_number:
+        example: REQ-2025-001
+        type: string
+      status:
+        example: pending
+        type: string
+    type: object
+  handlers.APIResourceManagementResourceWrite:
+    properties:
+      category_id:
+        example: 1
+        type: integer
+      description:
+        type: string
+      has_expiry:
+        type: boolean
+      is_active:
+        example: true
+        type: boolean
+      is_consumable:
+        example: true
+        type: boolean
+      is_critical:
+        type: boolean
+      name:
+        example: Surgical gloves
+        type: string
+      resource_code:
+        type: string
+      shelf_life_days:
+        type: integer
+      unit_of_measure:
+        example: box
+        type: string
+    type: object
+  handlers.APIUserCreateRequest:
+    properties:
       email:
         example: jdoe@example.com
         type: string
@@ -137,6 +348,118 @@ paths:
       summary: Get alerts
       tags:
       - Alerts
+  /api/departments:
+    get:
+      description: Requires admin:read
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{ \"departments\": [...] }'
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: List departments
+      tags:
+      - Departments
+    post:
+      consumes:
+      - application/json
+      description: Requires admin:create
+      parameters:
+      - description: Department
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.APIDepartmentWriteRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Create department
+      tags:
+      - Departments
+  /api/departments/{id}:
+    delete:
+      description: Requires admin:delete. Fails with 409 if still referenced.
+      parameters:
+      - description: Department ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Delete department
+      tags:
+      - Departments
+    get:
+      description: Requires admin:read
+      parameters:
+      - description: Department ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{ \"department\": {...} }'
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get department by ID
+      tags:
+      - Departments
+    put:
+      consumes:
+      - application/json
+      description: Requires admin:update
+      parameters:
+      - description: Department ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Department
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.APIDepartmentWriteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Update department
+      tags:
+      - Departments
   /api/employees:
     get:
       description: 'Returns `{ "employees": [...] }`. Requires `employees:read`.'
@@ -174,15 +497,15 @@ paths:
     post:
       consumes:
       - application/json
-      description: JSON body uses `models.Employee` field names (`employee_fname`,
-        `facility`, …). Requires `employees:create`.
+      description: Requires `employees:create`. Body field names match `models.Employee`
+        JSON tags.
       parameters:
-      - description: Employee fields (sql.Null* as string/number or null)
+      - description: Employee
         in: body
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.APIEmployeeWriteRequest'
       produces:
       - application/json
       responses:
@@ -274,12 +597,12 @@ paths:
         name: id
         required: true
         type: integer
-      - description: Employee fields
+      - description: Employee
         in: body
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.APIEmployeeWriteRequest'
       produces:
       - application/json
       responses:
@@ -819,7 +1142,7 @@ paths:
       - Outbreaks
   /api/pillars:
     get:
-      description: JSON list of resource management pillars (requires resource_management:read)
+      description: 'Returns `{ "pillars": [...] }` (requires resource_management:read)'
       produces:
       - application/json
       responses:
@@ -1348,13 +1671,12 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: deployment_id, activity_type, activity_date, optional times and
-          text fields
+      - description: Activity log
         in: body
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.APIResourceManagementActivityLogWrite'
       produces:
       - application/json
       responses:
@@ -1418,12 +1740,12 @@ paths:
         name: id
         required: true
         type: integer
-      - description: Fields
+      - description: Activity log
         in: body
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.APIResourceManagementActivityLogWrite'
       produces:
       - application/json
       responses:
@@ -1439,7 +1761,8 @@ paths:
       - Resource Management
   /api/resource-management/pillars:
     get:
-      description: Same as GET /api/pillars; session cookie + resource_management:read
+      description: 'Same as GET /api/pillars (`{ "pillars": [...] }`); session cookie
+        + resource_management:read'
       produces:
       - application/json
       responses:
@@ -1475,12 +1798,12 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Pillar fields (name, description, pillar_head_id, …)
+      - description: Pillar
         in: body
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.APIResourceManagementPillarWrite'
       produces:
       - application/json
       responses:
@@ -1544,12 +1867,12 @@ paths:
         name: id
         required: true
         type: integer
-      - description: Pillar fields
+      - description: Pillar
         in: body
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.APIResourceManagementPillarWrite'
       produces:
       - application/json
       responses:
@@ -1582,13 +1905,12 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: requisition_number, outbreak_id, optional deployment_id, requested_by,
-          dates, priority, status, notes
+      - description: Requisition
         in: body
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.APIResourceManagementRequisitionWrite'
       produces:
       - application/json
       responses:
@@ -1652,12 +1974,12 @@ paths:
         name: id
         required: true
         type: integer
-      - description: Fields
+      - description: Requisition
         in: body
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.APIResourceManagementRequisitionWrite'
       produces:
       - application/json
       responses:
@@ -1669,6 +1991,66 @@ paths:
       security:
       - SessionAuth: []
       summary: Update requisition
+      tags:
+      - Resource Management
+  /api/resource-management/resource-categories:
+    get:
+      description: Use category `id` values when creating catalog resources.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{ \"resource_categories\": [...] }'
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: List resource categories
+      tags:
+      - Resource Management
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Category
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.APIResourceCategoryWrite'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Create resource category
+      tags:
+      - Resource Management
+  /api/resource-management/resource-categories/{id}:
+    get:
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{ \"resource_category\": {...} }'
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get resource category by ID
       tags:
       - Resource Management
   /api/resource-management/resources:
@@ -1690,12 +2072,12 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Resource JSON (name, category_id, unit_of_measure, …)
+      - description: Resource
         in: body
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.APIResourceManagementResourceWrite'
       produces:
       - application/json
       responses:
@@ -1759,12 +2141,12 @@ paths:
         name: id
         required: true
         type: integer
-      - description: Resource JSON
+      - description: Resource
         in: body
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.APIResourceManagementResourceWrite'
       produces:
       - application/json
       responses:
@@ -1797,13 +2179,12 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: team_id, outbreak_id, deployment_date, deployment_status, optional
-          fields
+      - description: Deployment
         in: body
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.APIResourceManagementRRTDeploymentWrite'
       produces:
       - application/json
       responses:
@@ -1867,12 +2248,12 @@ paths:
         name: id
         required: true
         type: integer
-      - description: Fields to update
+      - description: Deployment
         in: body
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.APIResourceManagementRRTDeploymentWrite'
       produces:
       - application/json
       responses:
@@ -1905,12 +2286,12 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: RRT team JSON (team_name, team_code, team_type, …)
+      - description: RRT team (team_type and team_lead_name required by DB)
         in: body
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.APIResourceManagementRRTTeamWrite'
       produces:
       - application/json
       responses:
@@ -1974,12 +2355,12 @@ paths:
         name: id
         required: true
         type: integer
-      - description: RRT team JSON
+      - description: RRT team
         in: body
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.APIResourceManagementRRTTeamWrite'
       produces:
       - application/json
       responses:
@@ -2920,5 +3301,7 @@ tags:
   name: Alerts
 - description: Role-Based Access Control endpoints
   name: RBAC
+- description: Organization departments (RBAC) endpoints
+  name: Departments
 - description: Location data (districts, subcounties, parishes, villages) endpoints
   name: Locations

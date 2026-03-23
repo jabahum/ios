@@ -68,5 +68,8 @@ package main
 // @tag.name RBAC
 // @tag.description Role-Based Access Control endpoints
 
+// @tag.name Departments
+// @tag.description Organization departments (RBAC) endpoints
+
 // @tag.name Locations
 // @tag.description Location data (districts, subcounties, parishes, villages) endpoints

@@ -124,7 +124,7 @@ func (h *PillarsHandler) HandlerPillarsAPI(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to get pillars"})
 	}
 
-	return c.JSON(pillars)
+	return c.JSON(fiber.Map{"pillars": pillars})
 }
 
 // Helper methods for database operations

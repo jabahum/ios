@@ -38,6 +38,20 @@ func parseNullDateFlexible(s string) sql.NullTime {
 	return sql.NullTime{Time: t, Valid: true}
 }
 
+func rmNonEmptyString(s string) sql.NullString {
+	if s == "" {
+		return sql.NullString{}
+	}
+	return sql.NullString{String: s, Valid: true}
+}
+
+func rmNonEmptyInt64(v int64) sql.NullInt64 {
+	if v == 0 {
+		return sql.NullInt64{}
+	}
+	return sql.NullInt64{Int64: v, Valid: true}
+}
+
 // --- RRT teams ---
 
 func HandlerResourceManagementRRTTeamGetAPI(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
@@ -61,14 +75,33 @@ func HandlerResourceManagementRRTTeamCreateAPI(c *fiber.Ctx, db *sql.DB, store *
 	if !ok {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
-	var team models.RRTTeam
-	if err := c.BodyParser(&team); err != nil {
+	var body APIResourceManagementRRTTeamWrite
+	if err := c.BodyParser(&body); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON body"})
 	}
-	if team.TeamName == "" || team.TeamCode == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "team_name and team_code are required"})
+	if body.TeamName == "" || body.TeamCode == "" || body.TeamType == "" || body.TeamLeadName == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "team_name, team_code, team_type, and team_lead_name are required"})
 	}
-	team.CreatedBy = sql.NullInt64{Int64: int64(uid), Valid: true}
+	if body.TeamSize <= 0 {
+		body.TeamSize = 1
+	}
+	spec := body.Specializations
+	if spec == nil {
+		spec = []string{}
+	}
+	team := models.RRTTeam{
+		TeamName:        body.TeamName,
+		TeamCode:        body.TeamCode,
+		TeamType:        body.TeamType,
+		TeamLeadName:    body.TeamLeadName,
+		TeamLeadPhone:   rmNonEmptyString(body.TeamLeadPhone),
+		TeamLeadEmail:   rmNonEmptyString(body.TeamLeadEmail),
+		TeamSize:        body.TeamSize,
+		Specializations: spec,
+		BaseLocation:    rmNonEmptyString(body.BaseLocation),
+		IsActive:        body.IsActive,
+		CreatedBy:       sql.NullInt64{Int64: int64(uid), Valid: true},
+	}
 	h := NewResourceManagementHandler(db, store)
 	if err := h.createRRTTeam(&team); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
@@ -84,12 +117,34 @@ func HandlerResourceManagementRRTTeamUpdateAPI(c *fiber.Ctx, db *sql.DB, store *
 	if err != nil || id <= 0 {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid id"})
 	}
-	var team models.RRTTeam
-	if err := c.BodyParser(&team); err != nil {
+	var body APIResourceManagementRRTTeamWrite
+	if err := c.BodyParser(&body); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON body"})
 	}
-	team.ID = id
+	if body.TeamName == "" || body.TeamCode == "" || body.TeamType == "" || body.TeamLeadName == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "team_name, team_code, team_type, and team_lead_name are required"})
+	}
+	if body.TeamSize <= 0 {
+		body.TeamSize = 1
+	}
+	spec := body.Specializations
+	if spec == nil {
+		spec = []string{}
+	}
 	h := NewResourceManagementHandler(db, store)
+	team := models.RRTTeam{
+		ID:              id,
+		TeamName:        body.TeamName,
+		TeamCode:        body.TeamCode,
+		TeamType:        body.TeamType,
+		TeamLeadName:    body.TeamLeadName,
+		TeamLeadPhone:   rmNonEmptyString(body.TeamLeadPhone),
+		TeamLeadEmail:   rmNonEmptyString(body.TeamLeadEmail),
+		TeamSize:        body.TeamSize,
+		Specializations: spec,
+		BaseLocation:    rmNonEmptyString(body.BaseLocation),
+		IsActive:        body.IsActive,
+	}
 	if err := h.updateRRTTeam(&team); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -132,18 +187,7 @@ func HandlerResourceManagementRRTDeploymentCreateAPI(c *fiber.Ctx, db *sql.DB, s
 	if _, ok := rmCurrentUID(c); !ok {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
-	var body struct {
-		TeamID             int64  `json:"team_id"`
-		OutbreakID         int64  `json:"outbreak_id"`
-		DeploymentDate     string `json:"deployment_date"`
-		ExpectedReturnDate string `json:"expected_return_date"`
-		ActualReturnDate   string `json:"actual_return_date"`
-		DeploymentStatus   string `json:"deployment_status"`
-		DeploymentPurpose  string `json:"deployment_purpose"`
-		AssignedVehicle    string `json:"assigned_vehicle"`
-		AssignedDriver     string `json:"assigned_driver"`
-		DeploymentNotes    string `json:"deployment_notes"`
-	}
+	var body APIResourceManagementRRTDeploymentWrite
 	if err := c.BodyParser(&body); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON body"})
 	}
@@ -193,18 +237,7 @@ func HandlerResourceManagementRRTDeploymentUpdateAPI(c *fiber.Ctx, db *sql.DB, s
 		}
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
-	var body struct {
-		TeamID             int64  `json:"team_id"`
-		OutbreakID         int64  `json:"outbreak_id"`
-		DeploymentDate     string `json:"deployment_date"`
-		ExpectedReturnDate string `json:"expected_return_date"`
-		ActualReturnDate   string `json:"actual_return_date"`
-		DeploymentStatus   string `json:"deployment_status"`
-		DeploymentPurpose  string `json:"deployment_purpose"`
-		AssignedVehicle    string `json:"assigned_vehicle"`
-		AssignedDriver     string `json:"assigned_driver"`
-		DeploymentNotes    string `json:"deployment_notes"`
-	}
+	var body APIResourceManagementRRTDeploymentWrite
 	if err := c.BodyParser(&body); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON body"})
 	}
@@ -285,12 +318,24 @@ func HandlerResourceManagementResourceCreateAPI(c *fiber.Ctx, db *sql.DB, store 
 	if _, ok := rmCurrentUID(c); !ok {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
-	var r models.Resource
-	if err := c.BodyParser(&r); err != nil {
+	var body APIResourceManagementResourceWrite
+	if err := c.BodyParser(&body); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON body"})
 	}
-	if r.Name == "" || r.CategoryID == 0 || r.UnitOfMeasure == "" {
+	if body.Name == "" || body.CategoryID == 0 || body.UnitOfMeasure == "" {
 		return c.Status(400).JSON(fiber.Map{"error": "name, category_id, unit_of_measure are required"})
+	}
+	r := models.Resource{
+		Name:          body.Name,
+		Description:   rmNonEmptyString(body.Description),
+		ResourceCode:  rmNonEmptyString(body.ResourceCode),
+		CategoryID:    body.CategoryID,
+		UnitOfMeasure: body.UnitOfMeasure,
+		IsConsumable:  body.IsConsumable,
+		HasExpiry:     body.HasExpiry,
+		ShelfLifeDays: rmNonEmptyInt64(body.ShelfLifeDays),
+		IsCritical:    body.IsCritical,
+		IsActive:      body.IsActive,
 	}
 	h := NewResourceManagementHandler(db, store)
 	if err := h.createResource(&r); err != nil {
@@ -307,11 +352,26 @@ func HandlerResourceManagementResourceUpdateAPI(c *fiber.Ctx, db *sql.DB, store 
 	if err != nil || id <= 0 {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid id"})
 	}
-	var r models.Resource
-	if err := c.BodyParser(&r); err != nil {
+	var body APIResourceManagementResourceWrite
+	if err := c.BodyParser(&body); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON body"})
 	}
-	r.ID = id
+	if body.Name == "" || body.CategoryID == 0 || body.UnitOfMeasure == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "name, category_id, unit_of_measure are required"})
+	}
+	r := models.Resource{
+		ID:            id,
+		Name:          body.Name,
+		Description:   rmNonEmptyString(body.Description),
+		ResourceCode:  rmNonEmptyString(body.ResourceCode),
+		CategoryID:    body.CategoryID,
+		UnitOfMeasure: body.UnitOfMeasure,
+		IsConsumable:  body.IsConsumable,
+		HasExpiry:     body.HasExpiry,
+		ShelfLifeDays: rmNonEmptyInt64(body.ShelfLifeDays),
+		IsCritical:    body.IsCritical,
+		IsActive:      body.IsActive,
+	}
 	h := NewResourceManagementHandler(db, store)
 	if err := h.updateResource(&r); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
@@ -353,16 +413,7 @@ func HandlerResourceManagementRequisitionCreateAPI(c *fiber.Ctx, db *sql.DB, sto
 	if !ok {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
-	var body struct {
-		RequisitionNumber string `json:"requisition_number"`
-		OutbreakID        int64  `json:"outbreak_id"`
-		DeploymentID      int64  `json:"deployment_id"`
-		RequestedBy       int64  `json:"requested_by"`
-		RequiredDate      string `json:"required_date"`
-		Priority          string `json:"priority"`
-		Status            string `json:"status"`
-		Notes             string `json:"notes"`
-	}
+	var body APIResourceManagementRequisitionWrite
 	if err := c.BodyParser(&body); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON body"})
 	}
@@ -418,16 +469,7 @@ func HandlerResourceManagementRequisitionUpdateAPI(c *fiber.Ctx, db *sql.DB, sto
 	if err != nil || existing.ID == 0 {
 		return c.Status(404).JSON(fiber.Map{"error": "Not found"})
 	}
-	var body struct {
-		RequisitionNumber string `json:"requisition_number"`
-		OutbreakID        int64  `json:"outbreak_id"`
-		DeploymentID      int64  `json:"deployment_id"`
-		RequestedBy       int64  `json:"requested_by"`
-		RequiredDate      string `json:"required_date"`
-		Priority          string `json:"priority"`
-		Status            string `json:"status"`
-		Notes             string `json:"notes"`
-	}
+	var body APIResourceManagementRequisitionWrite
 	if err := c.BodyParser(&body); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON body"})
 	}
@@ -498,20 +540,25 @@ func HandlerResourceManagementActivityLogCreateAPI(c *fiber.Ctx, db *sql.DB, sto
 	if _, ok := rmCurrentUID(c); !ok {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
-	var body struct {
-		models.ActivityLog
-		ActivityDate string `json:"activity_date"`
-		StartTime    string `json:"start_time"`
-		EndTime      string `json:"end_time"`
-	}
+	var body APIResourceManagementActivityLogWrite
 	if err := c.BodyParser(&body); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON body"})
 	}
-	a := body.ActivityLog
-	var err error
-	a.ActivityDate, err = parseDateFlexible(body.ActivityDate)
+	ad, err := parseDateFlexible(body.ActivityDate)
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "activity_date required"})
+		return c.Status(400).JSON(fiber.Map{"error": "activity_date required (YYYY-MM-DD or RFC3339)"})
+	}
+	a := models.ActivityLog{
+		DeploymentID:        body.DeploymentID,
+		ActivityType:        body.ActivityType,
+		ActivityDate:        ad,
+		Location:            rmNonEmptyString(body.Location),
+		ParticipantsCount:   rmNonEmptyInt64(body.ParticipantsCount),
+		ActivityDescription: rmNonEmptyString(body.ActivityDescription),
+		Outcomes:            rmNonEmptyString(body.Outcomes),
+		Challenges:          rmNonEmptyString(body.Challenges),
+		Recommendations:     rmNonEmptyString(body.Recommendations),
+		ResourcesUsed:       rmNonEmptyString(body.ResourcesUsed),
 	}
 	if body.StartTime != "" {
 		t, e := time.Parse("15:04", body.StartTime)
@@ -548,20 +595,7 @@ func HandlerResourceManagementActivityLogUpdateAPI(c *fiber.Ctx, db *sql.DB, sto
 	if err != nil || existing.ID == 0 {
 		return c.Status(404).JSON(fiber.Map{"error": "Not found"})
 	}
-	var body struct {
-		DeploymentID        int64  `json:"deployment_id"`
-		ActivityType        string `json:"activity_type"`
-		ActivityDate        string `json:"activity_date"`
-		StartTime           string `json:"start_time"`
-		EndTime             string `json:"end_time"`
-		Location            string `json:"location"`
-		ParticipantsCount   int64  `json:"participants_count"`
-		ActivityDescription string `json:"activity_description"`
-		Outcomes            string `json:"outcomes"`
-		Challenges          string `json:"challenges"`
-		Recommendations     string `json:"recommendations"`
-		ResourcesUsed       string `json:"resources_used"`
-	}
+	var body APIResourceManagementActivityLogWrite
 	if err := c.BodyParser(&body); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON body"})
 	}
@@ -633,6 +667,61 @@ func HandlerResourceManagementActivityLogDeleteAPI(c *fiber.Ctx, db *sql.DB, sto
 	return c.JSON(fiber.Map{"message": "deleted"})
 }
 
+// --- Resource categories (IDs needed for POST /resources) ---
+
+func HandlerResourceManagementResourceCategoriesAPI(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
+	if _, ok := rmCurrentUID(c); !ok {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+	h := NewResourceManagementHandler(db, store)
+	list, err := h.getAllResourceCategories()
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"resource_categories": list})
+}
+
+func HandlerResourceManagementResourceCategoryGetAPI(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
+	if _, ok := rmCurrentUID(c); !ok {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+	h := NewResourceManagementHandler(db, store)
+	cat, err := h.getResourceCategoryByID(c.Params("id"))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return c.Status(404).JSON(fiber.Map{"error": "Not found"})
+		}
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"resource_category": cat})
+}
+
+func HandlerResourceManagementResourceCategoryCreateAPI(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
+	uid, ok := rmCurrentUID(c)
+	if !ok {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+	var body APIResourceCategoryWrite
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON body"})
+	}
+	if body.Name == "" || body.CategoryType == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "name and category_type are required"})
+	}
+	cat := models.ResourceCategory{
+		Name:         body.Name,
+		Description:  rmNonEmptyString(body.Description),
+		CategoryType: body.CategoryType,
+		IsActive:     body.IsActive,
+		CreatedBy:    sql.NullInt64{Int64: int64(uid), Valid: true},
+	}
+	h := NewResourceManagementHandler(db, store)
+	if err := h.createResourceCategory(&cat); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.Status(201).JSON(fiber.Map{"message": "created", "id": cat.ID, "resource_category": cat})
+}
+
 // --- Pillars ---
 
 func HandlerResourceManagementPillarGetAPI(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
@@ -655,14 +744,23 @@ func HandlerResourceManagementPillarCreateAPI(c *fiber.Ctx, db *sql.DB, store *s
 	if !ok {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
-	var p models.Pillar
-	if err := c.BodyParser(&p); err != nil {
+	var body APIResourceManagementPillarWrite
+	if err := c.BodyParser(&body); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON body"})
 	}
-	if p.Name == "" {
+	if body.Name == "" {
 		return c.Status(400).JSON(fiber.Map{"error": "name is required"})
 	}
-	p.CreatedBy = sql.NullInt64{Int64: int64(uid), Valid: true}
+	p := models.Pillar{
+		Name:            body.Name,
+		Description:     rmNonEmptyString(body.Description),
+		PillarHeadID:    rmNonEmptyInt64(body.PillarHeadID),
+		PillarHeadName:  rmNonEmptyString(body.PillarHeadName),
+		PillarHeadEmail: rmNonEmptyString(body.PillarHeadEmail),
+		PillarHeadPhone: rmNonEmptyString(body.PillarHeadPhone),
+		IsActive:        body.IsActive,
+		CreatedBy:       sql.NullInt64{Int64: int64(uid), Valid: true},
+	}
 	ph := NewPillarsHandler(db, store)
 	if err := ph.createPillar(&p); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
@@ -679,12 +777,24 @@ func HandlerResourceManagementPillarUpdateAPI(c *fiber.Ctx, db *sql.DB, store *s
 	if err != nil || id <= 0 {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid id"})
 	}
-	var p models.Pillar
-	if err := c.BodyParser(&p); err != nil {
+	var body APIResourceManagementPillarWrite
+	if err := c.BodyParser(&body); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON body"})
 	}
-	p.ID = id
-	p.UpdatedBy = sql.NullInt64{Int64: int64(uid), Valid: true}
+	if body.Name == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "name is required"})
+	}
+	p := models.Pillar{
+		ID:              id,
+		Name:            body.Name,
+		Description:     rmNonEmptyString(body.Description),
+		PillarHeadID:    rmNonEmptyInt64(body.PillarHeadID),
+		PillarHeadName:  rmNonEmptyString(body.PillarHeadName),
+		PillarHeadEmail: rmNonEmptyString(body.PillarHeadEmail),
+		PillarHeadPhone: rmNonEmptyString(body.PillarHeadPhone),
+		IsActive:        body.IsActive,
+		UpdatedBy:       sql.NullInt64{Int64: int64(uid), Valid: true},
+	}
 	ph := NewPillarsHandler(db, store)
 	if err := ph.updatePillar(&p); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})

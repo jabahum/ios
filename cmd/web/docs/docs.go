@@ -82,6 +82,183 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/departments": {
+            "get": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "description": "Requires admin:read",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Departments"
+                ],
+                "summary": "List departments",
+                "responses": {
+                    "200": {
+                        "description": "{ \\\"departments\\\": [...] }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "description": "Requires admin:create",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Departments"
+                ],
+                "summary": "Create department",
+                "parameters": [
+                    {
+                        "description": "Department",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.APIDepartmentWriteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/departments/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "description": "Requires admin:read",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Departments"
+                ],
+                "summary": "Get department by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Department ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{ \\\"department\\\": {...} }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "description": "Requires admin:update",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Departments"
+                ],
+                "summary": "Update department",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Department ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Department",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.APIDepartmentWriteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "description": "Requires admin:delete. Fails with 409 if still referenced.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Departments"
+                ],
+                "summary": "Delete department",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Department ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/api/employees": {
             "get": {
                 "security": [
@@ -140,7 +317,7 @@ const docTemplate = `{
                         "SessionAuth": []
                     }
                 ],
-                "description": "JSON body uses ` + "`" + `models.Employee` + "`" + ` field names (` + "`" + `employee_fname` + "`" + `, ` + "`" + `facility` + "`" + `, …). Requires ` + "`" + `employees:create` + "`" + `.",
+                "description": "Requires ` + "`" + `employees:create` + "`" + `. Body field names match ` + "`" + `models.Employee` + "`" + ` JSON tags.",
                 "consumes": [
                     "application/json"
                 ],
@@ -153,12 +330,12 @@ const docTemplate = `{
                 "summary": "Create employee",
                 "parameters": [
                     {
-                        "description": "Employee fields (sql.Null* as string/number or null)",
+                        "description": "Employee",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.APIEmployeeWriteRequest"
                         }
                     }
                 ],
@@ -260,12 +437,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Employee fields",
+                        "description": "Employee",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.APIEmployeeWriteRequest"
                         }
                     }
                 ],
@@ -1145,7 +1322,7 @@ const docTemplate = `{
                         "SessionAuth": []
                     }
                 ],
-                "description": "JSON list of resource management pillars (requires resource_management:read)",
+                "description": "Returns ` + "`" + `{ \"pillars\": [...] }` + "`" + ` (requires resource_management:read)",
                 "produces": [
                     "application/json"
                 ],
@@ -1999,12 +2176,12 @@ const docTemplate = `{
                 "summary": "Create activity log",
                 "parameters": [
                     {
-                        "description": "deployment_id, activity_type, activity_date, optional times and text fields",
+                        "description": "Activity log",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.APIResourceManagementActivityLogWrite"
                         }
                     }
                 ],
@@ -2077,12 +2254,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Fields",
+                        "description": "Activity log",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.APIResourceManagementActivityLogWrite"
                         }
                     }
                 ],
@@ -2136,7 +2313,7 @@ const docTemplate = `{
                         "SessionAuth": []
                     }
                 ],
-                "description": "Same as GET /api/pillars; session cookie + resource_management:read",
+                "description": "Same as GET /api/pillars (` + "`" + `{ \"pillars\": [...] }` + "`" + `); session cookie + resource_management:read",
                 "produces": [
                     "application/json"
                 ],
@@ -2199,12 +2376,12 @@ const docTemplate = `{
                 "summary": "Create pillar",
                 "parameters": [
                     {
-                        "description": "Pillar fields (name, description, pillar_head_id, …)",
+                        "description": "Pillar",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.APIResourceManagementPillarWrite"
                         }
                     }
                 ],
@@ -2277,12 +2454,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Pillar fields",
+                        "description": "Pillar",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.APIResourceManagementPillarWrite"
                         }
                     }
                 ],
@@ -2371,12 +2548,12 @@ const docTemplate = `{
                 "summary": "Create requisition",
                 "parameters": [
                     {
-                        "description": "requisition_number, outbreak_id, optional deployment_id, requested_by, dates, priority, status, notes",
+                        "description": "Requisition",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.APIResourceManagementRequisitionWrite"
                         }
                     }
                 ],
@@ -2449,12 +2626,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Fields",
+                        "description": "Requisition",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.APIResourceManagementRequisitionWrite"
                         }
                     }
                 ],
@@ -2493,6 +2670,103 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/resource-management/resource-categories": {
+            "get": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "description": "Use category ` + "`" + `id` + "`" + ` values when creating catalog resources.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "List resource categories",
+                "responses": {
+                    "200": {
+                        "description": "{ \\\"resource_categories\\\": [...] }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Create resource category",
+                "parameters": [
+                    {
+                        "description": "Category",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.APIResourceCategoryWrite"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/resource-management/resource-categories/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Get resource category by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{ \\\"resource_category\\\": {...} }",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -2543,12 +2817,12 @@ const docTemplate = `{
                 "summary": "Create resource catalog item",
                 "parameters": [
                     {
-                        "description": "Resource JSON (name, category_id, unit_of_measure, …)",
+                        "description": "Resource",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.APIResourceManagementResourceWrite"
                         }
                     }
                 ],
@@ -2621,12 +2895,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Resource JSON",
+                        "description": "Resource",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.APIResourceManagementResourceWrite"
                         }
                     }
                 ],
@@ -2715,12 +2989,12 @@ const docTemplate = `{
                 "summary": "Create RRT deployment",
                 "parameters": [
                     {
-                        "description": "team_id, outbreak_id, deployment_date, deployment_status, optional fields",
+                        "description": "Deployment",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.APIResourceManagementRRTDeploymentWrite"
                         }
                     }
                 ],
@@ -2793,12 +3067,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Fields to update",
+                        "description": "Deployment",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.APIResourceManagementRRTDeploymentWrite"
                         }
                     }
                 ],
@@ -2887,12 +3161,12 @@ const docTemplate = `{
                 "summary": "Create RRT team",
                 "parameters": [
                     {
-                        "description": "RRT team JSON (team_name, team_code, team_type, …)",
+                        "description": "RRT team (team_type and team_lead_name required by DB)",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.APIResourceManagementRRTTeamWrite"
                         }
                     }
                 ],
@@ -2965,12 +3239,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "RRT team JSON",
+                        "description": "RRT team",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.APIResourceManagementRRTTeamWrite"
                         }
                     }
                 ],
@@ -4401,6 +4675,62 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handlers.APIDepartmentWriteRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Surveillance"
+                }
+            }
+        },
+        "handlers.APIEmployeeWriteRequest": {
+            "type": "object",
+            "properties": {
+                "afi_district": {
+                    "type": "string"
+                },
+                "afi_facility": {
+                    "type": "string"
+                },
+                "afi_region": {
+                    "type": "string"
+                },
+                "employee_cadre": {
+                    "type": "string"
+                },
+                "employee_email": {
+                    "type": "string",
+                    "example": "jane@example.com"
+                },
+                "employee_fname": {
+                    "type": "string",
+                    "example": "Jane"
+                },
+                "employee_lname": {
+                    "type": "string",
+                    "example": "Doe"
+                },
+                "employee_phone": {
+                    "type": "string"
+                },
+                "employee_sex": {
+                    "type": "string",
+                    "example": "F"
+                },
+                "facility": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
         "handlers.APIOutbreakAssignRequest": {
             "type": "object",
             "properties": {
@@ -4444,13 +4774,260 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.APIUserCreateRequest": {
+        "handlers.APIResourceCategoryWrite": {
             "type": "object",
             "properties": {
-                "department_id": {
+                "category_type": {
+                    "type": "string",
+                    "example": "ppe"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "PPE"
+                }
+            }
+        },
+        "handlers.APIResourceManagementActivityLogWrite": {
+            "type": "object",
+            "properties": {
+                "activity_date": {
+                    "type": "string",
+                    "example": "2025-03-01"
+                },
+                "activity_description": {
+                    "type": "string"
+                },
+                "activity_type": {
+                    "type": "string",
+                    "example": "investigation"
+                },
+                "challenges": {
+                    "type": "string"
+                },
+                "deployment_id": {
                     "type": "integer",
                     "example": 1
                 },
+                "end_time": {
+                    "type": "string",
+                    "example": "17:00"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "outcomes": {
+                    "type": "string"
+                },
+                "participants_count": {
+                    "type": "integer"
+                },
+                "recommendations": {
+                    "type": "string"
+                },
+                "resources_used": {
+                    "type": "string"
+                },
+                "start_time": {
+                    "type": "string",
+                    "example": "09:00"
+                }
+            }
+        },
+        "handlers.APIResourceManagementPillarWrite": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Surveillance"
+                },
+                "pillar_head_email": {
+                    "type": "string"
+                },
+                "pillar_head_id": {
+                    "type": "integer"
+                },
+                "pillar_head_name": {
+                    "type": "string"
+                },
+                "pillar_head_phone": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.APIResourceManagementRRTDeploymentWrite": {
+            "type": "object",
+            "properties": {
+                "actual_return_date": {
+                    "type": "string"
+                },
+                "assigned_driver": {
+                    "type": "string"
+                },
+                "assigned_vehicle": {
+                    "type": "string"
+                },
+                "deployment_date": {
+                    "type": "string",
+                    "example": "2025-03-01"
+                },
+                "deployment_notes": {
+                    "type": "string"
+                },
+                "deployment_purpose": {
+                    "type": "string"
+                },
+                "deployment_status": {
+                    "type": "string",
+                    "example": "deployed"
+                },
+                "expected_return_date": {
+                    "type": "string"
+                },
+                "outbreak_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "team_id": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "handlers.APIResourceManagementRRTTeamWrite": {
+            "type": "object",
+            "properties": {
+                "base_location": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "specializations": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "team_code": {
+                    "type": "string",
+                    "example": "RRT-C-01"
+                },
+                "team_lead_email": {
+                    "type": "string"
+                },
+                "team_lead_name": {
+                    "type": "string",
+                    "example": "Dr. A"
+                },
+                "team_lead_phone": {
+                    "type": "string"
+                },
+                "team_name": {
+                    "type": "string",
+                    "example": "RRT Central"
+                },
+                "team_size": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "team_type": {
+                    "type": "string",
+                    "example": "medical"
+                }
+            }
+        },
+        "handlers.APIResourceManagementRequisitionWrite": {
+            "type": "object",
+            "properties": {
+                "deployment_id": {
+                    "type": "integer"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "outbreak_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "priority": {
+                    "type": "string",
+                    "example": "normal"
+                },
+                "requested_by": {
+                    "type": "integer"
+                },
+                "required_date": {
+                    "type": "string",
+                    "example": "2025-03-15"
+                },
+                "requisition_number": {
+                    "type": "string",
+                    "example": "REQ-2025-001"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "pending"
+                }
+            }
+        },
+        "handlers.APIResourceManagementResourceWrite": {
+            "type": "object",
+            "properties": {
+                "category_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "description": {
+                    "type": "string"
+                },
+                "has_expiry": {
+                    "type": "boolean"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "is_consumable": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "is_critical": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Surgical gloves"
+                },
+                "resource_code": {
+                    "type": "string"
+                },
+                "shelf_life_days": {
+                    "type": "integer"
+                },
+                "unit_of_measure": {
+                    "type": "string",
+                    "example": "box"
+                }
+            }
+        },
+        "handlers.APIUserCreateRequest": {
+            "type": "object",
+            "properties": {
                 "email": {
                     "type": "string",
                     "example": "jdoe@example.com"
@@ -4600,6 +5177,10 @@ const docTemplate = `{
         {
             "description": "Role-Based Access Control endpoints",
             "name": "RBAC"
+        },
+        {
+            "description": "Organization departments (RBAC) endpoints",
+            "name": "Departments"
         },
         {
             "description": "Location data (districts, subcounties, parishes, villages) endpoints",

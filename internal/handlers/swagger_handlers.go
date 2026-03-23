@@ -322,7 +322,7 @@ func SwaggerGetReports(c *fiber.Ctx) error {
 
 // GetPillars godoc
 // @Summary List resource pillars
-// @Description JSON list of resource management pillars (requires resource_management:read)
+// @Description Returns `{ "pillars": [...] }` (requires resource_management:read)
 // @Tags Resource Management
 // @Produce json
 // @Security SessionAuth
@@ -337,7 +337,7 @@ func SwaggerGetPillars(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
 
 // GetResourceManagementPillars godoc
 // @Summary List resource pillars (alternate path)
-// @Description Same as GET /api/pillars; session cookie + resource_management:read
+// @Description Same as GET /api/pillars (`{ "pillars": [...] }`); session cookie + resource_management:read
 // @Tags Resource Management
 // @Produce json
 // @Security SessionAuth
@@ -686,12 +686,12 @@ func SwaggerGetEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 
 // CreateEmployee godoc
 // @Summary Create employee
-// @Description JSON body uses `models.Employee` field names (`employee_fname`, `facility`, …). Requires `employees:create`.
+// @Description Requires `employees:create`. Body field names match `models.Employee` JSON tags.
 // @Tags Employees
 // @Accept json
 // @Produce json
 // @Security SessionAuth
-// @Param body body object true "Employee fields (sql.Null* as string/number or null)"
+// @Param body body APIEmployeeWriteRequest true "Employee"
 // @Success 201 {object} map[string]interface{} "Created"
 // @Failure 403 {object} map[string]string "Forbidden"
 // @Router /api/employees [post]
@@ -707,7 +707,7 @@ func SwaggerCreateEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 // @Produce json
 // @Security SessionAuth
 // @Param id path int true "Employee ID"
-// @Param body body object true "Employee fields"
+// @Param body body APIEmployeeWriteRequest true "Employee"
 // @Success 200 {object} map[string]interface{} "Updated"
 // @Failure 403 {object} map[string]string "Forbidden"
 // @Router /api/employees/{id} [put]
