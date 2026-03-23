@@ -1,14 +1,57 @@
 package handlers
 
 import (
+	"database/sql"
 	"fmt"
 	"strconv"
+	"time"
 
+	"case/internal/middleware"
 	"case/internal/models"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
 )
+
+// userOutbreakAssignmentAPI is the JSON shape for GET /api/outbreaks/assignments (excludes user_pass).
+type userOutbreakAssignmentAPI struct {
+	ID         int64                  `json:"id"`
+	UserID     int64                  `json:"user_id"`
+	OutbreakID int64                  `json:"outbreak_id"`
+	AssignedAt time.Time              `json:"assigned_at"`
+	AssignedBy sql.NullInt64          `json:"assigned_by"`
+	IsActive   bool                   `json:"is_active"`
+	User       *assignmentUserSummary `json:"user,omitempty"`
+	Outbreak   *models.Outbreak       `json:"outbreak,omitempty"`
+}
+
+type assignmentUserSummary struct {
+	UserID   int            `json:"user_id"`
+	UserName sql.NullString `json:"user_name"`
+}
+
+func assignmentsToAPI(in []models.UserOutbreak) []userOutbreakAssignmentAPI {
+	out := make([]userOutbreakAssignmentAPI, 0, len(in))
+	for _, a := range in {
+		row := userOutbreakAssignmentAPI{
+			ID:         a.ID,
+			UserID:     a.UserID,
+			OutbreakID: a.OutbreakID,
+			AssignedAt: a.AssignedAt,
+			AssignedBy: a.AssignedBy,
+			IsActive:   a.IsActive,
+			Outbreak:   a.Outbreak,
+		}
+		if a.User != nil {
+			row.User = &assignmentUserSummary{
+				UserID:   a.User.UserID,
+				UserName: a.User.UserName,
+			}
+		}
+		out = append(out, row)
+	}
+	return out
+}
 
 // OutbreakAssignmentHandler handles outbreak assignment operations
 type OutbreakAssignmentHandler struct {
@@ -303,12 +346,8 @@ func (h *OutbreakAssignmentHandler) ShowOutbreakAssignments(c *fiber.Ctx) error 
 
 // ShowOutbreakAssignmentsAPI returns outbreak assignments and related data as JSON
 func (h *OutbreakAssignmentHandler) ShowOutbreakAssignmentsAPI(c *fiber.Ctx) error {
-	// Ensure user is authenticated
-	sess, err := h.store.Get(c)
-	if err != nil {
-		return c.Status(401).JSON(fiber.Map{"error": "Session error"})
-	}
-	if sess.Get("user") == nil {
+	// Route uses PermissionRequired, which sets current_user_id; do not require sess "user" only.
+	if _, ok := middleware.GetCurrentUserID(c); !ok {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
@@ -322,13 +361,13 @@ func (h *OutbreakAssignmentHandler) ShowOutbreakAssignmentsAPI(c *fiber.Ctx) err
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to load outbreaks"})
 	}
 
-	users, err := h.userService.GetAllEnhancedUsers()
+	users, err := h.userService.ListUsersForOutbreakAssignmentJSON()
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to load users"})
 	}
 
 	return c.JSON(fiber.Map{
-		"assignments": assignments,
+		"assignments": assignmentsToAPI(assignments),
 		"outbreaks":   outbreaks,
 		"users":       users,
 	})
