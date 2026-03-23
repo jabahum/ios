@@ -89,7 +89,7 @@ const docTemplate = `{
                         "SessionAuth": []
                     }
                 ],
-                "description": "Retrieve list of all employees",
+                "description": "Returns ` + "`" + `{ \"employees\": [...] }` + "`" + `. Requires ` + "`" + `employees:read` + "`" + `.",
                 "produces": [
                     "application/json"
                 ],
@@ -99,17 +99,23 @@ const docTemplate = `{
                 "summary": "Get all employees",
                 "responses": {
                     "200": {
-                        "description": "List of employees",
+                        "description": "employees array",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "additionalProperties": true
-                            }
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -134,6 +140,7 @@ const docTemplate = `{
                         "SessionAuth": []
                     }
                 ],
+                "description": "JSON body uses ` + "`" + `models.Employee` + "`" + ` field names (` + "`" + `employee_fname` + "`" + `, ` + "`" + `facility` + "`" + `, …). Requires ` + "`" + `employees:create` + "`" + `.",
                 "consumes": [
                     "application/json"
                 ],
@@ -146,7 +153,7 @@ const docTemplate = `{
                 "summary": "Create employee",
                 "parameters": [
                     {
-                        "description": "Employee fields",
+                        "description": "Employee fields (sql.Null* as string/number or null)",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -162,6 +169,15 @@ const docTemplate = `{
                             "type": "object",
                             "additionalProperties": true
                         }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
             }
@@ -173,6 +189,7 @@ const docTemplate = `{
                         "SessionAuth": []
                     }
                 ],
+                "description": "Returns ` + "`" + `{ \"employee\": { ... } }` + "`" + ` with nullable fields. Requires ` + "`" + `employees:read` + "`" + `.",
                 "produces": [
                     "application/json"
                 ],
@@ -191,10 +208,28 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Employee",
+                        "description": "employee object",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -205,6 +240,7 @@ const docTemplate = `{
                         "SessionAuth": []
                     }
                 ],
+                "description": "Requires ` + "`" + `employees:update` + "`" + `.",
                 "consumes": [
                     "application/json"
                 ],
@@ -240,6 +276,15 @@ const docTemplate = `{
                             "type": "object",
                             "additionalProperties": true
                         }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
             },
@@ -249,6 +294,7 @@ const docTemplate = `{
                         "SessionAuth": []
                     }
                 ],
+                "description": "Requires ` + "`" + `employees:delete` + "`" + `.",
                 "produces": [
                     "application/json"
                 ],
@@ -271,6 +317,15 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -687,7 +742,7 @@ const docTemplate = `{
                         "SessionAuth": []
                     }
                 ],
-                "description": "Retrieve list of all outbreaks",
+                "description": "Accessible outbreaks for the current user. Response: ` + "`" + `{ \"outbreaks\": [ ... ] }` + "`" + `.",
                 "produces": [
                     "application/json"
                 ],
@@ -697,13 +752,10 @@ const docTemplate = `{
                 "summary": "Get all outbreaks",
                 "responses": {
                     "200": {
-                        "description": "List of outbreaks",
+                        "description": "outbreaks array",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "additionalProperties": true
-                            }
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "401": {
@@ -722,6 +774,365 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "string"
                             }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "description": "Requires outbreaks:create. Body: name, start_date (YYYY-MM-DD), optional description, end_date, status, outbreak_type, outbreak_category.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Outbreaks"
+                ],
+                "summary": "Create outbreak",
+                "parameters": [
+                    {
+                        "description": "Outbreak",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.APIOutbreakCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/outbreaks/assign": {
+            "post": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "description": "Requires outbreaks:update. Body: outbreak_id, user_id.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Outbreaks"
+                ],
+                "summary": "Assign user to outbreak",
+                "parameters": [
+                    {
+                        "description": "Assignment",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.APIOutbreakAssignRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/outbreaks/assignments": {
+            "get": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Outbreaks"
+                ],
+                "summary": "List user–outbreak assignments",
+                "responses": {
+                    "200": {
+                        "description": "assignments",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/outbreaks/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "description": "Requires outbreaks:read and user access to the outbreak.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Outbreaks"
+                ],
+                "summary": "Get outbreak by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Outbreak ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "outbreak object",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "description": "Requires outbreaks:update and manage permission on the outbreak.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Outbreaks"
+                ],
+                "summary": "Update outbreak",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Outbreak ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Fields to update",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.APIOutbreakCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "description": "Requires outbreaks:delete and manage permission.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Outbreaks"
+                ],
+                "summary": "Delete outbreak",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Outbreak ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/outbreaks/{id}/close": {
+            "post": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Outbreaks"
+                ],
+                "summary": "Close outbreak (status=closed)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Outbreak ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/outbreaks/{id}/select": {
+            "post": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Outbreaks"
+                ],
+                "summary": "Set session selected outbreak",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Outbreak ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/outbreaks/{id}/users": {
+            "get": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Outbreaks"
+                ],
+                "summary": "Users assigned to an outbreak",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Outbreak ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "users",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/outbreaks/{outbreak_id}/users/{user_id}": {
+            "delete": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Outbreaks"
+                ],
+                "summary": "Remove user from outbreak",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Outbreak ID",
+                        "name": "outbreak_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -1569,6 +1980,153 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Create activity log",
+                "parameters": [
+                    {
+                        "description": "deployment_id, activity_type, activity_date, optional times and text fields",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/resource-management/activity-logs/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Get activity log by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Activity log ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "activity_log",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Update activity log",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Activity log ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Fields",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Delete activity log",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Activity log ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
             }
         },
         "/api/resource-management/pillars": {
@@ -1622,6 +2180,153 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Create pillar",
+                "parameters": [
+                    {
+                        "description": "Pillar fields (name, description, pillar_head_id, …)",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/resource-management/pillars/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Get pillar by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Pillar ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "pillar",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Update pillar",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Pillar ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Pillar fields",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Delete pillar",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Pillar ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
             }
         },
         "/api/resource-management/requisitions": {
@@ -1641,6 +2346,153 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "requisitions",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Create requisition",
+                "parameters": [
+                    {
+                        "description": "requisition_number, outbreak_id, optional deployment_id, requested_by, dates, priority, status, notes",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/resource-management/requisitions/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Get requisition by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Requisition ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "requisition",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Update requisition",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Requisition ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Fields",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Delete requisition",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Requisition ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1672,6 +2524,153 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Create resource catalog item",
+                "parameters": [
+                    {
+                        "description": "Resource JSON (name, category_id, unit_of_measure, …)",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/resource-management/resources/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Get resource catalog item by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Resource ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "resource",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Update resource catalog item",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Resource ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Resource JSON",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Delete resource catalog item",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Resource ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
             }
         },
         "/api/resource-management/rrt-deployments": {
@@ -1697,6 +2696,153 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Create RRT deployment",
+                "parameters": [
+                    {
+                        "description": "team_id, outbreak_id, deployment_date, deployment_status, optional fields",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/resource-management/rrt-deployments/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Get RRT deployment by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Deployment ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "deployment",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Update RRT deployment",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Deployment ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Fields to update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Delete RRT deployment",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Deployment ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
             }
         },
         "/api/resource-management/rrt-teams": {
@@ -1716,6 +2862,153 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "teams",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Create RRT team",
+                "parameters": [
+                    {
+                        "description": "RRT team JSON (team_name, team_code, team_type, …)",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/resource-management/rrt-teams/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Get RRT team by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Team ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "team",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Update RRT team",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Team ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "RRT team JSON",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource Management"
+                ],
+                "summary": "Delete RRT team",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Team ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1756,7 +3049,7 @@ const docTemplate = `{
                         "SessionAuth": []
                     }
                 ],
-                "description": "Retrieve list of all users",
+                "description": "Paginated user list (users:read). Response shape: users (array), pagination { page, limit, total, total_pages }.",
                 "produces": [
                     "application/json"
                 ],
@@ -1764,19 +3057,65 @@ const docTemplate = `{
                     "Users"
                 ],
                 "summary": "Get all users",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Page size",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search username, email, or name",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by department id",
+                        "name": "department_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by role id",
+                        "name": "role_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Filter active users",
+                        "name": "is_active",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "List of users",
+                        "description": "users and pagination",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "additionalProperties": true
-                            }
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1813,12 +3152,12 @@ const docTemplate = `{
                 "summary": "Create user",
                 "parameters": [
                     {
-                        "description": "User fields",
-                        "name": "body",
+                        "description": "User + optional role_ids",
+                        "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.APIUserCreateRequest"
                         }
                     }
                 ],
@@ -1931,12 +3270,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "User fields",
-                        "name": "body",
+                        "description": "Fields to update",
+                        "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.APIUserUpdateRequest"
                         }
                     }
                 ],
@@ -3062,6 +4401,118 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handlers.APIOutbreakAssignRequest": {
+            "type": "object",
+            "properties": {
+                "outbreak_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "user_id": {
+                    "type": "integer",
+                    "example": 42
+                }
+            }
+        },
+        "handlers.APIOutbreakCreateRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Ebola response"
+                },
+                "outbreak_category": {
+                    "type": "string"
+                },
+                "outbreak_type": {
+                    "type": "string",
+                    "example": "vhf"
+                },
+                "start_date": {
+                    "type": "string",
+                    "example": "2025-01-15"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "active"
+                }
+            }
+        },
+        "handlers.APIUserCreateRequest": {
+            "type": "object",
+            "properties": {
+                "department_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "email": {
+                    "type": "string",
+                    "example": "jdoe@example.com"
+                },
+                "first_name": {
+                    "type": "string",
+                    "example": "Jane"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "last_name": {
+                    "type": "string",
+                    "example": "Doe"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "ChangeMe123!"
+                },
+                "role_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        2,
+                        3
+                    ]
+                },
+                "username": {
+                    "type": "string",
+                    "example": "jdoe"
+                }
+            }
+        },
+        "handlers.APIUserUpdateRequest": {
+            "type": "object",
+            "properties": {
+                "department_id": {
+                    "type": "integer"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "role_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
         "handlers.LoginCredentials": {
             "type": "object",
             "properties": {
@@ -3160,7 +4611,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "response.health.go.ug",
+	Host:             "localhost:3000",
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Integrated Outbreak Surveillance (IOS) API",

@@ -195,11 +195,19 @@ func (s *UserOutbreakService) GetAllOutbreakAssignments() ([]UserOutbreak, error
 	return assignments, nil
 }
 
-// GetOutbreakUsers gets all users assigned to an outbreak
-func (s *UserOutbreakService) GetOutbreakUsers(outbreakID int64) ([]User, error) {
+// OutbreakAssignedUser is a user row plus assignment metadata for API responses.
+type OutbreakAssignedUser struct {
+	UserID     int64          `json:"user_id"`
+	UserName   string         `json:"user_name"`
+	Email      sql.NullString `json:"email"`
+	AssignedAt time.Time      `json:"assigned_at"`
+	AssignedBy sql.NullInt64  `json:"assigned_by"`
+}
+
+// ListAssignedUsersForOutbreak returns active user_outbreaks rows with user details.
+func (s *UserOutbreakService) ListAssignedUsersForOutbreak(outbreakID int64) ([]OutbreakAssignedUser, error) {
 	query := `
-		SELECT u.user_id, u.user_name, u.user_name, u.user_name, u.user_name, u.user_name,
-		       uo.assigned_at, uo.assigned_by
+		SELECT u.user_id, u.user_name, u.email, uo.assigned_at, uo.assigned_by
 		FROM user_outbreaks uo
 		JOIN users u ON uo.user_id = u.user_id
 		WHERE uo.outbreak_id = $1 AND uo.is_active = true
@@ -211,19 +219,29 @@ func (s *UserOutbreakService) GetOutbreakUsers(outbreakID int64) ([]User, error)
 	}
 	defer rows.Close()
 
-	var users []User
+	var out []OutbreakAssignedUser
 	for rows.Next() {
-		var user User
-		var assignedAt time.Time
-		var assignedBy sql.NullInt64
-		err := rows.Scan(
-			&user.UserID, &user.UserName, &user.UserName, &user.UserName, &user.UserName, &user.UserName,
-			&assignedAt, &assignedBy,
-		)
-		if err != nil {
+		var row OutbreakAssignedUser
+		if err := rows.Scan(&row.UserID, &row.UserName, &row.Email, &row.AssignedAt, &row.AssignedBy); err != nil {
 			return nil, err
 		}
-		users = append(users, user)
+		out = append(out, row)
+	}
+	return out, nil
+}
+
+// GetOutbreakUsers gets all users assigned to an outbreak
+func (s *UserOutbreakService) GetOutbreakUsers(outbreakID int64) ([]User, error) {
+	list, err := s.ListAssignedUsersForOutbreak(outbreakID)
+	if err != nil {
+		return nil, err
+	}
+	users := make([]User, 0, len(list))
+	for _, row := range list {
+		users = append(users, User{
+			UserID:   int(row.UserID),
+			UserName: sql.NullString{String: row.UserName, Valid: row.UserName != ""},
+		})
 	}
 	return users, nil
 }

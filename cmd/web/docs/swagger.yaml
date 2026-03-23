@@ -1,5 +1,83 @@
 basePath: /
 definitions:
+  handlers.APIOutbreakAssignRequest:
+    properties:
+      outbreak_id:
+        example: 1
+        type: integer
+      user_id:
+        example: 42
+        type: integer
+    type: object
+  handlers.APIOutbreakCreateRequest:
+    properties:
+      description:
+        type: string
+      end_date:
+        type: string
+      name:
+        example: Ebola response
+        type: string
+      outbreak_category:
+        type: string
+      outbreak_type:
+        example: vhf
+        type: string
+      start_date:
+        example: "2025-01-15"
+        type: string
+      status:
+        example: active
+        type: string
+    type: object
+  handlers.APIUserCreateRequest:
+    properties:
+      department_id:
+        example: 1
+        type: integer
+      email:
+        example: jdoe@example.com
+        type: string
+      first_name:
+        example: Jane
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      last_name:
+        example: Doe
+        type: string
+      password:
+        example: ChangeMe123!
+        type: string
+      role_ids:
+        example:
+        - 2
+        - 3
+        items:
+          type: integer
+        type: array
+      username:
+        example: jdoe
+        type: string
+    type: object
+  handlers.APIUserUpdateRequest:
+    properties:
+      department_id:
+        type: integer
+      email:
+        type: string
+      first_name:
+        type: string
+      is_active:
+        type: boolean
+      last_name:
+        type: string
+      role_ids:
+        items:
+          type: integer
+        type: array
+    type: object
   handlers.LoginCredentials:
     properties:
       password:
@@ -7,7 +85,7 @@ definitions:
       username:
         type: string
     type: object
-host: response.health.go.ug
+host: localhost:3000
 info:
   contact:
     email: support@ios.gov.ug
@@ -61,19 +139,23 @@ paths:
       - Alerts
   /api/employees:
     get:
-      description: Retrieve list of all employees
+      description: 'Returns `{ "employees": [...] }`. Requires `employees:read`.'
       produces:
       - application/json
       responses:
         "200":
-          description: List of employees
+          description: employees array
           schema:
-            items:
-              additionalProperties: true
-              type: object
-            type: array
+            additionalProperties: true
+            type: object
         "401":
           description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
           schema:
             additionalProperties:
               type: string
@@ -92,8 +174,10 @@ paths:
     post:
       consumes:
       - application/json
+      description: JSON body uses `models.Employee` field names (`employee_fname`,
+        `facility`, …). Requires `employees:create`.
       parameters:
-      - description: Employee fields
+      - description: Employee fields (sql.Null* as string/number or null)
         in: body
         name: body
         required: true
@@ -107,6 +191,12 @@ paths:
           schema:
             additionalProperties: true
             type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       security:
       - SessionAuth: []
       summary: Create employee
@@ -114,6 +204,7 @@ paths:
       - Employees
   /api/employees/{id}:
     delete:
+      description: Requires `employees:delete`.
       parameters:
       - description: Employee ID
         in: path
@@ -128,12 +219,20 @@ paths:
           schema:
             additionalProperties: true
             type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       security:
       - SessionAuth: []
       summary: Delete employee
       tags:
       - Employees
     get:
+      description: 'Returns `{ "employee": { ... } }` with nullable fields. Requires
+        `employees:read`.'
       parameters:
       - description: Employee ID
         in: path
@@ -144,9 +243,21 @@ paths:
       - application/json
       responses:
         "200":
-          description: Employee
+          description: employee object
           schema:
             additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not found
+          schema:
+            additionalProperties:
+              type: string
             type: object
       security:
       - SessionAuth: []
@@ -156,6 +267,7 @@ paths:
     put:
       consumes:
       - application/json
+      description: Requires `employees:update`.
       parameters:
       - description: Employee ID
         in: path
@@ -175,6 +287,12 @@ paths:
           description: Updated
           schema:
             additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
             type: object
       security:
       - SessionAuth: []
@@ -446,17 +564,16 @@ paths:
       - Mpox
   /api/outbreaks:
     get:
-      description: Retrieve list of all outbreaks
+      description: 'Accessible outbreaks for the current user. Response: `{ "outbreaks":
+        [ ... ] }`.'
       produces:
       - application/json
       responses:
         "200":
-          description: List of outbreaks
+          description: outbreaks array
           schema:
-            items:
-              additionalProperties: true
-              type: object
-            type: array
+            additionalProperties: true
+            type: object
         "401":
           description: Unauthorized
           schema:
@@ -472,6 +589,232 @@ paths:
       security:
       - SessionAuth: []
       summary: Get all outbreaks
+      tags:
+      - Outbreaks
+    post:
+      consumes:
+      - application/json
+      description: 'Requires outbreaks:create. Body: name, start_date (YYYY-MM-DD),
+        optional description, end_date, status, outbreak_type, outbreak_category.'
+      parameters:
+      - description: Outbreak
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.APIOutbreakCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Create outbreak
+      tags:
+      - Outbreaks
+  /api/outbreaks/{id}:
+    delete:
+      description: Requires outbreaks:delete and manage permission.
+      parameters:
+      - description: Outbreak ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Delete outbreak
+      tags:
+      - Outbreaks
+    get:
+      description: Requires outbreaks:read and user access to the outbreak.
+      parameters:
+      - description: Outbreak ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: outbreak object
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get outbreak by ID
+      tags:
+      - Outbreaks
+    put:
+      consumes:
+      - application/json
+      description: Requires outbreaks:update and manage permission on the outbreak.
+      parameters:
+      - description: Outbreak ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Fields to update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.APIOutbreakCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Update outbreak
+      tags:
+      - Outbreaks
+  /api/outbreaks/{id}/close:
+    post:
+      parameters:
+      - description: Outbreak ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Close outbreak (status=closed)
+      tags:
+      - Outbreaks
+  /api/outbreaks/{id}/select:
+    post:
+      parameters:
+      - description: Outbreak ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Set session selected outbreak
+      tags:
+      - Outbreaks
+  /api/outbreaks/{id}/users:
+    get:
+      parameters:
+      - description: Outbreak ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: users
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Users assigned to an outbreak
+      tags:
+      - Outbreaks
+  /api/outbreaks/{outbreak_id}/users/{user_id}:
+    delete:
+      parameters:
+      - description: Outbreak ID
+        in: path
+        name: outbreak_id
+        required: true
+        type: integer
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Remove user from outbreak
+      tags:
+      - Outbreaks
+  /api/outbreaks/assign:
+    post:
+      consumes:
+      - application/json
+      description: 'Requires outbreaks:update. Body: outbreak_id, user_id.'
+      parameters:
+      - description: Assignment
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.APIOutbreakAssignRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Assign user to outbreak
+      tags:
+      - Outbreaks
+  /api/outbreaks/assignments:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: assignments
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: List user–outbreak assignments
       tags:
       - Outbreaks
   /api/pillars:
@@ -1001,6 +1344,99 @@ paths:
       summary: List activity logs
       tags:
       - Resource Management
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: deployment_id, activity_type, activity_date, optional times and
+          text fields
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Create activity log
+      tags:
+      - Resource Management
+  /api/resource-management/activity-logs/{id}:
+    delete:
+      parameters:
+      - description: Activity log ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Delete activity log
+      tags:
+      - Resource Management
+    get:
+      parameters:
+      - description: Activity log ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: activity_log
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get activity log by ID
+      tags:
+      - Resource Management
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Activity log ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Fields
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Update activity log
+      tags:
+      - Resource Management
   /api/resource-management/pillars:
     get:
       description: Same as GET /api/pillars; session cookie + resource_management:read
@@ -1035,6 +1471,98 @@ paths:
       summary: List resource pillars (alternate path)
       tags:
       - Resource Management
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Pillar fields (name, description, pillar_head_id, …)
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Create pillar
+      tags:
+      - Resource Management
+  /api/resource-management/pillars/{id}:
+    delete:
+      parameters:
+      - description: Pillar ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Delete pillar
+      tags:
+      - Resource Management
+    get:
+      parameters:
+      - description: Pillar ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: pillar
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get pillar by ID
+      tags:
+      - Resource Management
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Pillar ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Pillar fields
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Update pillar
+      tags:
+      - Resource Management
   /api/resource-management/requisitions:
     get:
       produces:
@@ -1048,6 +1576,99 @@ paths:
       security:
       - SessionAuth: []
       summary: List requisitions
+      tags:
+      - Resource Management
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: requisition_number, outbreak_id, optional deployment_id, requested_by,
+          dates, priority, status, notes
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Create requisition
+      tags:
+      - Resource Management
+  /api/resource-management/requisitions/{id}:
+    delete:
+      parameters:
+      - description: Requisition ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Delete requisition
+      tags:
+      - Resource Management
+    get:
+      parameters:
+      - description: Requisition ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: requisition
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get requisition by ID
+      tags:
+      - Resource Management
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Requisition ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Fields
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Update requisition
       tags:
       - Resource Management
   /api/resource-management/resources:
@@ -1065,6 +1686,98 @@ paths:
       summary: List resources
       tags:
       - Resource Management
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Resource JSON (name, category_id, unit_of_measure, …)
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Create resource catalog item
+      tags:
+      - Resource Management
+  /api/resource-management/resources/{id}:
+    delete:
+      parameters:
+      - description: Resource ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Delete resource catalog item
+      tags:
+      - Resource Management
+    get:
+      parameters:
+      - description: Resource ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: resource
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get resource catalog item by ID
+      tags:
+      - Resource Management
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Resource ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Resource JSON
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Update resource catalog item
+      tags:
+      - Resource Management
   /api/resource-management/rrt-deployments:
     get:
       produces:
@@ -1080,6 +1793,99 @@ paths:
       summary: List RRT deployments
       tags:
       - Resource Management
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: team_id, outbreak_id, deployment_date, deployment_status, optional
+          fields
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Create RRT deployment
+      tags:
+      - Resource Management
+  /api/resource-management/rrt-deployments/{id}:
+    delete:
+      parameters:
+      - description: Deployment ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Delete RRT deployment
+      tags:
+      - Resource Management
+    get:
+      parameters:
+      - description: Deployment ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: deployment
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get RRT deployment by ID
+      tags:
+      - Resource Management
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Deployment ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Fields to update
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Update RRT deployment
+      tags:
+      - Resource Management
   /api/resource-management/rrt-teams:
     get:
       produces:
@@ -1093,6 +1899,98 @@ paths:
       security:
       - SessionAuth: []
       summary: List RRT teams
+      tags:
+      - Resource Management
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: RRT team JSON (team_name, team_code, team_type, …)
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Create RRT team
+      tags:
+      - Resource Management
+  /api/resource-management/rrt-teams/{id}:
+    delete:
+      parameters:
+      - description: Team ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Delete RRT team
+      tags:
+      - Resource Management
+    get:
+      parameters:
+      - description: Team ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: team
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get RRT team by ID
+      tags:
+      - Resource Management
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Team ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: RRT team JSON
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Update RRT team
       tags:
       - Resource Management
   /api/resource-management/summary:
@@ -1112,19 +2010,51 @@ paths:
       - Resource Management
   /api/users:
     get:
-      description: Retrieve list of all users
+      description: 'Paginated user list (users:read). Response shape: users (array),
+        pagination { page, limit, total, total_pages }.'
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Page size
+        in: query
+        name: limit
+        type: integer
+      - description: Search username, email, or name
+        in: query
+        name: search
+        type: string
+      - description: Filter by department id
+        in: query
+        name: department_id
+        type: string
+      - description: Filter by role id
+        in: query
+        name: role_id
+        type: string
+      - description: Filter active users
+        in: query
+        name: is_active
+        type: boolean
       produces:
       - application/json
       responses:
         "200":
-          description: List of users
+          description: users and pagination
           schema:
-            items:
-              additionalProperties: true
-              type: object
-            type: array
+            additionalProperties: true
+            type: object
         "401":
           description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
           schema:
             additionalProperties:
               type: string
@@ -1144,12 +2074,12 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: User fields
+      - description: User + optional role_ids
         in: body
-        name: body
+        name: request
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.APIUserCreateRequest'
       produces:
       - application/json
       responses:
@@ -1213,12 +2143,12 @@ paths:
         name: id
         required: true
         type: integer
-      - description: User fields
+      - description: Fields to update
         in: body
-        name: body
+        name: request
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.APIUserUpdateRequest'
       produces:
       - application/json
       responses:
