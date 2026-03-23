@@ -304,6 +304,9 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 	app.Put("/api/rbac/users/:user_id/roles", middleware.PermissionRequired(store, db, sl, "users", "update"), func(c *fiber.Ctx) error {
 		return handlers.HandlerUpdateUserRoles(c, db, sl, store, config)
 	})
+	app.Post("/api/rbac/bulk-assign-roles", middleware.PermissionRequired(store, db, sl, "users", "update"), func(c *fiber.Ctx) error {
+		return handlers.HandlerBulkAssignRoles(c, db, sl, store, config)
+	})
 	app.Post("/api/rbac/user-roles", middleware.PermissionRequired(store, db, sl, "users", "update"), func(c *fiber.Ctx) error {
 		return handlers.HandlerAssignUserRole(c, db, sl, store, config)
 	})
@@ -318,13 +321,35 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 	})
 
 	app.Get("/api/users", middleware.PermissionRequired(store, db, sl, "users", "read"), func(c *fiber.Ctx) error {
-		return handlers.HandlerGetUsers(c, db, sl, store)
+		return handlers.HandlerUserListAPI(c, db, sl, store, config)
 	})
 	app.Get("/api/users/:id/permissions", middleware.PermissionRequired(store, db, sl, "users", "read"), func(c *fiber.Ctx) error {
 		return handlers.HandlerGetUserPermissions(c, db, sl)
 	})
 	app.Post("/api/users/roles", middleware.PermissionRequired(store, db, sl, "users", "update"), func(c *fiber.Ctx) error {
 		return handlers.HandlerAssignUserRole(c, db, sl, store, config)
+	})
+
+	app.Get("/api/resource-management/summary", middleware.PermissionRequired(store, db, sl, "resource_management", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementSummaryAPI(c, db, store)
+	})
+	app.Get("/api/resource-management/pillars", middleware.PermissionRequired(store, db, sl, "resource_management", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementPillarsAPI(c, db, store)
+	})
+	app.Get("/api/resource-management/rrt-teams", middleware.PermissionRequired(store, db, sl, "resource_management", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementRRTTeamsAPI(c, db, store)
+	})
+	app.Get("/api/resource-management/rrt-deployments", middleware.PermissionRequired(store, db, sl, "resource_management", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementRRTDeploymentsAPI(c, db, store)
+	})
+	app.Get("/api/resource-management/resources", middleware.PermissionRequired(store, db, sl, "resource_management", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementResourcesAPI(c, db, store)
+	})
+	app.Get("/api/resource-management/requisitions", middleware.PermissionRequired(store, db, sl, "resource_management", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementRequisitionsAPI(c, db, store)
+	})
+	app.Get("/api/resource-management/activity-logs", middleware.PermissionRequired(store, db, sl, "resource_management", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementActivityLogsAPI(c, db, store)
 	})
 
 	// Protected routes

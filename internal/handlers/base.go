@@ -30,6 +30,20 @@ var (
 	dbG  *sql.DB
 )
 
+// attachPermissionsForAPI loads the user's RBAC permissions into the Fiber context so
+// handlers using middleware.UserHasPermission work behind AuthRequired-only routes.
+func attachPermissionsForAPI(c *fiber.Ctx, db *sql.DB, userID int) {
+	if userID <= 0 {
+		return
+	}
+	perms, err := models.GetUserPermissions(c.Context(), db, userID)
+	if err != nil {
+		return
+	}
+	c.Locals("current_user_permissions", perms)
+	c.Locals("current_user_id", userID)
+}
+
 // Role constants for RBAC system
 const (
 	RoleSuperAdmin          = "super_admin"

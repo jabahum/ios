@@ -60,10 +60,11 @@ func main() {
 		}
 
 		if !exists {
+			name := "Resource management " + perm.action
 			_, err := db.Exec(`
-				INSERT INTO permissions (resource, action, description)
-				VALUES ('resource_management', $1, $2)
-			`, perm.action, perm.description)
+				INSERT INTO permissions (name, resource, action, description)
+				VALUES ($1, 'resource_management', $2, $3)
+			`, name, perm.action, perm.description)
 
 			if err != nil {
 				log.Printf("Error creating permission %s: %v", perm.action, err)
@@ -82,10 +83,10 @@ func main() {
 	}
 
 	roleAssignments := []RolePermissions{
-		{"Super Admin", []string{"read", "create", "update", "delete"}},
-		{"Admin", []string{"read", "create", "update", "delete"}},
-		{"Outbreak Coordinator", []string{"read", "create"}},
-		{"Case Manager", []string{"read"}},
+		{"super_admin", []string{"read", "create", "update", "delete"}},
+		{"admin", []string{"read", "create", "update", "delete"}},
+		{"outbreak_coordinator", []string{"read", "create"}},
+		{"case_manager", []string{"read"}},
 	}
 
 	log.Println("\nAssigning permissions to roles...")

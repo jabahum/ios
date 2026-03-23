@@ -14,6 +14,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
+	"github.com/lib/pq"
 )
 
 // EnhancedUserHandler handles user management with RBAC
@@ -56,7 +57,7 @@ func (h *EnhancedUserHandler) ListUsers(c *fiber.Ctx) error {
 		SELECT DISTINCT u.user_id, u.user_name, u.email, u.first_name, u.last_name, 
 		       u.is_active, u.is_locked, u.last_login_at, u.created_at,
 		       d.name as department_name,
-		       array_agg(r.name) as roles
+		       COALESCE(array_agg(r.name) FILTER (WHERE r.id IS NOT NULL), '{}') AS roles
 		FROM users u
 		LEFT JOIN departments d ON u.department_id = d.id
 		LEFT JOIN user_roles ur ON u.user_id = ur.user_id
@@ -73,7 +74,7 @@ func (h *EnhancedUserHandler) ListUsers(c *fiber.Ctx) error {
 		query += fmt.Sprintf(" AND (u.user_name ILIKE $%d OR u.email ILIKE $%d OR u.first_name ILIKE $%d OR u.last_name ILIKE $%d)",
 			argCount, argCount, argCount, argCount)
 		searchTerm := "%" + search + "%"
-		args = append(args, searchTerm, searchTerm, searchTerm, searchTerm)
+		args = append(args, searchTerm)
 	}
 
 	// Add department filter
@@ -114,7 +115,7 @@ func (h *EnhancedUserHandler) ListUsers(c *fiber.Ctx) error {
 	}
 	defer rows.Close()
 
-	var users []map[string]interface{}
+	users := make([]map[string]interface{}, 0)
 	for rows.Next() {
 		var user struct {
 			ID             int
@@ -127,13 +128,13 @@ func (h *EnhancedUserHandler) ListUsers(c *fiber.Ctx) error {
 			LastLoginAt    sql.NullTime
 			CreatedAt      time.Time
 			DepartmentName sql.NullString
-			Roles          []string
 		}
+		var roles []string
 
 		err := rows.Scan(
 			&user.ID, &user.Username, &user.Email, &user.FirstName, &user.LastName,
 			&user.IsActive, &user.IsLocked, &user.LastLoginAt, &user.CreatedAt,
-			&user.DepartmentName, &user.Roles,
+			&user.DepartmentName, pq.Array(&roles),
 		)
 		if err != nil {
 			h.logger.Error("Error scanning user row", "error", err)
@@ -151,7 +152,7 @@ func (h *EnhancedUserHandler) ListUsers(c *fiber.Ctx) error {
 			"last_login_at":   user.LastLoginAt.Time,
 			"created_at":      user.CreatedAt,
 			"department_name": user.DepartmentName.String,
-			"roles":           user.Roles,
+			"roles":           roles,
 		})
 	}
 
@@ -171,7 +172,7 @@ func (h *EnhancedUserHandler) ListUsers(c *fiber.Ctx) error {
 		countQuery += fmt.Sprintf(" AND (u.user_name ILIKE $%d OR u.email ILIKE $%d OR u.first_name ILIKE $%d OR u.last_name ILIKE $%d)",
 			argCount, argCount, argCount, argCount)
 		searchTerm := "%" + search + "%"
-		countArgs = append(countArgs, searchTerm, searchTerm, searchTerm, searchTerm)
+		countArgs = append(countArgs, searchTerm)
 	}
 
 	if departmentID != "" {
@@ -199,7 +200,10 @@ func (h *EnhancedUserHandler) ListUsers(c *fiber.Ctx) error {
 	}
 
 	// Calculate pagination info
-	totalPages := (totalCount + limit - 1) / limit
+	totalPages := 0
+	if limit > 0 {
+		totalPages = (totalCount + limit - 1) / limit
+	}
 
 	return c.JSON(fiber.Map{
 		"users": users,
@@ -483,7 +487,8 @@ func (h *EnhancedUserHandler) GetUserDetails(c *fiber.Ctx) error {
 		SELECT u.user_id, u.user_name, u.email, u.first_name, u.last_name, 
 		       u.is_active, u.is_locked, u.last_login_at, u.created_at, u.updated_at,
 		       d.id as department_id, d.name as department_name,
-		       array_agg(r.id) as role_ids, array_agg(r.name) as role_names
+		       COALESCE(array_agg(r.id) FILTER (WHERE r.id IS NOT NULL), '{}') AS role_ids,
+		       COALESCE(array_agg(r.name) FILTER (WHERE r.id IS NOT NULL), '{}') AS role_names
 		FROM users u
 		LEFT JOIN departments d ON u.department_id = d.id
 		LEFT JOIN user_roles ur ON u.user_id = ur.user_id
@@ -505,14 +510,14 @@ func (h *EnhancedUserHandler) GetUserDetails(c *fiber.Ctx) error {
 		UpdatedAt      time.Time
 		DepartmentID   sql.NullInt64
 		DepartmentName sql.NullString
-		RoleIDs        []int
-		RoleNames      []string
 	}
+	var roleIDs []int64
+	var roleNames []string
 
 	err = h.db.QueryRowContext(c.Context(), query, userID).Scan(
 		&user.ID, &user.Username, &user.Email, &user.FirstName, &user.LastName,
 		&user.IsActive, &user.IsLocked, &user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
-		&user.DepartmentID, &user.DepartmentName, &user.RoleIDs, &user.RoleNames,
+		&user.DepartmentID, &user.DepartmentName, pq.Array(&roleIDs), pq.Array(&roleNames),
 	)
 
 	if err != nil {
@@ -523,7 +528,11 @@ func (h *EnhancedUserHandler) GetUserDetails(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
 	}
 
-	// Build response
+	roleIDInts := make([]int, len(roleIDs))
+	for i, id := range roleIDs {
+		roleIDInts[i] = int(id)
+	}
+
 	response := map[string]interface{}{
 		"id":              user.ID,
 		"username":        user.Username,
@@ -537,7 +546,8 @@ func (h *EnhancedUserHandler) GetUserDetails(c *fiber.Ctx) error {
 		"updated_at":      user.UpdatedAt,
 		"department_id":   user.DepartmentID.Int64,
 		"department_name": user.DepartmentName.String,
-		"roles":           user.RoleNames,
+		"role_ids":        roleIDInts,
+		"roles":           roleNames,
 	}
 
 	return c.JSON(response)
