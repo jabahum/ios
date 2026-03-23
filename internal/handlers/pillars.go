@@ -129,11 +129,12 @@ func (h *PillarsHandler) HandlerPillarsAPI(c *fiber.Ctx) error {
 
 // Helper methods for database operations
 func (h *PillarsHandler) getAllPillars() ([]*models.Pillar, error) {
+	// Join users with user_name + email only (first_name/last_name are not present on all deployed DBs).
 	query := `
 		SELECT p.id, p.name, p.description, p.pillar_head_id, p.pillar_head_name, 
 		       p.pillar_head_email, p.pillar_head_phone, p.is_active, p.created_at, 
 		       p.updated_at, p.created_by, p.updated_by,
-		       u.first_name, u.last_name, u.email
+		       u.user_name, u.email
 		FROM pillars p
 		LEFT JOIN users u ON p.pillar_head_id = u.user_id
 		ORDER BY p.name
@@ -148,25 +149,26 @@ func (h *PillarsHandler) getAllPillars() ([]*models.Pillar, error) {
 	var pillars []*models.Pillar
 	for rows.Next() {
 		pillar := &models.Pillar{}
-		var userFirstName, userLastName, userEmail sql.NullString
+		var headUserName, headEmail sql.NullString
 
 		err := rows.Scan(
 			&pillar.ID, &pillar.Name, &pillar.Description, &pillar.PillarHeadID,
 			&pillar.PillarHeadName, &pillar.PillarHeadEmail, &pillar.PillarHeadPhone,
 			&pillar.IsActive, &pillar.CreatedAt, &pillar.UpdatedAt,
 			&pillar.CreatedBy, &pillar.UpdatedBy,
-			&userFirstName, &userLastName, &userEmail,
+			&headUserName, &headEmail,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		// Set related user data if exists
-		if userFirstName.Valid {
+		if headUserName.Valid || headEmail.Valid {
 			pillar.PillarHead = &models.EnhancedUser{
-				FirstName: sql.NullString{String: userFirstName.String, Valid: true},
-				LastName:  sql.NullString{String: userLastName.String, Valid: true},
-				Email:     sql.NullString{String: userEmail.String, Valid: true},
+				UserName: headUserName,
+				Email:    headEmail,
+			}
+			if headUserName.Valid {
+				pillar.PillarHead.FirstName = sql.NullString{String: headUserName.String, Valid: true}
 			}
 		}
 
@@ -181,32 +183,33 @@ func (h *PillarsHandler) getPillarByID(id string) (*models.Pillar, error) {
 		SELECT p.id, p.name, p.description, p.pillar_head_id, p.pillar_head_name, 
 		       p.pillar_head_email, p.pillar_head_phone, p.is_active, p.created_at, 
 		       p.updated_at, p.created_by, p.updated_by,
-		       u.first_name, u.last_name, u.email
+		       u.user_name, u.email
 		FROM pillars p
 		LEFT JOIN users u ON p.pillar_head_id = u.user_id
 		WHERE p.id = $1
 	`
 
 	pillar := &models.Pillar{}
-	var userFirstName, userLastName, userEmail sql.NullString
+	var headUserName, headEmail sql.NullString
 
 	err := h.db.QueryRow(query, id).Scan(
 		&pillar.ID, &pillar.Name, &pillar.Description, &pillar.PillarHeadID,
 		&pillar.PillarHeadName, &pillar.PillarHeadEmail, &pillar.PillarHeadPhone,
 		&pillar.IsActive, &pillar.CreatedAt, &pillar.UpdatedAt,
 		&pillar.CreatedBy, &pillar.UpdatedBy,
-		&userFirstName, &userLastName, &userEmail,
+		&headUserName, &headEmail,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	// Set related user data if exists
-	if userFirstName.Valid {
+	if headUserName.Valid || headEmail.Valid {
 		pillar.PillarHead = &models.EnhancedUser{
-			FirstName: sql.NullString{String: userFirstName.String, Valid: true},
-			LastName:  sql.NullString{String: userLastName.String, Valid: true},
-			Email:     sql.NullString{String: userEmail.String, Valid: true},
+			UserName: headUserName,
+			Email:    headEmail,
+		}
+		if headUserName.Valid {
+			pillar.PillarHead.FirstName = sql.NullString{String: headUserName.String, Valid: true}
 		}
 	}
 
@@ -350,7 +353,7 @@ func (h *PillarsHandler) getPillarChanges(pillarID string) ([]*models.PillarChan
 	query := `
 		SELECT pc.id, pc.pillar_id, pc.change_type, pc.old_value, pc.new_value,
 		       pc.change_reason, pc.changed_by, pc.changed_at, pc.notes,
-		       u.first_name, u.last_name
+		       u.user_name
 		FROM pillar_changes pc
 		LEFT JOIN users u ON pc.changed_by = u.user_id
 		WHERE pc.pillar_id = $1
@@ -366,22 +369,21 @@ func (h *PillarsHandler) getPillarChanges(pillarID string) ([]*models.PillarChan
 	var changes []*models.PillarChange
 	for rows.Next() {
 		change := &models.PillarChange{}
-		var userFirstName, userLastName sql.NullString
+		var changedByUserName sql.NullString
 
 		err := rows.Scan(
 			&change.ID, &change.PillarID, &change.ChangeType, &change.OldValue,
 			&change.NewValue, &change.ChangeReason, &change.ChangedBy,
-			&change.ChangedAt, &change.Notes, &userFirstName, &userLastName,
+			&change.ChangedAt, &change.Notes, &changedByUserName,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		// Set related user data if exists
-		if userFirstName.Valid {
+		if changedByUserName.Valid {
 			change.ChangedByUser = &models.EnhancedUser{
-				FirstName: sql.NullString{String: userFirstName.String, Valid: true},
-				LastName:  sql.NullString{String: userLastName.String, Valid: true},
+				UserName:  changedByUserName,
+				FirstName: sql.NullString{String: changedByUserName.String, Valid: true},
 			}
 		}
 
