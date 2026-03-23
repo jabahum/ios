@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"net/url"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
-	"path/filepath"
-	"net/url"
-	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
@@ -26,6 +26,7 @@ import (
 )
 
 func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger, config handlers.Config, smsService *services.SMSService, voiceService *services.VoiceService) {
+	inventoryHandler := handlers.NewInventoryHandler(db, store)
 
 	// Swagger documentation routes
 	app.Get("/swagger/*", fiberSwagger.HandlerDefault)
@@ -58,7 +59,7 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		// Fiber uses "*" as the parameter name for the wildcard
 		rawPath := c.Params("*")
 		filename, _ := url.QueryUnescape(rawPath)
-		
+
 		log.Printf("DEBUG: Requested path: %s", filename)
 
 		// 3. Construct the absolute path
@@ -68,7 +69,7 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 
 		// @jkage: use this one for development on docker
 		// absPath := filepath.Join(wd, "audios", filepath.Clean(filename))
-		
+
 		fmt.Println("Full system path to file:", absPath)
 
 		// 4. Set Headers for Africa's Talking (No-Cache)
@@ -377,6 +378,10 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		return handlers.HandlerResourceManagementActivityLogsAPI(c, db, store)
 	})
 
+	// Register JSON /api/* routes on app (session JSON 401) so they work the same locally and behind reverse proxies
+	// without depending only on the late AuthRequired group. See app_json_api.go.
+	registerAuthenticatedJSONAPIRoutes(app, db, sl, store, config, smsService, inventoryHandler)
+
 	// Protected routes
 	appGroup := app.Group("/")
 	appGroup.Use(AuthRequired(store))
@@ -386,20 +391,7 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 			return handlers.HandlerAlerts(c, db, sl, store, config)
 		})
 
-		// Alerts API endpoint for paginated data
-		appGroup.Get("/api/alerts", middleware.PermissionRequired(store, db, sl, "alerts", "read"), func(c *fiber.Ctx) error {
-			return handlers.HandlerAlertsAPI(c, db, sl, store, config)
-		})
-
-		// 6767 Alerts from DHIS2
-		appGroup.Get("/api/alerts/6767", middleware.PermissionRequired(store, db, sl, "alerts", "read"), func(c *fiber.Ctx) error {
-			return handlers.HandlerAlerts6767API(c, db, sl, store, config)
-		})
-
-		// Alerts debug endpoint
-		appGroup.Get("/api/alerts/debug", middleware.PermissionRequired(store, db, sl, "alerts", "read"), func(c *fiber.Ctx) error {
-			return handlers.HandlerAlertsDebug(c, db, sl, store, config)
-		})
+		// /api/alerts* JSON: registerAuthenticatedJSONAPIRoutes (app_json_api.go)
 		// VHF CIF routes with RBAC protection
 		appGroup.Get("/vhf-cif", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
 			return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "vhf_cif")
@@ -453,8 +445,7 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 			return handlers.HandlerVHFLabSave(c, db, sl, store, config)
 		})
 
-		// Inventory routes
-		inventoryHandler := handlers.NewInventoryHandler(db, store)
+		// Inventory routes (inventoryHandler from SetRoute)
 
 		// Inventory dashboard
 		appGroup.Get("/inventory", func(c *fiber.Ctx) error {
@@ -796,7 +787,9 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		appGroup.Get("/cases", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
 			return handlers.HandlerCasesList(c, db, sl, store, config)
 		})
-		appGroup.Get("/cases/new", func(c *fiber.Ctx) error { return handlers.HandlerCasesForm(c, db, sl, store, config, smsService, voiceService) })
+		appGroup.Get("/cases/new", func(c *fiber.Ctx) error {
+			return handlers.HandlerCasesForm(c, db, sl, store, config, smsService, voiceService)
+		})
 		appGroup.Get("/cases/:outbreak_id", func(c *fiber.Ctx) error {
 			// Set the outbreak ID in session and redirect to cases list
 			outbreakID, err := strconv.Atoi(c.Params("outbreak_id"))
@@ -1312,8 +1305,7 @@ func AuthRequired(store *session.Store) fiber.Handler {
 			return c.Redirect("/login")
 		}
 
-		userID := sess.Get("user")
-		if userID == nil {
+		if sess.Get("user") == nil && sess.Get("user_id") == nil {
 			return c.Redirect("/login")
 		}
 
@@ -1730,6 +1722,8 @@ func RouteOutbreaks(app *fiber.App, db *sql.DB, sl *slog.Logger, store *session.
 
 // SetupRoutes configures all routes for the application
 func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger, config handlers.Config, smsService *services.SMSService) {
+	inventoryHandler := handlers.NewInventoryHandler(db, store)
+
 	// Public routes
 	app.Get("/", func(c *fiber.Ctx) error {
 		return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "landing")
@@ -1835,8 +1829,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logg
 		return c.SendString("Simple route working!")
 	})
 
-	// Inventory routes (moved to top to avoid conflicts)
-	inventoryHandler := handlers.NewInventoryHandler(db, store)
+	// Inventory routes (inventoryHandler from SetRoute)
 
 	// Inventory dashboard - test without middleware first
 	app.Get("/inventory-test", func(c *fiber.Ctx) error {
