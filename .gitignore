@@ -12,6 +12,7 @@ web.exe
 =======
 /cmd/web/web.exe
 <<<<<<< HEAD
+<<<<<<< HEAD
 docker-compose.yml
 /init
 .env
@@ -39,4 +40,11 @@ docker-compose.yml
 .idea
 .vscode
 >>>>>>> d0bb006 (User management enhanced)
+<<<<<<< HEAD
 >>>>>>> bcd5b09 (User management enhanced)
+=======
+=======
+docker-compose.yml
+/init
+>>>>>>> dd59593 (docker compose delete)
+>>>>>>> a0c459a (docker compose delete)
