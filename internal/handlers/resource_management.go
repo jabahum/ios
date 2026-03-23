@@ -977,7 +977,9 @@ func (h *ResourceManagementHandler) getAllResources() ([]*models.Resource, error
 }
 
 func (h *ResourceManagementHandler) getAllResourceCategories() ([]*models.ResourceCategory, error) {
-	query := `SELECT id, name, description FROM resource_categories ORDER BY name`
+	query := `
+		SELECT id, name, description, category_type, is_active, created_at, updated_at, created_by
+		FROM resource_categories ORDER BY name`
 
 	rows, err := h.db.Query(query)
 	if err != nil {
@@ -988,7 +990,10 @@ func (h *ResourceManagementHandler) getAllResourceCategories() ([]*models.Resour
 	var categories []*models.ResourceCategory
 	for rows.Next() {
 		category := &models.ResourceCategory{}
-		err := rows.Scan(&category.ID, &category.Name, &category.Description)
+		err := rows.Scan(
+			&category.ID, &category.Name, &category.Description, &category.CategoryType,
+			&category.IsActive, &category.CreatedAt, &category.UpdatedAt, &category.CreatedBy,
+		)
 		if err != nil {
 			continue
 		}
@@ -996,6 +1001,31 @@ func (h *ResourceManagementHandler) getAllResourceCategories() ([]*models.Resour
 	}
 
 	return categories, nil
+}
+
+func (h *ResourceManagementHandler) getResourceCategoryByID(id string) (*models.ResourceCategory, error) {
+	query := `
+		SELECT id, name, description, category_type, is_active, created_at, updated_at, created_by
+		FROM resource_categories WHERE id = $1`
+	category := &models.ResourceCategory{}
+	err := h.db.QueryRow(query, id).Scan(
+		&category.ID, &category.Name, &category.Description, &category.CategoryType,
+		&category.IsActive, &category.CreatedAt, &category.UpdatedAt, &category.CreatedBy,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return category, nil
+}
+
+func (h *ResourceManagementHandler) createResourceCategory(cat *models.ResourceCategory) error {
+	query := `
+		INSERT INTO resource_categories (name, description, category_type, is_active, created_by)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id`
+	return h.db.QueryRow(query,
+		cat.Name, cat.Description, cat.CategoryType, cat.IsActive, cat.CreatedBy,
+	).Scan(&cat.ID)
 }
 
 func (h *ResourceManagementHandler) getResourceByID(id string) (*models.Resource, error) {

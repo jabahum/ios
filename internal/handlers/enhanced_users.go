@@ -226,14 +226,13 @@ func (h *EnhancedUserHandler) CreateUser(c *fiber.Ctx) error {
 	}
 
 	var userData struct {
-		Username     string `json:"username"`
-		Email        string `json:"email"`
-		FirstName    string `json:"first_name"`
-		LastName     string `json:"last_name"`
-		Password     string `json:"password"`
-		DepartmentID int    `json:"department_id"`
-		RoleIDs      []int  `json:"role_ids"`
-		IsActive     bool   `json:"is_active"`
+		Username  string `json:"username"`
+		Email     string `json:"email"`
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+		Password  string `json:"password"`
+		RoleIDs   []int  `json:"role_ids"`
+		IsActive  bool   `json:"is_active"`
 	}
 
 	if err := c.BodyParser(&userData); err != nil {
@@ -272,7 +271,7 @@ func (h *EnhancedUserHandler) CreateUser(c *fiber.Ctx) error {
 		LastName:     sql.NullString{String: userData.LastName, Valid: userData.LastName != ""},
 		PasswordHash: sql.NullString{String: passwordHash, Valid: true},
 		PasswordSalt: sql.NullString{String: salt, Valid: true},
-		DepartmentID: sql.NullInt64{Int64: int64(userData.DepartmentID), Valid: userData.DepartmentID > 0},
+		DepartmentID: sql.NullInt64{},
 		IsActive:     userData.IsActive,
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
