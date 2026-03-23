@@ -11,6 +11,7 @@ web.exe
 <<<<<<< HEAD
 =======
 /cmd/web/web.exe
+<<<<<<< HEAD
 docker-compose.yml
 /init
 .env
@@ -31,4 +32,11 @@ docker-compose.yml
 =======
 =======
 >>>>>>> 1ed39ff (git ignore updated)
+<<<<<<< HEAD
 >>>>>>> f3b2b44 (git ignore updated)
+=======
+=======
+.idea
+.vscode
+>>>>>>> d0bb006 (User management enhanced)
+>>>>>>> bcd5b09 (User management enhanced)

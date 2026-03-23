@@ -439,6 +439,23 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		return handlers.HandlerDepartmentDeleteAPI(c, db, sl)
 	})
 
+	// Employee JSON API (same pattern as /api/users: PermissionRequired = session + RBAC; avoids relying only on AuthRequired group)
+	app.Get("/api/employees", middleware.PermissionRequired(store, db, sl, "employees", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerEmployeeListAPI(c, db, sl, store, config)
+	})
+	app.Get("/api/employees/:id", middleware.PermissionRequired(store, db, sl, "employees", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerGetEmployeeAPI(c, db, sl, store, config)
+	})
+	app.Post("/api/employees", middleware.PermissionRequired(store, db, sl, "employees", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerEmployeeSubmitAPI(c, db, sl, store, config)
+	})
+	app.Put("/api/employees/:id", middleware.PermissionRequired(store, db, sl, "employees", "update"), func(c *fiber.Ctx) error {
+		return handlers.HandlerEmployeeUpdateAPI(c, db, sl, store, config)
+	})
+	app.Delete("/api/employees/:id", middleware.PermissionRequired(store, db, sl, "employees", "delete"), func(c *fiber.Ctx) error {
+		return handlers.HandlerDeleteEmployeeAPI(c, db, sl, store, config)
+	})
+
 	app.Get("/api/resource-management/summary", middleware.PermissionRequired(store, db, sl, "resource_management", "read"), func(c *fiber.Ctx) error {
 		return handlers.HandlerResourceManagementSummaryAPI(c, db, store)
 	})

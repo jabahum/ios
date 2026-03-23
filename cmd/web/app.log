@@ -84695,6 +84695,7 @@ time=2026-03-23T13:05:16.931+03:00 level=INFO msg="DEBUG: AuthRequired checking 
 time=2026-03-23T13:05:16.931+03:00 level=INFO msg="DEBUG: Path /api/vhf/cif requires authentication"
 time=2026-03-23T13:05:16.931+03:00 level=INFO msg="DEBUG: AuthRequired checking path: /api/vhf/cif"
 time=2026-03-23T13:05:16.931+03:00 level=INFO msg="DEBUG: Path /api/vhf/cif requires authentication"
+<<<<<<< HEAD
 time=2026-03-23T13:46:41.019+03:00 level=INFO msg="DEBUG: Incoming request session cookie: 6c39e9eb-2b40-4351-8859-910118aa967b"
 time=2026-03-23T13:46:41.019+03:00 level=INFO msg="DEBUG: Request path: /api/pillars"
 time=2026-03-23T13:46:41.020+03:00 level=INFO msg="DEBUG: Session keys: [username isAuthenticated authenticated outbreak_id selected_outbreak user user_id userID]"
@@ -86484,3 +86485,5 @@ time=2026-03-24T12:46:39.196+03:00 level=INFO msg="DEBUG: Session isAuthenticate
 time=2026-03-24T12:46:39.196+03:00 level=INFO msg="DEBUG: Session user: 1"
 time=2026-03-24T12:46:39.197+03:00 level=INFO msg="DEBUG: Session user_id: 1"
 time=2026-03-24T12:46:39.197+03:00 level=INFO msg="DEBUG: Session username: paul.mbaka@gmail.com"
+=======
+>>>>>>> d0bb006 (User management enhanced)
