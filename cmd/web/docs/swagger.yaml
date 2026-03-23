@@ -1,4 +1,12 @@
 basePath: /
+definitions:
+  handlers.LoginCredentials:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
 host: localhost:3000
 info:
   contact:
@@ -79,6 +87,98 @@ paths:
       security:
       - SessionAuth: []
       summary: Get all employees
+      tags:
+      - Employees
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Employee fields
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Create employee
+      tags:
+      - Employees
+  /api/employees/{id}:
+    delete:
+      parameters:
+      - description: Employee ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Deleted
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Delete employee
+      tags:
+      - Employees
+    get:
+      parameters:
+      - description: Employee ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Employee
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get employee by ID
+      tags:
+      - Employees
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Employee ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Employee fields
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Update employee
       tags:
       - Employees
   /api/facilities:
@@ -376,19 +476,23 @@ paths:
       - Outbreaks
   /api/pillars:
     get:
-      description: Retrieve list of all resource management pillars
+      description: JSON list of resource management pillars (requires resource_management:read)
       produces:
       - application/json
       responses:
         "200":
-          description: List of pillars
+          description: Pillars payload
           schema:
-            items:
-              additionalProperties: true
-              type: object
-            type: array
+            additionalProperties: true
+            type: object
         "401":
           description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
           schema:
             additionalProperties:
               type: string
@@ -401,7 +505,7 @@ paths:
             type: object
       security:
       - SessionAuth: []
-      summary: Get pillars
+      summary: List resource pillars
       tags:
       - Resource Management
   /api/polio/patients:
@@ -439,6 +543,60 @@ paths:
       summary: Get Polio cases
       tags:
       - Polio
+  /api/rbac/bulk-assign-roles:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Bulk assign payload
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Bulk assign roles
+      tags:
+      - RBAC
+  /api/rbac/migration-status:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Status
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: RBAC migration status
+      tags:
+      - RBAC
+  /api/rbac/permission-stats:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Stats
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Permission usage statistics
+      tags:
+      - RBAC
   /api/rbac/permissions:
     get:
       description: Retrieve list of all RBAC permissions
@@ -467,6 +625,113 @@ paths:
       security:
       - SessionAuth: []
       summary: Get all permissions
+      tags:
+      - RBAC
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Permission
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Create permission
+      tags:
+      - RBAC
+  /api/rbac/permissions/{id}:
+    delete:
+      parameters:
+      - description: Permission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Deleted
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Delete permission
+      tags:
+      - RBAC
+    get:
+      parameters:
+      - description: Permission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Permission
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get permission by ID
+      tags:
+      - RBAC
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Permission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Permission
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Update permission
+      tags:
+      - RBAC
+  /api/rbac/role-stats:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Stats
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Role assignment statistics
       tags:
       - RBAC
   /api/rbac/roles:
@@ -499,6 +764,352 @@ paths:
       summary: Get all roles
       tags:
       - RBAC
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Role
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Create role
+      tags:
+      - RBAC
+  /api/rbac/roles/{id}:
+    delete:
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Deleted
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Delete role
+      tags:
+      - RBAC
+    get:
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Role
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get role by ID
+      tags:
+      - RBAC
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Role
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Update role
+      tags:
+      - RBAC
+  /api/rbac/stats:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Stats
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: RBAC aggregate stats
+      tags:
+      - RBAC
+  /api/rbac/user-roles:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: user_id, role_id
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Assign one role to a user
+      tags:
+      - RBAC
+  /api/rbac/user-roles/{user_id}/{role_id}:
+    delete:
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      - description: Role ID
+        in: path
+        name: role_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Remove role from user
+      tags:
+      - RBAC
+  /api/rbac/users:
+    get:
+      description: Same user list as user management; requires users:read
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Users
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: List users (RBAC path)
+      tags:
+      - RBAC
+  /api/rbac/users/{user_id}/roles:
+    get:
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Roles
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Roles assigned to a user
+      tags:
+      - RBAC
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      - description: role_ids
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Replace all roles for a user
+      tags:
+      - RBAC
+  /api/resource-management/activity-logs:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: activity_logs
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: List activity logs
+      tags:
+      - Resource Management
+  /api/resource-management/pillars:
+    get:
+      description: Same as GET /api/pillars; session cookie + resource_management:read
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Pillars payload
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: List resource pillars (alternate path)
+      tags:
+      - Resource Management
+  /api/resource-management/requisitions:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: requisitions
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: List requisitions
+      tags:
+      - Resource Management
+  /api/resource-management/resources:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: resources
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: List resources
+      tags:
+      - Resource Management
+  /api/resource-management/rrt-deployments:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: deployments
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: List RRT deployments
+      tags:
+      - Resource Management
+  /api/resource-management/rrt-teams:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: teams
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: List RRT teams
+      tags:
+      - Resource Management
+  /api/resource-management/summary:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Counts and summary fields
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Resource management dashboard stats
+      tags:
+      - Resource Management
   /api/users:
     get:
       description: Retrieve list of all users
@@ -529,6 +1140,275 @@ paths:
       summary: Get all users
       tags:
       - Users
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: User fields
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Create user
+      tags:
+      - Users
+  /api/users/{id}:
+    delete:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Deleted
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Delete user
+      tags:
+      - Users
+    get:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get user by ID
+      tags:
+      - Users
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User fields
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Update user
+      tags:
+      - Users
+  /api/users/{id}/permissions:
+    get:
+      description: Permissions derived from role assignments
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: permissions array
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Effective permissions for a user
+      tags:
+      - Users
+  /api/users/roles:
+    post:
+      consumes:
+      - application/json
+      description: Same handler as POST /api/rbac/user-roles; requires users:update
+      parameters:
+      - description: user_id, role_id
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Assign a role to a user
+      tags:
+      - Users
+  /api/vhf/cif:
+    get:
+      description: Same bundle as by ID; pass case_code query parameter
+      parameters:
+      - description: Case code
+        in: query
+        name: case_code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: CIF bundle
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Missing or invalid case_code
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: VHF CIF bundle by case code
+      tags:
+      - VHF
+  /api/vhf/cif/{id}:
+    get:
+      description: 'Full CIF JSON: patient, clinical signs, hospitalization, risk
+        factors, laboratory, investigator'
+      parameters:
+      - description: VHF patient ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: CIF bundle
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: VHF CIF bundle by patient ID
+      tags:
+      - VHF
+  /api/vhf/lab/{id}:
+    get:
+      parameters:
+      - description: Case or patient ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lab form
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get VHF lab form (by case/patient id)
+      tags:
+      - VHF
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Case or patient ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Lab form payload
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Saved
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Submit VHF lab form
+      tags:
+      - VHF
   /api/vhf/patients:
     get:
       description: Retrieve list of Viral Hemorrhagic Fever cases
@@ -611,6 +1491,45 @@ paths:
       tags:
       - VHF
   /api/vhf/patients/{id}:
+    delete:
+      description: Delete a VHF patient record by ID
+      parameters:
+      - description: Patient ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Deleted
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Delete VHF case
+      tags:
+      - VHF
     get:
       description: Retrieve detailed information about a specific VHF case
       parameters:
@@ -650,40 +1569,342 @@ paths:
       summary: Get VHF case by ID
       tags:
       - VHF
-  /login:
-    post:
+    put:
       consumes:
       - application/json
-      - application/x-www-form-urlencoded
-      description: Authenticate user with username and password
+      description: Update an existing Viral Hemorrhagic Fever case by patient ID
       parameters:
-      - description: Username
-        in: formData
-        name: username
+      - description: Patient ID
+        in: path
+        name: id
         required: true
-        type: string
-      - description: Password
-        in: formData
-        name: password
+        type: integer
+      - description: VHF case fields
+        in: body
+        name: body
         required: true
-        type: string
+        schema:
+          type: object
       produces:
       - application/json
-      - text/html
       responses:
         "200":
-          description: Login successful
+          description: Updated case
           schema:
             additionalProperties: true
             type: object
         "400":
-          description: Invalid credentials
+          description: Invalid request
           schema:
             additionalProperties:
               type: string
             type: object
         "401":
           description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Update VHF case
+      tags:
+      - VHF
+  /api/vhf/patients/{id}/clinical-signs:
+    get:
+      parameters:
+      - description: Patient ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Clinical signs
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get VHF clinical signs
+      tags:
+      - VHF
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Patient ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Clinical signs payload
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Saved
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Save VHF clinical signs
+      tags:
+      - VHF
+  /api/vhf/patients/{id}/hospitalization:
+    get:
+      parameters:
+      - description: Patient ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Hospitalization
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get VHF hospitalization
+      tags:
+      - VHF
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Patient ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Hospitalization payload
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Saved
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Save VHF hospitalization
+      tags:
+      - VHF
+  /api/vhf/patients/{id}/investigator:
+    get:
+      parameters:
+      - description: Patient ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Investigator
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get VHF investigator
+      tags:
+      - VHF
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Patient ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Investigator payload
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Saved
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Save VHF investigator
+      tags:
+      - VHF
+  /api/vhf/patients/{id}/laboratory:
+    get:
+      parameters:
+      - description: Patient ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Laboratory
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get VHF laboratory (CIF section)
+      tags:
+      - VHF
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Patient ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Laboratory payload
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Saved
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Save VHF laboratory (CIF section)
+      tags:
+      - VHF
+  /api/vhf/patients/{id}/risk-factors:
+    get:
+      parameters:
+      - description: Patient ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Risk factors
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Get VHF risk factors
+      tags:
+      - VHF
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Patient ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Risk factors payload
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Saved
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Save VHF risk factors
+      tags:
+      - VHF
+  /login:
+    post:
+      consumes:
+      - application/json
+      - application/x-www-form-urlencoded
+      description: Creates a session cookie (fiber_sess). For API/Swagger use Content-Type
+        application/json and body {"username","password"}. HTML forms may POST as
+        application/x-www-form-urlencoded with the same fields.
+      parameters:
+      - description: Credentials (required for JSON requests)
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.LoginCredentials'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful (JSON mode); includes redirect path for the
+            web app
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Missing username or password
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Invalid credentials
           schema:
             additionalProperties:
               type: string
@@ -731,7 +1952,7 @@ paths:
 securityDefinitions:
   SessionAuth:
     in: cookie
-    name: session
+    name: fiber_sess
     type: apiKey
 swagger: "2.0"
 tags:

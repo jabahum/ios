@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
 )
 
@@ -259,6 +260,40 @@ func SaveVHFPatient(db *sql.DB, patient *VHFPatient) error {
 		patient.Latitude, patient.Longitude, patient.DateResidingFrom, patient.DateResidingTo,
 	).Scan(&patient.ID, &patient.CreatedAt)
 
+	return err
+}
+
+// UpdateVHFPatient updates an existing VHF patient row (used by JSON APIs).
+func UpdateVHFPatient(db *sql.DB, patient *VHFPatient) error {
+	if patient.ID == 0 {
+		return fmt.Errorf("patient id required for update")
+	}
+	q := `
+		UPDATE vhf_patients SET
+			surname = $1, other_names = $2, date_of_birth = $3, age_years = $4, age_months = $5,
+			gender = $6, patient_phone = $7, phone_owner = $8, next_of_kin = $9, next_of_kin_phone = $10,
+			relationship_to_patient = $11, data_capturer_name = $12, data_capturer_phone = $13,
+			reporting_health_facility_name = $14, case_code = $15, status = $16, date_of_death = $17,
+			head_of_household = $18, village_town = $19, parish = $20, subcounty = $21, district = $22,
+			country_of_residence = $23, occupation = $24, ill_village_town = $25, ill_subcounty = $26,
+			ill_district = $27, latitude = $28, longitude = $29, date_residing_from = $30, date_residing_to = $31
+		WHERE id = $32`
+	_, err := db.Exec(q,
+		patient.Surname, patient.OtherNames, patient.DateOfBirth, patient.AgeYears, patient.AgeMonths,
+		patient.Gender, patient.PatientPhone, patient.PhoneOwner, patient.NextOfKin, patient.NextOfKinPhone,
+		patient.RelationshipToPatient, patient.DataCapturerName, patient.DataCapturerPhone,
+		patient.ReportingHealthFacilityName, patient.CaseCode, patient.Status, patient.DateOfDeath,
+		patient.HeadOfHousehold, patient.VillageTown, patient.Parish, patient.Subcounty, patient.District,
+		patient.CountryOfResidence, patient.Occupation, patient.IllVillageTown, patient.IllSubcounty,
+		patient.IllDistrict, patient.Latitude, patient.Longitude, patient.DateResidingFrom, patient.DateResidingTo,
+		patient.ID,
+	)
+	return err
+}
+
+// DeleteVHFPatient removes a patient row by ID (ensure FK constraints allow this in your DB).
+func DeleteVHFPatient(db *sql.DB, id int64) error {
+	_, err := db.Exec(`DELETE FROM vhf_patients WHERE id = $1`, id)
 	return err
 }
 

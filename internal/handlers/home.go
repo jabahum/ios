@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -318,30 +319,133 @@ func HandlerLoginForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 	return GenerateHTML(c, db, data, "login")
 }
 
+// LoginCredentials is used by POST /login (JSON or form) and by Swagger.
+type LoginCredentials struct {
+	Username string `json:"username" form:"username"`
+	Password string `json:"password" form:"password"`
+}
+
+func wantsLoginJSONResponse(c *fiber.Ctx) bool {
+	return strings.Contains(strings.ToLower(c.Get("Content-Type")), "application/json")
+}
+
+func parseLoginCredentials(c *fiber.Ctx) (username, password string) {
+	username = c.FormValue("username")
+	password = c.FormValue("password")
+	if username != "" && password != "" {
+		return username, password
+	}
+	var creds LoginCredentials
+	if err := c.BodyParser(&creds); err == nil {
+		if creds.Username != "" {
+			username = creds.Username
+		}
+		if creds.Password != "" {
+			password = creds.Password
+		}
+	}
+	if username != "" && password != "" {
+		return username, password
+	}
+	raw := strings.TrimSpace(string(c.Body()))
+	if raw != "" && !strings.HasPrefix(raw, "{") && strings.Contains(raw, "=") {
+		if vals, err := url.ParseQuery(raw); err == nil {
+			if username == "" {
+				username = vals.Get("username")
+			}
+			if password == "" {
+				password = vals.Get("password")
+			}
+		}
+	}
+	return username, password
+}
+
+func sessionUserID(sess *session.Session) int {
+	v := sess.Get("user")
+	if v == nil {
+		return 0
+	}
+	switch n := v.(type) {
+	case int:
+		return n
+	case int64:
+		return int(n)
+	case float64:
+		return int(n)
+	default:
+		return 0
+	}
+}
+
+// loginRedirectPath returns the same post-login path as the HTML login flow.
+func loginRedirectPath(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, userID int, primaryRole string) string {
+	switch primaryRole {
+	case "vhf_lab_technician", "vhf_data_entry":
+		return "/vhf-list"
+	case "mpox_case_manager", "mpox_data_entry":
+		return "/outbreaks"
+	case "case_manager":
+		defaultOutbreakID, err := getDefaultOutbreakID(c, db, userID)
+		if err != nil {
+			sl.Error("Failed to get default outbreak ID for case manager", "error", err, "user_id", userID)
+			return "/outbreaks"
+		}
+		if defaultOutbreakID > 0 {
+			return fmt.Sprintf("/cases/%d", defaultOutbreakID)
+		}
+		return "/outbreaks"
+	case "outbreak_viewer", "outbreak_manager":
+		return "/outbreaks"
+	case "super_admin", "admin":
+		return "/home"
+	default:
+		if strings.Contains(strings.ToLower(primaryRole), "case") {
+			return "/cases"
+		}
+		return "/outbreaks"
+	}
+}
+
 func HandlerLoginSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	wantJSON := wantsLoginJSONResponse(c)
 
 	sess, err := store.Get(c)
 	if err == nil {
 		userID := sess.Get("user")
 		if userID != nil {
 			fmt.Println("Already logged in")
+			if wantJSON {
+				return c.JSON(fiber.Map{
+					"message": "Already authenticated",
+					"user_id": sessionUserID(sess),
+				})
+			}
 			return c.Redirect("/outbreaks", 302)
 		}
 	}
 
-	// Extract form values
-	username := c.FormValue("username")
-	password := c.FormValue("password")
+	username, password := parseLoginCredentials(c)
 
 	if username == "" || password == "" {
 		fmt.Println("No username and or password provided")
-		c.Status(fiber.StatusBadRequest)      // Set HTTP 400 status
-		return c.Redirect("/login?error=400") // Redirect to login page
+		if wantJSON {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "username and password are required",
+			})
+		}
+		c.Status(fiber.StatusBadRequest)
+		return c.Redirect("/login?error=400")
 	}
 
 	id, er := models.Authenticate(c.Context(), db, username, password)
 	if er != nil {
 		fmt.Println("Failed Authentication: ", er.Error())
+		if wantJSON {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Invalid username or password",
+			})
+		}
 		return c.Redirect("/login?error=afail")
 	}
 
@@ -350,6 +454,9 @@ func HandlerLoginSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 		sess, err := store.Get(c)
 		if err != nil {
 			sl.Info("Session error")
+			if wantJSON {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Session error"})
+			}
 			return c.Redirect("/login?serror")
 		}
 
@@ -395,75 +502,36 @@ func HandlerLoginSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 		// Save session
 		if err := sess.Save(); err != nil {
 			sl.Info("Failed to save session", "error", err)
+			if wantJSON {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to save session"})
+			}
 		} else {
 			sl.Info("Session saved successfully for user", "user_id", id)
 			cookie := c.Cookies("fiber_sess")
 			sl.Info("Session cookie after login", "cookie", cookie)
 		}
 
-		// Get user's primary role to determine redirect destination
 		primaryRole, err := getUserPrimaryRole(c, db, id)
 		if err != nil {
 			sl.Error("Failed to get user role for redirect", "error", err, "user_id", id)
-			// Default to outbreaks page if role lookup fails
-			return c.Redirect("/outbreaks")
+			primaryRole = ""
 		}
 
 		fmt.Printf("DEBUG: User ID %d has primary role: '%s'\n", id, primaryRole)
 
-		// Redirect based on user's primary role
-		switch primaryRole {
-		case "vhf_lab_technician", "vhf_data_entry":
-			// VHF users go directly to VHF list
-			fmt.Printf("DEBUG: Redirecting VHF user (ID: %d, role: %s) to /vhf-list\n", id, primaryRole)
-			sl.Info("Redirecting VHF user to VHF list", "user_id", id, "role", primaryRole)
-			return c.Redirect("/vhf-list")
-		case "mpox_case_manager", "mpox_data_entry":
-			// MPOX users go to outbreaks page (they can select MPOX outbreaks)
-			fmt.Printf("DEBUG: Redirecting MPOX user (ID: %d, role: %s) to /outbreaks\n", id, primaryRole)
-			sl.Info("Redirecting MPOX user to outbreaks", "user_id", id, "role", primaryRole)
-			return c.Redirect("/outbreaks")
-		case "case_manager":
-			// Case managers go to /cases with default outbreak or /outbreaks for selection
-			defaultOutbreakID, err := getDefaultOutbreakID(c, db, id)
-			if err != nil {
-				sl.Error("Failed to get default outbreak ID for case manager", "error", err, "user_id", id)
-				return c.Redirect("/outbreaks") // Fallback to outbreaks if lookup fails
-			}
-			if defaultOutbreakID > 0 {
-				// User has exactly one active outbreak - redirect to cases
-				fmt.Printf("DEBUG: Redirecting case manager (ID: %d, role: %s) to /cases/%d\n", id, primaryRole, defaultOutbreakID)
-				sl.Info("Redirecting case manager to cases with default outbreak", "user_id", id, "role", primaryRole, "outbreak_id", defaultOutbreakID)
-				return c.Redirect(fmt.Sprintf("/cases/%d", defaultOutbreakID))
-			} else {
-				// User has multiple outbreaks or no outbreaks - redirect to outbreaks selection
-				fmt.Printf("DEBUG: Redirecting case manager (ID: %d, role: %s) to /outbreaks (multiple outbreaks or no outbreaks)\n", id, primaryRole)
-				sl.Info("Redirecting case manager to outbreaks selection", "user_id", id, "role", primaryRole)
-				return c.Redirect("/outbreaks")
-			}
-		case "outbreak_viewer", "outbreak_manager":
-			// Outbreak users go to outbreaks page
-			fmt.Printf("DEBUG: Redirecting outbreak user (ID: %d, role: %s) to /outbreaks\n", id, primaryRole)
-			sl.Info("Redirecting outbreak user to outbreaks", "user_id", id, "role", primaryRole)
-			return c.Redirect("/outbreaks")
-		case "super_admin", "admin":
-			// Admin users go directly to home page (they can access everything)
-			fmt.Printf("DEBUG: Redirecting admin user (ID: %d, role: %s) to /home\n", id, primaryRole)
-			sl.Info("Redirecting admin user to home", "user_id", id, "role", primaryRole)
-			return c.Redirect("/home")
-		default:
-			// Check if the role contains "case" (for any case-related roles)
-			if strings.Contains(strings.ToLower(primaryRole), "case") {
-				// Case users go directly to /cases page
-				fmt.Printf("DEBUG: Redirecting case user (ID: %d, role: %s) to /cases\n", id, primaryRole)
-				sl.Info("Redirecting case user to cases", "user_id", id, "role", primaryRole)
-				return c.Redirect("/cases")
-			}
-			// Default redirect for users without specific roles or other roles
-			fmt.Printf("DEBUG: Redirecting user (ID: %d, role: '%s') to /outbreaks (default)\n", id, primaryRole)
-			sl.Info("Redirecting user to outbreaks (default)", "user_id", id, "role", primaryRole)
-			return c.Redirect("/outbreaks")
+		redirectPath := loginRedirectPath(c, db, sl, id, primaryRole)
+		if wantJSON {
+			return c.JSON(fiber.Map{
+				"message":  "Login successful",
+				"user_id":  id,
+				"username": username,
+				"role":     primaryRole,
+				"redirect": redirectPath,
+			})
 		}
+
+		sl.Info("Redirecting after login", "user_id", id, "role", primaryRole, "path", redirectPath)
+		return c.Redirect(redirectPath, fiber.StatusFound)
 	}
 
 	return nil

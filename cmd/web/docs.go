@@ -15,7 +15,7 @@ package main
 
 // @securityDefinitions.apikey SessionAuth
 // @in cookie
-// @name session
+// @name fiber_sess
 
 // @tag.name Authentication
 // @tag.description Authentication endpoints

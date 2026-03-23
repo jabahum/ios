@@ -82,6 +82,7 @@ type AuditLog struct {
 // Permission constants
 const (
 	// Resource types
+	ResourceAdmin        = "admin"
 	ResourceUsers        = "users"
 	ResourceVHFPatients  = "vhf_patients"
 	ResourceReports      = "reports"

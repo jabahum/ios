@@ -32,6 +32,13 @@ func NewRBACManagementHandler(db *sql.DB, logger *slog.Logger, store *session.St
 	}
 }
 
+// rbacHasAdminOrUsers matches /api/rbac route middleware, which uses resource "admin",
+// while these handlers historically checked "users". Accept either so role edit works.
+func rbacHasAdminOrUsers(c *fiber.Ctx, action string) bool {
+	return middleware.UserHasPermission(c, models.ResourceAdmin, action) ||
+		middleware.UserHasPermission(c, models.ResourceUsers, action)
+}
+
 // ==================== ROLE MANAGEMENT ====================
 
 // ListRoles handles listing all roles with their permissions
@@ -98,8 +105,7 @@ func (h *RBACManagementHandler) ListRoles(c *fiber.Ctx) error {
 
 // CreateRole handles creating a new role
 func (h *RBACManagementHandler) CreateRole(c *fiber.Ctx) error {
-	// Check permission
-	if !middleware.UserHasPermission(c, models.ResourceUsers, models.ActionCreate) {
+	if !rbacHasAdminOrUsers(c, models.ActionCreate) {
 		return c.Status(403).JSON(fiber.Map{"error": "Access denied"})
 	}
 
@@ -149,6 +155,7 @@ func (h *RBACManagementHandler) CreateRole(c *fiber.Ctx) error {
 	h.logger.Info("Role created", "user_id", userID, "role_id", roleID, "role_name", req.Name)
 
 	return c.JSON(fiber.Map{
+		"success": true,
 		"message": "Role created successfully",
 		"role_id": roleID,
 	})
@@ -156,8 +163,7 @@ func (h *RBACManagementHandler) CreateRole(c *fiber.Ctx) error {
 
 // UpdateRole handles updating a role
 func (h *RBACManagementHandler) UpdateRole(c *fiber.Ctx) error {
-	// Check permission
-	if !middleware.UserHasPermission(c, models.ResourceUsers, models.ActionUpdate) {
+	if !rbacHasAdminOrUsers(c, models.ActionUpdate) {
 		return c.Status(403).JSON(fiber.Map{"error": "Access denied"})
 	}
 
@@ -167,20 +173,63 @@ func (h *RBACManagementHandler) UpdateRole(c *fiber.Ctx) error {
 	}
 
 	var req struct {
-		Name        string `json:"name"`
-		Description string `json:"description"`
-		IsActive    bool   `json:"is_active"`
+		Name        *string `json:"name"`
+		Description *string `json:"description"`
+		IsActive    *bool   `json:"is_active"`
 	}
 
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request body"})
 	}
 
-	// Update role
+	var curName string
+	var curDesc sql.NullString
+	var curActive bool
+	err = h.db.QueryRowContext(c.Context(), `
+		SELECT name, description, is_active FROM roles WHERE id = $1
+	`, roleID).Scan(&curName, &curDesc, &curActive)
+	if err == sql.ErrNoRows {
+		return c.Status(404).JSON(fiber.Map{"error": "Role not found"})
+	}
+	if err != nil {
+		h.logger.Error("Error loading role for update", "error", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
+	}
+
+	name := curName
+	if req.Name != nil {
+		if *req.Name == "" {
+			return c.Status(400).JSON(fiber.Map{"error": "Role name cannot be empty"})
+		}
+		name = *req.Name
+	}
+	desc := curDesc.String
+	if req.Description != nil {
+		desc = *req.Description
+	}
+	active := curActive
+	if req.IsActive != nil {
+		active = *req.IsActive
+	}
+
+	if name != curName {
+		var taken bool
+		err = h.db.QueryRowContext(c.Context(), `
+			SELECT EXISTS(SELECT 1 FROM roles WHERE name = $1 AND id <> $2)
+		`, name, roleID).Scan(&taken)
+		if err != nil {
+			h.logger.Error("Error checking role name", "error", err)
+			return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
+		}
+		if taken {
+			return c.Status(409).JSON(fiber.Map{"error": "Another role already uses this name"})
+		}
+	}
+
 	result, err := h.db.ExecContext(c.Context(), `
 		UPDATE roles SET name = $1, description = $2, is_active = $3, updated_at = NOW()
 		WHERE id = $4
-	`, req.Name, req.Description, req.IsActive, roleID)
+	`, name, desc, active, roleID)
 
 	if err != nil {
 		h.logger.Error("Error updating role", "error", err)
@@ -209,8 +258,7 @@ func (h *RBACManagementHandler) UpdateRole(c *fiber.Ctx) error {
 
 // DeleteRole handles deleting a role
 func (h *RBACManagementHandler) DeleteRole(c *fiber.Ctx) error {
-	// Check permission
-	if !middleware.UserHasPermission(c, models.ResourceUsers, models.ActionDelete) {
+	if !rbacHasAdminOrUsers(c, models.ActionDelete) {
 		return c.Status(403).JSON(fiber.Map{"error": "Access denied"})
 	}
 
@@ -335,8 +383,7 @@ func (h *RBACManagementHandler) ListPermissions(c *fiber.Ctx) error {
 
 // CreatePermission handles creating a new permission
 func (h *RBACManagementHandler) CreatePermission(c *fiber.Ctx) error {
-	// Check permission
-	if !middleware.UserHasPermission(c, models.ResourceUsers, models.ActionCreate) {
+	if !rbacHasAdminOrUsers(c, models.ActionCreate) {
 		return c.Status(403).JSON(fiber.Map{"error": "Access denied"})
 	}
 
@@ -388,6 +435,7 @@ func (h *RBACManagementHandler) CreatePermission(c *fiber.Ctx) error {
 	h.logger.Info("Permission created", "user_id", userID, "permission_id", permID)
 
 	return c.JSON(fiber.Map{
+		"success":       true,
 		"message":       "Permission created successfully",
 		"permission_id": permID,
 	})
@@ -395,8 +443,7 @@ func (h *RBACManagementHandler) CreatePermission(c *fiber.Ctx) error {
 
 // UpdatePermission handles updating a permission
 func (h *RBACManagementHandler) UpdatePermission(c *fiber.Ctx) error {
-	// Check permission
-	if !middleware.UserHasPermission(c, models.ResourceUsers, models.ActionUpdate) {
+	if !rbacHasAdminOrUsers(c, models.ActionUpdate) {
 		return c.Status(403).JSON(fiber.Map{"error": "Access denied"})
 	}
 
@@ -406,22 +453,75 @@ func (h *RBACManagementHandler) UpdatePermission(c *fiber.Ctx) error {
 	}
 
 	var req struct {
-		Name        string `json:"name"`
-		Description string `json:"description"`
-		Resource    string `json:"resource"`
-		Action      string `json:"action"`
-		IsActive    bool   `json:"is_active"`
+		Name        *string `json:"name"`
+		Description *string `json:"description"`
+		Resource    *string `json:"resource"`
+		Action      *string `json:"action"`
+		IsActive    *bool   `json:"is_active"`
 	}
 
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request body"})
 	}
 
-	// Update permission
+	var curName string
+	var curDesc sql.NullString
+	var curRes, curAct string
+	var curActive bool
+	err = h.db.QueryRowContext(c.Context(), `
+		SELECT name, description, resource, action, is_active FROM permissions WHERE id = $1
+	`, permID).Scan(&curName, &curDesc, &curRes, &curAct, &curActive)
+	if err == sql.ErrNoRows {
+		return c.Status(404).JSON(fiber.Map{"error": "Permission not found"})
+	}
+	if err != nil {
+		h.logger.Error("Error loading permission for update", "error", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
+	}
+
+	name := curName
+	if req.Name != nil {
+		name = *req.Name
+	}
+	desc := curDesc.String
+	if req.Description != nil {
+		desc = *req.Description
+	}
+	res := curRes
+	if req.Resource != nil && *req.Resource != "" {
+		res = *req.Resource
+	}
+	act := curAct
+	if req.Action != nil && *req.Action != "" {
+		act = *req.Action
+	}
+	active := curActive
+	if req.IsActive != nil {
+		active = *req.IsActive
+	}
+
+	if name == "" || res == "" || act == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "Name, resource, and action are required"})
+	}
+
+	if res != curRes || act != curAct {
+		var taken bool
+		err = h.db.QueryRowContext(c.Context(), `
+			SELECT EXISTS(SELECT 1 FROM permissions WHERE resource = $1 AND action = $2 AND id <> $3)
+		`, res, act, permID).Scan(&taken)
+		if err != nil {
+			h.logger.Error("Error checking permission uniqueness", "error", err)
+			return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
+		}
+		if taken {
+			return c.Status(409).JSON(fiber.Map{"error": "Another permission already uses this resource and action"})
+		}
+	}
+
 	result, err := h.db.ExecContext(c.Context(), `
 		UPDATE permissions SET name = $1, description = $2, resource = $3, action = $4, is_active = $5, updated_at = NOW()
 		WHERE id = $6
-	`, req.Name, req.Description, req.Resource, req.Action, req.IsActive, permID)
+	`, name, desc, res, act, active, permID)
 
 	if err != nil {
 		h.logger.Error("Error updating permission", "error", err)
@@ -442,13 +542,12 @@ func (h *RBACManagementHandler) UpdatePermission(c *fiber.Ctx) error {
 	userID := GetCurrentUser(c, h.store)
 	h.logger.Info("Permission updated", "user_id", userID, "permission_id", permID)
 
-	return c.JSON(fiber.Map{"message": "Permission updated successfully"})
+	return c.JSON(fiber.Map{"success": true, "message": "Permission updated successfully"})
 }
 
 // DeletePermission handles deleting a permission
 func (h *RBACManagementHandler) DeletePermission(c *fiber.Ctx) error {
-	// Check permission
-	if !middleware.UserHasPermission(c, models.ResourceUsers, models.ActionDelete) {
+	if !rbacHasAdminOrUsers(c, models.ActionDelete) {
 		return c.Status(403).JSON(fiber.Map{"error": "Access denied"})
 	}
 
@@ -678,8 +777,7 @@ func (h *RBACManagementHandler) RemoveUserRole(c *fiber.Ctx) error {
 
 // UpdateUserRoles handles updating all roles for a user
 func (h *RBACManagementHandler) UpdateUserRoles(c *fiber.Ctx) error {
-	// Check permission
-	if !middleware.UserHasPermission(c, models.ResourceUsers, models.ActionUpdate) {
+	if !rbacHasAdminOrUsers(c, models.ActionUpdate) {
 		return c.Status(403).JSON(fiber.Map{"error": "Access denied"})
 	}
 
@@ -696,18 +794,21 @@ func (h *RBACManagementHandler) UpdateUserRoles(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request body"})
 	}
 
-	// Clear existing user roles
-	_, err = h.db.ExecContext(c.Context(), `
-		DELETE FROM user_roles WHERE user_id = $1
-	`, userID)
+	tx, err := h.db.BeginTx(c.Context(), nil)
+	if err != nil {
+		h.logger.Error("Error starting transaction", "error", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
+	}
+	defer tx.Rollback()
+
+	_, err = tx.ExecContext(c.Context(), `DELETE FROM user_roles WHERE user_id = $1`, userID)
 	if err != nil {
 		h.logger.Error("Error clearing user roles", "error", err)
 		return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
 	}
 
-	// Assign new roles
 	for _, roleID := range req.Roles {
-		_, err = h.db.ExecContext(c.Context(), `
+		_, err = tx.ExecContext(c.Context(), `
 			INSERT INTO user_roles (user_id, role_id, created_at)
 			VALUES ($1, $2, NOW())
 		`, userID, roleID)
@@ -717,7 +818,11 @@ func (h *RBACManagementHandler) UpdateUserRoles(c *fiber.Ctx) error {
 		}
 	}
 
-	// Log the action
+	if err := tx.Commit(); err != nil {
+		h.logger.Error("Error committing user roles update", "error", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
+	}
+
 	adminUserID := GetCurrentUser(c, h.store)
 	h.logger.Info("User roles updated", "user_id", userID, "admin_user_id", adminUserID, "new_roles", req.Roles)
 
@@ -727,12 +832,86 @@ func (h *RBACManagementHandler) UpdateUserRoles(c *fiber.Ctx) error {
 	})
 }
 
+// BulkAssignRoles adds multiple roles to multiple users in one request (skips pairs that already exist).
+func (h *RBACManagementHandler) BulkAssignRoles(c *fiber.Ctx) error {
+	if !rbacHasAdminOrUsers(c, models.ActionUpdate) {
+		return c.Status(403).JSON(fiber.Map{"error": "Access denied"})
+	}
+
+	var req struct {
+		UserIDs []int `json:"user_ids"`
+		RoleIDs []int `json:"role_ids"`
+	}
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+	if len(req.UserIDs) == 0 || len(req.RoleIDs) == 0 {
+		return c.Status(400).JSON(fiber.Map{"error": "user_ids and role_ids must be non-empty"})
+	}
+
+	tx, err := h.db.BeginTx(c.Context(), nil)
+	if err != nil {
+		h.logger.Error("Error starting transaction", "error", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
+	}
+	defer tx.Rollback()
+
+	added := 0
+	for _, uid := range req.UserIDs {
+		if uid <= 0 {
+			continue
+		}
+		for _, rid := range req.RoleIDs {
+			if rid <= 0 {
+				continue
+			}
+			var exists bool
+			err = tx.QueryRowContext(c.Context(), `
+				SELECT EXISTS(SELECT 1 FROM user_roles WHERE user_id = $1 AND role_id = $2)
+			`, uid, rid).Scan(&exists)
+			if err != nil {
+				h.logger.Error("Error checking user role", "error", err)
+				return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
+			}
+			if exists {
+				continue
+			}
+			_, err = tx.ExecContext(c.Context(), `
+				INSERT INTO user_roles (user_id, role_id, created_at)
+				VALUES ($1, $2, NOW())
+			`, uid, rid)
+			if err != nil {
+				h.logger.Error("Error bulk-assigning role", "error", err)
+				return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
+			}
+			added++
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		h.logger.Error("Error committing bulk role assignment", "error", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
+	}
+
+	adminUserID := GetCurrentUser(c, h.store)
+	h.logger.Info("Bulk roles assigned",
+		"admin_user_id", adminUserID,
+		"user_count", len(req.UserIDs),
+		"role_count", len(req.RoleIDs),
+		"assignments_added", added)
+
+	return c.JSON(fiber.Map{
+		"success":           true,
+		"message":           "Roles assigned",
+		"assignments_added": added,
+	})
+}
+
 // ==================== ROLE PERMISSION MANAGEMENT ====================
 
 // GetRolePermissions handles getting permissions for a specific role
 func (h *RBACManagementHandler) GetRolePermissions(c *fiber.Ctx) error {
-	// Check permission
-	if !middleware.UserHasPermission(c, models.ResourceUsers, models.ActionRead) {
+	if !rbacHasAdminOrUsers(c, models.ActionRead) {
 		return c.Status(403).JSON(fiber.Map{"error": "Access denied"})
 	}
 
@@ -788,8 +967,7 @@ func (h *RBACManagementHandler) GetRolePermissions(c *fiber.Ctx) error {
 
 // AssignRolePermission handles assigning a permission to a role
 func (h *RBACManagementHandler) AssignRolePermission(c *fiber.Ctx) error {
-	// Check permission
-	if !middleware.UserHasPermission(c, models.ResourceUsers, models.ActionCreate) {
+	if !rbacHasAdminOrUsers(c, models.ActionCreate) {
 		return c.Status(403).JSON(fiber.Map{"error": "Access denied"})
 	}
 
@@ -843,8 +1021,7 @@ func (h *RBACManagementHandler) AssignRolePermission(c *fiber.Ctx) error {
 
 // RemoveRolePermission handles removing a permission from a role
 func (h *RBACManagementHandler) RemoveRolePermission(c *fiber.Ctx) error {
-	// Check permission
-	if !middleware.UserHasPermission(c, models.ResourceUsers, models.ActionDelete) {
+	if !rbacHasAdminOrUsers(c, models.ActionDelete) {
 		return c.Status(403).JSON(fiber.Map{"error": "Access denied"})
 	}
 
@@ -1100,6 +1277,12 @@ func HandlerUpdateUserRoles(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *se
 	return handler.UpdateUserRoles(c)
 }
 
+// HandlerBulkAssignRoles assigns multiple roles to multiple users at once.
+func HandlerBulkAssignRoles(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	handler := NewRBACManagementHandler(db, sl, store, config)
+	return handler.BulkAssignRoles(c)
+}
+
 // HandlerGetRolePermissions handles getting role permissions
 func HandlerGetRolePermissions(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 	handler := NewRBACManagementHandler(db, sl, nil, Config{})
@@ -1249,7 +1432,7 @@ func HandlerMigrateUserRightsToRBAC(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, s
 
 // GetRole handles fetching a single role by ID
 func (h *RBACManagementHandler) GetRole(c *fiber.Ctx) error {
-	if !middleware.UserHasPermission(c, models.ResourceUsers, models.ActionRead) {
+	if !rbacHasAdminOrUsers(c, models.ActionRead) {
 		return c.Status(403).JSON(fiber.Map{"error": "Access denied"})
 	}
 	roleID, err := strconv.Atoi(c.Params("id"))
@@ -1288,7 +1471,7 @@ func (h *RBACManagementHandler) GetRole(c *fiber.Ctx) error {
 
 // GetPermission handles fetching a single permission by ID
 func (h *RBACManagementHandler) GetPermission(c *fiber.Ctx) error {
-	if !middleware.UserHasPermission(c, models.ResourceUsers, models.ActionRead) {
+	if !rbacHasAdminOrUsers(c, models.ActionRead) {
 		return c.Status(403).JSON(fiber.Map{"error": "Access denied"})
 	}
 	permID, err := strconv.Atoi(c.Params("id"))
