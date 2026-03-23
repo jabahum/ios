@@ -24,5 +24,11 @@ docker-compose.yml
 
 .DS_Store
 .vscode
+<<<<<<< HEAD
 >>>>>>> 05ff780 (add editor and IDE files and folders to ignore)
+<<<<<<< HEAD
 >>>>>>> e93dcbb (add editor and IDE files and folders to ignore)
+=======
+=======
+>>>>>>> 1ed39ff (git ignore updated)
+>>>>>>> f3b2b44 (git ignore updated)
