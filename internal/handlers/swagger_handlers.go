@@ -220,12 +220,13 @@ func SwaggerGetUsers(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.S
 
 // GetEmployees godoc
 // @Summary Get all employees
-// @Description Retrieve list of all employees
+// @Description Returns `{ "employees": [...] }`. Requires `employees:read`.
 // @Tags Employees
 // @Produce json
 // @Security SessionAuth
-// @Success 200 {array} map[string]interface{} "List of employees"
+// @Success 200 {object} map[string]interface{} "employees array"
 // @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 403 {object} map[string]string "Forbidden"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /api/employees [get]
 func SwaggerGetEmployees(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
@@ -670,11 +671,14 @@ func SwaggerAssignUserRoleApp(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 
 // GetEmployee godoc
 // @Summary Get employee by ID
+// @Description Returns `{ "employee": { ... } }` with nullable fields. Requires `employees:read`.
 // @Tags Employees
 // @Produce json
 // @Security SessionAuth
 // @Param id path int true "Employee ID"
-// @Success 200 {object} map[string]interface{} "Employee"
+// @Success 200 {object} map[string]interface{} "employee object"
+// @Failure 403 {object} map[string]string "Forbidden"
+// @Failure 404 {object} map[string]string "Not found"
 // @Router /api/employees/{id} [get]
 func SwaggerGetEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
 	return HandlerGetEmployeeAPI(c, db, sl, store, config)
@@ -682,12 +686,14 @@ func SwaggerGetEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 
 // CreateEmployee godoc
 // @Summary Create employee
+// @Description JSON body uses `models.Employee` field names (`employee_fname`, `facility`, …). Requires `employees:create`.
 // @Tags Employees
 // @Accept json
 // @Produce json
 // @Security SessionAuth
-// @Param body body object true "Employee fields"
+// @Param body body object true "Employee fields (sql.Null* as string/number or null)"
 // @Success 201 {object} map[string]interface{} "Created"
+// @Failure 403 {object} map[string]string "Forbidden"
 // @Router /api/employees [post]
 func SwaggerCreateEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
 	return HandlerEmployeeSubmitAPI(c, db, sl, store, config)
@@ -695,6 +701,7 @@ func SwaggerCreateEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 
 // UpdateEmployee godoc
 // @Summary Update employee
+// @Description Requires `employees:update`.
 // @Tags Employees
 // @Accept json
 // @Produce json
@@ -702,6 +709,7 @@ func SwaggerCreateEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 // @Param id path int true "Employee ID"
 // @Param body body object true "Employee fields"
 // @Success 200 {object} map[string]interface{} "Updated"
+// @Failure 403 {object} map[string]string "Forbidden"
 // @Router /api/employees/{id} [put]
 func SwaggerUpdateEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
 	return HandlerEmployeeUpdateAPI(c, db, sl, store, config)
@@ -709,11 +717,13 @@ func SwaggerUpdateEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 
 // DeleteEmployee godoc
 // @Summary Delete employee
+// @Description Requires `employees:delete`.
 // @Tags Employees
 // @Produce json
 // @Security SessionAuth
 // @Param id path int true "Employee ID"
 // @Success 200 {object} map[string]interface{} "Deleted"
+// @Failure 403 {object} map[string]string "Forbidden"
 // @Router /api/employees/{id} [delete]
 func SwaggerDeleteEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
 	return HandlerDeleteEmployeeAPI(c, db, sl, store, config)
