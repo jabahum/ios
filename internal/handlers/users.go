@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -23,6 +24,39 @@ type FormData struct {
 	Add     []string `form:"input[add][]"`
 	Edit    []string `form:"input[edit][]"`
 	Execute []string `form:"input[execute][]"`
+}
+
+// formValues returns every submitted value for a key (e.g. multi-select "roles").
+// Supports application/x-www-form-urlencoded and multipart/form-data.
+func formValues(c *fiber.Ctx, name string) []string {
+	ct := strings.ToLower(c.Get("Content-Type"))
+	if strings.Contains(ct, "multipart/form-data") {
+		mf, err := c.MultipartForm()
+		if err == nil && mf != nil {
+			if v := mf.Value[name]; len(v) > 0 {
+				out := make([]string, 0, len(v))
+				for _, s := range v {
+					s = strings.TrimSpace(s)
+					if s != "" {
+						out = append(out, s)
+					}
+				}
+				return out
+			}
+		}
+		return nil
+	}
+	var out []string
+	c.Request().PostArgs().VisitAll(func(k, v []byte) {
+		if string(k) != name {
+			return
+		}
+		s := strings.TrimSpace(string(v))
+		if s != "" {
+			out = append(out, s)
+		}
+	})
+	return out
 }
 
 func HandlerUserForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
@@ -172,103 +206,129 @@ func HandlerUserForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.S
 	data.FormChild1 = functions
 	data.From = c.Query("from", "") // Get the 'from' parameter from the URL
 
+	if errMsg := c.Query("error"); errMsg != "" {
+		data.Message = errMsg
+		data.MessageType = "error"
+	}
+
 	return GenerateHTML(c, db, data, "form_user")
 }
 
 func HandlerUserSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
-	// Debug: Log all form values
 	sl.Info("Form submission received", "content_type", c.Get("Content-Type"))
 
-	id, er := strconv.Atoi(c.FormValue("id"))
-	if er != nil {
-		id = 0
+	id, _ := strconv.Atoi(c.FormValue("id"))
+	employeeID, _ := strconv.Atoi(c.FormValue("user_employee"))
+	username := strings.TrimSpace(c.FormValue("user_name"))
+	password := c.FormValue("user_pass")
+	confirm := c.FormValue("confirm_password")
+
+	redirForm := func(msg string) error {
+		q := "/users/new/0"
+		if id > 0 {
+			q = "/users/new/" + strconv.Itoa(id)
+		}
+		return c.Redirect(q + "?error=" + url.QueryEscape(msg))
 	}
 
-	// Debug: Log the user ID
-	sl.Info("Processing user submission", "user_id", id)
-
-	// Get employee details if employee is selected
-	employeeID, err := strconv.Atoi(c.FormValue("user_employee"))
-	if err != nil {
-		employeeID = 0
+	if username == "" {
+		return redirForm("Username is required.")
+	}
+	if id == 0 && employeeID <= 0 {
+		return redirForm("Please select an employee.")
+	}
+	if id == 0 {
+		if len(password) < 8 {
+			return redirForm("Password must be at least 8 characters.")
+		}
+		if password != confirm {
+			return redirForm("Password and confirmation do not match.")
+		}
+	} else if password != "" || confirm != "" {
+		if password != confirm {
+			return redirForm("Password and confirmation do not match.")
+		}
+		if len(password) < 8 {
+			return redirForm("Password must be at least 8 characters.")
+		}
 	}
 
 	var firstName, lastName, email sql.NullString
 	var departmentID sql.NullInt64
 
 	if employeeID > 0 {
-		// Get employee details
 		empQuery := `SELECT employee_fname, employee_lname, employee_email, facility 
-		             FROM employee WHERE employee_id = $1`
+		             FROM public.employee WHERE employee_id = $1`
 		err := db.QueryRowContext(c.Context(), empQuery, employeeID).Scan(
 			&firstName, &lastName, &email, &departmentID)
 		if err != nil {
 			sl.Error("Error getting employee details", "error", err, "employee_id", employeeID)
+			return redirForm("Could not load the selected employee.")
+		}
+	}
+
+	isActive := c.FormValue("is_active") == "1"
+	isLocked := c.FormValue("is_locked") == "1"
+	var pwdExpires sql.NullTime
+	if s := strings.TrimSpace(c.FormValue("password_expires_at")); s != "" {
+		if t, err := time.Parse("2006-01-02", s); err == nil {
+			pwdExpires = sql.NullTime{Time: t, Valid: true}
 		}
 	}
 
 	user := models.User{
 		UserID:       id,
-		UserName:     ParseNullString(c.FormValue("user_name")),
+		UserName:     ParseNullString(username),
 		UserEmployee: ParseNullInt(c.FormValue("user_employee")),
 	}
 
-	// Set password for new users
 	if user.UserID == 0 {
-		password := c.FormValue("user_pass")
-		if password == "" {
-			password = "123456" // Default password
-		}
 		user.UserPass = sql.NullString{String: models.Encrypt(password), Valid: true}
-		err := user.Insert(c.Context(), db)
-		if err != nil {
-			log.Println(err.Error())
+		if err := user.Insert(c.Context(), db); err != nil {
+			sl.Error("user insert failed", "error", err)
+			msg := "Could not create user."
+			estr := strings.ToLower(err.Error())
+			if strings.Contains(estr, "unique") || strings.Contains(estr, "23505") {
+				msg = "That username is already in use."
+			}
+			return redirForm(msg)
 		}
 		sl.Info("Created new user", "user_id", user.UserID)
 	} else {
 		user.SetAsExists()
-		err := user.Update_NoPass(c.Context(), db)
-		if err != nil {
-			log.Println(err.Error())
+		if err := user.Update_NoPass(c.Context(), db); err != nil {
+			sl.Error("user update failed", "error", err)
+			return redirForm("Could not update user.")
+		}
+		if password != "" {
+			user.UserPass = sql.NullString{String: models.Encrypt(password), Valid: true}
+			if err := user.Update_Pass(c.Context(), db); err != nil {
+				sl.Error("password update failed", "error", err)
+				return redirForm("Could not update password.")
+			}
 		}
 		sl.Info("Updated existing user", "user_id", user.UserID)
 	}
 
-	// Update enhanced user data if employee is selected
-	if employeeID > 0 && user.UserID > 0 {
-		// Check if enhanced user record exists
-		var exists bool
-		err := db.QueryRowContext(c.Context(),
-			"SELECT EXISTS(SELECT 1 FROM enhanced_users WHERE user_id = $1)", user.UserID).Scan(&exists)
-		if err != nil {
-			sl.Error("Error checking enhanced user existence", "error", err)
-		}
-
-		if exists {
-			// Update existing enhanced user
-			updateQuery := `UPDATE enhanced_users SET 
-				first_name = $1, last_name = $2, email = $3, department_id = $4, updated_at = $5
-				WHERE user_id = $6`
-			_, err := db.ExecContext(c.Context(), updateQuery,
-				firstName, lastName, email, departmentID, time.Now(), user.UserID)
-			if err != nil {
-				sl.Error("Error updating enhanced user", "error", err)
-			}
-		} else {
-			// Create new enhanced user record
-			insertQuery := `INSERT INTO enhanced_users 
-				(user_id, first_name, last_name, email, department_id, is_active, created_at, updated_at)
-				VALUES ($1, $2, $3, $4, $5, true, $6, $7)`
-			_, err := db.ExecContext(c.Context(), insertQuery,
-				user.UserID, firstName, lastName, email, departmentID, time.Now(), time.Now())
-			if err != nil {
-				sl.Error("Error creating enhanced user", "error", err)
-			}
-		}
+	// Merged RBAC profile lives on public.users (see migration 015).
+	profileUpd := `UPDATE public.users SET 
+		first_name = $1, last_name = $2, email = $3, 
+		department_id = $4, 
+		is_active = $5, is_locked = $6, 
+		password_expires_at = $7, 
+		updated_at = $8 
+		WHERE user_id = $9`
+	var deptArg interface{}
+	if departmentID.Valid && departmentID.Int64 != 0 {
+		deptArg = departmentID.Int64
+	}
+	_, err := db.ExecContext(c.Context(), profileUpd,
+		firstName, lastName, email, deptArg,
+		isActive, isLocked, pwdExpires, time.Now(), user.UserID)
+	if err != nil {
+		sl.Error("Error updating user profile columns", "error", err, "user_id", user.UserID)
 	}
 
-	// Handle RBAC roles and permissions
-	// First, remove existing user roles
 	if user.UserID > 0 {
 		_, err := db.ExecContext(c.Context(), "DELETE FROM user_roles WHERE user_id = $1", user.UserID)
 		if err != nil {
@@ -276,84 +336,34 @@ func HandlerUserSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session
 		}
 	}
 
-	// Add selected roles
-	// For multiple select, we need to get all form values with the same name
-	form, err := c.MultipartForm()
-	if err != nil {
-		sl.Error("Error parsing form", "error", err)
-		// Try alternative approach for non-multipart forms
-		sl.Info("Trying alternative form parsing approach")
-
-		// Try to get roles from regular form values
-		rolesValue := c.FormValue("roles")
-		sl.Info("Roles from FormValue", "roles", rolesValue)
-
-		if rolesValue != "" {
-			// Split by comma if multiple roles are sent as a single value
-			roleIDs := strings.Split(rolesValue, ",")
-			for _, roleIDStr := range roleIDs {
-				roleID, err := strconv.Atoi(strings.TrimSpace(roleIDStr))
-				if err != nil {
-					sl.Error("Invalid role ID", "role_id", roleIDStr, "error", err)
-					continue
-				}
-
-				// Insert user role
-				_, err = db.ExecContext(c.Context(),
-					"INSERT INTO user_roles (user_id, role_id, created_at) VALUES ($1, $2, $3)",
-					user.UserID, roleID, time.Now())
-				if err != nil {
-					sl.Error("Error assigning role to user", "user_id", user.UserID, "role_id", roleID, "error", err)
-				} else {
-					sl.Info("Successfully assigned role to user", "user_id", user.UserID, "role_id", roleID)
-				}
-			}
-		} else {
-			sl.Info("No roles selected for user", "user_id", user.UserID)
+	for _, roleIDStr := range formValues(c, "roles") {
+		roleID, err := strconv.Atoi(roleIDStr)
+		if err != nil {
+			sl.Error("Invalid role ID", "role_id", roleIDStr, "error", err)
+			continue
 		}
-	} else {
-		selectedRoles := form.Value["roles"]
-		sl.Info("Roles from MultipartForm", "roles", selectedRoles)
-		if len(selectedRoles) > 0 {
-			for _, roleIDStr := range selectedRoles {
-				roleID, err := strconv.Atoi(strings.TrimSpace(roleIDStr))
-				if err != nil {
-					sl.Error("Invalid role ID", "role_id", roleIDStr, "error", err)
-					continue
-				}
-
-				// Insert user role
-				_, err = db.ExecContext(c.Context(),
-					"INSERT INTO user_roles (user_id, role_id, created_at) VALUES ($1, $2, $3)",
-					user.UserID, roleID, time.Now())
-				if err != nil {
-					sl.Error("Error assigning role to user", "user_id", user.UserID, "role_id", roleID, "error", err)
-				} else {
-					sl.Info("Successfully assigned role to user", "user_id", user.UserID, "role_id", roleID)
-				}
-			}
-		} else {
-			sl.Info("No roles selected for user", "user_id", user.UserID)
+		_, err = db.ExecContext(c.Context(),
+			"INSERT INTO user_roles (user_id, role_id, created_at) VALUES ($1, $2, $3)",
+			user.UserID, roleID, time.Now())
+		if err != nil {
+			sl.Error("Error assigning role to user", "user_id", user.UserID, "role_id", roleID, "error", err)
 		}
 	}
 
-	// Handle individual permissions (if any are set)
-	// This is for granular permissions beyond role-based permissions
 	permissionResources := []string{"users", "vhf_patients", "outbreaks", "reports"}
 	for _, resource := range permissionResources {
 		for _, action := range []string{"create", "read", "update", "delete"} {
 			permissionKey := fmt.Sprintf("permissions[%s][%s]", resource, action)
 			if c.FormValue(permissionKey) == "1" {
-				// This user has this specific permission
-				// You might want to store this in a user_permissions table
-				// For now, we'll just log it
 				sl.Info("User has specific permission", "user_id", user.UserID, "resource", resource, "action", action)
 			}
 		}
 	}
 
-	urlx := "/users/new/" + strconv.Itoa(user.UserID)
-	return c.Redirect(urlx)
+	if c.FormValue("from") == "close" {
+		return c.Redirect("/users")
+	}
+	return c.Redirect("/users/new/" + strconv.Itoa(user.UserID))
 }
 
 func HandlerUserList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {

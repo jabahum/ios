@@ -220,7 +220,7 @@
             </div>
             {{ end }}
 
-            <form method="post" action="/users/save" id="userForm" enctype="multipart/form-data">
+            <form method="post" action="/users/save" id="userForm">
                 <!-- Basic Information Card -->
                 <div class="card">
                     <div class="card-header">
@@ -304,7 +304,7 @@
                                 <div class="form-group">
                                     <label class="form-label" for="password_expires_at">Password Expires</label>
                                     <input type="date" class="form-control" id="password_expires_at" name="password_expires_at"
-                                           value="{{ .Form.PasswordExpiresAt.Time.Format "2006-01-02" }}">
+                                           value="{{ if .Form.PasswordExpiresAt.Valid }}{{ .Form.PasswordExpiresAt.Time.Format "2006-01-02" }}{{ end }}">
                                 </div>
                             </div>
                         </div>
