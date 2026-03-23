@@ -9,3 +9,5 @@ test_app
 test_build
 web.exe
 /cmd/web/web.exe
+docker-compose.yml
+/init
