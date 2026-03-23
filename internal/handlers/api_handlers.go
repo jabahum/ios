@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
 
+	"case/internal/middleware"
 	"case/internal/models"
 	"case/internal/services"
 )
@@ -643,79 +644,262 @@ func HandlerFacilityDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 
 // Outbreak Management APIs
 func HandlerOutbreakListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
-	userID, userRole := GetUser(c, sl, store)
-	if userRole == "" || userID == 0 {
-		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
-	}
-
-	outbreaks := []fiber.Map{
-		{"id": 1, "name": "Ebola Outbreak", "status": "active"},
-		{"id": 2, "name": "Measles Outbreak", "status": "closed"},
-	}
-
-	return c.JSON(fiber.Map{"outbreaks": outbreaks})
+	return HandlerGetOutbreaksAPI(c, db, sl, store)
 }
 
 func HandlerGetOutbreakAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
-	userID, userRole := GetUser(c, sl, store)
-	if userRole == "" || userID == 0 {
+	uid, ok := middleware.GetCurrentUserID(c)
+	if !ok {
+		uid = GetCurrentUser(c, store)
+	}
+	if uid == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
-
-	return c.JSON(fiber.Map{"outbreak": fiber.Map{"id": c.Params("id"), "name": "Outbreak Name"}})
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil || id <= 0 {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid outbreak id"})
+	}
+	hasAccess, err := models.CheckUserOutbreakAccess(c.Context(), db, uid, id)
+	if err != nil {
+		sl.Error("outbreak access check", "error", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to check access"})
+	}
+	if !hasAccess {
+		return c.Status(403).JSON(fiber.Map{"error": "Access denied"})
+	}
+	o, err := models.OutbreakByID(c.Context(), db, id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return c.Status(404).JSON(fiber.Map{"error": "Not found"})
+		}
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"outbreak": o})
 }
 
 func HandlerOutbreakSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
-	userID, userRole := GetUser(c, sl, store)
-	if userRole == "" || userID == 0 {
+	uid, ok := middleware.GetCurrentUserID(c)
+	if !ok {
+		uid = GetCurrentUser(c, store)
+	}
+	if uid == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
-
-	var data fiber.Map
-	c.BodyParser(&data)
-	return c.Status(201).JSON(fiber.Map{"message": "Outbreak created successfully"})
+	var body struct {
+		Name             string `json:"name"`
+		Description      string `json:"description"`
+		StartDate        string `json:"start_date"`
+		EndDate          string `json:"end_date"`
+		Status           string `json:"status"`
+		OutbreakType     string `json:"outbreak_type"`
+		OutbreakCategory string `json:"outbreak_category"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON body"})
+	}
+	if body.Name == "" || body.StartDate == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "name and start_date are required"})
+	}
+	startDate, err := time.Parse("2006-01-02", body.StartDate)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "start_date must be YYYY-MM-DD"})
+	}
+	now := time.Now()
+	o := models.Outbreak{
+		Name:             sql.NullString{String: body.Name, Valid: true},
+		Description:      sql.NullString{String: body.Description, Valid: body.Description != ""},
+		StartDate:        sql.NullTime{Time: startDate, Valid: true},
+		Status:           sql.NullString{String: body.Status, Valid: body.Status != ""},
+		OutbreakType:     sql.NullString{String: body.OutbreakType, Valid: body.OutbreakType != ""},
+		OutbreakCategory: sql.NullString{String: body.OutbreakCategory, Valid: body.OutbreakCategory != ""},
+		EnterOn:          sql.NullTime{Time: now, Valid: true},
+		EnterBy:          sql.NullInt64{Int64: int64(uid), Valid: true},
+		EditOn:           sql.NullTime{Time: now, Valid: true},
+		EditBy:           sql.NullInt64{Int64: int64(uid), Valid: true},
+	}
+	if o.OutbreakCategory.String == "" && o.OutbreakType.Valid {
+		o.OutbreakCategory = o.OutbreakType
+	}
+	if body.EndDate != "" {
+		if endDate, err := time.Parse("2006-01-02", body.EndDate); err == nil {
+			o.EndDate = sql.NullTime{Time: endDate, Valid: true}
+		}
+	}
+	if !o.Status.Valid {
+		o.Status = sql.NullString{String: "active", Valid: true}
+	}
+	if err := o.Insert(c.Context(), db); err != nil {
+		sl.Error("outbreak insert", "error", err)
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.Status(201).JSON(fiber.Map{"message": "Outbreak created", "outbreak_id": o.ID})
 }
 
 func HandlerOutbreakUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
-	userID, userRole := GetUser(c, sl, store)
-	if userRole == "" || userID == 0 {
+	uid, ok := middleware.GetCurrentUserID(c)
+	if !ok {
+		uid = GetCurrentUser(c, store)
+	}
+	if uid == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
-
-	_ = c.Params("id")
-	var data fiber.Map
-	c.BodyParser(&data)
-	return c.JSON(fiber.Map{"message": "Outbreak updated successfully"})
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil || id <= 0 {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid outbreak id"})
+	}
+	hasAccess, err := models.CheckUserOutbreakAccess(c.Context(), db, uid, id)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to check access"})
+	}
+	if !hasAccess {
+		return c.Status(403).JSON(fiber.Map{"error": "Access denied"})
+	}
+	canManage, err := models.CanUserManageOutbreak(c.Context(), db, uid, id)
+	if err != nil || !canManage {
+		return c.Status(403).JSON(fiber.Map{"error": "You cannot edit this outbreak"})
+	}
+	o, err := models.OutbreakByID(c.Context(), db, id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return c.Status(404).JSON(fiber.Map{"error": "Not found"})
+		}
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	var body struct {
+		Name             string `json:"name"`
+		Description      string `json:"description"`
+		StartDate        string `json:"start_date"`
+		EndDate          string `json:"end_date"`
+		Status           string `json:"status"`
+		OutbreakType     string `json:"outbreak_type"`
+		OutbreakCategory string `json:"outbreak_category"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON body"})
+	}
+	if body.Name != "" {
+		o.Name = sql.NullString{String: body.Name, Valid: true}
+	}
+	if body.Description != "" {
+		o.Description = sql.NullString{String: body.Description, Valid: true}
+	}
+	if body.StartDate != "" {
+		if t, err := time.Parse("2006-01-02", body.StartDate); err == nil {
+			o.StartDate = sql.NullTime{Time: t, Valid: true}
+		}
+	}
+	if body.EndDate != "" {
+		if t, err := time.Parse("2006-01-02", body.EndDate); err == nil {
+			o.EndDate = sql.NullTime{Time: t, Valid: true}
+		}
+	}
+	if body.Status != "" {
+		o.Status = sql.NullString{String: body.Status, Valid: true}
+	}
+	if body.OutbreakType != "" {
+		o.OutbreakType = sql.NullString{String: body.OutbreakType, Valid: true}
+	}
+	if body.OutbreakCategory != "" {
+		o.OutbreakCategory = sql.NullString{String: body.OutbreakCategory, Valid: true}
+	}
+	now := time.Now()
+	o.EditOn = sql.NullTime{Time: now, Valid: true}
+	o.EditBy = sql.NullInt64{Int64: int64(uid), Valid: true}
+	if err := o.Update(c.Context(), db); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"message": "Outbreak updated"})
 }
 
 func HandlerOutbreakDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
-	userID, userRole := GetUser(c, sl, store)
-	if userRole == "" || userID == 0 {
+	uid, ok := middleware.GetCurrentUserID(c)
+	if !ok {
+		uid = GetCurrentUser(c, store)
+	}
+	if uid == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
-
-	_ = c.Params("id")
-	return c.JSON(fiber.Map{"message": "Outbreak deleted successfully"})
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil || id <= 0 {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid outbreak id"})
+	}
+	hasAccess, err := models.CheckUserOutbreakAccess(c.Context(), db, uid, id)
+	if err != nil || !hasAccess {
+		return c.Status(403).JSON(fiber.Map{"error": "Access denied"})
+	}
+	canManage, err := models.CanUserManageOutbreak(c.Context(), db, uid, id)
+	if err != nil || !canManage {
+		return c.Status(403).JSON(fiber.Map{"error": "You cannot delete this outbreak"})
+	}
+	o, err := models.OutbreakByID(c.Context(), db, id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return c.Status(404).JSON(fiber.Map{"error": "Not found"})
+		}
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	if err := o.Delete(c.Context(), db); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"message": "Outbreak deleted"})
 }
 
 func HandlerOutbreakCloseAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
-	userID, userRole := GetUser(c, sl, store)
-	if userRole == "" || userID == 0 {
+	uid, ok := middleware.GetCurrentUserID(c)
+	if !ok {
+		uid = GetCurrentUser(c, store)
+	}
+	if uid == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
-
-	_ = c.Params("id")
-	return c.JSON(fiber.Map{"message": "Outbreak closed successfully"})
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil || id <= 0 {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid outbreak id"})
+	}
+	hasAccess, err := models.CheckUserOutbreakAccess(c.Context(), db, uid, id)
+	if err != nil || !hasAccess {
+		return c.Status(403).JSON(fiber.Map{"error": "Access denied"})
+	}
+	canManage, err := models.CanUserManageOutbreak(c.Context(), db, uid, id)
+	if err != nil || !canManage {
+		return c.Status(403).JSON(fiber.Map{"error": "You cannot close this outbreak"})
+	}
+	o, err := models.OutbreakByID(c.Context(), db, id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return c.Status(404).JSON(fiber.Map{"error": "Not found"})
+		}
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	o.Status = sql.NullString{String: "closed", Valid: true}
+	o.EditOn = sql.NullTime{Time: time.Now(), Valid: true}
+	o.EditBy = sql.NullInt64{Int64: int64(uid), Valid: true}
+	if err := o.Update(c.Context(), db); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"message": "Outbreak closed"})
 }
 
 func HandlerOutbreakSelectAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
-	userID, userRole := GetUser(c, sl, store)
-	if userRole == "" || userID == 0 {
+	uid, ok := middleware.GetCurrentUserID(c)
+	if !ok {
+		uid = GetCurrentUser(c, store)
+	}
+	if uid == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
-
-	_ = c.Params("id")
-	return c.JSON(fiber.Map{"message": "Outbreak selected successfully"})
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil || id <= 0 {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid outbreak id"})
+	}
+	hasAccess, err := models.CheckUserOutbreakAccess(c.Context(), db, uid, id)
+	if err != nil || !hasAccess {
+		return c.Status(403).JSON(fiber.Map{"error": "Access denied"})
+	}
+	if err := SetSelectedOutbreak(c, store, id); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to select outbreak"})
+	}
+	return c.JSON(fiber.Map{"message": "Outbreak selected", "outbreak_id": id})
 }
 
 // Case Management APIs

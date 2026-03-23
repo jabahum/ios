@@ -102,11 +102,11 @@ func SwaggerGetFacilities(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 
 // GetOutbreaks godoc
 // @Summary Get all outbreaks
-// @Description Retrieve list of all outbreaks
+// @Description Accessible outbreaks for the current user. Response: `{ "outbreaks": [ ... ] }`.
 // @Tags Outbreaks
 // @Produce json
 // @Security SessionAuth
-// @Success 200 {array} map[string]interface{} "List of outbreaks"
+// @Success 200 {object} map[string]interface{} "outbreaks array"
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /api/outbreaks [get]
@@ -607,7 +607,7 @@ func SwaggerGetUser(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 // @Accept json
 // @Produce json
 // @Security SessionAuth
-// @Param body body object true "User fields"
+// @Param request body APIUserCreateRequest true "User + optional role_ids"
 // @Success 201 {object} map[string]interface{} "Created"
 // @Router /api/users [post]
 func SwaggerCreateUser(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
@@ -621,7 +621,7 @@ func SwaggerCreateUser(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session
 // @Produce json
 // @Security SessionAuth
 // @Param id path int true "User ID"
-// @Param body body object true "User fields"
+// @Param request body APIUserUpdateRequest true "Fields to update"
 // @Success 200 {object} map[string]interface{} "Updated"
 // @Router /api/users/{id} [put]
 func SwaggerUpdateUser(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {

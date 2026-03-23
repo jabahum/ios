@@ -1351,6 +1351,31 @@ func (h *ResourceManagementHandler) getAllOutbreaks() ([]*models.Outbreak, error
 	return outbreaks, nil
 }
 
+func (h *ResourceManagementHandler) deleteRRTTeam(id int64) error {
+	_, err := h.db.Exec(`DELETE FROM rrt_teams WHERE id = $1`, id)
+	return err
+}
+
+func (h *ResourceManagementHandler) deleteRRTDeployment(id int64) error {
+	_, err := h.db.Exec(`DELETE FROM rrt_deployments WHERE id = $1`, id)
+	return err
+}
+
+func (h *ResourceManagementHandler) deleteResource(id int64) error {
+	_, err := h.db.Exec(`DELETE FROM resources WHERE id = $1`, id)
+	return err
+}
+
+func (h *ResourceManagementHandler) deleteRequisition(id int64) error {
+	_, err := h.db.Exec(`DELETE FROM requisitions WHERE id = $1`, id)
+	return err
+}
+
+func (h *ResourceManagementHandler) deleteActivityLog(id int64) error {
+	_, err := h.db.Exec(`DELETE FROM activity_logs WHERE id = $1`, id)
+	return err
+}
+
 func (h *ResourceManagementHandler) generateSitRep(outbreakID int64, reportType string, periodStart, periodEnd time.Time) (*models.GeneratedSitRep, error) {
 	return &models.GeneratedSitRep{}, nil
 }

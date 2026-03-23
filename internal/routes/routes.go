@@ -213,9 +213,63 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 		return handlers.HandlerGetFacilities(c, db, sl)
 	})
 
-	// Outbreaks API route
-	app.Get("/api/outbreaks", func(c *fiber.Ctx) error {
+	// Outbreaks API (static paths before /api/outbreaks/:id)
+	app.Get("/api/outbreaks/assignments", middleware.PermissionRequired(store, db, sl, "outbreaks", "read"), func(c *fiber.Ctx) error {
+		userService := models.NewUserService(db)
+		userOutbreakService := models.NewUserOutbreakService(db)
+		patientRoleService := models.NewPatientManagementRoleService(db)
+		outbreakService := models.NewOutbreakService(db)
+		facilityService := models.NewFacilityService(db)
+		handler := handlers.NewOutbreakAssignmentHandler(
+			userOutbreakService, patientRoleService, userService, outbreakService, facilityService, store,
+		)
+		return handler.ShowOutbreakAssignmentsAPI(c)
+	})
+	app.Post("/api/outbreaks/assign", middleware.PermissionRequired(store, db, sl, "outbreaks", "update"), func(c *fiber.Ctx) error {
+		userService := models.NewUserService(db)
+		userOutbreakService := models.NewUserOutbreakService(db)
+		patientRoleService := models.NewPatientManagementRoleService(db)
+		outbreakService := models.NewOutbreakService(db)
+		facilityService := models.NewFacilityService(db)
+		handler := handlers.NewOutbreakAssignmentHandler(
+			userOutbreakService, patientRoleService, userService, outbreakService, facilityService, store,
+		)
+		return handler.HandleAssignFormSubmissionAPI(c)
+	})
+	app.Delete("/api/outbreaks/:outbreak_id/users/:user_id", middleware.PermissionRequired(store, db, sl, "outbreaks", "update"), func(c *fiber.Ctx) error {
+		userService := models.NewUserService(db)
+		userOutbreakService := models.NewUserOutbreakService(db)
+		patientRoleService := models.NewPatientManagementRoleService(db)
+		outbreakService := models.NewOutbreakService(db)
+		facilityService := models.NewFacilityService(db)
+		handler := handlers.NewOutbreakAssignmentHandler(
+			userOutbreakService, patientRoleService, userService, outbreakService, facilityService, store,
+		)
+		return handler.RemoveUserFromOutbreakAPI(c)
+	})
+	app.Get("/api/outbreaks/:id/users", middleware.PermissionRequired(store, db, sl, "outbreaks", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerOutbreakUsersAPI(c, db, sl, store)
+	})
+	app.Get("/api/outbreaks", middleware.PermissionRequired(store, db, sl, "outbreaks", "read"), func(c *fiber.Ctx) error {
 		return handlers.HandlerGetOutbreaksAPI(c, db, sl, store)
+	})
+	app.Get("/api/outbreaks/:id", middleware.PermissionRequired(store, db, sl, "outbreaks", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerGetOutbreakAPI(c, db, sl, store, config)
+	})
+	app.Post("/api/outbreaks", middleware.PermissionRequired(store, db, sl, "outbreaks", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerOutbreakSubmitAPI(c, db, sl, store, config)
+	})
+	app.Put("/api/outbreaks/:id", middleware.PermissionRequired(store, db, sl, "outbreaks", "update"), func(c *fiber.Ctx) error {
+		return handlers.HandlerOutbreakUpdateAPI(c, db, sl, store, config)
+	})
+	app.Delete("/api/outbreaks/:id", middleware.PermissionRequired(store, db, sl, "outbreaks", "delete"), func(c *fiber.Ctx) error {
+		return handlers.HandlerOutbreakDeleteAPI(c, db, sl, store, config)
+	})
+	app.Post("/api/outbreaks/:id/close", middleware.PermissionRequired(store, db, sl, "outbreaks", "update"), func(c *fiber.Ctx) error {
+		return handlers.HandlerOutbreakCloseAPI(c, db, sl, store, config)
+	})
+	app.Post("/api/outbreaks/:id/select", middleware.PermissionRequired(store, db, sl, "outbreaks", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerOutbreakSelectAPI(c, db, sl, store, config)
 	})
 
 	// Backward-compatible CIF aliases (public API style to match existing clients)
@@ -338,6 +392,18 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 	app.Post("/api/users/roles", middleware.PermissionRequired(store, db, sl, "users", "update"), func(c *fiber.Ctx) error {
 		return handlers.HandlerAssignUserRole(c, db, sl, store, config)
 	})
+	app.Post("/api/users", middleware.PermissionRequired(store, db, sl, "users", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerUserSubmitAPI(c, db, sl, store, config)
+	})
+	app.Get("/api/users/:id", middleware.PermissionRequired(store, db, sl, "users", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerGetUserAPI(c, db, sl, store, config)
+	})
+	app.Put("/api/users/:id", middleware.PermissionRequired(store, db, sl, "users", "update"), func(c *fiber.Ctx) error {
+		return handlers.HandlerUserUpdateAPI(c, db, sl, store, config)
+	})
+	app.Delete("/api/users/:id", middleware.PermissionRequired(store, db, sl, "users", "delete"), func(c *fiber.Ctx) error {
+		return handlers.HandlerUserDeleteAPI(c, db, sl, store, config)
+	})
 
 	// Employee JSON API (same pattern as /api/users: PermissionRequired = session + RBAC; avoids relying only on AuthRequired group)
 	app.Get("/api/employees", middleware.PermissionRequired(store, db, sl, "employees", "read"), func(c *fiber.Ctx) error {
@@ -376,6 +442,80 @@ func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger,
 	})
 	app.Get("/api/resource-management/activity-logs", middleware.PermissionRequired(store, db, sl, "resource_management", "read"), func(c *fiber.Ctx) error {
 		return handlers.HandlerResourceManagementActivityLogsAPI(c, db, store)
+	})
+
+	// Resource management JSON CRUD (same RBAC as read routes above)
+	app.Get("/api/resource-management/pillars/:id", middleware.PermissionRequired(store, db, sl, "resource_management", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementPillarGetAPI(c, db, store)
+	})
+	app.Post("/api/resource-management/pillars", middleware.PermissionRequired(store, db, sl, "resource_management", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementPillarCreateAPI(c, db, store)
+	})
+	app.Put("/api/resource-management/pillars/:id", middleware.PermissionRequired(store, db, sl, "resource_management", "update"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementPillarUpdateAPI(c, db, store)
+	})
+	app.Delete("/api/resource-management/pillars/:id", middleware.PermissionRequired(store, db, sl, "resource_management", "delete"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementPillarDeleteAPI(c, db, store)
+	})
+	app.Get("/api/resource-management/rrt-teams/:id", middleware.PermissionRequired(store, db, sl, "resource_management", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementRRTTeamGetAPI(c, db, store)
+	})
+	app.Post("/api/resource-management/rrt-teams", middleware.PermissionRequired(store, db, sl, "resource_management", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementRRTTeamCreateAPI(c, db, store)
+	})
+	app.Put("/api/resource-management/rrt-teams/:id", middleware.PermissionRequired(store, db, sl, "resource_management", "update"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementRRTTeamUpdateAPI(c, db, store)
+	})
+	app.Delete("/api/resource-management/rrt-teams/:id", middleware.PermissionRequired(store, db, sl, "resource_management", "delete"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementRRTTeamDeleteAPI(c, db, store)
+	})
+	app.Get("/api/resource-management/rrt-deployments/:id", middleware.PermissionRequired(store, db, sl, "resource_management", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementRRTDeploymentGetAPI(c, db, store)
+	})
+	app.Post("/api/resource-management/rrt-deployments", middleware.PermissionRequired(store, db, sl, "resource_management", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementRRTDeploymentCreateAPI(c, db, store)
+	})
+	app.Put("/api/resource-management/rrt-deployments/:id", middleware.PermissionRequired(store, db, sl, "resource_management", "update"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementRRTDeploymentUpdateAPI(c, db, store)
+	})
+	app.Delete("/api/resource-management/rrt-deployments/:id", middleware.PermissionRequired(store, db, sl, "resource_management", "delete"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementRRTDeploymentDeleteAPI(c, db, store)
+	})
+	app.Get("/api/resource-management/resources/:id", middleware.PermissionRequired(store, db, sl, "resource_management", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementResourceGetAPI(c, db, store)
+	})
+	app.Post("/api/resource-management/resources", middleware.PermissionRequired(store, db, sl, "resource_management", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementResourceCreateAPI(c, db, store)
+	})
+	app.Put("/api/resource-management/resources/:id", middleware.PermissionRequired(store, db, sl, "resource_management", "update"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementResourceUpdateAPI(c, db, store)
+	})
+	app.Delete("/api/resource-management/resources/:id", middleware.PermissionRequired(store, db, sl, "resource_management", "delete"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementResourceDeleteAPI(c, db, store)
+	})
+	app.Get("/api/resource-management/requisitions/:id", middleware.PermissionRequired(store, db, sl, "resource_management", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementRequisitionGetAPI(c, db, store)
+	})
+	app.Post("/api/resource-management/requisitions", middleware.PermissionRequired(store, db, sl, "resource_management", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementRequisitionCreateAPI(c, db, store)
+	})
+	app.Put("/api/resource-management/requisitions/:id", middleware.PermissionRequired(store, db, sl, "resource_management", "update"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementRequisitionUpdateAPI(c, db, store)
+	})
+	app.Delete("/api/resource-management/requisitions/:id", middleware.PermissionRequired(store, db, sl, "resource_management", "delete"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementRequisitionDeleteAPI(c, db, store)
+	})
+	app.Get("/api/resource-management/activity-logs/:id", middleware.PermissionRequired(store, db, sl, "resource_management", "read"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementActivityLogGetAPI(c, db, store)
+	})
+	app.Post("/api/resource-management/activity-logs", middleware.PermissionRequired(store, db, sl, "resource_management", "create"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementActivityLogCreateAPI(c, db, store)
+	})
+	app.Put("/api/resource-management/activity-logs/:id", middleware.PermissionRequired(store, db, sl, "resource_management", "update"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementActivityLogUpdateAPI(c, db, store)
+	})
+	app.Delete("/api/resource-management/activity-logs/:id", middleware.PermissionRequired(store, db, sl, "resource_management", "delete"), func(c *fiber.Ctx) error {
+		return handlers.HandlerResourceManagementActivityLogDeleteAPI(c, db, store)
 	})
 
 	// Register JSON /api/* routes on app (session JSON 401) so they work the same locally and behind reverse proxies

@@ -14,6 +14,31 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/session"
 )
 
+// sessionUserIDAsInt returns a positive user id from session keys user_id or user (int, int64, float64).
+func sessionUserIDAsInt(sess *session.Session) int {
+	for _, key := range []string{"user_id", "user"} {
+		v := sess.Get(key)
+		if v == nil {
+			continue
+		}
+		switch n := v.(type) {
+		case int:
+			if n > 0 {
+				return n
+			}
+		case int64:
+			if n > 0 {
+				return int(n)
+			}
+		case float64:
+			if n > 0 {
+				return int(n)
+			}
+		}
+	}
+	return 0
+}
+
 // PermissionRequired creates middleware that checks if user has specific permission
 func PermissionRequired(store *session.Store, db *sql.DB, sl *slog.Logger, resource, action string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
@@ -32,17 +57,11 @@ func PermissionRequired(store *session.Store, db *sql.DB, sl *slog.Logger, resou
 			})
 		}
 
-		// Get user ID from session (try both keys for compatibility)
-		var userID int
-		var ok bool
-		// Try user_id first (RBAC standard)
-		if userID, ok = sess.Get("user_id").(int); !ok {
-			// Fallback to user (legacy authentication)
-			if userID, ok = sess.Get("user").(int); !ok {
-				return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
-					"error": "Invalid user session",
-				})
-			}
+		userID := sessionUserIDAsInt(sess)
+		if userID == 0 {
+			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Invalid user session",
+			})
 		}
 
 		// Check permission
