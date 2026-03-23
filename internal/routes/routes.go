@@ -2220,20 +2220,20 @@ func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logg
 		return handlers.HandlerVHFLabSaveAPI(c, db, sl, store, config)
 	})
 
-	// Employee Management APIs
-	protected.Get("/api/employees", func(c *fiber.Ctx) error {
+	// Employee Management APIs (session + employees:* RBAC)
+	protected.Get("/api/employees", middleware.PermissionRequired(store, db, sl, "employees", "read"), func(c *fiber.Ctx) error {
 		return handlers.HandlerEmployeeListAPI(c, db, sl, store, config)
 	})
-	protected.Get("/api/employees/:id", func(c *fiber.Ctx) error {
+	protected.Get("/api/employees/:id", middleware.PermissionRequired(store, db, sl, "employees", "read"), func(c *fiber.Ctx) error {
 		return handlers.HandlerGetEmployeeAPI(c, db, sl, store, config)
 	})
-	protected.Post("/api/employees", func(c *fiber.Ctx) error {
+	protected.Post("/api/employees", middleware.PermissionRequired(store, db, sl, "employees", "create"), func(c *fiber.Ctx) error {
 		return handlers.HandlerEmployeeSubmitAPI(c, db, sl, store, config)
 	})
-	protected.Put("/api/employees/:id", func(c *fiber.Ctx) error {
+	protected.Put("/api/employees/:id", middleware.PermissionRequired(store, db, sl, "employees", "update"), func(c *fiber.Ctx) error {
 		return handlers.HandlerEmployeeUpdateAPI(c, db, sl, store, config)
 	})
-	protected.Delete("/api/employees/:id", func(c *fiber.Ctx) error {
+	protected.Delete("/api/employees/:id", middleware.PermissionRequired(store, db, sl, "employees", "delete"), func(c *fiber.Ctx) error {
 		return handlers.HandlerDeleteEmployeeAPI(c, db, sl, store, config)
 	})
 

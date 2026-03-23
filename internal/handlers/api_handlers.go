@@ -399,7 +399,7 @@ func HandlerEmployeeListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *se
 		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
 	}
 	defer rows.Close()
-	var out []fiber.Map
+	out := make([]fiber.Map, 0)
 	for rows.Next() {
 		var id int
 		var fn, ln, sex, em, ph, cadre sql.NullString

@@ -207,7 +207,7 @@ func HandlerGetEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 		return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
 	}
 
-	return c.JSON(employee)
+	return c.JSON(fiber.Map{"employee": employee})
 }
 
 // HandlerDeleteEmployee handles deleting an employee (API endpoint)
@@ -219,7 +219,7 @@ func HandlerDeleteEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 
 	// Check if employee exists
 	var exists bool
-	err = db.QueryRowContext(c.Context(), "SELECT EXISTS(SELECT 1 FROM employee WHERE employee_id = $1)", employeeID).Scan(&exists)
+	err = db.QueryRowContext(c.Context(), "SELECT EXISTS(SELECT 1 FROM public.employee WHERE employee_id = $1)", employeeID).Scan(&exists)
 	if err != nil {
 		sl.Error("Error checking employee existence", "error", err)
 		return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
@@ -229,7 +229,7 @@ func HandlerDeleteEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 	}
 
 	// Delete employee
-	_, err = db.ExecContext(c.Context(), "DELETE FROM employee WHERE employee_id = $1", employeeID)
+	_, err = db.ExecContext(c.Context(), "DELETE FROM public.employee WHERE employee_id = $1", employeeID)
 	if err != nil {
 		sl.Error("Error deleting employee", "error", err)
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to delete employee"})
