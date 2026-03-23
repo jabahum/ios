@@ -428,27 +428,11 @@ func (h *OutbreakAssignmentHandler) HandleAssignFormSubmissionAPI(c *fiber.Ctx) 
 		return c.Status(400).JSON(fiber.Map{"error": "outbreak_id and user_id are required"})
 	}
 
-	// Get current user from session
-	sess, err := h.store.Get(c)
-	if err != nil {
-		return c.Status(401).JSON(fiber.Map{"error": "Session error"})
-	}
-	userIDFromSession := sess.Get("user")
-	if userIDFromSession == nil {
+	currentUID := GetCurrentUser(c, h.store)
+	if currentUID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
-
-	var currentUserID int64
-	switch v := userIDFromSession.(type) {
-	case int:
-		currentUserID = int64(v)
-	case int64:
-		currentUserID = v
-	case float64:
-		currentUserID = int64(v)
-	default:
-		return c.Status(401).JSON(fiber.Map{"error": "Invalid user session"})
-	}
+	currentUserID := int64(currentUID)
 
 	if err := h.userOutbreakService.AssignUserToOutbreak(req.UserID, req.OutbreakID, currentUserID); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})

@@ -8,7 +8,6 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/session"
 
 	"case/internal/handlers"
-	"case/internal/models"
 	"case/internal/services"
 )
 
@@ -175,19 +174,7 @@ func registerAuthenticatedJSONAPIRoutes(app *fiber.App, db *sql.DB, sl *slog.Log
 
 	// Employee JSON APIs: registered on app with PermissionRequired (see /api/users block).
 
-	// User Management APIs
-	app.Get("/api/users/:id", auth, func(c *fiber.Ctx) error {
-		return handlers.HandlerGetUserAPI(c, db, sl, store, config)
-	})
-	app.Post("/api/users", auth, func(c *fiber.Ctx) error {
-		return handlers.HandlerUserSubmitAPI(c, db, sl, store, config)
-	})
-	app.Put("/api/users/:id", auth, func(c *fiber.Ctx) error {
-		return handlers.HandlerUserUpdateAPI(c, db, sl, store, config)
-	})
-	app.Delete("/api/users/:id", auth, func(c *fiber.Ctx) error {
-		return handlers.HandlerUserDeleteAPI(c, db, sl, store, config)
-	})
+	// User Management APIs: POST/GET :id/PUT/DELETE registered on app with PermissionRequired (routes.go).
 
 	// Facility Management APIs
 	app.Get("/api/facilities/:id", auth, func(c *fiber.Ctx) error {
@@ -451,40 +438,7 @@ func registerAuthenticatedJSONAPIRoutes(app *fiber.App, db *sql.DB, sl *slog.Log
 		return handlers.FacilityMortalitySurveillanceAPI(c, db, store, config)
 	})
 
-	// Outbreak Assignment APIs
-	app.Get("/api/outbreaks/assignments", auth, func(c *fiber.Ctx) error {
-		userService := models.NewUserService(db)
-		userOutbreakService := models.NewUserOutbreakService(db)
-		patientRoleService := models.NewPatientManagementRoleService(db)
-		outbreakService := models.NewOutbreakService(db)
-		facilityService := models.NewFacilityService(db)
-		handler := handlers.NewOutbreakAssignmentHandler(
-			userOutbreakService, patientRoleService, userService, outbreakService, facilityService, store,
-		)
-		return handler.ShowOutbreakAssignmentsAPI(c)
-	})
-	app.Post("/api/outbreaks/assign", auth, func(c *fiber.Ctx) error {
-		userService := models.NewUserService(db)
-		userOutbreakService := models.NewUserOutbreakService(db)
-		patientRoleService := models.NewPatientManagementRoleService(db)
-		outbreakService := models.NewOutbreakService(db)
-		facilityService := models.NewFacilityService(db)
-		handler := handlers.NewOutbreakAssignmentHandler(
-			userOutbreakService, patientRoleService, userService, outbreakService, facilityService, store,
-		)
-		return handler.HandleAssignFormSubmissionAPI(c)
-	})
-	app.Delete("/api/outbreaks/:outbreak_id/users/:user_id", auth, func(c *fiber.Ctx) error {
-		userService := models.NewUserService(db)
-		userOutbreakService := models.NewUserOutbreakService(db)
-		patientRoleService := models.NewPatientManagementRoleService(db)
-		outbreakService := models.NewOutbreakService(db)
-		facilityService := models.NewFacilityService(db)
-		handler := handlers.NewOutbreakAssignmentHandler(
-			userOutbreakService, patientRoleService, userService, outbreakService, facilityService, store,
-		)
-		return handler.RemoveUserFromOutbreakAPI(c)
-	})
+	// Outbreak assignment APIs: registered on app with PermissionRequired (routes.go).
 
 	// Mpox APIs
 	app.Get("/api/mpox/patients", auth, func(c *fiber.Ctx) error {

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"case/internal/middleware"
 	"case/internal/models"
 	"database/sql"
 	"log/slog"
@@ -291,20 +292,20 @@ func HandlerOutbreakSelect(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 
 // HandlerGetOutbreaksAPI handles the API endpoint for getting outbreaks accessible to the current user
 func HandlerGetOutbreaksAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store) error {
-	// Get current user ID
-	userID := GetCurrentUser(c, store)
+	userID, ok := middleware.GetCurrentUserID(c)
+	if !ok {
+		userID = GetCurrentUser(c, store)
+	}
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
-	// Get outbreaks accessible to this user
 	outbreaks, err := models.GetUserAccessibleOutbreaks(c.Context(), db, userID)
 	if err != nil {
 		sl.Error("Failed to get user accessible outbreaks: " + err.Error())
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to get outbreaks"})
 	}
 
-	// Convert to JSON response
 	var response []fiber.Map
 	for _, outbreak := range outbreaks {
 		response = append(response, fiber.Map{
@@ -319,7 +320,7 @@ func HandlerGetOutbreaksAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *se
 		})
 	}
 
-	return c.JSON(response)
+	return c.JSON(fiber.Map{"outbreaks": response})
 }
 
 // SetSelectedOutbreak sets the selected outbreak in the session

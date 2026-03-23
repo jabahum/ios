@@ -63,8 +63,9 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             console.log('Outbreaks data:', data); // Debug log
             const outbreakSelect = document.getElementById('outbreak_id');
-            if (data && data.length > 0) {
-                data.forEach(outbreak => {
+            const outbreaks = Array.isArray(data) ? data : (data && data.outbreaks) ? data.outbreaks : [];
+            if (outbreaks && outbreaks.length > 0) {
+                outbreaks.forEach(outbreak => {
                     const option = document.createElement('option');
                     option.value = outbreak.id;
                     // Handle null name values

@@ -323,8 +323,10 @@ func (h *EnhancedUserHandler) CreateUser(c *fiber.Ctx) error {
 	models.LogAuditEvent(c.Context(), h.db, auditLog)
 
 	return c.Status(201).JSON(fiber.Map{
-		"message": "User created successfully",
-		"user_id": user.UserID,
+		"message":  "User created successfully",
+		"user_id":  user.UserID,
+		"role_ids": userData.RoleIDs,
+		"username": userData.Username,
 	})
 }
 

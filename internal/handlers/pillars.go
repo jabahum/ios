@@ -393,6 +393,11 @@ func (h *PillarsHandler) getPillarChanges(pillarID string) ([]*models.PillarChan
 	return changes, nil
 }
 
+func (h *PillarsHandler) deletePillarByID(id int64) error {
+	_, err := h.db.Exec(`DELETE FROM pillars WHERE id = $1`, id)
+	return err
+}
+
 func (h *PillarsHandler) getAllEnhancedUsers() ([]*models.EnhancedUser, error) {
 	query := `
 		SELECT user_id, user_name, email, is_active
