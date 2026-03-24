@@ -855,6 +855,62 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "description": "Submit a new Measles CIF payload.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Measles"
+                ],
+                "summary": "Create Measles CIF case",
+                "parameters": [
+                    {
+                        "description": "Measles CIF payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.APIMeaslesCIFRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
             }
         },
         "/api/mpox/patients": {
@@ -902,6 +958,62 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "description": "Submit a new Mpox CIF payload.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Mpox"
+                ],
+                "summary": "Create Mpox CIF case",
+                "parameters": [
+                    {
+                        "description": "Mpox CIF payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.APIMpoxCIFRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1413,6 +1525,62 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "description": "Submit a new Polio CIF payload.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Polio"
+                ],
+                "summary": "Create Polio CIF case",
+                "parameters": [
+                    {
+                        "description": "Polio CIF payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.APIPolioCIFRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -3818,7 +3986,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.APIVHFLaboratoryRequest"
                         }
                     }
                 ],
@@ -3917,7 +4085,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.APIVHFPatientCreateRequest"
                         }
                     }
                 ],
@@ -4225,7 +4393,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.APIVHFClinicalSignsRequest"
                         }
                     }
                 ],
@@ -4312,7 +4480,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.APIVHFHospitalizationRequest"
                         }
                     }
                 ],
@@ -4390,7 +4558,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.APIVHFInvestigatorRequest"
                         }
                     }
                 ],
@@ -4468,7 +4636,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.APIVHFLaboratoryRequest"
                         }
                     }
                 ],
@@ -4546,7 +4714,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.APIVHFRiskFactorsRequest"
                         }
                     }
                 ],
@@ -4731,6 +4899,63 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.APIMeaslesCIFRequest": {
+            "type": "object",
+            "properties": {
+                "dob": {
+                    "type": "string",
+                    "example": "2020-05-15"
+                },
+                "measles_code": {
+                    "type": "string",
+                    "example": "MEA-UG-2026-001"
+                },
+                "onset_district": {
+                    "type": "string"
+                },
+                "patient_id": {
+                    "type": "string",
+                    "example": "MEA-001"
+                },
+                "patient_name": {
+                    "type": "string",
+                    "example": "Mary Doe"
+                },
+                "sex": {
+                    "type": "string",
+                    "example": "female"
+                }
+            }
+        },
+        "handlers.APIMpoxCIFRequest": {
+            "type": "object",
+            "properties": {
+                "age_years": {
+                    "type": "integer",
+                    "example": 31
+                },
+                "case_code": {
+                    "type": "string",
+                    "example": "MPOX-UG-2026-001"
+                },
+                "date_of_onset": {
+                    "type": "string",
+                    "example": "2026-03-08"
+                },
+                "district_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "patient_name": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "sex": {
+                    "type": "string",
+                    "example": "male"
+                }
+            }
+        },
         "handlers.APIOutbreakAssignRequest": {
             "type": "object",
             "properties": {
@@ -4771,6 +4996,36 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "active"
+                }
+            }
+        },
+        "handlers.APIPolioCIFRequest": {
+            "type": "object",
+            "properties": {
+                "case_id": {
+                    "type": "string",
+                    "example": "POL-UG-2026-001"
+                },
+                "country": {
+                    "type": "string",
+                    "example": "Uganda"
+                },
+                "district": {
+                    "type": "string"
+                },
+                "epid_number": {
+                    "type": "string"
+                },
+                "patient_name": {
+                    "type": "string",
+                    "example": "Paul Doe"
+                },
+                "region_province": {
+                    "type": "string"
+                },
+                "sex": {
+                    "type": "string",
+                    "example": "male"
                 }
             }
         },
@@ -5090,6 +5345,164 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.APIVHFClinicalSignsRequest": {
+            "type": "object",
+            "properties": {
+                "bleeding": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "diarrhoea": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "fever": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "onset_date": {
+                    "type": "string",
+                    "example": "2026-03-10"
+                },
+                "other_signs": {
+                    "type": "string"
+                },
+                "vomiting": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "handlers.APIVHFHospitalizationRequest": {
+            "type": "object",
+            "properties": {
+                "date_of_admission": {
+                    "type": "string",
+                    "example": "2026-03-12"
+                },
+                "date_of_discharge": {
+                    "type": "string"
+                },
+                "hospital_name": {
+                    "type": "string"
+                },
+                "hospitalized": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "outcome": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.APIVHFInvestigatorRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "investigation_date": {
+                    "type": "string",
+                    "example": "2026-03-13"
+                },
+                "investigator_name": {
+                    "type": "string",
+                    "example": "John Investigator"
+                },
+                "investigator_title": {
+                    "type": "string",
+                    "example": "Surveillance Officer"
+                },
+                "phone": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.APIVHFLaboratoryRequest": {
+            "type": "object",
+            "properties": {
+                "date_collected": {
+                    "type": "string",
+                    "example": "2026-03-12"
+                },
+                "date_sent": {
+                    "type": "string",
+                    "example": "2026-03-13"
+                },
+                "result": {
+                    "type": "string"
+                },
+                "sample_collected": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "sample_type": {
+                    "type": "string",
+                    "example": "blood"
+                }
+            }
+        },
+        "handlers.APIVHFPatientCreateRequest": {
+            "type": "object",
+            "properties": {
+                "age_years": {
+                    "type": "integer",
+                    "example": 28
+                },
+                "case_id": {
+                    "type": "string",
+                    "example": "VHF-UG-2026-001"
+                },
+                "date_of_notification": {
+                    "type": "string",
+                    "example": "2026-03-11"
+                },
+                "date_of_onset": {
+                    "type": "string",
+                    "example": "2026-03-10"
+                },
+                "district_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "facility_id": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "patient_name": {
+                    "type": "string",
+                    "example": "Jane Doe"
+                },
+                "sex": {
+                    "type": "string",
+                    "example": "female"
+                }
+            }
+        },
+        "handlers.APIVHFRiskFactorsRequest": {
+            "type": "object",
+            "properties": {
+                "additional_details": {
+                    "type": "string"
+                },
+                "animal_exposure": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "contact_with_case": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "health_worker": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "travel_history": {
+                    "type": "boolean",
+                    "example": false
+                }
+            }
+        },
         "handlers.LoginCredentials": {
             "type": "object",
             "properties": {
@@ -5199,6 +5612,8 @@ var SwaggerInfo = &swag.Spec{
 	Description:      "This is the API documentation for the Integrated Outbreak Surveillance System",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
+	LeftDelim:        "{{",
+	RightDelim:       "}}",
 }
 
 func init() {

@@ -39,6 +39,47 @@ definitions:
         example: 1
         type: integer
     type: object
+  handlers.APIMeaslesCIFRequest:
+    properties:
+      dob:
+        example: "2020-05-15"
+        type: string
+      measles_code:
+        example: MEA-UG-2026-001
+        type: string
+      onset_district:
+        type: string
+      patient_id:
+        example: MEA-001
+        type: string
+      patient_name:
+        example: Mary Doe
+        type: string
+      sex:
+        example: female
+        type: string
+    type: object
+  handlers.APIMpoxCIFRequest:
+    properties:
+      age_years:
+        example: 31
+        type: integer
+      case_code:
+        example: MPOX-UG-2026-001
+        type: string
+      date_of_onset:
+        example: "2026-03-08"
+        type: string
+      district_id:
+        example: 1
+        type: integer
+      patient_name:
+        example: John Doe
+        type: string
+      sex:
+        example: male
+        type: string
+    type: object
   handlers.APIOutbreakAssignRequest:
     properties:
       outbreak_id:
@@ -67,6 +108,27 @@ definitions:
         type: string
       status:
         example: active
+        type: string
+    type: object
+  handlers.APIPolioCIFRequest:
+    properties:
+      case_id:
+        example: POL-UG-2026-001
+        type: string
+      country:
+        example: Uganda
+        type: string
+      district:
+        type: string
+      epid_number:
+        type: string
+      patient_name:
+        example: Paul Doe
+        type: string
+      region_province:
+        type: string
+      sex:
+        example: male
         type: string
     type: object
   handlers.APIResourceCategoryWrite:
@@ -288,6 +350,118 @@ definitions:
         items:
           type: integer
         type: array
+    type: object
+  handlers.APIVHFClinicalSignsRequest:
+    properties:
+      bleeding:
+        example: false
+        type: boolean
+      diarrhoea:
+        example: false
+        type: boolean
+      fever:
+        example: true
+        type: boolean
+      onset_date:
+        example: "2026-03-10"
+        type: string
+      other_signs:
+        type: string
+      vomiting:
+        example: true
+        type: boolean
+    type: object
+  handlers.APIVHFHospitalizationRequest:
+    properties:
+      date_of_admission:
+        example: "2026-03-12"
+        type: string
+      date_of_discharge:
+        type: string
+      hospital_name:
+        type: string
+      hospitalized:
+        example: true
+        type: boolean
+      outcome:
+        type: string
+    type: object
+  handlers.APIVHFInvestigatorRequest:
+    properties:
+      email:
+        type: string
+      investigation_date:
+        example: "2026-03-13"
+        type: string
+      investigator_name:
+        example: John Investigator
+        type: string
+      investigator_title:
+        example: Surveillance Officer
+        type: string
+      phone:
+        type: string
+    type: object
+  handlers.APIVHFLaboratoryRequest:
+    properties:
+      date_collected:
+        example: "2026-03-12"
+        type: string
+      date_sent:
+        example: "2026-03-13"
+        type: string
+      result:
+        type: string
+      sample_collected:
+        example: true
+        type: boolean
+      sample_type:
+        example: blood
+        type: string
+    type: object
+  handlers.APIVHFPatientCreateRequest:
+    properties:
+      age_years:
+        example: 28
+        type: integer
+      case_id:
+        example: VHF-UG-2026-001
+        type: string
+      date_of_notification:
+        example: "2026-03-11"
+        type: string
+      date_of_onset:
+        example: "2026-03-10"
+        type: string
+      district_id:
+        example: 1
+        type: integer
+      facility_id:
+        example: 10
+        type: integer
+      patient_name:
+        example: Jane Doe
+        type: string
+      sex:
+        example: female
+        type: string
+    type: object
+  handlers.APIVHFRiskFactorsRequest:
+    properties:
+      additional_details:
+        type: string
+      animal_exposure:
+        example: false
+        type: boolean
+      contact_with_case:
+        example: true
+        type: boolean
+      health_worker:
+        example: true
+        type: boolean
+      travel_history:
+        example: false
+        type: boolean
     type: object
   handlers.LoginCredentials:
     properties:
@@ -850,6 +1024,42 @@ paths:
       summary: Get Measles cases
       tags:
       - Measles
+    post:
+      consumes:
+      - application/json
+      description: Submit a new Measles CIF payload.
+      parameters:
+      - description: Measles CIF payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.APIMeaslesCIFRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Create Measles CIF case
+      tags:
+      - Measles
   /api/mpox/patients:
     get:
       description: Retrieve list of Mpox cases
@@ -883,6 +1093,42 @@ paths:
       security:
       - SessionAuth: []
       summary: Get Mpox cases
+      tags:
+      - Mpox
+    post:
+      consumes:
+      - application/json
+      description: Submit a new Mpox CIF payload.
+      parameters:
+      - description: Mpox CIF payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.APIMpoxCIFRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Create Mpox CIF case
       tags:
       - Mpox
   /api/outbreaks:
@@ -1207,6 +1453,42 @@ paths:
       security:
       - SessionAuth: []
       summary: Get Polio cases
+      tags:
+      - Polio
+    post:
+      consumes:
+      - application/json
+      description: Submit a new Polio CIF payload.
+      parameters:
+      - description: Polio CIF payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.APIPolioCIFRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - SessionAuth: []
+      summary: Create Polio CIF case
       tags:
       - Polio
   /api/rbac/bulk-assign-roles:
@@ -2706,7 +2988,7 @@ paths:
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.APIVHFLaboratoryRequest'
       produces:
       - application/json
       responses:
@@ -2769,7 +3051,7 @@ paths:
         name: case
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.APIVHFPatientCreateRequest'
       produces:
       - application/json
       responses:
@@ -2968,7 +3250,7 @@ paths:
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.APIVHFClinicalSignsRequest'
       produces:
       - application/json
       responses:
@@ -3023,7 +3305,7 @@ paths:
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.APIVHFHospitalizationRequest'
       produces:
       - application/json
       responses:
@@ -3072,7 +3354,7 @@ paths:
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.APIVHFInvestigatorRequest'
       produces:
       - application/json
       responses:
@@ -3121,7 +3403,7 @@ paths:
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.APIVHFLaboratoryRequest'
       produces:
       - application/json
       responses:
@@ -3170,7 +3452,7 @@ paths:
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.APIVHFRiskFactorsRequest'
       produces:
       - application/json
       responses:

@@ -153,7 +153,7 @@ func SwaggerGetVHFCase(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session
 // @Accept json
 // @Produce json
 // @Security SessionAuth
-// @Param case body object true "VHF case data"
+// @Param case body APIVHFPatientCreateRequest true "VHF case data"
 // @Success 201 {object} map[string]interface{} "Case created successfully"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 401 {object} map[string]string "Unauthorized"
@@ -449,7 +449,7 @@ func SwaggerGetVHFClinicalSigns(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 // @Produce json
 // @Security SessionAuth
 // @Param id path int true "Patient ID"
-// @Param body body object true "Clinical signs payload"
+// @Param body body APIVHFClinicalSignsRequest true "Clinical signs payload"
 // @Success 200 {object} map[string]interface{} "Saved"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Router /api/vhf/patients/{id}/clinical-signs [post]
@@ -476,7 +476,7 @@ func SwaggerGetVHFHospitalization(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, sto
 // @Produce json
 // @Security SessionAuth
 // @Param id path int true "Patient ID"
-// @Param body body object true "Hospitalization payload"
+// @Param body body APIVHFHospitalizationRequest true "Hospitalization payload"
 // @Success 200 {object} map[string]interface{} "Saved"
 // @Router /api/vhf/patients/{id}/hospitalization [post]
 func SwaggerSaveVHFHospitalization(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
@@ -502,7 +502,7 @@ func SwaggerGetVHFRiskFactors(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 // @Produce json
 // @Security SessionAuth
 // @Param id path int true "Patient ID"
-// @Param body body object true "Risk factors payload"
+// @Param body body APIVHFRiskFactorsRequest true "Risk factors payload"
 // @Success 200 {object} map[string]interface{} "Saved"
 // @Router /api/vhf/patients/{id}/risk-factors [post]
 func SwaggerSaveVHFRiskFactors(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
@@ -528,7 +528,7 @@ func SwaggerGetVHFLaboratorySection(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, s
 // @Produce json
 // @Security SessionAuth
 // @Param id path int true "Patient ID"
-// @Param body body object true "Laboratory payload"
+// @Param body body APIVHFLaboratoryRequest true "Laboratory payload"
 // @Success 200 {object} map[string]interface{} "Saved"
 // @Router /api/vhf/patients/{id}/laboratory [post]
 func SwaggerSaveVHFLaboratorySection(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config, sms *services.SMSService) error {
@@ -554,7 +554,7 @@ func SwaggerGetVHFInvestigator(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store 
 // @Produce json
 // @Security SessionAuth
 // @Param id path int true "Patient ID"
-// @Param body body object true "Investigator payload"
+// @Param body body APIVHFInvestigatorRequest true "Investigator payload"
 // @Success 200 {object} map[string]interface{} "Saved"
 // @Router /api/vhf/patients/{id}/investigator [post]
 func SwaggerSaveVHFInvestigator(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
@@ -580,11 +580,59 @@ func SwaggerGetVHFLabForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 // @Produce json
 // @Security SessionAuth
 // @Param id path int true "Case or patient ID"
-// @Param body body object true "Lab form payload"
+// @Param body body APIVHFLaboratoryRequest true "Lab form payload"
 // @Success 200 {object} map[string]interface{} "Saved"
 // @Router /api/vhf/lab/{id} [post]
 func SwaggerSaveVHFLabForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
 	return HandlerVHFLabSaveAPI(c, db, sl, store, config)
+}
+
+// CreateMpoxCIFCase godoc
+// @Summary Create Mpox CIF case
+// @Description Submit a new Mpox CIF payload.
+// @Tags Mpox
+// @Accept json
+// @Produce json
+// @Security SessionAuth
+// @Param body body APIMpoxCIFRequest true "Mpox CIF payload"
+// @Success 201 {object} map[string]interface{} "Created"
+// @Failure 400 {object} map[string]string "Invalid request"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Router /api/mpox/patients [post]
+func SwaggerCreateMpoxCIFCase(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
+	return HandlerMpoxCIFSubmitAPI(c, db, sl)
+}
+
+// CreateMeaslesCIFCase godoc
+// @Summary Create Measles CIF case
+// @Description Submit a new Measles CIF payload.
+// @Tags Measles
+// @Accept json
+// @Produce json
+// @Security SessionAuth
+// @Param body body APIMeaslesCIFRequest true "Measles CIF payload"
+// @Success 201 {object} map[string]interface{} "Created"
+// @Failure 400 {object} map[string]string "Invalid request"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Router /api/measles/patients [post]
+func SwaggerCreateMeaslesCIFCase(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
+	return HandlerMeaslesCIFAPI(c, db, store)
+}
+
+// CreatePolioCIFCase godoc
+// @Summary Create Polio CIF case
+// @Description Submit a new Polio CIF payload.
+// @Tags Polio
+// @Accept json
+// @Produce json
+// @Security SessionAuth
+// @Param body body APIPolioCIFRequest true "Polio CIF payload"
+// @Success 201 {object} map[string]interface{} "Created"
+// @Failure 400 {object} map[string]string "Invalid request"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Router /api/polio/patients [post]
+func SwaggerCreatePolioCIFCase(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	return HandlerPolioCIFSubmitAPI(c, db, sl, store, config)
 }
 
 // --- Users (CRUD + permissions) ---
