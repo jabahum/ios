@@ -5612,6 +5612,8 @@ var SwaggerInfo = &swag.Spec{
 	Description:      "This is the API documentation for the Integrated Outbreak Surveillance System",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
+	LeftDelim:        "{{",
+	RightDelim:       "}}",
 }
 
 func init() {
