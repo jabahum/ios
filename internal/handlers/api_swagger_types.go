@@ -61,6 +61,95 @@ type APIOutbreakAssignRequest struct {
 	UserID     int64 `json:"user_id" example:"42"`
 }
 
+// APIVHFPatientCreateRequest documents POST /api/vhf/patients.
+type APIVHFPatientCreateRequest struct {
+	CaseID             string `json:"case_id" example:"VHF-UG-2026-001"`
+	PatientName        string `json:"patient_name" example:"Jane Doe"`
+	Sex                string `json:"sex" example:"female"`
+	AgeYears           int    `json:"age_years" example:"28"`
+	DistrictID         int64  `json:"district_id" example:"1"`
+	FacilityID         int64  `json:"facility_id" example:"10"`
+	DateOfOnset        string `json:"date_of_onset" example:"2026-03-10"`
+	DateOfNotification string `json:"date_of_notification" example:"2026-03-11"`
+}
+
+// APIVHFClinicalSignsRequest documents POST /api/vhf/patients/{id}/clinical-signs.
+type APIVHFClinicalSignsRequest struct {
+	Fever      bool   `json:"fever" example:"true"`
+	Bleeding   bool   `json:"bleeding" example:"false"`
+	Vomiting   bool   `json:"vomiting" example:"true"`
+	Diarrhoea  bool   `json:"diarrhoea" example:"false"`
+	OtherSigns string `json:"other_signs"`
+	OnsetDate  string `json:"onset_date" example:"2026-03-10"`
+}
+
+// APIVHFHospitalizationRequest documents POST /api/vhf/patients/{id}/hospitalization.
+type APIVHFHospitalizationRequest struct {
+	Hospitalized    bool   `json:"hospitalized" example:"true"`
+	HospitalName    string `json:"hospital_name"`
+	DateOfAdmission string `json:"date_of_admission" example:"2026-03-12"`
+	Outcome         string `json:"outcome"`
+	DateOfDischarge string `json:"date_of_discharge"`
+}
+
+// APIVHFRiskFactorsRequest documents POST /api/vhf/patients/{id}/risk-factors.
+type APIVHFRiskFactorsRequest struct {
+	ContactWithCase   bool   `json:"contact_with_case" example:"true"`
+	TravelHistory     bool   `json:"travel_history" example:"false"`
+	AnimalExposure    bool   `json:"animal_exposure" example:"false"`
+	HealthWorker      bool   `json:"health_worker" example:"true"`
+	AdditionalDetails string `json:"additional_details"`
+}
+
+// APIVHFLaboratoryRequest documents POST /api/vhf/patients/{id}/laboratory and /api/vhf/lab/{id}.
+type APIVHFLaboratoryRequest struct {
+	SampleCollected bool   `json:"sample_collected" example:"true"`
+	SampleType      string `json:"sample_type" example:"blood"`
+	DateCollected   string `json:"date_collected" example:"2026-03-12"`
+	DateSent        string `json:"date_sent" example:"2026-03-13"`
+	Result          string `json:"result"`
+}
+
+// APIVHFInvestigatorRequest documents POST /api/vhf/patients/{id}/investigator.
+type APIVHFInvestigatorRequest struct {
+	InvestigatorName  string `json:"investigator_name" example:"John Investigator"`
+	InvestigatorTitle string `json:"investigator_title" example:"Surveillance Officer"`
+	Phone             string `json:"phone"`
+	Email             string `json:"email"`
+	InvestigationDate string `json:"investigation_date" example:"2026-03-13"`
+}
+
+// APIMpoxCIFRequest documents POST /api/mpox/patients.
+type APIMpoxCIFRequest struct {
+	PatientName string `json:"patient_name" example:"John Doe"`
+	Sex         string `json:"sex" example:"male"`
+	AgeYears    int    `json:"age_years" example:"31"`
+	DistrictID  int64  `json:"district_id" example:"1"`
+	CaseCode    string `json:"case_code" example:"MPOX-UG-2026-001"`
+	DateOfOnset string `json:"date_of_onset" example:"2026-03-08"`
+}
+
+// APIMeaslesCIFRequest documents POST /api/measles/patients.
+type APIMeaslesCIFRequest struct {
+	PatientID     string `json:"patient_id" example:"MEA-001"`
+	MeaslesCode   string `json:"measles_code" example:"MEA-UG-2026-001"`
+	PatientName   string `json:"patient_name" example:"Mary Doe"`
+	Sex           string `json:"sex" example:"female"`
+	DOB           string `json:"dob" example:"2020-05-15"`
+	OnsetDistrict string `json:"onset_district"`
+}
+
+// APIPolioCIFRequest documents POST /api/polio/patients.
+type APIPolioCIFRequest struct {
+	CaseID         string `json:"case_id" example:"POL-UG-2026-001"`
+	EpidNumber     string `json:"epid_number"`
+	Country        string `json:"country" example:"Uganda"`
+	RegionProvince string `json:"region_province"`
+	District       string `json:"district"`
+	PatientName    string `json:"patient_name" example:"Paul Doe"`
+	Sex            string `json:"sex" example:"male"`
+}
+
 // --- Resource management JSON bodies (/api/resource-management/*) ---
 
 // APIResourceManagementPillarWrite is the body for POST/PUT /api/resource-management/pillars.
