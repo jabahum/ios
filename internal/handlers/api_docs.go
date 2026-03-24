@@ -234,11 +234,11 @@ package handlers
 
 // HandlerPillarsAPI godoc
 // @Summary Get pillars
-// @Description Retrieve list of all pillars
+// @Description Retrieve list of all pillars as `{ "pillars": [...] }`
 // @Tags Resource Management
 // @Produce  json
 // @Security SessionAuth
-// @Success 200 {array} map[string]interface{} "List of pillars"
+// @Success 200 {object} map[string]interface{} "pillars array"
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /api/pillars [get]

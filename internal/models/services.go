@@ -59,11 +59,15 @@ func (s *UserService) GetAllUsers() ([]*User, error) {
 
 // GetAllEnhancedUsers gets all enhanced users
 func (s *UserService) GetAllEnhancedUsers() ([]*EnhancedUser, error) {
+	// COALESCE: legacy/partially migrated rows may have NULL in bool/int/timestamp columns;
+	// scanning NULL into bool, int, or time.Time fails and breaks APIs (e.g. /api/outbreaks/assignments).
 	query := `SELECT user_id, user_name, user_pass, user_employee, email, first_name, last_name, 
-	          password_hash, password_salt, is_active, is_locked, failed_login_attempts, 
+	          password_hash, password_salt, 
+	          COALESCE(is_active, true), COALESCE(is_locked, false), COALESCE(failed_login_attempts, 0), 
 	          last_login_at, password_changed_at, password_expires_at, department_id, 
-	          created_at, updated_at, created_by, updated_by 
-	          FROM users ORDER BY first_name, last_name`
+	          COALESCE(created_at, CURRENT_TIMESTAMP), COALESCE(updated_at, CURRENT_TIMESTAMP), 
+	          created_by, updated_by 
+	          FROM users ORDER BY COALESCE(first_name, ''), COALESCE(last_name, ''), user_name`
 	rows, err := s.db.Query(query)
 	if err != nil {
 		return nil, err
@@ -85,6 +89,42 @@ func (s *UserService) GetAllEnhancedUsers() ([]*EnhancedUser, error) {
 		users = append(users, user)
 	}
 	return users, nil
+}
+
+// OutbreakAssignmentUserOption is a JSON-safe user row for outbreak assignment pickers (no password fields).
+type OutbreakAssignmentUserOption struct {
+	UserID    int            `json:"user_id"`
+	UserName  sql.NullString `json:"user_name"`
+	Email     sql.NullString `json:"email"`
+	FirstName sql.NullString `json:"first_name"`
+	LastName  sql.NullString `json:"last_name"`
+	IsActive  bool           `json:"is_active"`
+}
+
+// ListUsersForOutbreakAssignmentJSON returns users for assignment APIs without sensitive columns.
+func (s *UserService) ListUsersForOutbreakAssignmentJSON() ([]OutbreakAssignmentUserOption, error) {
+	query := `
+		SELECT user_id, user_name, email, first_name, last_name, COALESCE(is_active, true)
+		FROM users
+		ORDER BY COALESCE(first_name, ''), COALESCE(last_name, ''), user_name`
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []OutbreakAssignmentUserOption
+	for rows.Next() {
+		var u OutbreakAssignmentUserOption
+		if err := rows.Scan(&u.UserID, &u.UserName, &u.Email, &u.FirstName, &u.LastName, &u.IsActive); err != nil {
+			return nil, err
+		}
+		out = append(out, u)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 // UpdatePassword updates a user's password

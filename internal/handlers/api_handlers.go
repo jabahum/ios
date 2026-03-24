@@ -1939,8 +1939,10 @@ func HandlerGetMpoxAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session
 }
 
 func HandlerMpoxCIFSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
-	var data fiber.Map
-	c.BodyParser(&data)
+	var payload APIMpoxCIFRequest
+	if err := c.BodyParser(&payload); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON body"})
+	}
 	return c.Status(201).JSON(fiber.Map{"message": "Mpox CIF submitted successfully"})
 }
 
@@ -2033,8 +2035,10 @@ func HandlerGetMeaslesAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 }
 
 func HandlerMeaslesCIFAPI(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
-	var data fiber.Map
-	c.BodyParser(&data)
+	var payload APIMeaslesCIFRequest
+	if err := c.BodyParser(&payload); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON body"})
+	}
 	return c.Status(201).JSON(fiber.Map{"message": "Measles CIF submitted successfully"})
 }
 
@@ -2085,8 +2089,10 @@ func HandlerGetPolioAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 }
 
 func HandlerPolioCIFSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
-	var data fiber.Map
-	c.BodyParser(&data)
+	var payload APIPolioCIFRequest
+	if err := c.BodyParser(&payload); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON body"})
+	}
 	return c.Status(201).JSON(fiber.Map{"message": "Polio CIF submitted successfully"})
 }
 

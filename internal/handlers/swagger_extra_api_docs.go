@@ -172,7 +172,7 @@ func SwaggerGetResourceManagementPillarByID(c *fiber.Ctx, db *sql.DB, store *ses
 // @Accept json
 // @Produce json
 // @Security SessionAuth
-// @Param body body object true "Pillar fields (name, description, pillar_head_id, …)"
+// @Param body body APIResourceManagementPillarWrite true "Pillar"
 // @Success 201 {object} map[string]interface{} "Created"
 // @Router /api/resource-management/pillars [post]
 func SwaggerCreateResourceManagementPillar(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
@@ -186,7 +186,7 @@ func SwaggerCreateResourceManagementPillar(c *fiber.Ctx, db *sql.DB, store *sess
 // @Produce json
 // @Security SessionAuth
 // @Param id path int true "Pillar ID"
-// @Param body body object true "Pillar fields"
+// @Param body body APIResourceManagementPillarWrite true "Pillar"
 // @Success 200 {object} map[string]interface{} "OK"
 // @Router /api/resource-management/pillars/{id} [put]
 func SwaggerUpdateResourceManagementPillar(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
@@ -223,7 +223,7 @@ func SwaggerGetResourceManagementRRTTeamByID(c *fiber.Ctx, db *sql.DB, store *se
 // @Accept json
 // @Produce json
 // @Security SessionAuth
-// @Param body body object true "RRT team JSON (team_name, team_code, team_type, …)"
+// @Param body body APIResourceManagementRRTTeamWrite true "RRT team (team_type and team_lead_name required by DB)"
 // @Success 201 {object} map[string]interface{} "Created"
 // @Router /api/resource-management/rrt-teams [post]
 func SwaggerCreateResourceManagementRRTTeam(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
@@ -237,7 +237,7 @@ func SwaggerCreateResourceManagementRRTTeam(c *fiber.Ctx, db *sql.DB, store *ses
 // @Produce json
 // @Security SessionAuth
 // @Param id path int true "Team ID"
-// @Param body body object true "RRT team JSON"
+// @Param body body APIResourceManagementRRTTeamWrite true "RRT team"
 // @Success 200 {object} map[string]interface{} "OK"
 // @Router /api/resource-management/rrt-teams/{id} [put]
 func SwaggerUpdateResourceManagementRRTTeam(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
@@ -274,7 +274,7 @@ func SwaggerGetResourceManagementRRTDeploymentByID(c *fiber.Ctx, db *sql.DB, sto
 // @Accept json
 // @Produce json
 // @Security SessionAuth
-// @Param body body object true "team_id, outbreak_id, deployment_date, deployment_status, optional fields"
+// @Param body body APIResourceManagementRRTDeploymentWrite true "Deployment"
 // @Success 201 {object} map[string]interface{} "Created"
 // @Router /api/resource-management/rrt-deployments [post]
 func SwaggerCreateResourceManagementRRTDeployment(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
@@ -288,7 +288,7 @@ func SwaggerCreateResourceManagementRRTDeployment(c *fiber.Ctx, db *sql.DB, stor
 // @Produce json
 // @Security SessionAuth
 // @Param id path int true "Deployment ID"
-// @Param body body object true "Fields to update"
+// @Param body body APIResourceManagementRRTDeploymentWrite true "Deployment"
 // @Success 200 {object} map[string]interface{} "OK"
 // @Router /api/resource-management/rrt-deployments/{id} [put]
 func SwaggerUpdateResourceManagementRRTDeployment(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
@@ -325,7 +325,7 @@ func SwaggerGetResourceManagementResourceByID(c *fiber.Ctx, db *sql.DB, store *s
 // @Accept json
 // @Produce json
 // @Security SessionAuth
-// @Param body body object true "Resource JSON (name, category_id, unit_of_measure, …)"
+// @Param body body APIResourceManagementResourceWrite true "Resource"
 // @Success 201 {object} map[string]interface{} "Created"
 // @Router /api/resource-management/resources [post]
 func SwaggerCreateResourceManagementResource(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
@@ -339,7 +339,7 @@ func SwaggerCreateResourceManagementResource(c *fiber.Ctx, db *sql.DB, store *se
 // @Produce json
 // @Security SessionAuth
 // @Param id path int true "Resource ID"
-// @Param body body object true "Resource JSON"
+// @Param body body APIResourceManagementResourceWrite true "Resource"
 // @Success 200 {object} map[string]interface{} "OK"
 // @Router /api/resource-management/resources/{id} [put]
 func SwaggerUpdateResourceManagementResource(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
@@ -356,6 +356,43 @@ func SwaggerUpdateResourceManagementResource(c *fiber.Ctx, db *sql.DB, store *se
 // @Router /api/resource-management/resources/{id} [delete]
 func SwaggerDeleteResourceManagementResource(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
 	return HandlerResourceManagementResourceDeleteAPI(c, db, store)
+}
+
+// SwaggerListResourceManagementResourceCategories godoc
+// @Summary List resource categories
+// @Description Use category `id` values when creating catalog resources.
+// @Tags Resource Management
+// @Produce json
+// @Security SessionAuth
+// @Success 200 {object} map[string]interface{} "{ \"resource_categories\": [...] }"
+// @Router /api/resource-management/resource-categories [get]
+func SwaggerListResourceManagementResourceCategories(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
+	return HandlerResourceManagementResourceCategoriesAPI(c, db, store)
+}
+
+// SwaggerGetResourceManagementResourceCategory godoc
+// @Summary Get resource category by ID
+// @Tags Resource Management
+// @Produce json
+// @Security SessionAuth
+// @Param id path int true "Category ID"
+// @Success 200 {object} map[string]interface{} "{ \"resource_category\": {...} }"
+// @Router /api/resource-management/resource-categories/{id} [get]
+func SwaggerGetResourceManagementResourceCategory(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
+	return HandlerResourceManagementResourceCategoryGetAPI(c, db, store)
+}
+
+// SwaggerCreateResourceManagementResourceCategory godoc
+// @Summary Create resource category
+// @Tags Resource Management
+// @Accept json
+// @Produce json
+// @Security SessionAuth
+// @Param body body APIResourceCategoryWrite true "Category"
+// @Success 201 {object} map[string]interface{} "Created"
+// @Router /api/resource-management/resource-categories [post]
+func SwaggerCreateResourceManagementResourceCategory(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
+	return HandlerResourceManagementResourceCategoryCreateAPI(c, db, store)
 }
 
 // SwaggerGetResourceManagementRequisitionByID godoc
@@ -376,7 +413,7 @@ func SwaggerGetResourceManagementRequisitionByID(c *fiber.Ctx, db *sql.DB, store
 // @Accept json
 // @Produce json
 // @Security SessionAuth
-// @Param body body object true "requisition_number, outbreak_id, optional deployment_id, requested_by, dates, priority, status, notes"
+// @Param body body APIResourceManagementRequisitionWrite true "Requisition"
 // @Success 201 {object} map[string]interface{} "Created"
 // @Router /api/resource-management/requisitions [post]
 func SwaggerCreateResourceManagementRequisition(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
@@ -390,7 +427,7 @@ func SwaggerCreateResourceManagementRequisition(c *fiber.Ctx, db *sql.DB, store 
 // @Produce json
 // @Security SessionAuth
 // @Param id path int true "Requisition ID"
-// @Param body body object true "Fields"
+// @Param body body APIResourceManagementRequisitionWrite true "Requisition"
 // @Success 200 {object} map[string]interface{} "OK"
 // @Router /api/resource-management/requisitions/{id} [put]
 func SwaggerUpdateResourceManagementRequisition(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
@@ -427,7 +464,7 @@ func SwaggerGetResourceManagementActivityLogByID(c *fiber.Ctx, db *sql.DB, store
 // @Accept json
 // @Produce json
 // @Security SessionAuth
-// @Param body body object true "deployment_id, activity_type, activity_date, optional times and text fields"
+// @Param body body APIResourceManagementActivityLogWrite true "Activity log"
 // @Success 201 {object} map[string]interface{} "Created"
 // @Router /api/resource-management/activity-logs [post]
 func SwaggerCreateResourceManagementActivityLog(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
@@ -441,7 +478,7 @@ func SwaggerCreateResourceManagementActivityLog(c *fiber.Ctx, db *sql.DB, store 
 // @Produce json
 // @Security SessionAuth
 // @Param id path int true "Activity log ID"
-// @Param body body object true "Fields"
+// @Param body body APIResourceManagementActivityLogWrite true "Activity log"
 // @Success 200 {object} map[string]interface{} "OK"
 // @Router /api/resource-management/activity-logs/{id} [put]
 func SwaggerUpdateResourceManagementActivityLog(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
@@ -458,4 +495,73 @@ func SwaggerUpdateResourceManagementActivityLog(c *fiber.Ctx, db *sql.DB, store 
 // @Router /api/resource-management/activity-logs/{id} [delete]
 func SwaggerDeleteResourceManagementActivityLog(c *fiber.Ctx, db *sql.DB, store *session.Store) error {
 	return HandlerResourceManagementActivityLogDeleteAPI(c, db, store)
+}
+
+// --- Departments (CRUD; admin permissions, same as /api/roles) ---
+
+// SwaggerListDepartments godoc
+// @Summary List departments
+// @Description Requires admin:read
+// @Tags Departments
+// @Produce json
+// @Security SessionAuth
+// @Success 200 {object} map[string]interface{} "{ \"departments\": [...] }"
+// @Router /api/departments [get]
+func SwaggerListDepartments(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	return HandlerDepartmentListAPI(c, db, sl)
+}
+
+// SwaggerGetDepartment godoc
+// @Summary Get department by ID
+// @Description Requires admin:read
+// @Tags Departments
+// @Produce json
+// @Security SessionAuth
+// @Param id path int true "Department ID"
+// @Success 200 {object} map[string]interface{} "{ \"department\": {...} }"
+// @Router /api/departments/{id} [get]
+func SwaggerGetDepartment(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	return HandlerDepartmentGetAPI(c, db, sl)
+}
+
+// SwaggerCreateDepartment godoc
+// @Summary Create department
+// @Description Requires admin:create
+// @Tags Departments
+// @Accept json
+// @Produce json
+// @Security SessionAuth
+// @Param body body APIDepartmentWriteRequest true "Department"
+// @Success 201 {object} map[string]interface{} "Created"
+// @Router /api/departments [post]
+func SwaggerCreateDepartment(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	return HandlerDepartmentCreateAPI(c, db, sl)
+}
+
+// SwaggerUpdateDepartment godoc
+// @Summary Update department
+// @Description Requires admin:update
+// @Tags Departments
+// @Accept json
+// @Produce json
+// @Security SessionAuth
+// @Param id path int true "Department ID"
+// @Param body body APIDepartmentWriteRequest true "Department"
+// @Success 200 {object} map[string]interface{} "OK"
+// @Router /api/departments/{id} [put]
+func SwaggerUpdateDepartment(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	return HandlerDepartmentUpdateAPI(c, db, sl)
+}
+
+// SwaggerDeleteDepartment godoc
+// @Summary Delete department
+// @Description Requires admin:delete. Fails with 409 if still referenced.
+// @Tags Departments
+// @Produce json
+// @Security SessionAuth
+// @Param id path int true "Department ID"
+// @Success 200 {object} map[string]interface{} "OK"
+// @Router /api/departments/{id} [delete]
+func SwaggerDeleteDepartment(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+	return HandlerDepartmentDeleteAPI(c, db, sl)
 }

@@ -25,14 +25,14 @@ import (
 // Session represents call state
 type Session struct {
 	sync.Mutex
-	SessionID    string            `json:"session_id"`
-	PhoneNumber  string            `json:"phone_number"`
-	PatientName  string            `json:"patient_name"`
-	Language     string            `json:"language"`
-	CurrentStep  int               `json:"current_step"`
-	Responses    MpoxAssessment    `json:"responses"`
-	LastActivity time.Time         `json:"last_activity"`
-	ClientID     int               `json:"client_id"`
+	SessionID    string         `json:"session_id"`
+	PhoneNumber  string         `json:"phone_number"`
+	PatientName  string         `json:"patient_name"`
+	Language     string         `json:"language"`
+	CurrentStep  int            `json:"current_step"`
+	Responses    MpoxAssessment `json:"responses"`
+	LastActivity time.Time      `json:"last_activity"`
+	ClientID     int            `json:"client_id"`
 }
 
 // Africa's Talking callback request
@@ -101,9 +101,9 @@ type CallSession struct {
 
 // Config represents the application configuration
 type Config struct {
-	AT_PHONE	 string `json:"AT_PHONE"`
-	AT_USERNAME  string `json:"AT_USERNAME"`
-	AT_API_KEY   string `json:"AT_API_KEY"`
+	AT_PHONE    string `json:"AT_PHONE"`
+	AT_USERNAME string `json:"AT_USERNAME"`
+	AT_API_KEY  string `json:"AT_API_KEY"`
 }
 
 var stepPrompts = map[int]string{}
@@ -222,10 +222,16 @@ func HandleVoiceCallback(c *fiber.Ctx, db *sql.DB) error {
 		callback.SessionID, callback.CallerNumber, callback.DtmfDigits)
 
 	if callback.CallSessionState == "Answered" {
-		// fmt.Println(">>>>> Call answered")
-		client, _ := ClientByHBCPhone(c.Context(), db, callback.CallerNumber[1:])
-		clientLanguage = client.HbcLanguage.Int64
-		clientID = client.ID
+		phoneKey := strings.TrimPrefix(strings.TrimSpace(callback.CallerNumber), "+")
+		if phoneKey != "" {
+			client, err := ClientByHBCPhone(c.Context(), db, phoneKey)
+			if err == nil && client != nil {
+				if client.HbcLanguage.Valid {
+					clientLanguage = client.HbcLanguage.Int64
+				}
+				clientID = client.ID
+			}
+		}
 	}
 
 	// Get or create session
@@ -387,7 +393,7 @@ func createGetDigitsResponse(step int, patientName string, language string, isRe
 
 	return ATResponse{
 		GetDigits: &GetDigits{
-			Timeout: 8,
+			Timeout:     8,
 			NumDigits:   numDigits,
 			CallbackUrl: "https://response.health.go.ug/voice/callback", //"https://pxvs54rm-3001.uks1.devtunnels.ms/voice/callback", // Replace with your domain
 			Play: Play{
@@ -408,14 +414,14 @@ func createCompletionResponse() ATResponse {
 }
 
 func saveMpoxResponse(session *Session, amount string, duration string, db *sql.DB) {
-	// 1. Parse amount to float64 and then to int	
+	// 1. Parse amount to float64 and then to int
 	amt, _ := strconv.ParseFloat(amount, 64)
 	intAmount := int(math.Round(amt)) // Convert to int for DB consistency
 
 	// 2. Map directly to your struct (No JSON overhead)
 	assessmentData := MpoxAssessment{
-		Platform:         "ivr",
-		PhoneNumber:      session.PhoneNumber,
+		Platform:    "ivr",
+		PhoneNumber: session.PhoneNumber,
 		// Pull values directly from the fixed memory slots
 		PatientCondition: session.Responses.PatientCondition,
 		PainLevel:        session.Responses.PainLevel,
@@ -437,7 +443,7 @@ func saveMpoxResponse(session *Session, amount string, duration string, db *sql.
 	var callID int
 	queryCall := `INSERT INTO call_sessions (phone_number, duration_in_seconds, amount) 
 	              VALUES ($1, $2, $3) RETURNING id`
-	
+
 	err := db.QueryRow(queryCall, assessmentData.PhoneNumber, duration, intAmount).Scan(&callID)
 	if err != nil {
 		log.Printf("Error saving call session: %v", err)
@@ -448,17 +454,17 @@ func saveMpoxResponse(session *Session, amount string, duration string, db *sql.
 	queryAss := `INSERT INTO mpox_assessments 
 		(client_id, call_session_id, platform, phone_number, patient_condition, pain_level, new_lesions, comorbidities, lesions_dry, exposure_alert) 
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
-	
-	_, err = db.Exec(queryAss, 
-		session.ClientID, 
-		callID, 
-		assessmentData.Platform, 
-		assessmentData.PhoneNumber, 
-		assessmentData.PatientCondition, 
-		assessmentData.PainLevel, 
-		assessmentData.NewLesions, 
-		assessmentData.Comorbidities, 
-		assessmentData.LesionsDry, 
+
+	_, err = db.Exec(queryAss,
+		session.ClientID,
+		callID,
+		assessmentData.Platform,
+		assessmentData.PhoneNumber,
+		assessmentData.PatientCondition,
+		assessmentData.PainLevel,
+		assessmentData.NewLesions,
+		assessmentData.Comorbidities,
+		assessmentData.LesionsDry,
 		assessmentData.ExposureAlert,
 	)
 
