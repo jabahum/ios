@@ -1,38 +1,36 @@
 services:
   keycloak:
     env_file:
-      - dev.env
+      - prod.env
     command:
-      - start-dev
+      - start
       - --import-realm
+      - --http-enabled=true
+      - --proxy=edge
+      - --hostname=${KEYCLOAK_HOSTNAME}
+      - --hostname-strict=false
     environment:
-      KC_DB: ${KEYCLOAK_DB:-postgres}
-      KC_DB_URL_HOST: keycloak-db
-      KC_DB_URL_PORT: 5432
-      KC_DB_URL_DATABASE: ${KEYCLOAK_DB_NAME}
-      KC_DB_USERNAME: ${KEYCLOAK_DB_USER}
-      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
-      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
-      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
-      KC_HTTP_ENABLED: "true"
-      KC_PROXY: "edge"
-      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-http://localhost:8081}
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME}
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
-      KC_HEALTH_ENABLED: "true"
-      KC_METRICS_ENABLED: "true"
     ports:
       - "8081:8080"
+    restart: unless-stopped
+    healthcheck:
+      test:
+        ["CMD-SHELL", "wget -qO- http://localhost:8080/health/ready || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
 
   web:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    container_name: integrated-outbreak-web
+    image: ghcr.io/${GHCR_OWNER}/${GHCR_WEB_IMAGE:-integrated-outbreak-system}:${APP_TAG:-latest}
     env_file:
-      - dev.env
+      - prod.env
+    restart: unless-stopped
     environment:
-      APP_ENV: ${APP_ENV:-local}
+      APP_ENV: ${APP_ENV:-prod}
       DB_HOST: ${DB_HOST:-db}
       DB_PORT: ${DB_PORT:-5432}
       DB_USER: ${DB_USER}
@@ -62,25 +60,9 @@ services:
       AT_PHONE: ${AT_PHONE}
     ports:
       - "3001:3000"
-    volumes:
-      - .:/var/www/integrated-outbreak-system/app
-      - go-mod-cache:/go/pkg/mod
-      - go-build-cache:/root/.cache/go-build
-    command: air -c .air.toml
-    depends_on:
-      db:
-        condition: service_healthy
-      keycloak:
-        condition: service_healthy
-    networks:
-      - ios_network
 
   db:
+    env_file:
+      - prod.env
     ports:
       - "5432:5432"
-
-volumes:
-  go-mod-cache:
-    driver: local
-  go-build-cache:
-    driver: local
