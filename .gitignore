@@ -8,51 +8,5 @@ configs.json
 test_app
 test_build
 web.exe
-<<<<<<< HEAD
-=======
-/cmd/web/web.exe
-<<<<<<< HEAD
-<<<<<<< HEAD
-docker-compose.yml
-/init
-<<<<<<< HEAD
-.env
-<<<<<<< HEAD
-/ios_rearranged
-.DS_Store
-.idea
-=======
-
-.idea
-
-.DS_Store
-.vscode
-<<<<<<< HEAD
->>>>>>> 05ff780 (add editor and IDE files and folders to ignore)
-<<<<<<< HEAD
->>>>>>> e93dcbb (add editor and IDE files and folders to ignore)
-=======
-=======
->>>>>>> 1ed39ff (git ignore updated)
-<<<<<<< HEAD
->>>>>>> f3b2b44 (git ignore updated)
-=======
-=======
 .idea
 .vscode
->>>>>>> d0bb006 (User management enhanced)
-<<<<<<< HEAD
->>>>>>> bcd5b09 (User management enhanced)
-=======
-=======
-docker-compose.yml
-/init
->>>>>>> dd59593 (docker compose delete)
-<<<<<<< HEAD
->>>>>>> a0c459a (docker compose delete)
-=======
-=======
-.idea
-.vscode
->>>>>>> 4b91ff1 (add gitignore)
->>>>>>> c880656 (add gitignore)
