@@ -86485,5 +86485,8 @@ time=2026-03-24T12:46:39.196+03:00 level=INFO msg="DEBUG: Session isAuthenticate
 time=2026-03-24T12:46:39.196+03:00 level=INFO msg="DEBUG: Session user: 1"
 time=2026-03-24T12:46:39.197+03:00 level=INFO msg="DEBUG: Session user_id: 1"
 time=2026-03-24T12:46:39.197+03:00 level=INFO msg="DEBUG: Session username: paul.mbaka@gmail.com"
+<<<<<<< HEAD
 =======
 >>>>>>> d0bb006 (User management enhanced)
+=======
+>>>>>>> f109009 (migrations applied)
