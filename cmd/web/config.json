@@ -5,7 +5,7 @@
     "Static"         : "public",
     "DBHost"         : "localhost",
     "Ux"             : "postgres",
-    "Px"             : "postgres",
+    "Px"             : "pwaiswa",
     "Dx"             : "ios",
     "LogFile"        : "app.log",
     "LogData"        : "data.log",

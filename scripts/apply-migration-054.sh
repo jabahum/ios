@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Creates activity_logs (+ rrt_teams / rrt_deployments if missing). Fixes:
-#   pq: relation "activity_logs" does not exist
+# Applies migration 054: rrt_teams, rrt_deployments, full 029 RRT members/proposals
+# stack, proposal trigger, activity_logs. Fixes missing tables / pq relation errors.
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SQL="$(cd "$SCRIPT_DIR/.." && pwd)/migrations/054_ensure_activity_logs.sql"
