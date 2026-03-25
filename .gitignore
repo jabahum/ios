@@ -15,6 +15,7 @@ web.exe
 <<<<<<< HEAD
 docker-compose.yml
 /init
+<<<<<<< HEAD
 .env
 <<<<<<< HEAD
 /ios_rearranged
@@ -47,4 +48,11 @@ docker-compose.yml
 docker-compose.yml
 /init
 >>>>>>> dd59593 (docker compose delete)
+<<<<<<< HEAD
 >>>>>>> a0c459a (docker compose delete)
+=======
+=======
+.idea
+.vscode
+>>>>>>> 4b91ff1 (add gitignore)
+>>>>>>> c880656 (add gitignore)
