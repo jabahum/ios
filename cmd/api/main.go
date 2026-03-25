@@ -1,14 +1,18 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"log"
 	"log/slog"
 	"os"
+	"time"
 
 	"case/internal/config"
+	flogger "case/internal/log"
 	"case/internal/routes"
 	"case/internal/services"
+
+	dbpkg "case/internal/database"
 
 	"github.com/gofiber/fiber/v2"
 	fiberLogger "github.com/gofiber/fiber/v2/middleware/logger"
@@ -27,16 +31,21 @@ func main() {
 		log.Fatalf("invalid config: %v", err)
 	}
 
-	// Initialize database connection
-	db, err := sql.Open("postgres", cfg.DBSource())
-	if err != nil {
-		log.Fatalf("failed to open database connection: %v", err)
-	}
-	defer db.Close()
+	appLogger := flogger.InitLogger(cfg.LogFile)
 
-	if err := db.Ping(); err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
+	// Initialize database connection
+	primaryDB, err := dbpkg.InitDB(context.Background(), appLogger, dbpkg.DBConfig{
+		Driver:          "postgres",
+		DSN:             cfg.DBSource(),
+		MaxOpenConns:    25,
+		MaxIdleConns:    10,
+		ConnMaxLifetime: 30 * time.Minute,
+		WaitTimeout:     30 * time.Second,
+	})
+	if err != nil {
+		appLogger.Error("failed to initialize primary DB", "error", err)
 	}
+	defer primaryDB.Close()
 
 	// Initialize logger
 	sl := slog.New(slog.NewTextHandler(os.Stdout, nil))
@@ -56,9 +65,6 @@ func main() {
 	// Initialize session store
 	store := session.New()
 
-	// Initialize handler config
-	handlerConfig := config.Config{}
-
 	// Create Fiber app
 	app := fiber.New()
 
@@ -66,7 +72,7 @@ func main() {
 	app.Use(fiberLogger.New())
 
 	// Set up routes
-	routes.SetRoute(app, db, store, sl, handlerConfig, smsService, voiceService)
+	routes.SetRoute(app, primaryDB, store, sl, cfg, smsService, voiceService)
 
 	// Start server
 	log.Fatal(app.Listen(cfg.Addr()))
