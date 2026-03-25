@@ -14,3 +14,4 @@ docker-compose.yml
 .env
 /ios_rearranged
 .DS_Store
+.idea
