@@ -61,7 +61,7 @@ func apiSessionUserID(sess *session.Session) int {
 // registerAuthenticatedJSONAPIRoutes registers JSON /api/* routes on the root app with session auth.
 // This avoids relying only on app.Group("/", AuthRequired(store)), which can behave differently per deploy
 // and only checks sess.Get("user") (not user_id).
-func registerAuthenticatedJSONAPIRoutes(app *fiber.App, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config, smsService *services.SMSService, inventoryHandler *handlers.InventoryHandler) {
+func registerAuthenticatedJSONAPIRoutes(app *fiber.App, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config, smsService *services.SMSService, inventoryHandler *handlers.InventoryHandler) {
 	auth := JSONAPIAuthRequired(store)
 """
 (root / "app_json_api.go").write_text(header + "\n" + body + "\n}\n", encoding="utf-8")

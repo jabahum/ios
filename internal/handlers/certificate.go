@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"case/internal/config"
 	"case/internal/models"
 	"database/sql"
 	"fmt"
@@ -17,7 +18,7 @@ import (
 	"github.com/skip2/go-qrcode"
 )
 
-func Discharge(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func Discharge(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	//=================
 
 	userID := GetCurrentUser(c, store)
@@ -94,7 +95,7 @@ func Discharge(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, 
 	})
 }
 
-func GetDischarge(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func GetDischarge(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID := GetCurrentUser(c, store)
 
 	// Check if user is logged in
@@ -121,7 +122,7 @@ func GetDischarge(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Stor
 	return c.JSON(discharge)
 }
 
-func Certificate(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func Certificate(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 
 	clientID := c.Query("who")
 	if clientID == "" {

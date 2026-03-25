@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"case/internal/config"
 	"case/internal/models"
 	"database/sql"
 	"log/slog"
@@ -13,7 +14,7 @@ import (
 	"github.com/lib/pq"
 )
 
-func HandlerMpoxDailyFollowUpForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMpoxDailyFollowUpForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	clientIDStr := c.Params("i")
 	clientID, err := strconv.Atoi(clientIDStr)
 	if err != nil {
@@ -62,7 +63,7 @@ func HandlerMpoxDailyFollowUpForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, sto
 	return GenerateHTML(c, db, data, "mpox_daily_followup_new")
 }
 
-func HandlerMpoxDailyFollowUpSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMpoxDailyFollowUpSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	clientID, err := strconv.Atoi(c.FormValue("client_id"))
 	if err != nil {
 		sl.Error("Invalid client ID", "error", err, "client_id", c.FormValue("client_id"))

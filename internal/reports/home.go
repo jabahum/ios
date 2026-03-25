@@ -1,6 +1,7 @@
 package reports
 
 import (
+	"case/internal/config"
 	"case/internal/handlers"
 	"database/sql"
 	"log/slog"
@@ -9,7 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/session"
 )
 
-func ReportHome(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func ReportHome(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 
 	userID, userName := handlers.GetUser(c, sl, store)
 
@@ -24,7 +25,7 @@ func ReportHome(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store,
 	return handlers.GenerateHTML(c, db, data, "reports")
 }
 
-func ReportView(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func ReportView(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 
 	userID, userName := handlers.GetUser(c, sl, store)
 

@@ -160,33 +160,51 @@ func GetRoleHierarchy() []string {
 	}
 }
 
-type Config struct {
-	Address      string `json:"Port"`
-	ReadTimeout  int64  `json:"ReadTimeout"`
-	WriteTimeout int64  `json:"WriteTimeout"`
-	Static       string `json:"Static"`
-	DBHost       string `json:"DBHost"`
-	Ux           string `json:"Ux"`
-	Px           string `json:"Px"`
-	Dx           string `json:"Dx"`
-	LogFile      string `json:"LogFile"`
-	LogData      string `json:"LogData"`
-	Facility     string `json:"Facility"`
-	SMSUsername  string `json:"SMSUser"`
-	SMSPassword  string `json:"SMSPassword"`
-	SMSBaseURL   string `json:"SMSURL"`
-	DHIS2API     struct {
-		BaseURL  string `json:"BaseURL"`
-		Username string `json:"Username"`
-		Password string `json:"Password"`
-	} `json:"DHIS2API"`
-	AlertsAPI struct {
-		BaseURL  string `json:"BaseURL"`
-		Username string `json:"Username"`
-		Password string `json:"Password"`
-	} `json:"AlertsAPI"`
-	VoiceURL     string `json:"VoiceURL"`
-}
+// type AuthConfig struct {
+// 	Enabled             bool   `json:"Enabled"`
+// 	KeycloakInternalURL string `json:"KeycloakInternalURL"`
+// 	KeycloakPublicURL   string `json:"KeycloakPublicURL"`
+// 	KeycloakBaseURL     string `json:"KeycloakBaseURL"`
+// 	KeycloakRealm       string `json:"KeycloakRealm"`
+// 	ClientID            string `json:"ClientID"`
+// 	ClientSecret        string `json:"ClientSecret"`
+// 	AdminClientID       string `json:"AdminClientID"`
+// 	AdminClientSecret   string `json:"AdminClientSecret"`
+// 	RedirectURI         string `json:"RedirectURI"`
+// 	SuccessRedirect     string `json:"SuccessRedirect"`
+// 	LogoutRedirect      string `json:"LogoutRedirect"`
+// 	CookieDomain        string `json:"CookieDomain"`
+// 	CookieSecure        bool   `json:"CookieSecure"`
+// }
+
+// type Config struct {
+// 	Address      string `json:"Port"`
+// 	ReadTimeout  int64  `json:"ReadTimeout"`
+// 	WriteTimeout int64  `json:"WriteTimeout"`
+// 	Static       string `json:"Static"`
+// 	DBHost       string `json:"DBHost"`
+// 	Ux           string `json:"Ux"`
+// 	Px           string `json:"Px"`
+// 	Dx           string `json:"Dx"`
+// 	LogFile      string `json:"LogFile"`
+// 	LogData      string `json:"LogData"`
+// 	Facility     string `json:"Facility"`
+// 	SMSUsername  string `json:"SMSUser"`
+// 	SMSPassword  string `json:"SMSPassword"`
+// 	SMSBaseURL   string `json:"SMSURL"`
+// 	DHIS2API     struct {
+// 		BaseURL  string `json:"BaseURL"`
+// 		Username string `json:"Username"`
+// 		Password string `json:"Password"`
+// 	} `json:"DHIS2API"`
+// 	AlertsAPI struct {
+// 		BaseURL  string `json:"BaseURL"`
+// 		Username string `json:"Username"`
+// 		Password string `json:"Password"`
+// 	} `json:"AlertsAPI"`
+// 	VoiceURL string     `json:"VoiceURL"`
+// 	Auth     AuthConfig `json:"Auth"`
+// }
 
 type TemplateData struct {
 	CurrentYear     int

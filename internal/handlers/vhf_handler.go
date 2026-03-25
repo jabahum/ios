@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"case/internal/config"
 	"case/internal/models"
 	"case/internal/security"
 	"case/internal/services"
@@ -17,7 +18,7 @@ import (
 )
 
 // HandlerVHFPatientSubmit handles the submission of patient information
-func HandlerVHFPatientSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config, smsService *services.SMSService) error {
+func HandlerVHFPatientSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config, smsService *services.SMSService) error {
 	// Parse form data
 	patient := &models.VHFPatient{
 		Surname:                     c.FormValue("surname"),
@@ -598,7 +599,7 @@ func parseBool(str string) bool {
 }
 
 // HandlerVHFClinicalSignsSubmit handles the submission of clinical signs
-func HandlerVHFClinicalSignsSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFClinicalSignsSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	patientID, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
 		return c.Status(400).SendString("Invalid patient ID")
@@ -870,7 +871,7 @@ func HandlerVHFClinicalSignsSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, st
 }
 
 // HandlerVHFHospitalizationSubmit handles the submission of hospitalization information
-func HandlerVHFHospitalizationSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFHospitalizationSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	patientID, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
 		return c.Status(400).SendString("Invalid patient ID")
@@ -919,7 +920,7 @@ func HandlerVHFHospitalizationSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, 
 }
 
 // HandlerVHFRiskFactorsSubmit handles the submission of risk factors
-func HandlerVHFRiskFactorsSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFRiskFactorsSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	patientID, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
 		return c.Status(400).SendString("Invalid patient ID")
@@ -969,7 +970,7 @@ func HandlerVHFRiskFactorsSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, stor
 
 //Last known save lab data function that does not send sms
 // HandlerVHFLaboratorySubmit handles the submission of laboratory information
-// func HandlerVHFLaboratorySubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config, smsService *services.SMSService) error {
+// func HandlerVHFLaboratorySubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config, smsService *services.SMSService) error {
 // 	patientID, err := strconv.ParseInt(c.Params("id"), 10, 64)
 // 	if err != nil {
 // 		return c.Status(400).SendString("Invalid patient ID")
@@ -1018,7 +1019,7 @@ func HandlerVHFLaboratorySubmit(
 	db *sql.DB,
 	sl *slog.Logger,
 	store *session.Store,
-	config Config,
+	config config.Config,
 	smsService *services.SMSService,
 ) error {
 	patientID, err := strconv.ParseInt(c.Params("id"), 10, 64)
@@ -1078,7 +1079,7 @@ func HandlerVHFLaboratorySubmit(
 }
 
 // HandlerVHFInvestigatorSubmit handles the submission of investigator information
-func HandlerVHFInvestigatorSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFInvestigatorSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	patientID, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
 		return c.Status(400).SendString("Invalid patient ID")
@@ -1115,7 +1116,7 @@ func HandlerVHFInvestigatorSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, sto
 }
 
 // HandlerVHFList handles the listing of all VHF cases
-func HandlerVHFList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	// Get current user information
 	userID, _ := GetUser(c, sl, store)
 
@@ -1617,7 +1618,7 @@ func HandlerVHFList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 }
 
 // HandlerVHFView handles viewing a single VHF case
-func HandlerVHFView(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFView(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
 		return c.Status(400).SendString("Invalid patient ID")
@@ -1898,7 +1899,7 @@ func HandlerVHFView(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 }
 
 // HandlerVHFSuccess handles the success page after form submission
-func HandlerVHFSuccess(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFSuccess(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	// Get the case code from the query parameters
 	caseCode := c.Query("case_code")
 	if caseCode == "" {
@@ -1914,7 +1915,7 @@ func HandlerVHFSuccess(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session
 }
 
 // HandlerVHFLabForm handles displaying the lab form for a VHF case
-func HandlerVHFLabForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFLabForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	caseID := c.Params("id")
 	if caseID == "" {
 		return c.Status(400).SendString("Case ID is required")
@@ -2012,7 +2013,7 @@ func HandlerVHFLabForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session
 }
 
 // HandlerVHFLabSave handles the submission of laboratory information
-func HandlerVHFLabSave(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFLabSave(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	caseID, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{
@@ -2072,7 +2073,7 @@ func HandlerVHFLabSave(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session
 }
 
 // HandlerVHFUpdate handles updating a VHF case (full implementation)
-func HandlerVHFUpdate(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFUpdate(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	caseCode := c.FormValue("case_code")
 	sl.Info("HandlerVHFUpdate called", "case_code", caseCode)
 

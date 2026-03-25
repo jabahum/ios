@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"case/internal/config"
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
@@ -75,7 +76,7 @@ type ProcessedEvent struct {
 }
 
 // CommunityMortalitySurveillance handles the community mortality surveillance page
-func CommunityMortalitySurveillance(c *fiber.Ctx, db *sql.DB, store *session.Store, config Config) error {
+func CommunityMortalitySurveillance(c *fiber.Ctx, db *sql.DB, store *session.Store, config config.Config) error {
 	sess, err := store.Get(c)
 	if err != nil {
 		return c.Status(500).SendString("Failed to get session")
@@ -137,7 +138,7 @@ func CommunityMortalitySurveillance(c *fiber.Ctx, db *sql.DB, store *session.Sto
 }
 
 // FacilityMortalitySurveillance handles the facility mortality surveillance page
-func FacilityMortalitySurveillance(c *fiber.Ctx, db *sql.DB, store *session.Store, config Config) error {
+func FacilityMortalitySurveillance(c *fiber.Ctx, db *sql.DB, store *session.Store, config config.Config) error {
 	sess, err := store.Get(c)
 	if err != nil {
 		return c.Status(500).SendString("Failed to get session")
@@ -199,7 +200,7 @@ func FacilityMortalitySurveillance(c *fiber.Ctx, db *sql.DB, store *session.Stor
 }
 
 // fetchDHIS2Data fetches data from the DHIS2 API
-func fetchDHIS2Data(config Config, surveillanceType, startDate, endDate string) (*SurveillanceData, error) {
+func fetchDHIS2Data(config config.Config, surveillanceType, startDate, endDate string) (*SurveillanceData, error) {
 	// Construct the API URL based on the surveillance type
 	var endpoint string
 	if surveillanceType == "community" {

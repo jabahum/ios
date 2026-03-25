@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"case/internal/config"
 	"case/internal/middleware"
 	"case/internal/models"
 	"database/sql"
@@ -13,7 +14,7 @@ import (
 )
 
 // HandlerOutbreakList handles the outbreak list page
-func HandlerOutbreakList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerOutbreakList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	// Get current user ID
 	userID := GetCurrentUser(c, store)
 	if userID == 0 {
@@ -85,7 +86,7 @@ func HandlerOutbreakList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 }
 
 // HandlerOutbreakForm handles the outbreak form page
-func HandlerOutbreakForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerOutbreakForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	// Get current user ID
 	userID := GetCurrentUser(c, store)
 	if userID == 0 {
@@ -136,7 +137,7 @@ func HandlerOutbreakForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 }
 
 // HandlerOutbreakSubmit handles the outbreak form submission
-func HandlerOutbreakSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerOutbreakSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	// Get current user ID
 	userID := GetCurrentUser(c, store)
 	if userID == 0 {
@@ -205,7 +206,7 @@ func HandlerOutbreakSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 }
 
 // HandlerOutbreakClose handles closing an outbreak
-func HandlerOutbreakClose(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerOutbreakClose(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	// Get current user ID
 	userID := GetCurrentUser(c, store)
 	if userID == 0 {
@@ -259,7 +260,7 @@ func HandlerOutbreakClose(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 }
 
 // HandlerOutbreakSelect handles selecting an outbreak
-func HandlerOutbreakSelect(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerOutbreakSelect(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	// Get current user ID
 	userID := GetCurrentUser(c, store)
 	if userID == 0 {

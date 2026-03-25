@@ -18,6 +18,7 @@ import (
 
 	fiberSwagger "github.com/arsmn/fiber-swagger/v2"
 
+	"case/internal/config"
 	"case/internal/handlers"
 	"case/internal/middleware"
 	"case/internal/models"
@@ -25,7 +26,7 @@ import (
 	"case/internal/services"
 )
 
-func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger, config handlers.Config, smsService *services.SMSService, voiceService *services.VoiceService) {
+func SetRoute(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger, config config.Config, smsService *services.SMSService, voiceService *services.VoiceService) {
 	inventoryHandler := handlers.NewInventoryHandler(db, store)
 
 	// Swagger documentation routes
@@ -1517,14 +1518,14 @@ func matchesRoute(path, pattern string) bool {
 	return true
 }
 
-func RouteAPIEncounter(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
+func RouteAPIEncounter(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) {
 	// Add RBAC permission checks for API encounter
 	v.Get("/", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
 		return handlers.HandlerAPIGetEncounter(c, db, sl, store, config)
 	})
 }
 
-func RouteAPIStatus(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
+func RouteAPIStatus(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) {
 	// Add RBAC permission checks for API status
 	v.Get("/list", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
 		return handlers.HandlerAPIGetStatuses(c, db, sl, store, config)
@@ -1534,7 +1535,7 @@ func RouteAPIStatus(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.
 	})
 }
 
-func RouteDischarge(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
+func RouteDischarge(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) {
 	// Add RBAC permission checks for discharge management
 	v.Get("/list", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
 		return handlers.GetDischarge(c, db, sl, store, config)
@@ -1547,7 +1548,7 @@ func RouteDischarge(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.
 	})
 }
 
-func RouteHome(app *fiber.App, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config, smsService *services.SMSService) {
+func RouteHome(app *fiber.App, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config, smsService *services.SMSService) {
 	// Landing page
 	app.Get("/", func(c *fiber.Ctx) error {
 		return handlers.GenerateHTML(c, db, handlers.NewTemplateData(c, store), "landing")
@@ -1619,11 +1620,11 @@ func RouteHome(app *fiber.App, db *sql.DB, sl *slog.Logger, store *session.Store
 	})
 }
 
-func RouteVerify(app *fiber.App, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
+func RouteVerify(app *fiber.App, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) {
 	app.Get("/verify/discharges/:i", func(c *fiber.Ctx) error { return handlers.VerifyDischarge2(c, db, sl, store, config) })
 }
 
-func RouteFacilities(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
+func RouteFacilities(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) {
 	// Add RBAC permission checks for facility management
 	v.Get("/new/:i", middleware.PermissionRequired(store, db, sl, "facilities", "create"), func(c *fiber.Ctx) error {
 		return handlers.HandlerFacilityForm(c, db, sl, store, config)
@@ -1642,7 +1643,7 @@ func RouteFacilities(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session
 	})
 }
 
-func RouteUsers(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
+func RouteUsers(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) {
 	// Add RBAC permission checks for user management
 	v.Get("/new/:i", middleware.PermissionRequired(store, db, sl, "users", "create"), func(c *fiber.Ctx) error {
 		return handlers.HandlerUserForm(c, db, sl, store, config)
@@ -1661,7 +1662,7 @@ func RouteUsers(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Stor
 	})
 }
 
-func RouteEmployees(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
+func RouteEmployees(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) {
 	// Add RBAC permission checks for employee management
 	v.Get("/new/:i", middleware.PermissionRequired(store, db, sl, "employees", "create"), func(c *fiber.Ctx) error {
 		return handlers.HandlerEmployeeForm(c, db, sl, store, config)
@@ -1688,7 +1689,7 @@ func RouteEmployees(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.
 	})
 }
 
-func RouteCases(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config, smsService *services.SMSService, voiceService *services.VoiceService) {
+func RouteCases(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config, smsService *services.SMSService, voiceService *services.VoiceService) {
 	// Add RBAC permission checks for case management
 	v.Get("/profile/:i", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
 		return handlers.HandlerPatientProfile(c, db, sl, store, config, smsService, voiceService)
@@ -1753,7 +1754,7 @@ func RouteCases(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Stor
 	})
 }
 
-func RouteCaseDischarge(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config, smsService *services.SMSService, voiceService *services.VoiceService) {
+func RouteCaseDischarge(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config, smsService *services.SMSService, voiceService *services.VoiceService) {
 	// Add RBAC permission checks for case discharge
 	v.Get("/view/:i/:j", middleware.PermissionRequired(store, db, sl, "vhf_patients", "read"), func(c *fiber.Ctx) error {
 		return handlers.HandlerCasesForm(c, db, sl, store, config, smsService, voiceService)
@@ -1766,7 +1767,7 @@ func RouteCaseDischarge(v fiber.Router, db *sql.DB, sl *slog.Logger, store *sess
 	})
 }
 
-func RouteSymptoms(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
+func RouteSymptoms(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) {
 	// Add RBAC permission checks for symptoms management
 	v.Get("/new/:i", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
 		return handlers.HandlerSymptomsForm(c, db, sl, store, config)
@@ -1785,7 +1786,7 @@ func RouteSymptoms(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.S
 	})
 }
 
-func RouteMorbidity(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
+func RouteMorbidity(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) {
 	// Add RBAC permission checks for morbidity management
 	v.Get("/new/:i", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
 		return handlers.HandlerMorbidityForm(c, db, sl, store, config)
@@ -1804,7 +1805,7 @@ func RouteMorbidity(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.
 	})
 }
 
-func RouteRush(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
+func RouteRush(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) {
 	// Add RBAC permission checks for rush management
 	v.Get("/new/:i", middleware.PermissionRequired(store, db, sl, "vhf_patients", "create"), func(c *fiber.Ctx) error {
 		return handlers.HandlerRushForm(c, db, sl, store, config)
@@ -1823,7 +1824,7 @@ func RouteRush(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store
 	})
 }
 
-func RouteLab(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
+func RouteLab(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) {
 	// Add RBAC permission checks for laboratory management
 	v.Get("/new/:i", middleware.PermissionRequired(store, db, sl, "laboratory", "create"), func(c *fiber.Ctx) error {
 		return handlers.HandlerLabForm(c, db, sl, store, config)
@@ -1842,7 +1843,7 @@ func RouteLab(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store,
 	})
 }
 
-func RouteReports(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) { //+
+func RouteReports(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) { //+
 	// Add RBAC permission checks for reports
 	v.Get("/view", middleware.PermissionRequired(store, db, sl, "reports", "read"), func(c *fiber.Ctx) error {
 		return reports.GenerateReport(c, db, sl, store, config)
@@ -1881,13 +1882,13 @@ func RouteReports(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.St
 }
 
 // Add this new function for outbreak routes
-func RouteOutbreaks(app *fiber.App, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
+func RouteOutbreaks(app *fiber.App, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) {
 	// This function is kept for compatibility but routes are now defined in SetRoute
 	// to avoid duplicate route definitions
 }
 
 // SetupRoutes configures all routes for the application
-func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger, config handlers.Config, smsService *services.SMSService) {
+func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logger, config config.Config, smsService *services.SMSService) {
 	inventoryHandler := handlers.NewInventoryHandler(db, store)
 
 	// Public routes
@@ -2839,7 +2840,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB, store *session.Store, sl *slog.Logg
 }
 
 // RouteSurveillance defines the surveillance routes
-func RouteSurveillance(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) {
+func RouteSurveillance(v fiber.Router, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) {
 	// Community Mortality Surveillance
 	v.Get("/community-mortality", middleware.PermissionRequired(store, db, sl, "surveillance", "read"), func(c *fiber.Ctx) error {
 		return handlers.CommunityMortalitySurveillance(c, db, store, config)

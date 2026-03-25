@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"case/internal/config"
 	"case/internal/models"
 	"case/internal/security"
 	"case/internal/services"
@@ -12,8 +13,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
 	// "io"
-    // "encoding/json"
+	// "encoding/json"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
@@ -41,12 +43,12 @@ type EncounterPageData struct {
 
 // AdmissionData holds all admission-related information
 type AdmissionData struct {
-	Demographics *models.MpoxDemographics
-	Exposure     *models.MpoxExposureHistory
-	Vitals       *models.MpoxOnsetVitals
+	Demographics  *models.MpoxDemographics
+	Exposure      *models.MpoxExposureHistory
+	Vitals        *models.MpoxOnsetVitals
 	Comorbidities *models.MpoxComorbidities
-	Rash         *models.MpoxRashEvaluation
-	Labs         *models.MpoxLaboratoryInvestigations
+	Rash          *models.MpoxRashEvaluation
+	Labs          *models.MpoxLaboratoryInvestigations
 }
 
 // FullTreatmentData represents complete treatment data for templates
@@ -174,7 +176,7 @@ type FullTreatmentData struct {
 	MetronidazoleFreq           sql.NullString  `json:"metronidazole_freq"`
 }
 
-func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config, smsService *services.SMSService, voiceService *services.VoiceService) error {
+func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config, smsService *services.SMSService, voiceService *services.VoiceService) error {
 	DoZaLogging("INFO", "Starting Client form", nil)
 
 	userID, userName := GetUser(c, sl, store)
@@ -225,7 +227,7 @@ func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 	// Set outbreak ID for new cases
 	data.OutbreakID = outbreakID.(int)
 	data.IsOutbreakID = data.OutbreakID > 0
-	
+
 	// Get outbreak name
 	outbreak, err := models.OutbreakByID(c.Context(), db, outbreakID.(int))
 	if err == nil && outbreak != nil {
@@ -233,7 +235,7 @@ func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 			data.OutbreakName = outbreak.Name.String
 		}
 	}
-	
+
 	if client.ID == 0 {
 		client.OutbreakID = sql.NullInt64{Int64: int64(outbreakID.(int)), Valid: true}
 	}
@@ -242,7 +244,7 @@ func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 	var cE []models.ClientEncounter = []models.ClientEncounter{}
 	var st []models.Status = []models.Status{}
 	var assessments []*models.MpoxAssessment = []*models.MpoxAssessment{}
-	
+
 	if id > 0 && client.ID > 0 {
 		cE, err = models.ClientEncounterz(c.Context(), db, "client_id="+strconv.Itoa(id), outbreakID.(int))
 		if err != nil {
@@ -278,7 +280,7 @@ func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 			assessments = []*models.MpoxAssessment{}
 		}
 	}
-	
+
 	data.User = userName
 	data.Role = role
 	data.Optionz = Get_Client_Optionz()
@@ -286,7 +288,7 @@ func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 	data.FormChild1 = cE
 	data.FormChild2 = st
 	data.FormChild3 = assessments
-	if (client.AdmWard.String == strconv.Itoa(3)) {
+	if client.AdmWard.String == strconv.Itoa(3) {
 		data.IsHomeBasedCare = true
 	}
 	// fmt.Printf("assessments data: %s", assessments)
@@ -304,7 +306,7 @@ func HandlerCasesForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 }
 
 // HandlerPatientProfile handles the patient profile view with biodata and clinical notes
-func HandlerPatientProfile(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config, smsService *services.SMSService, voiceService *services.VoiceService) error {
+func HandlerPatientProfile(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config, smsService *services.SMSService, voiceService *services.VoiceService) error {
 	DoZaLogging("INFO", "Starting Patient Profile", nil)
 
 	userID, userName := GetUser(c, sl, store)
@@ -425,7 +427,7 @@ func HandlerPatientProfile(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 
 	// Create struct to hold admission data
 	var admissionData AdmissionData
-	
+
 	if hasAdmission {
 		// Fetch demographics
 		var demo models.MpoxDemographics
@@ -448,7 +450,7 @@ func HandlerPatientProfile(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 		if err == nil {
 			admissionData.Demographics = &demo
 			sl.Info("Loaded admission demographics", "admission_id", admissionID)
-			
+
 			// Fetch exposure history
 			var exp models.MpoxExposureHistory
 			err = db.QueryRowContext(c.Context(), `
@@ -464,7 +466,7 @@ func HandlerPatientProfile(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 			} else if err != sql.ErrNoRows {
 				sl.Warn("Error fetching exposure history", "admission_id", admissionID, "error", err)
 			}
-			
+
 			// Fetch onset vitals
 			var vitals models.MpoxOnsetVitals
 			err = db.QueryRowContext(c.Context(), `
@@ -485,7 +487,7 @@ func HandlerPatientProfile(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 			sl.Error("Error fetching admission demographics", "admission_id", admissionID, "error", err)
 		}
 	}
-	
+
 	sl.Info("Admission data prepared", "has_admission", hasAdmission, "has_demo", admissionData.Demographics != nil)
 
 	data.User = userName
@@ -502,10 +504,10 @@ func HandlerPatientProfile(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 	}
 	data.HasMpoxAdmission = hasAdmission
 	data.MpoxAdmissionID = admissionID
-	
+
 	// Debug logging
 	if hasAdmission {
-		sl.Info("Admission data status", 
+		sl.Info("Admission data status",
 			"has_demo", admissionData.Demographics != nil,
 			"has_exposure", admissionData.Exposure != nil,
 			"has_vitals", admissionData.Vitals != nil,
@@ -513,7 +515,7 @@ func HandlerPatientProfile(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 	}
 	data.OutbreakID = outbreakID.(int)
 	data.IsIDPos = true
-	if (client.AdmWard.String == strconv.Itoa(3)) {
+	if client.AdmWard.String == strconv.Itoa(3) {
 		data.IsHomeBasedCare = true
 	}
 
@@ -521,7 +523,7 @@ func HandlerPatientProfile(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 	return GenerateHTML(c, db, data, "patient_profile")
 }
 
-func HandlerCasesSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerCasesSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 
 	id, er := strconv.Atoi(c.FormValue("id"))
 	if er != nil {
@@ -646,7 +648,7 @@ func HandlerCasesSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 	return c.Redirect(urlx)
 }
 
-func HandlerCasesList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerCasesList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	fmt.Println("starting case list")
 
 	userID, userName := GetUser(c, sl, store)
@@ -735,7 +737,7 @@ func HandlerCasesList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 	return GenerateHTML(c, db, data, "list_patients")
 }
 
-func HandlerCaseEncounterForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerCaseEncounterForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	// Get client ID from URL path parameter
 	clientIDStr := c.Params("i")
 	if clientIDStr == "" {
@@ -1129,7 +1131,7 @@ func HandlerCaseEncounterForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 	return GenerateHTML(c, db, data, "form_encounters")
 }
 
-func HandlerCaseEncounterList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerCaseEncounterList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	// Get client ID from query parameter
 	ClientIDStr := c.Query("client_id")
 	if ClientIDStr == "" {
@@ -1340,7 +1342,7 @@ func saveClinical(c *fiber.Ctx, db *sql.DB, id1, id2, id3 int) error {
 	}
 }
 
-func HandlerCaseEncounterSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerCaseEncounterSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	// Get user ID from session
 	sess, err := store.Get(c)
 	if err != nil {
@@ -1786,7 +1788,7 @@ func saveTreatment(c *fiber.Ctx, db *sql.DB, encounterID int) error {
 	return nil
 }
 
-func HandlerAPIGetEncounter(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerAPIGetEncounter(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	// Get ID from the query parameter
 
 	id := c.Query("id")
@@ -1904,7 +1906,7 @@ func HandlerAPIGetEncounter(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *se
 
 }
 
-func HandlerAPIGetStatuses(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerAPIGetStatuses(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID := GetCurrentUser(c, store)
 
 	// Check if user is logged in
@@ -1928,7 +1930,7 @@ func HandlerAPIGetStatuses(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 
 }
 
-func HandlerAPIPostStatus(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerAPIPostStatus(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 
 	//=================
 
@@ -1954,14 +1956,14 @@ func HandlerAPIPostStatus(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 	s.ClientID = ParseNullInt2(formData["client_id"])
 	s.StatusDate = ParseNullString2(formData["status_date"])
 	s.Status = ParseNullString2(formData["status"])
-	
+
 	// Build status notes - include transfer info if status is Transfer
 	statusNotes := ParseNullString2(formData["status_notes"])
 	if s.Status.String == "Transfer" {
 		transferSite := ""
 		transferStatus := ""
 		treatmentProgram := ""
-		
+
 		if val, ok := formData["transfer_site"].(string); ok && val != "" {
 			transferSite = val
 		}
@@ -1971,7 +1973,7 @@ func HandlerAPIPostStatus(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 		if val, ok := formData["treatment_program"].(string); ok && val != "" {
 			treatmentProgram = val
 		}
-		
+
 		transferInfo := ""
 		if transferSite != "" || transferStatus != "" || treatmentProgram != "" {
 			transferInfo = " [Transfer Details: "
@@ -1986,7 +1988,7 @@ func HandlerAPIPostStatus(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 			}
 			transferInfo = strings.TrimSuffix(transferInfo, "; ") + "]"
 		}
-		
+
 		if statusNotes.String != "" {
 			s.StatusNotes = sql.NullString{String: statusNotes.String + transferInfo, Valid: true}
 		} else {

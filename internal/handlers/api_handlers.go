@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
 
+	"case/internal/config"
 	"case/internal/middleware"
 	"case/internal/models"
 	"case/internal/services"
@@ -19,7 +20,7 @@ import (
 // outbreaks, cases, disease CIFs, resource management, inventory, surveillance stubs, etc.).
 
 // Authentication APIs
-func HandlerGetCurrentUser(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerGetCurrentUser(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -35,14 +36,14 @@ func HandlerGetCurrentUser(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 	return c.JSON(user)
 }
 
-func HandlerChangePassword(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerChangePassword(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	// This would wrap the existing password change logic
 	// For now, return a placeholder
 	return c.JSON(fiber.Map{"message": "Password change endpoint - implement as needed"})
 }
 
 // Dashboard APIs
-func HandlerHomeAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerHomeAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	// Get home dashboard data
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
@@ -56,7 +57,7 @@ func HandlerHomeAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 	})
 }
 
-func HandlerDashboardStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerDashboardStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -74,7 +75,7 @@ func HandlerDashboardStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 
 // VHF APIs — JSON counterparts to VHF CIF; use models.VHFPatient JSON shape (see internal/models/vhf_models.go).
 
-func HandlerVHFListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -87,7 +88,7 @@ func HandlerVHFListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session
 	return c.JSON(fiber.Map{"patients": list})
 }
 
-func HandlerVHFViewAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFViewAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -107,7 +108,7 @@ func HandlerVHFViewAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session
 	return c.JSON(payload)
 }
 
-func HandlerVHFPatientSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config, smsService *services.SMSService) error {
+func HandlerVHFPatientSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config, smsService *services.SMSService) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -130,7 +131,7 @@ func HandlerVHFPatientSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 	})
 }
 
-func HandlerVHFUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -151,7 +152,7 @@ func HandlerVHFUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 	return c.JSON(fiber.Map{"message": "Patient updated", "patient_id": id})
 }
 
-func HandlerVHFDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -168,7 +169,7 @@ func HandlerVHFDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 }
 
 // VHF Clinical Signs APIs
-func HandlerVHFClinicalSignsAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFClinicalSignsAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -185,7 +186,7 @@ func HandlerVHFClinicalSignsAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 	return c.JSON(fiber.Map{"clinical_signs": signs})
 }
 
-func HandlerVHFClinicalSignsSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFClinicalSignsSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -208,7 +209,7 @@ func HandlerVHFClinicalSignsSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger,
 }
 
 // VHF Hospitalization APIs
-func HandlerVHFHospitalizationAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFHospitalizationAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -224,7 +225,7 @@ func HandlerVHFHospitalizationAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, sto
 	return c.JSON(fiber.Map{"hospitalization": h})
 }
 
-func HandlerVHFHospitalizationSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFHospitalizationSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -246,7 +247,7 @@ func HandlerVHFHospitalizationSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logge
 }
 
 // VHF Risk Factors APIs
-func HandlerVHFRiskFactorsAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFRiskFactorsAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -262,7 +263,7 @@ func HandlerVHFRiskFactorsAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 	return c.JSON(fiber.Map{"risk_factors": r})
 }
 
-func HandlerVHFRiskFactorsSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFRiskFactorsSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -284,7 +285,7 @@ func HandlerVHFRiskFactorsSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, s
 }
 
 // VHF Laboratory APIs
-func HandlerVHFLaboratoryAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFLaboratoryAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -300,7 +301,7 @@ func HandlerVHFLaboratoryAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *s
 	return c.JSON(fiber.Map{"laboratory": lab})
 }
 
-func HandlerVHFLaboratorySubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config, smsService *services.SMSService) error {
+func HandlerVHFLaboratorySubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config, smsService *services.SMSService) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -323,7 +324,7 @@ func HandlerVHFLaboratorySubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, st
 }
 
 // VHF Investigator APIs
-func HandlerVHFInvestigatorAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFInvestigatorAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -339,7 +340,7 @@ func HandlerVHFInvestigatorAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store 
 	return c.JSON(fiber.Map{"investigator": inv})
 }
 
-func HandlerVHFInvestigatorSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFInvestigatorSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -362,7 +363,7 @@ func HandlerVHFInvestigatorSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, 
 }
 
 // VHF Lab Form APIs (lab record id — same laboratory model when keyed by patient in other routes)
-func HandlerVHFLabFormAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFLabFormAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -378,12 +379,12 @@ func HandlerVHFLabFormAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 	return c.JSON(fiber.Map{"laboratory": lab})
 }
 
-func HandlerVHFLabSaveAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVHFLabSaveAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerVHFLaboratorySubmitAPI(c, db, sl, store, config, nil)
 }
 
 // Employee Management APIs
-func HandlerEmployeeListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerEmployeeListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -424,7 +425,7 @@ func HandlerEmployeeListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *se
 	return c.JSON(fiber.Map{"employees": out})
 }
 
-func HandlerGetEmployeeAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerGetEmployeeAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -432,7 +433,7 @@ func HandlerGetEmployeeAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 	return HandlerGetEmployee(c, db, sl, store, config)
 }
 
-func HandlerEmployeeSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerEmployeeSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -449,7 +450,7 @@ func HandlerEmployeeSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 	return c.Status(201).JSON(fiber.Map{"message": "Employee created", "employee_id": emp.EmployeeID})
 }
 
-func HandlerEmployeeUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerEmployeeUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -471,7 +472,7 @@ func HandlerEmployeeUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 	return c.JSON(fiber.Map{"message": "Employee updated", "employee_id": id})
 }
 
-func HandlerDeleteEmployeeAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerDeleteEmployeeAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -540,7 +541,7 @@ func HandlerResourceManagementActivityLogsAPI(c *fiber.Ctx, db *sql.DB, store *s
 }
 
 // User Management APIs (session auth + users:* RBAC via attachPermissionsForAPI)
-func HandlerUserListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerUserListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -549,7 +550,7 @@ func HandlerUserListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 	return NewEnhancedUserHandler(db, sl, store, config).ListUsers(c)
 }
 
-func HandlerGetUserAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerGetUserAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -558,7 +559,7 @@ func HandlerGetUserAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session
 	return NewEnhancedUserHandler(db, sl, store, config).GetUserDetails(c)
 }
 
-func HandlerUserSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerUserSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -567,7 +568,7 @@ func HandlerUserSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 	return NewEnhancedUserHandler(db, sl, store, config).CreateUser(c)
 }
 
-func HandlerUserUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerUserUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -576,7 +577,7 @@ func HandlerUserUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 	return NewEnhancedUserHandler(db, sl, store, config).UpdateUser(c)
 }
 
-func HandlerUserDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerUserDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -586,7 +587,7 @@ func HandlerUserDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 }
 
 // Facility Management APIs
-func HandlerFacilityListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerFacilityListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -600,7 +601,7 @@ func HandlerFacilityListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *se
 	return c.JSON(fiber.Map{"facilities": facilities})
 }
 
-func HandlerGetFacilityAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerGetFacilityAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -609,7 +610,7 @@ func HandlerGetFacilityAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 	return c.JSON(fiber.Map{"facility": fiber.Map{"id": c.Params("id"), "name": "Facility Name"}})
 }
 
-func HandlerFacilitySubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerFacilitySubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -620,7 +621,7 @@ func HandlerFacilitySubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 	return c.Status(201).JSON(fiber.Map{"message": "Facility created successfully"})
 }
 
-func HandlerFacilityUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerFacilityUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -632,7 +633,7 @@ func HandlerFacilityUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 	return c.JSON(fiber.Map{"message": "Facility updated successfully"})
 }
 
-func HandlerFacilityDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerFacilityDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -643,11 +644,11 @@ func HandlerFacilityDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 }
 
 // Outbreak Management APIs
-func HandlerOutbreakListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerOutbreakListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerGetOutbreaksAPI(c, db, sl, store)
 }
 
-func HandlerGetOutbreakAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerGetOutbreakAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	uid, ok := middleware.GetCurrentUserID(c)
 	if !ok {
 		uid = GetCurrentUser(c, store)
@@ -677,7 +678,7 @@ func HandlerGetOutbreakAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 	return c.JSON(fiber.Map{"outbreak": o})
 }
 
-func HandlerOutbreakSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerOutbreakSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	uid, ok := middleware.GetCurrentUserID(c)
 	if !ok {
 		uid = GetCurrentUser(c, store)
@@ -735,7 +736,7 @@ func HandlerOutbreakSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 	return c.Status(201).JSON(fiber.Map{"message": "Outbreak created", "outbreak_id": o.ID})
 }
 
-func HandlerOutbreakUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerOutbreakUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	uid, ok := middleware.GetCurrentUserID(c)
 	if !ok {
 		uid = GetCurrentUser(c, store)
@@ -811,7 +812,7 @@ func HandlerOutbreakUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 	return c.JSON(fiber.Map{"message": "Outbreak updated"})
 }
 
-func HandlerOutbreakDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerOutbreakDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	uid, ok := middleware.GetCurrentUserID(c)
 	if !ok {
 		uid = GetCurrentUser(c, store)
@@ -844,7 +845,7 @@ func HandlerOutbreakDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 	return c.JSON(fiber.Map{"message": "Outbreak deleted"})
 }
 
-func HandlerOutbreakCloseAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerOutbreakCloseAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	uid, ok := middleware.GetCurrentUserID(c)
 	if !ok {
 		uid = GetCurrentUser(c, store)
@@ -880,7 +881,7 @@ func HandlerOutbreakCloseAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *s
 	return c.JSON(fiber.Map{"message": "Outbreak closed"})
 }
 
-func HandlerOutbreakSelectAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerOutbreakSelectAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	uid, ok := middleware.GetCurrentUserID(c)
 	if !ok {
 		uid = GetCurrentUser(c, store)
@@ -903,7 +904,7 @@ func HandlerOutbreakSelectAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 }
 
 // Case Management APIs
-func HandlerCasesListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerCasesListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -917,7 +918,7 @@ func HandlerCasesListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 	return c.JSON(fiber.Map{"cases": cases})
 }
 
-func HandlerGetCaseAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerGetCaseAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -926,7 +927,7 @@ func HandlerGetCaseAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session
 	return c.JSON(fiber.Map{"case": fiber.Map{"id": c.Params("id"), "patient_name": "Patient Name"}})
 }
 
-func HandlerCasesSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerCasesSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -979,7 +980,7 @@ func HandlerCasesSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 	})
 }
 
-func HandlerCaseUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerCaseUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -991,7 +992,7 @@ func HandlerCaseUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 	return c.JSON(fiber.Map{"message": "Case updated successfully"})
 }
 
-func HandlerCaseDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerCaseDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1002,7 +1003,7 @@ func HandlerCaseDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 }
 
 // Case Encounter APIs
-func HandlerCaseEncounterListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerCaseEncounterListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1017,7 +1018,7 @@ func HandlerCaseEncounterListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, stor
 	return c.JSON(fiber.Map{"encounters": encounters})
 }
 
-func HandlerGetCaseEncounterAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerGetCaseEncounterAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1026,7 +1027,7 @@ func HandlerGetCaseEncounterAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 	return c.JSON(fiber.Map{"encounter": fiber.Map{"id": c.Params("encounter_id"), "case_id": c.Params("id")}})
 }
 
-func HandlerCaseEncounterSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerCaseEncounterSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1037,7 +1038,7 @@ func HandlerCaseEncounterSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, st
 	return c.Status(201).JSON(fiber.Map{"message": "Encounter created successfully"})
 }
 
-func HandlerCaseEncounterUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerCaseEncounterUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1050,7 +1051,7 @@ func HandlerCaseEncounterUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, st
 	return c.JSON(fiber.Map{"message": "Encounter updated successfully"})
 }
 
-func HandlerCaseEncounterDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerCaseEncounterDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1062,7 +1063,7 @@ func HandlerCaseEncounterDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, st
 }
 
 // HandlerGetCIFAPI returns CIF data for a VHF case by ID
-func HandlerGetCIFAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerGetCIFAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1106,7 +1107,7 @@ func HandlerGetCIFAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 }
 
 // HandlerGetCIFByCaseCodeAPI returns CIF data using case_code query param
-func HandlerGetCIFByCaseCodeAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerGetCIFByCaseCodeAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1144,7 +1145,7 @@ func HandlerGetCIFByCaseCodeAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 
 // Disease-specific CIF endpoints
 // VHF
-func HandlerVhfCIFByID(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVhfCIFByID(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1172,7 +1173,7 @@ func HandlerVhfCIFByID(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session
 	})
 }
 
-func HandlerVhfCIFByCaseCode(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerVhfCIFByCaseCode(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1201,7 +1202,7 @@ func HandlerVhfCIFByCaseCode(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *s
 }
 
 // Measles (placeholder)
-func HandlerMeaslesCIFByID(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMeaslesCIFByID(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1258,7 +1259,7 @@ func HandlerMeaslesCIFByID(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 		"specimens":        spec,
 	})
 }
-func HandlerMeaslesCIFByCaseCode(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMeaslesCIFByCaseCode(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1324,7 +1325,7 @@ func HandlerMeaslesCIFByCaseCode(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, stor
 }
 
 // Polio (placeholder)
-func HandlerPolioCIFByID(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerPolioCIFByID(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1415,7 +1416,7 @@ func HandlerPolioCIFByID(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 		"investigator":     investigator,
 	})
 }
-func HandlerPolioCIFByCaseCode(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerPolioCIFByCaseCode(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1509,7 +1510,7 @@ func HandlerPolioCIFByCaseCode(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store 
 }
 
 // Mpox (placeholder)
-func HandlerMpoxCIFByID(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMpoxCIFByID(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1570,7 +1571,7 @@ func HandlerMpoxCIFByID(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 		"laboratory":     lab,
 	})
 }
-func HandlerMpoxCIFByCaseCode(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMpoxCIFByCaseCode(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1634,7 +1635,7 @@ func HandlerMpoxCIFByCaseCode(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 }
 
 // Discharge Management APIs
-func GetDischargeAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func GetDischargeAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1648,7 +1649,7 @@ func GetDischargeAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.S
 	return c.JSON(fiber.Map{"discharges": discharges})
 }
 
-func GetDischargeByIdAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func GetDischargeByIdAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1657,7 +1658,7 @@ func GetDischargeByIdAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 	return c.JSON(fiber.Map{"discharge": fiber.Map{"id": c.Params("id"), "patient_name": "Patient Name"}})
 }
 
-func DischargeAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func DischargeAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1668,7 +1669,7 @@ func DischargeAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Stor
 	return c.Status(201).JSON(fiber.Map{"message": "Discharge created successfully"})
 }
 
-func CertificateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func CertificateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1678,7 +1679,7 @@ func CertificateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 }
 
 // Laboratory Management APIs
-func HandlerLabListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerLabListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1692,7 +1693,7 @@ func HandlerLabListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session
 	return c.JSON(fiber.Map{"labs": labs})
 }
 
-func HandlerGetLabAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerGetLabAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1701,7 +1702,7 @@ func HandlerGetLabAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 	return c.JSON(fiber.Map{"lab": fiber.Map{"id": c.Params("id"), "test_type": "Blood Test"}})
 }
 
-func HandlerLabSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerLabSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1712,7 +1713,7 @@ func HandlerLabSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 	return c.Status(201).JSON(fiber.Map{"message": "Lab result submitted successfully"})
 }
 
-func HandlerLabUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerLabUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1724,7 +1725,7 @@ func HandlerLabUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 	return c.JSON(fiber.Map{"message": "Lab result updated successfully"})
 }
 
-func HandlerLabDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerLabDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1735,7 +1736,7 @@ func HandlerLabDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 }
 
 // Symptoms Management APIs
-func HandlerSymptomsListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerSymptomsListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1749,7 +1750,7 @@ func HandlerSymptomsListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *se
 	return c.JSON(fiber.Map{"symptoms": symptoms})
 }
 
-func HandlerGetSymptomsAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerGetSymptomsAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1758,7 +1759,7 @@ func HandlerGetSymptomsAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 	return c.JSON(fiber.Map{"symptoms": fiber.Map{"id": c.Params("id"), "symptom": "Fever"}})
 }
 
-func HandlerSymptomsSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerSymptomsSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1769,7 +1770,7 @@ func HandlerSymptomsSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 	return c.Status(201).JSON(fiber.Map{"message": "Symptoms submitted successfully"})
 }
 
-func HandlerSymptomsUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerSymptomsUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1781,7 +1782,7 @@ func HandlerSymptomsUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 	return c.JSON(fiber.Map{"message": "Symptoms updated successfully"})
 }
 
-func HandlerSymptomsDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerSymptomsDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1792,7 +1793,7 @@ func HandlerSymptomsDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 }
 
 // Morbidity Management APIs
-func HandlerMorbidityListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMorbidityListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1806,7 +1807,7 @@ func HandlerMorbidityListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *s
 	return c.JSON(fiber.Map{"morbidity": morbidity})
 }
 
-func HandlerGetMorbidityAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerGetMorbidityAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1815,7 +1816,7 @@ func HandlerGetMorbidityAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *se
 	return c.JSON(fiber.Map{"morbidity": fiber.Map{"id": c.Params("id"), "condition": "Condition"}})
 }
 
-func HandlerMorbiditySubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMorbiditySubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1826,7 +1827,7 @@ func HandlerMorbiditySubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store 
 	return c.Status(201).JSON(fiber.Map{"message": "Morbidity submitted successfully"})
 }
 
-func HandlerMorbidityUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMorbidityUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1838,7 +1839,7 @@ func HandlerMorbidityUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store 
 	return c.JSON(fiber.Map{"message": "Morbidity updated successfully"})
 }
 
-func HandlerMorbidityDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMorbidityDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1849,7 +1850,7 @@ func HandlerMorbidityDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store 
 }
 
 // Rush Management APIs
-func HandlerRushListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerRushListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1863,7 +1864,7 @@ func HandlerRushListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 	return c.JSON(fiber.Map{"rush": rush})
 }
 
-func HandlerGetRushAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerGetRushAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1872,7 +1873,7 @@ func HandlerGetRushAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session
 	return c.JSON(fiber.Map{"rush": fiber.Map{"id": c.Params("id"), "rush_type": "Emergency"}})
 }
 
-func HandlerRushSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerRushSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1883,7 +1884,7 @@ func HandlerRushSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 	return c.Status(201).JSON(fiber.Map{"message": "Rush submitted successfully"})
 }
 
-func HandlerRushUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerRushUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1895,7 +1896,7 @@ func HandlerRushUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 	return c.JSON(fiber.Map{"message": "Rush updated successfully"})
 }
 
-func HandlerRushDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerRushDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1906,16 +1907,16 @@ func HandlerRushDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 }
 
 // Surveillance APIs
-func CommunityMortalitySurveillanceAPI(c *fiber.Ctx, db *sql.DB, store *session.Store, config Config) error {
+func CommunityMortalitySurveillanceAPI(c *fiber.Ctx, db *sql.DB, store *session.Store, config config.Config) error {
 	return c.JSON(fiber.Map{"message": "Community mortality surveillance data"})
 }
 
-func FacilityMortalitySurveillanceAPI(c *fiber.Ctx, db *sql.DB, store *session.Store, config Config) error {
+func FacilityMortalitySurveillanceAPI(c *fiber.Ctx, db *sql.DB, store *session.Store, config config.Config) error {
 	return c.JSON(fiber.Map{"message": "Facility mortality surveillance data"})
 }
 
 // Mpox APIs
-func HandlerMpoxListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMpoxListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1929,7 +1930,7 @@ func HandlerMpoxListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 	return c.JSON(fiber.Map{"mpox_patients": mpoxPatients})
 }
 
-func HandlerGetMpoxAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerGetMpoxAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1946,7 +1947,7 @@ func HandlerMpoxCIFSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 	return c.Status(201).JSON(fiber.Map{"message": "Mpox CIF submitted successfully"})
 }
 
-func HandlerMpoxUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMpoxUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1958,7 +1959,7 @@ func HandlerMpoxUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 	return c.JSON(fiber.Map{"message": "Mpox patient updated successfully"})
 }
 
-func HandlerMpoxDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMpoxDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1968,7 +1969,7 @@ func HandlerMpoxDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 	return c.JSON(fiber.Map{"message": "Mpox patient deleted successfully"})
 }
 
-func HandlerMpoxAdmissionFormAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMpoxAdmissionFormAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1977,7 +1978,7 @@ func HandlerMpoxAdmissionFormAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, stor
 	return c.JSON(fiber.Map{"admission_form": fiber.Map{"patient_id": c.Params("id")}})
 }
 
-func HandlerMpoxAdmissionSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMpoxAdmissionSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1989,7 +1990,7 @@ func HandlerMpoxAdmissionSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, st
 	return c.JSON(fiber.Map{"message": "Mpox admission submitted successfully"})
 }
 
-func HandlerMpoxDailyFollowUpFormAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMpoxDailyFollowUpFormAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -1998,7 +1999,7 @@ func HandlerMpoxDailyFollowUpFormAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, 
 	return c.JSON(fiber.Map{"daily_followup_form": fiber.Map{"patient_id": c.Params("id")}})
 }
 
-func HandlerMpoxDailyFollowUpSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMpoxDailyFollowUpSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -2011,7 +2012,7 @@ func HandlerMpoxDailyFollowUpSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger
 }
 
 // Measles APIs
-func HandlerMeaslesListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMeaslesListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -2025,7 +2026,7 @@ func HandlerMeaslesListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 	return c.JSON(fiber.Map{"measles_patients": measlesPatients})
 }
 
-func HandlerGetMeaslesAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerGetMeaslesAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -2042,7 +2043,7 @@ func HandlerMeaslesCIFAPI(c *fiber.Ctx, db *sql.DB, store *session.Store) error 
 	return c.Status(201).JSON(fiber.Map{"message": "Measles CIF submitted successfully"})
 }
 
-func HandlerMeaslesUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMeaslesUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -2054,7 +2055,7 @@ func HandlerMeaslesUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *s
 	return c.JSON(fiber.Map{"message": "Measles patient updated successfully"})
 }
 
-func HandlerMeaslesDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMeaslesDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -2065,7 +2066,7 @@ func HandlerMeaslesDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *s
 }
 
 // Polio APIs
-func HandlerPolioListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerPolioListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -2079,7 +2080,7 @@ func HandlerPolioListAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 	return c.JSON(fiber.Map{"polio_patients": polioPatients})
 }
 
-func HandlerGetPolioAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerGetPolioAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -2088,7 +2089,7 @@ func HandlerGetPolioAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 	return c.JSON(fiber.Map{"polio_patient": fiber.Map{"id": c.Params("id"), "patient_name": "Patient Name"}})
 }
 
-func HandlerPolioCIFSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerPolioCIFSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	var payload APIPolioCIFRequest
 	if err := c.BodyParser(&payload); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON body"})
@@ -2096,7 +2097,7 @@ func HandlerPolioCIFSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 	return c.Status(201).JSON(fiber.Map{"message": "Polio CIF submitted successfully"})
 }
 
-func HandlerPolioUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerPolioUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -2108,7 +2109,7 @@ func HandlerPolioUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 	return c.JSON(fiber.Map{"message": "Polio patient updated successfully"})
 }
 
-func HandlerPolioDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerPolioDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -2119,7 +2120,7 @@ func HandlerPolioDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 }
 
 // Patient Roles APIs
-func HandlerPatientRolesAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerPatientRolesAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -2133,7 +2134,7 @@ func HandlerPatientRolesAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *se
 	return c.JSON(fiber.Map{"patient_roles": roles})
 }
 
-func HandlerGetPatientRoleAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerGetPatientRoleAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -2142,7 +2143,7 @@ func HandlerGetPatientRoleAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 	return c.JSON(fiber.Map{"patient_role": fiber.Map{"id": c.Params("id"), "name": "Role Name"}})
 }
 
-func HandlerPatientRoleSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerPatientRoleSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -2153,7 +2154,7 @@ func HandlerPatientRoleSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, stor
 	return c.Status(201).JSON(fiber.Map{"message": "Patient role created successfully"})
 }
 
-func HandlerPatientRoleUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerPatientRoleUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -2165,7 +2166,7 @@ func HandlerPatientRoleUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, stor
 	return c.JSON(fiber.Map{"message": "Patient role updated successfully"})
 }
 
-func HandlerPatientRoleDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerPatientRoleDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -2176,7 +2177,7 @@ func HandlerPatientRoleDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, stor
 }
 
 // Alerts APIs
-func HandlerGetAlertAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerGetAlertAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -2185,7 +2186,7 @@ func HandlerGetAlertAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 	return c.JSON(fiber.Map{"alert": fiber.Map{"id": c.Params("id"), "message": "Alert message"}})
 }
 
-func HandlerAlertSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerAlertSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -2196,7 +2197,7 @@ func HandlerAlertSubmitAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 	return c.Status(201).JSON(fiber.Map{"message": "Alert created successfully"})
 }
 
-func HandlerAlertUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerAlertUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -2208,7 +2209,7 @@ func HandlerAlertUpdateAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 	return c.JSON(fiber.Map{"message": "Alert updated successfully"})
 }
 
-func HandlerAlertDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerAlertDeleteAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userRole := GetUser(c, sl, store)
 	if userRole == "" || userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})

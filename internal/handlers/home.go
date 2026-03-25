@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"case/internal/config"
 	"case/internal/models"
 	"database/sql"
 	"fmt"
@@ -15,7 +16,7 @@ import (
 )
 
 // HandlerHome handles the home page
-func HandlerHome(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerHome(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	// Get the current user
 	userID, username := GetUser(c, sl, store)
 
@@ -301,7 +302,7 @@ func hasCaseRole(c *fiber.Ctx, db *sql.DB, userID int) (bool, error) {
 	return count > 0, nil
 }
 
-func HandlerLoginForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerLoginForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 
 	sess, err := store.Get(c)
 
@@ -407,7 +408,7 @@ func loginRedirectPath(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, userID int, pr
 	}
 }
 
-func HandlerLoginSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerLoginSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	wantJSON := wantsLoginJSONResponse(c)
 
 	sess, err := store.Get(c)
@@ -537,7 +538,7 @@ func HandlerLoginSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 	return nil
 }
 
-func HandlerLoginOut(c *fiber.Ctx, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerLoginOut(c *fiber.Ctx, sl *slog.Logger, store *session.Store, config config.Config) error {
 
 	sess, err := store.Get(c)
 	if err != nil {
@@ -551,7 +552,7 @@ func HandlerLoginOut(c *fiber.Ctx, sl *slog.Logger, store *session.Store, config
 	return c.Redirect("/login")
 }
 
-func HandlerLoginForgot(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerLoginForgot(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 
 	sess, err := store.Get(c)
 	if err == nil {
@@ -567,7 +568,7 @@ func HandlerLoginForgot(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 	return GenerateHTML(c, db, data, "forgot")
 }
 
-func HandlerHelp(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerHelp(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	data := NewTemplateData(c, store)
 	data.Form = map[string]string{"Title": "Help Page"}
 	return GenerateHTML(c, db, data, "help")

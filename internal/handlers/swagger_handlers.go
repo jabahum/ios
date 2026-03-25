@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log/slog"
 
+	"case/internal/config"
 	"case/internal/services"
 
 	"github.com/gofiber/fiber/v2"
@@ -22,7 +23,7 @@ import (
 // @Failure 400 {object} map[string]string "Missing username or password"
 // @Failure 401 {object} map[string]string "Invalid credentials"
 // @Router /login [post]
-func SwaggerLogin(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerLogin(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerLoginSubmit(c, db, sl, store, config)
 }
 
@@ -32,7 +33,7 @@ func SwaggerLogin(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Stor
 // @Tags Authentication
 // @Success 302 "Redirect to login"
 // @Router /logout [get]
-func SwaggerLogout(c *fiber.Ctx, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerLogout(c *fiber.Ctx, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerLoginOut(c, sl, store, config)
 }
 
@@ -126,7 +127,7 @@ func SwaggerGetOutbreaks(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /api/vhf/patients [get]
-func SwaggerGetVHFCases(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerGetVHFCases(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerVHFListAPI(c, db, sl, store, config)
 }
 
@@ -142,7 +143,7 @@ func SwaggerGetVHFCases(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 // @Failure 404 {object} map[string]string "Case not found"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /api/vhf/patients/{id} [get]
-func SwaggerGetVHFCase(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerGetVHFCase(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerVHFViewAPI(c, db, sl, store, config)
 }
 
@@ -159,7 +160,7 @@ func SwaggerGetVHFCase(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /api/vhf/patients [post]
-func SwaggerCreateVHFCase(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config, sms *services.SMSService) error {
+func SwaggerCreateVHFCase(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config, sms *services.SMSService) error {
 	return HandlerVHFPatientSubmitAPI(c, db, sl, store, config, sms)
 }
 
@@ -177,7 +178,7 @@ func SwaggerCreateVHFCase(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /api/vhf/patients/{id} [put]
-func SwaggerUpdateVHFCase(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerUpdateVHFCase(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerVHFUpdateAPI(c, db, sl, store, config)
 }
 
@@ -193,7 +194,7 @@ func SwaggerUpdateVHFCase(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 // @Failure 404 {object} map[string]string "Not found"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /api/vhf/patients/{id} [delete]
-func SwaggerDeleteVHFCase(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerDeleteVHFCase(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerVHFDeleteAPI(c, db, sl, store, config)
 }
 
@@ -214,7 +215,7 @@ func SwaggerDeleteVHFCase(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 // @Failure 403 {object} map[string]string "Forbidden"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /api/users [get]
-func SwaggerGetUsers(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerGetUsers(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerUserListAPI(c, db, sl, store, config)
 }
 
@@ -229,7 +230,7 @@ func SwaggerGetUsers(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.S
 // @Failure 403 {object} map[string]string "Forbidden"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /api/employees [get]
-func SwaggerGetEmployees(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerGetEmployees(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerEmployeeListAPI(c, db, sl, store, config)
 }
 
@@ -274,7 +275,7 @@ func SwaggerGetStockLevels(c *fiber.Ctx) error {
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /api/alerts [get]
-func SwaggerGetAlerts(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerGetAlerts(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerAlertsAPI(c, db, sl, store, config)
 }
 
@@ -361,7 +362,7 @@ func SwaggerGetResourceManagementPillars(c *fiber.Ctx, db *sql.DB, store *sessio
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /api/mpox/patients [get]
-func SwaggerGetMpoxCases(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerGetMpoxCases(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerMpoxListAPI(c, db, sl, store, config)
 }
 
@@ -376,7 +377,7 @@ func SwaggerGetMpoxCases(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /api/measles/patients [get]
-func SwaggerGetMeaslesCases(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerGetMeaslesCases(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerMeaslesListAPI(c, db, sl, store, config)
 }
 
@@ -391,7 +392,7 @@ func SwaggerGetMeaslesCases(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *se
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /api/polio/patients [get]
-func SwaggerGetPolioCases(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerGetPolioCases(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerPolioListAPI(c, db, sl, store, config)
 }
 
@@ -409,7 +410,7 @@ func SwaggerGetPolioCases(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 // @Failure 404 {object} map[string]string "Not found"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /api/vhf/cif/{id} [get]
-func SwaggerGetVHFCIFByID(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerGetVHFCIFByID(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerVhfCIFByID(c, db, sl, store, config)
 }
 
@@ -425,7 +426,7 @@ func SwaggerGetVHFCIFByID(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 404 {object} map[string]string "Not found"
 // @Router /api/vhf/cif [get]
-func SwaggerGetVHFCIFByCaseCode(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerGetVHFCIFByCaseCode(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerVhfCIFByCaseCode(c, db, sl, store, config)
 }
 
@@ -438,7 +439,7 @@ func SwaggerGetVHFCIFByCaseCode(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 // @Success 200 {object} map[string]interface{} "Clinical signs"
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Router /api/vhf/patients/{id}/clinical-signs [get]
-func SwaggerGetVHFClinicalSigns(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerGetVHFClinicalSigns(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerVHFClinicalSignsAPI(c, db, sl, store, config)
 }
 
@@ -453,7 +454,7 @@ func SwaggerGetVHFClinicalSigns(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 // @Success 200 {object} map[string]interface{} "Saved"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Router /api/vhf/patients/{id}/clinical-signs [post]
-func SwaggerSaveVHFClinicalSigns(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerSaveVHFClinicalSigns(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerVHFClinicalSignsSubmitAPI(c, db, sl, store, config)
 }
 
@@ -465,7 +466,7 @@ func SwaggerSaveVHFClinicalSigns(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, stor
 // @Param id path int true "Patient ID"
 // @Success 200 {object} map[string]interface{} "Hospitalization"
 // @Router /api/vhf/patients/{id}/hospitalization [get]
-func SwaggerGetVHFHospitalization(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerGetVHFHospitalization(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerVHFHospitalizationAPI(c, db, sl, store, config)
 }
 
@@ -479,7 +480,7 @@ func SwaggerGetVHFHospitalization(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, sto
 // @Param body body APIVHFHospitalizationRequest true "Hospitalization payload"
 // @Success 200 {object} map[string]interface{} "Saved"
 // @Router /api/vhf/patients/{id}/hospitalization [post]
-func SwaggerSaveVHFHospitalization(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerSaveVHFHospitalization(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerVHFHospitalizationSubmitAPI(c, db, sl, store, config)
 }
 
@@ -491,7 +492,7 @@ func SwaggerSaveVHFHospitalization(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, st
 // @Param id path int true "Patient ID"
 // @Success 200 {object} map[string]interface{} "Risk factors"
 // @Router /api/vhf/patients/{id}/risk-factors [get]
-func SwaggerGetVHFRiskFactors(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerGetVHFRiskFactors(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerVHFRiskFactorsAPI(c, db, sl, store, config)
 }
 
@@ -505,7 +506,7 @@ func SwaggerGetVHFRiskFactors(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 // @Param body body APIVHFRiskFactorsRequest true "Risk factors payload"
 // @Success 200 {object} map[string]interface{} "Saved"
 // @Router /api/vhf/patients/{id}/risk-factors [post]
-func SwaggerSaveVHFRiskFactors(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerSaveVHFRiskFactors(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerVHFRiskFactorsSubmitAPI(c, db, sl, store, config)
 }
 
@@ -517,7 +518,7 @@ func SwaggerSaveVHFRiskFactors(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store 
 // @Param id path int true "Patient ID"
 // @Success 200 {object} map[string]interface{} "Laboratory"
 // @Router /api/vhf/patients/{id}/laboratory [get]
-func SwaggerGetVHFLaboratorySection(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerGetVHFLaboratorySection(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerVHFLaboratoryAPI(c, db, sl, store, config)
 }
 
@@ -531,7 +532,7 @@ func SwaggerGetVHFLaboratorySection(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, s
 // @Param body body APIVHFLaboratoryRequest true "Laboratory payload"
 // @Success 200 {object} map[string]interface{} "Saved"
 // @Router /api/vhf/patients/{id}/laboratory [post]
-func SwaggerSaveVHFLaboratorySection(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config, sms *services.SMSService) error {
+func SwaggerSaveVHFLaboratorySection(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config, sms *services.SMSService) error {
 	return HandlerVHFLaboratorySubmitAPI(c, db, sl, store, config, sms)
 }
 
@@ -543,7 +544,7 @@ func SwaggerSaveVHFLaboratorySection(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, 
 // @Param id path int true "Patient ID"
 // @Success 200 {object} map[string]interface{} "Investigator"
 // @Router /api/vhf/patients/{id}/investigator [get]
-func SwaggerGetVHFInvestigator(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerGetVHFInvestigator(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerVHFInvestigatorAPI(c, db, sl, store, config)
 }
 
@@ -557,7 +558,7 @@ func SwaggerGetVHFInvestigator(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store 
 // @Param body body APIVHFInvestigatorRequest true "Investigator payload"
 // @Success 200 {object} map[string]interface{} "Saved"
 // @Router /api/vhf/patients/{id}/investigator [post]
-func SwaggerSaveVHFInvestigator(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerSaveVHFInvestigator(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerVHFInvestigatorSubmitAPI(c, db, sl, store, config)
 }
 
@@ -569,7 +570,7 @@ func SwaggerSaveVHFInvestigator(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 // @Param id path int true "Case or patient ID"
 // @Success 200 {object} map[string]interface{} "Lab form"
 // @Router /api/vhf/lab/{id} [get]
-func SwaggerGetVHFLabForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerGetVHFLabForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerVHFLabFormAPI(c, db, sl, store, config)
 }
 
@@ -583,7 +584,7 @@ func SwaggerGetVHFLabForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 // @Param body body APIVHFLaboratoryRequest true "Lab form payload"
 // @Success 200 {object} map[string]interface{} "Saved"
 // @Router /api/vhf/lab/{id} [post]
-func SwaggerSaveVHFLabForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerSaveVHFLabForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerVHFLabSaveAPI(c, db, sl, store, config)
 }
 
@@ -631,7 +632,7 @@ func SwaggerCreateMeaslesCIFCase(c *fiber.Ctx, db *sql.DB, store *session.Store)
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Router /api/polio/patients [post]
-func SwaggerCreatePolioCIFCase(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerCreatePolioCIFCase(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerPolioCIFSubmitAPI(c, db, sl, store, config)
 }
 
@@ -645,7 +646,7 @@ func SwaggerCreatePolioCIFCase(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store 
 // @Param id path int true "User ID"
 // @Success 200 {object} map[string]interface{} "User"
 // @Router /api/users/{id} [get]
-func SwaggerGetUser(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerGetUser(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerGetUserAPI(c, db, sl, store, config)
 }
 
@@ -658,7 +659,7 @@ func SwaggerGetUser(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 // @Param request body APIUserCreateRequest true "User + optional role_ids"
 // @Success 201 {object} map[string]interface{} "Created"
 // @Router /api/users [post]
-func SwaggerCreateUser(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerCreateUser(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerUserSubmitAPI(c, db, sl, store, config)
 }
 
@@ -672,7 +673,7 @@ func SwaggerCreateUser(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session
 // @Param request body APIUserUpdateRequest true "Fields to update"
 // @Success 200 {object} map[string]interface{} "Updated"
 // @Router /api/users/{id} [put]
-func SwaggerUpdateUser(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerUpdateUser(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerUserUpdateAPI(c, db, sl, store, config)
 }
 
@@ -684,7 +685,7 @@ func SwaggerUpdateUser(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session
 // @Param id path int true "User ID"
 // @Success 200 {object} map[string]interface{} "Deleted"
 // @Router /api/users/{id} [delete]
-func SwaggerDeleteUser(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerDeleteUser(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerUserDeleteAPI(c, db, sl, store, config)
 }
 
@@ -711,7 +712,7 @@ func SwaggerGetUserPermissionsDoc(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) err
 // @Param body body object true "user_id, role_id"
 // @Success 200 {object} map[string]interface{} "OK"
 // @Router /api/users/roles [post]
-func SwaggerAssignUserRoleApp(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerAssignUserRoleApp(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerAssignUserRole(c, db, sl, store, config)
 }
 
@@ -728,7 +729,7 @@ func SwaggerAssignUserRoleApp(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 // @Failure 403 {object} map[string]string "Forbidden"
 // @Failure 404 {object} map[string]string "Not found"
 // @Router /api/employees/{id} [get]
-func SwaggerGetEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerGetEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerGetEmployeeAPI(c, db, sl, store, config)
 }
 
@@ -743,7 +744,7 @@ func SwaggerGetEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 // @Success 201 {object} map[string]interface{} "Created"
 // @Failure 403 {object} map[string]string "Forbidden"
 // @Router /api/employees [post]
-func SwaggerCreateEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerCreateEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerEmployeeSubmitAPI(c, db, sl, store, config)
 }
 
@@ -759,7 +760,7 @@ func SwaggerCreateEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 // @Success 200 {object} map[string]interface{} "Updated"
 // @Failure 403 {object} map[string]string "Forbidden"
 // @Router /api/employees/{id} [put]
-func SwaggerUpdateEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerUpdateEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerEmployeeUpdateAPI(c, db, sl, store, config)
 }
 
@@ -773,7 +774,7 @@ func SwaggerUpdateEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 // @Success 200 {object} map[string]interface{} "Deleted"
 // @Failure 403 {object} map[string]string "Forbidden"
 // @Router /api/employees/{id} [delete]
-func SwaggerDeleteEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerDeleteEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerDeleteEmployeeAPI(c, db, sl, store, config)
 }
 
@@ -878,7 +879,7 @@ func SwaggerGetRBACMigrationStatus(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) er
 // @Param body body object true "Role"
 // @Success 201 {object} map[string]interface{} "Created"
 // @Router /api/rbac/roles [post]
-func SwaggerCreateRBACRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerCreateRBACRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerCreateRole(c, db, sl, store, config)
 }
 
@@ -904,7 +905,7 @@ func SwaggerGetRBACRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 // @Param body body object true "Role"
 // @Success 200 {object} map[string]interface{} "Updated"
 // @Router /api/rbac/roles/{id} [put]
-func SwaggerUpdateRBACRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerUpdateRBACRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerUpdateRole(c, db, sl, store, config)
 }
 
@@ -916,7 +917,7 @@ func SwaggerUpdateRBACRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 // @Param id path int true "Role ID"
 // @Success 200 {object} map[string]interface{} "Deleted"
 // @Router /api/rbac/roles/{id} [delete]
-func SwaggerDeleteRBACRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerDeleteRBACRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerDeleteRole(c, db, sl, store, config)
 }
 
@@ -929,7 +930,7 @@ func SwaggerDeleteRBACRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 // @Param body body object true "Permission"
 // @Success 201 {object} map[string]interface{} "Created"
 // @Router /api/rbac/permissions [post]
-func SwaggerCreateRBACPermission(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerCreateRBACPermission(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerCreatePermission(c, db, sl, store, config)
 }
 
@@ -955,7 +956,7 @@ func SwaggerGetRBACPermission(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 // @Param body body object true "Permission"
 // @Success 200 {object} map[string]interface{} "Updated"
 // @Router /api/rbac/permissions/{id} [put]
-func SwaggerUpdateRBACPermission(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerUpdateRBACPermission(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerUpdatePermission(c, db, sl, store, config)
 }
 
@@ -967,7 +968,7 @@ func SwaggerUpdateRBACPermission(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, stor
 // @Param id path int true "Permission ID"
 // @Success 200 {object} map[string]interface{} "Deleted"
 // @Router /api/rbac/permissions/{id} [delete]
-func SwaggerDeleteRBACPermission(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerDeleteRBACPermission(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerDeletePermission(c, db, sl, store, config)
 }
 
@@ -1005,7 +1006,7 @@ func SwaggerGetRBACUserRoles(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
 // @Param body body object true "role_ids"
 // @Success 200 {object} map[string]interface{} "OK"
 // @Router /api/rbac/users/{user_id}/roles [put]
-func SwaggerUpdateRBACUserRoles(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerUpdateRBACUserRoles(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerUpdateUserRoles(c, db, sl, store, config)
 }
 
@@ -1018,7 +1019,7 @@ func SwaggerUpdateRBACUserRoles(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 // @Param body body object true "Bulk assign payload"
 // @Success 200 {object} map[string]interface{} "OK"
 // @Router /api/rbac/bulk-assign-roles [post]
-func SwaggerBulkAssignRBACRoles(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerBulkAssignRBACRoles(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerBulkAssignRoles(c, db, sl, store, config)
 }
 
@@ -1031,7 +1032,7 @@ func SwaggerBulkAssignRBACRoles(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store
 // @Param body body object true "user_id, role_id"
 // @Success 200 {object} map[string]interface{} "OK"
 // @Router /api/rbac/user-roles [post]
-func SwaggerAssignRBACUserRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerAssignRBACUserRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerAssignUserRole(c, db, sl, store, config)
 }
 
@@ -1044,7 +1045,7 @@ func SwaggerAssignRBACUserRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store 
 // @Param role_id path int true "Role ID"
 // @Success 200 {object} map[string]interface{} "OK"
 // @Router /api/rbac/user-roles/{user_id}/{role_id} [delete]
-func SwaggerRemoveRBACUserRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerRemoveRBACUserRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerRemoveUserRole(c, db, sl, store, config)
 }
 

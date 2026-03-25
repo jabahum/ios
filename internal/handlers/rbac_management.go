@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"case/internal/config"
 	"case/internal/middleware"
 	"case/internal/models"
 	"database/sql"
@@ -19,11 +20,11 @@ type RBACManagementHandler struct {
 	db     *sql.DB
 	logger *slog.Logger
 	store  *session.Store
-	config Config
+	config config.Config
 }
 
 // NewRBACManagementHandler creates a new RBAC management handler
-func NewRBACManagementHandler(db *sql.DB, logger *slog.Logger, store *session.Store, config Config) *RBACManagementHandler {
+func NewRBACManagementHandler(db *sql.DB, logger *slog.Logger, store *session.Store, config config.Config) *RBACManagementHandler {
 	return &RBACManagementHandler{
 		db:     db,
 		logger: logger,
@@ -1207,103 +1208,103 @@ func (h *RBACManagementHandler) CreateDefaultAdminUser(c *fiber.Ctx) error {
 
 // HandlerGetRoles handles getting all roles
 func HandlerGetRoles(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
-	handler := NewRBACManagementHandler(db, sl, nil, Config{})
+	handler := NewRBACManagementHandler(db, sl, nil, config.Config{})
 	return handler.ListRoles(c)
 }
 
 // HandlerCreateRole handles creating a new role
-func HandlerCreateRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerCreateRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	handler := NewRBACManagementHandler(db, sl, store, config)
 	return handler.CreateRole(c)
 }
 
 // HandlerUpdateRole handles updating a role
-func HandlerUpdateRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerUpdateRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	handler := NewRBACManagementHandler(db, sl, store, config)
 	return handler.UpdateRole(c)
 }
 
 // HandlerDeleteRole handles deleting a role
-func HandlerDeleteRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerDeleteRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	handler := NewRBACManagementHandler(db, sl, store, config)
 	return handler.DeleteRole(c)
 }
 
 // HandlerGetPermissions handles getting all permissions
 func HandlerGetPermissions(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
-	handler := NewRBACManagementHandler(db, sl, nil, Config{})
+	handler := NewRBACManagementHandler(db, sl, nil, config.Config{})
 	return handler.ListPermissions(c)
 }
 
 // HandlerCreatePermission handles creating a new permission
-func HandlerCreatePermission(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerCreatePermission(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	handler := NewRBACManagementHandler(db, sl, store, config)
 	return handler.CreatePermission(c)
 }
 
 // HandlerUpdatePermission handles updating a permission
-func HandlerUpdatePermission(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerUpdatePermission(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	handler := NewRBACManagementHandler(db, sl, store, config)
 	return handler.UpdatePermission(c)
 }
 
 // HandlerDeletePermission handles deleting a permission
-func HandlerDeletePermission(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerDeletePermission(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	handler := NewRBACManagementHandler(db, sl, store, config)
 	return handler.DeletePermission(c)
 }
 
 // HandlerGetUserRoles handles getting user roles
 func HandlerGetUserRoles(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
-	handler := NewRBACManagementHandler(db, sl, nil, Config{})
+	handler := NewRBACManagementHandler(db, sl, nil, config.Config{})
 	return handler.GetUserRoles(c)
 }
 
 // HandlerAssignUserRole handles assigning a role to a user
-func HandlerAssignUserRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerAssignUserRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	handler := NewRBACManagementHandler(db, sl, store, config)
 	return handler.AssignUserRole(c)
 }
 
 // HandlerRemoveUserRole handles removing a role from a user
-func HandlerRemoveUserRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerRemoveUserRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	handler := NewRBACManagementHandler(db, sl, store, config)
 	return handler.RemoveUserRole(c)
 }
 
 // HandlerUpdateUserRoles handles updating all roles for a user
-func HandlerUpdateUserRoles(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerUpdateUserRoles(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	handler := NewRBACManagementHandler(db, sl, store, config)
 	return handler.UpdateUserRoles(c)
 }
 
 // HandlerBulkAssignRoles assigns multiple roles to multiple users at once.
-func HandlerBulkAssignRoles(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerBulkAssignRoles(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	handler := NewRBACManagementHandler(db, sl, store, config)
 	return handler.BulkAssignRoles(c)
 }
 
 // HandlerGetRolePermissions handles getting role permissions
 func HandlerGetRolePermissions(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
-	handler := NewRBACManagementHandler(db, sl, nil, Config{})
+	handler := NewRBACManagementHandler(db, sl, nil, config.Config{})
 	return handler.GetRolePermissions(c)
 }
 
 // HandlerAssignRolePermission handles assigning a permission to a role
-func HandlerAssignRolePermission(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerAssignRolePermission(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	handler := NewRBACManagementHandler(db, sl, store, config)
 	return handler.AssignRolePermission(c)
 }
 
 // HandlerRemoveRolePermission handles removing a permission from a role
-func HandlerRemoveRolePermission(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerRemoveRolePermission(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	handler := NewRBACManagementHandler(db, sl, store, config)
 	return handler.RemoveRolePermission(c)
 }
 
 // HandlerGetMigrationStatus handles getting migration status
 func HandlerGetMigrationStatus(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
-	handler := NewRBACManagementHandler(db, sl, nil, Config{})
+	handler := NewRBACManagementHandler(db, sl, nil, config.Config{})
 	return handler.GetMigrationStatus(c)
 }
 
@@ -1425,7 +1426,7 @@ func HandlerGetUsers(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.S
 }
 
 // HandlerMigrateUserRightsToRBAC handles migrating user rights to RBAC
-func HandlerMigrateUserRightsToRBAC(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMigrateUserRightsToRBAC(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	handler := NewRBACManagementHandler(db, sl, store, config)
 	return handler.MigrateUserRightsToRBAC(c)
 }
@@ -1514,13 +1515,13 @@ func (h *RBACManagementHandler) GetPermission(c *fiber.Ctx) error {
 
 // HandlerGetRole handles getting a single role by ID
 func HandlerGetRole(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
-	handler := NewRBACManagementHandler(db, sl, nil, Config{})
+	handler := NewRBACManagementHandler(db, sl, nil, config.Config{})
 	return handler.GetRole(c)
 }
 
 // HandlerGetPermission handles getting a single permission by ID
 func HandlerGetPermission(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
-	handler := NewRBACManagementHandler(db, sl, nil, Config{})
+	handler := NewRBACManagementHandler(db, sl, nil, config.Config{})
 	return handler.GetPermission(c)
 }
 
@@ -1584,13 +1585,13 @@ func (h *RBACManagementHandler) GetUserPermissions(c *fiber.Ctx) error {
 
 // HandlerGetUserPermissions handles getting all permissions for a specific user
 func HandlerGetUserPermissions(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
-	handler := NewRBACManagementHandler(db, sl, nil, Config{})
+	handler := NewRBACManagementHandler(db, sl, nil, config.Config{})
 	return handler.GetUserPermissions(c)
 }
 
 // HandlerGetRBACStats handles getting overall RBAC statistics
 func HandlerGetRBACStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
-	handler := NewRBACManagementHandler(db, sl, nil, Config{})
+	handler := NewRBACManagementHandler(db, sl, nil, config.Config{})
 	return handler.GetRBACStats(c)
 }
 
@@ -1638,7 +1639,7 @@ func (h *RBACManagementHandler) GetRBACStats(c *fiber.Ctx) error {
 
 // HandlerGetRBACRoleStats handles getting role-specific statistics
 func HandlerGetRBACRoleStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
-	handler := NewRBACManagementHandler(db, sl, nil, Config{})
+	handler := NewRBACManagementHandler(db, sl, nil, config.Config{})
 	return handler.GetRBACRoleStats(c)
 }
 
@@ -1686,7 +1687,7 @@ func (h *RBACManagementHandler) GetRBACRoleStats(c *fiber.Ctx) error {
 
 // HandlerGetRBACPermissionStats handles getting permission-specific statistics
 func HandlerGetRBACPermissionStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger) error {
-	handler := NewRBACManagementHandler(db, sl, nil, Config{})
+	handler := NewRBACManagementHandler(db, sl, nil, config.Config{})
 	return handler.GetRBACPermissionStats(c)
 }
 

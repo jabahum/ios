@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"case/internal/config"
 	"case/internal/middleware"
 	"case/internal/models"
 	"crypto/rand"
@@ -22,11 +23,11 @@ type EnhancedUserHandler struct {
 	db     *sql.DB
 	logger *slog.Logger
 	store  *session.Store
-	config Config
+	config config.Config
 }
 
 // NewEnhancedUserHandler creates a new user handler
-func NewEnhancedUserHandler(db *sql.DB, logger *slog.Logger, store *session.Store, config Config) *EnhancedUserHandler {
+func NewEnhancedUserHandler(db *sql.DB, logger *slog.Logger, store *session.Store, config config.Config) *EnhancedUserHandler {
 	return &EnhancedUserHandler{
 		db:     db,
 		logger: logger,

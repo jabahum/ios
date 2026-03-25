@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"case/internal/config"
 	"case/internal/models"
 	"database/sql"
 	"log/slog"
@@ -10,7 +11,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/session"
 )
 
-func VerifyDischarge2(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func VerifyDischarge2(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	//data := map[string]string{"Title": "Help Page"}
 	//return GenerateHTML(c, data, "help")
 	id, err := strconv.Atoi(c.Params("i"))
@@ -48,7 +49,7 @@ func VerifyDischarge2(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 	}
 }
 
-func VerifyDischarge(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func VerifyDischarge(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 
 	id, err := strconv.Atoi(c.Params("i"))
 

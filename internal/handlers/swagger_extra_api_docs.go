@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log/slog"
 
+	"case/internal/config"
 	"case/internal/models"
 
 	"github.com/gofiber/fiber/v2"
@@ -32,7 +33,7 @@ func newOutbreakAssignmentHandlerForAPI(db *sql.DB, store *session.Store) *Outbr
 // @Param id path int true "Outbreak ID"
 // @Success 200 {object} map[string]interface{} "outbreak object"
 // @Router /api/outbreaks/{id} [get]
-func SwaggerGetOutbreak(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerGetOutbreak(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerGetOutbreakAPI(c, db, sl, store, config)
 }
 
@@ -46,7 +47,7 @@ func SwaggerGetOutbreak(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 // @Param request body APIOutbreakCreateRequest true "Outbreak"
 // @Success 201 {object} map[string]interface{} "Created"
 // @Router /api/outbreaks [post]
-func SwaggerCreateOutbreak(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerCreateOutbreak(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerOutbreakSubmitAPI(c, db, sl, store, config)
 }
 
@@ -61,7 +62,7 @@ func SwaggerCreateOutbreak(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 // @Param request body APIOutbreakCreateRequest true "Fields to update"
 // @Success 200 {object} map[string]interface{} "OK"
 // @Router /api/outbreaks/{id} [put]
-func SwaggerUpdateOutbreak(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerUpdateOutbreak(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerOutbreakUpdateAPI(c, db, sl, store, config)
 }
 
@@ -74,7 +75,7 @@ func SwaggerUpdateOutbreak(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 // @Param id path int true "Outbreak ID"
 // @Success 200 {object} map[string]interface{} "OK"
 // @Router /api/outbreaks/{id} [delete]
-func SwaggerDeleteOutbreak(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerDeleteOutbreak(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerOutbreakDeleteAPI(c, db, sl, store, config)
 }
 
@@ -86,7 +87,7 @@ func SwaggerDeleteOutbreak(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 // @Param id path int true "Outbreak ID"
 // @Success 200 {object} map[string]interface{} "OK"
 // @Router /api/outbreaks/{id}/close [post]
-func SwaggerCloseOutbreak(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerCloseOutbreak(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerOutbreakCloseAPI(c, db, sl, store, config)
 }
 
@@ -98,7 +99,7 @@ func SwaggerCloseOutbreak(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 // @Param id path int true "Outbreak ID"
 // @Success 200 {object} map[string]interface{} "OK"
 // @Router /api/outbreaks/{id}/select [post]
-func SwaggerSelectOutbreak(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerSelectOutbreak(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerOutbreakSelectAPI(c, db, sl, store, config)
 }
 
@@ -507,7 +508,7 @@ func SwaggerDeleteResourceManagementActivityLog(c *fiber.Ctx, db *sql.DB, store 
 // @Security SessionAuth
 // @Success 200 {object} map[string]interface{} "{ \"departments\": [...] }"
 // @Router /api/departments [get]
-func SwaggerListDepartments(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerListDepartments(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerDepartmentListAPI(c, db, sl)
 }
 
@@ -520,7 +521,7 @@ func SwaggerListDepartments(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *se
 // @Param id path int true "Department ID"
 // @Success 200 {object} map[string]interface{} "{ \"department\": {...} }"
 // @Router /api/departments/{id} [get]
-func SwaggerGetDepartment(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerGetDepartment(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerDepartmentGetAPI(c, db, sl)
 }
 
@@ -534,7 +535,7 @@ func SwaggerGetDepartment(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 // @Param body body APIDepartmentWriteRequest true "Department"
 // @Success 201 {object} map[string]interface{} "Created"
 // @Router /api/departments [post]
-func SwaggerCreateDepartment(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerCreateDepartment(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerDepartmentCreateAPI(c, db, sl)
 }
 
@@ -549,7 +550,7 @@ func SwaggerCreateDepartment(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *s
 // @Param body body APIDepartmentWriteRequest true "Department"
 // @Success 200 {object} map[string]interface{} "OK"
 // @Router /api/departments/{id} [put]
-func SwaggerUpdateDepartment(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerUpdateDepartment(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerDepartmentUpdateAPI(c, db, sl)
 }
 
@@ -562,6 +563,6 @@ func SwaggerUpdateDepartment(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *s
 // @Param id path int true "Department ID"
 // @Success 200 {object} map[string]interface{} "OK"
 // @Router /api/departments/{id} [delete]
-func SwaggerDeleteDepartment(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func SwaggerDeleteDepartment(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return HandlerDepartmentDeleteAPI(c, db, sl)
 }

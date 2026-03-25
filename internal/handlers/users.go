@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"case/internal/config"
 	"case/internal/models"
 	"case/internal/security"
 	"database/sql"
@@ -59,7 +60,7 @@ func formValues(c *fiber.Ctx, name string) []string {
 	return out
 }
 
-func HandlerUserForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerUserForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userName := GetUser(c, sl, store)
 	role := security.GetRoleID(db, userID, "admin")
 
@@ -214,7 +215,7 @@ func HandlerUserForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.S
 	return GenerateHTML(c, db, data, "form_user")
 }
 
-func HandlerUserSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerUserSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	sl.Info("Form submission received", "content_type", c.Get("Content-Type"))
 
 	id, _ := strconv.Atoi(c.FormValue("id"))
@@ -366,7 +367,7 @@ func HandlerUserSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session
 	return c.Redirect("/users/new/" + strconv.Itoa(user.UserID))
 }
 
-func HandlerUserList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerUserList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	fmt.Println("starting user list")
 
 	userID, userName := GetUser(c, sl, store)

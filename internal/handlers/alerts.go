@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"case/internal/config"
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
@@ -170,7 +171,7 @@ func mapAPIAlertToFrontend(apiAlert ExternalAlert) ExternalAlert {
 }
 
 // HandlerAlerts handles the alerts page
-func HandlerAlerts(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerAlerts(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	// Fetch alerts from external API
 	alerts, err := fetchExternalAlerts(config)
 	if err != nil {
@@ -191,7 +192,7 @@ func HandlerAlerts(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Sto
 }
 
 // HandlerAlertsAPI handles the API endpoint for paginated alerts
-func HandlerAlertsAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerAlertsAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	// Get query parameters
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	pageSize, _ := strconv.Atoi(c.Query("page_size", "10"))
@@ -266,7 +267,7 @@ func HandlerAlertsAPI(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.
 }
 
 // HandlerAlertsDebug handles debugging the external API
-func HandlerAlertsDebug(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerAlertsDebug(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	// Test the external API directly
 	alerts, err := fetchExternalAlerts(config)
 
@@ -330,7 +331,7 @@ func filterAlerts(alerts []ExternalAlert, search, severity, status, location str
 }
 
 // getBearerToken returns the provided test token for now
-func getBearerToken(config Config) (string, error) {
+func getBearerToken(config config.Config) (string, error) {
 	// Using the provided test token
 	testToken := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTc2NjIzMTcsInVzZXJfaWQiOjEsInVzZXJuYW1lIjoicHdhaXN3YSJ9.WevC8m0gFOlQmI3or8QdVuDRGx3-D5M44DV4gIABXTM"
 
@@ -344,7 +345,7 @@ func getBearerToken(config Config) (string, error) {
 }
 
 // fetchExternalAlerts fetches alerts from the external API using token-based authentication
-func fetchExternalAlerts(config Config) ([]ExternalAlert, error) {
+func fetchExternalAlerts(config config.Config) ([]ExternalAlert, error) {
 	client := &http.Client{Timeout: 30 * time.Second}
 	url := config.AlertsAPI.BaseURL + "/alerts"
 
@@ -468,7 +469,7 @@ type dhis2EventsResponse struct {
 }
 
 // fetchDHIS2Events retrieves events for a given DHIS2 program
-func fetchDHIS2Events(config Config, programID, startDate, endDate string) ([]dhis2Event, error) {
+func fetchDHIS2Events(config config.Config, programID, startDate, endDate string) ([]dhis2Event, error) {
 	client := &http.Client{Timeout: 30 * time.Second}
 
 	// Build endpoint
@@ -504,7 +505,7 @@ func fetchDHIS2Events(config Config, programID, startDate, endDate string) ([]dh
 }
 
 // HandlerAlerts6767API returns alerts sourced from DHIS2 program iaN1DovM5em
-func HandlerAlerts6767API(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerAlerts6767API(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	startDate := c.Query("startDate", "")
 	endDate := c.Query("endDate", "")
 

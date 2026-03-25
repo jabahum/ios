@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"case/internal/config"
 	"case/internal/models"
 	"database/sql"
 	"fmt"
@@ -379,7 +380,7 @@ func HandlerMpoxCIFSubmit(c *fiber.Ctx, db *sql.DB, logger *slog.Logger) error {
 }
 
 // HandlerMpoxCIFView handles viewing an mpox CIF
-func HandlerMpoxCIFView(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMpoxCIFView(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	idParam := c.Params("id")
 	if idParam == "" {
 		return c.Status(400).SendString("Case ID required")
@@ -389,7 +390,7 @@ func HandlerMpoxCIFView(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 	// Try numeric first (database id), then fall back to case_id
 	var ci *models.MpoxCaseInvestigation
 	var caseID string
-	
+
 	ci = &models.MpoxCaseInvestigation{}
 	// Try querying by numeric ID first
 	if idInt, err := strconv.Atoi(idParam); err == nil {
@@ -415,7 +416,7 @@ func HandlerMpoxCIFView(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 			return c.Status(500).SendString("Failed to load case")
 		}
 	}
-	
+
 	// Now use caseID to fetch related data
 	var demo *models.MpoxPatientDemographics
 	var clin *models.MpoxClinicianInfo
@@ -475,7 +476,7 @@ func HandlerMpoxCIFView(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 }
 
 // HandlerMpoxCIFEdit handles editing an mpox CIF
-func HandlerMpoxCIFEdit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMpoxCIFEdit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	idParam := c.Params("id")
 	if idParam == "" {
 		return c.Status(400).SendString("Case ID required")
@@ -484,7 +485,7 @@ func HandlerMpoxCIFEdit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 	// Determine if this is a numeric ID (primary key) or case_id (string)
 	var ci *models.MpoxCaseInvestigation
 	var caseID string
-	
+
 	ci = &models.MpoxCaseInvestigation{}
 	// Try querying by numeric ID first
 	if idInt, err := strconv.Atoi(idParam); err == nil {
@@ -510,7 +511,7 @@ func HandlerMpoxCIFEdit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 			return c.Status(500).SendString("Failed to load case")
 		}
 	}
-	
+
 	// Now use caseID to fetch related data
 	var demo *models.MpoxPatientDemographics
 	var clin *models.MpoxClinicianInfo
@@ -578,7 +579,7 @@ func HandlerMpoxCIFSuccess(c *fiber.Ctx, db *sql.DB, logger *slog.Logger, store 
 }
 
 // HandlerMpoxList handles the listing of all MPOX cases
-func HandlerMpoxList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMpoxList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	// Get current user information (for future use if needed)
 	_, _ = GetUser(c, sl, store)
 

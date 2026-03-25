@@ -6,60 +6,68 @@ import (
 	"log/slog"
 	"os"
 
-	"case/internal/handlers"
+	"case/internal/config"
 	"case/internal/routes"
 	"case/internal/services"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/logger"
+	fiberLogger "github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/session"
-	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
 func main() {
-	// Load environment variables
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
+	// Load application config
+	cfg, err := config.LoadConfig(os.Getenv("CONFIG_FILE"))
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
+
+	if err := cfg.Validate(); err != nil {
+		log.Fatalf("invalid config: %v", err)
 	}
 
 	// Initialize database connection
-	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
+	db, err := sql.Open("postgres", cfg.DBSource())
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to open database connection: %v", err)
 	}
 	defer db.Close()
+
+	if err := db.Ping(); err != nil {
+		log.Fatalf("failed to connect to database: %v", err)
+	}
 
 	// Initialize logger
 	sl := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	// Initialize SMS service
 	smsService := services.NewSMSService(services.SMSConfig{
-		BaseURL:  os.Getenv("SMS_BASE_URL"),
-		Username: os.Getenv("SMS_USERNAME"),
-		Password: os.Getenv("SMS_PASSWORD"),
+		BaseURL:  cfg.SMSBaseURL,
+		Username: cfg.SMSUsername,
+		Password: cfg.SMSPassword,
 	})
 
 	// Initialize Voice service
-	voiceService := services.NewVoiceService(services.VoiceConfig{VoiceURL: os.Getenv("VOICE_URL")})
+	voiceService := services.NewVoiceService(services.VoiceConfig{
+		VoiceURL: cfg.VoiceURL,
+	})
 
 	// Initialize session store
 	store := session.New()
 
-	// Initialize config
-	config := handlers.Config{
-		// Add any required config values here
-	}
+	// Initialize handler config
+	handlerConfig := config.Config{}
 
 	// Create Fiber app
 	app := fiber.New()
 
 	// Add middleware
-	app.Use(logger.New())
+	app.Use(fiberLogger.New())
 
 	// Set up routes
-	routes.SetRoute(app, db, store, sl, config, smsService, voiceService)
+	routes.SetRoute(app, db, store, sl, handlerConfig, smsService, voiceService)
 
 	// Start server
-	log.Fatal(app.Listen(":3000"))
+	log.Fatal(app.Listen(cfg.Addr()))
 }

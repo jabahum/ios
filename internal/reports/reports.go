@@ -1,6 +1,7 @@
 package reports
 
 import (
+	"case/internal/config"
 	"case/internal/handlers"
 	"case/internal/security"
 	"database/sql"
@@ -43,7 +44,7 @@ type ReportData struct {
 }
 
 // ReportsHome handles the main reports dashboard
-func ReportsHome(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func ReportsHome(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userName := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Redirect("/login")
@@ -96,7 +97,7 @@ func ReportsHome(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store
 }
 
 // GenerateReport handles report generation with filter persistence
-func GenerateReport(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GenerateReport(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Redirect("/login")
@@ -175,7 +176,7 @@ func GenerateReport(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.St
 }
 
 // CIFReports handles CIF-specific reports
-func CIFReports(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func CIFReports(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userName := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Redirect("/login", 302)
@@ -1981,7 +1982,7 @@ func generateLabTechnicianReport(c *fiber.Ctx, db *sql.DB, district int) error {
 // API Functions for AJAX data loading
 
 // GetQuickStats returns quick statistics for the dashboard
-func GetQuickStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetQuickStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -2122,7 +2123,7 @@ func getCIFQuickStats(c *fiber.Ctx, db *sql.DB, filters ReportFilters) fiber.Map
 }
 
 // GetHealthIndicators returns all 14 health indicators for the dashboard
-func GetHealthIndicators(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetHealthIndicators(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -2326,7 +2327,7 @@ func GetHealthIndicators(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 }
 
 // GetChartData returns chart data based on filters
-func GetChartData(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetChartData(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -2374,7 +2375,7 @@ func GetChartData(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Stor
 }
 
 // GetTableData returns table data based on filters
-func GetTableData(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetTableData(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -2462,7 +2463,7 @@ func GetTableData(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Stor
 }
 
 // ExportReport handles report export functionality
-func ExportReport(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func ExportReport(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -3100,7 +3101,7 @@ func getAgeGroupsData(c *fiber.Ctx, db *sql.DB, filters ReportFilters) (interfac
 }
 
 // VHF-specific API functions
-func GetVHFStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetVHFStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -3141,7 +3142,7 @@ func GetVHFStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store
 	})
 }
 
-func GetVHFTrends(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetVHFTrends(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -3186,7 +3187,7 @@ func GetVHFTrends(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Stor
 	})
 }
 
-func GetVHFStatus(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetVHFStatus(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -3230,7 +3231,7 @@ func GetVHFStatus(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Stor
 	})
 }
 
-func GetVHFGender(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetVHFGender(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -3274,7 +3275,7 @@ func GetVHFGender(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Stor
 	})
 }
 
-func GetVHFAge(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetVHFAge(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -3325,7 +3326,7 @@ func GetVHFAge(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, 
 	})
 }
 
-func GetVHFDistricts(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetVHFDistricts(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -3370,7 +3371,7 @@ func GetVHFDistricts(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.S
 	})
 }
 
-func GetVHFCases(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetVHFCases(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -3430,7 +3431,7 @@ func GetVHFCases(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store
 }
 
 // Demographics API functions
-func GetDemographicsStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetDemographicsStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -3470,7 +3471,7 @@ func GetDemographicsStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 	})
 }
 
-func GetGenderDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetGenderDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -3518,7 +3519,7 @@ func GetGenderDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 	})
 }
 
-func GetAgeGroupDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetAgeGroupDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -3569,7 +3570,7 @@ func GetAgeGroupDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *s
 	})
 }
 
-func GetAgeDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetAgeDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -3613,7 +3614,7 @@ func GetAgeDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 	})
 }
 
-func GetDistrictDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetDistrictDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -3659,7 +3660,7 @@ func GetDistrictDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *s
 	})
 }
 
-func GetFacilityDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetFacilityDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -3705,7 +3706,7 @@ func GetFacilityDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *s
 	})
 }
 
-func GetOccupationDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetOccupationDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -3756,7 +3757,7 @@ func GetOccupationDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store 
 	})
 }
 
-func GetDemographicsTable(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetDemographicsTable(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -3815,7 +3816,7 @@ func GetDemographicsTable(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sess
 }
 
 // Trend analysis API functions
-func GetTrendStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetTrendStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -3868,7 +3869,7 @@ func GetTrendStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Sto
 	})
 }
 
-func GetTrendData(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetTrendData(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -3917,7 +3918,7 @@ func GetTrendData(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Stor
 	})
 }
 
-func GetWeeklyComparison(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetWeeklyComparison(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -3970,7 +3971,7 @@ func GetWeeklyComparison(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 	})
 }
 
-func GetDiseaseDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetDiseaseDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -4015,7 +4016,7 @@ func GetDiseaseDistribution(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *se
 	})
 }
 
-func GetGeographicTrends(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetGeographicTrends(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -4062,7 +4063,7 @@ func GetGeographicTrends(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 }
 
 // CIF API functions
-func GetCIFStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetCIFStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -4102,7 +4103,7 @@ func GetCIFStats(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store
 	})
 }
 
-func GetCIFStatusChart(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetCIFStatusChart(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -4146,7 +4147,7 @@ func GetCIFStatusChart(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session
 	})
 }
 
-func GetCIFTypeChart(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetCIFTypeChart(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -4191,7 +4192,7 @@ func GetCIFTypeChart(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.S
 	})
 }
 
-func GetRecentCIFs(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config handlers.Config) error {
+func GetRecentCIFs(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, _ := handlers.GetUser(c, sl, store)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})

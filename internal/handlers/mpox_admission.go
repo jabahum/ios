@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"case/internal/config"
 	"case/internal/models"
 	"case/internal/utils"
 	"database/sql"
@@ -41,7 +42,7 @@ func joinCheckboxValues(values []string) string {
 }
 
 // HandlerMpoxAdmissionForm renders the mpox admission form
-func HandlerMpoxAdmissionForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMpoxAdmissionForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	clientIDStr := c.Params("i")
 	clientID, err := strconv.Atoi(clientIDStr)
 	if err != nil {
@@ -127,7 +128,7 @@ func HandlerMpoxAdmissionForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *
 }
 
 // HandlerMpoxAdmissionSubmit handles the submission of the mpox admission form
-func HandlerMpoxAdmissionSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMpoxAdmissionSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	// Start a transaction
 	tx, err := db.Begin()
 	if err != nil {

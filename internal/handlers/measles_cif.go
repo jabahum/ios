@@ -8,6 +8,7 @@ import (
 
 	"database/sql"
 
+	"case/internal/config"
 	"case/internal/models"
 
 	"log/slog"
@@ -156,7 +157,7 @@ func HandlerMeaslesSuccess(c *fiber.Ctx, store *session.Store) error {
 	return GenerateHTML(c, nil, data, "measles_success")
 }
 
-func HandlerMeaslesList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMeaslesList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	// Get current user information (for future use if needed)
 	_, _ = GetUser(c, sl, store)
 
@@ -287,7 +288,7 @@ func parseInt(s string) int {
 }
 
 // HandlerMeaslesCIFView handles viewing a measles CIF
-func HandlerMeaslesCIFView(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMeaslesCIFView(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	pid := c.Params("id")
 	if pid == "" {
 		return c.Status(400).SendString("Patient ID required")
@@ -345,20 +346,20 @@ func HandlerMeaslesCIFView(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 	// Render template
 	data := NewTemplateData(c, store)
 	data.Form = fiber.Map{
-		"Patient":          patient,
-		"Demographics":     demo,
-		"Investigators":    inv,
-		"ClinicalHistory":  hist,
-		"Results":          res,
-		"Specimens":        spec,
-		"IsView":           true,
+		"Patient":         patient,
+		"Demographics":    demo,
+		"Investigators":   inv,
+		"ClinicalHistory": hist,
+		"Results":         res,
+		"Specimens":       spec,
+		"IsView":          true,
 	}
 	data.Optionz = Get_Client_Optionz()
 	return GenerateHTML(c, db, data, "measles_cif")
 }
 
 // HandlerMeaslesCIFEdit handles editing a measles CIF
-func HandlerMeaslesCIFEdit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerMeaslesCIFEdit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	pid := c.Params("id")
 	if pid == "" {
 		return c.Status(400).SendString("Patient ID required")
@@ -416,14 +417,14 @@ func HandlerMeaslesCIFEdit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 	// Render template with edit mode
 	data := NewTemplateData(c, store)
 	data.Form = fiber.Map{
-		"Patient":          patient,
-		"Demographics":     demo,
-		"Investigators":    inv,
-		"ClinicalHistory":  hist,
-		"Results":          res,
-		"Specimens":        spec,
-		"IsEdit":           true,
-		"MeaslesCode":      patient.MeaslesCode,
+		"Patient":         patient,
+		"Demographics":    demo,
+		"Investigators":   inv,
+		"ClinicalHistory": hist,
+		"Results":         res,
+		"Specimens":       spec,
+		"IsEdit":          true,
+		"MeaslesCode":     patient.MeaslesCode,
 	}
 	data.Optionz = Get_Client_Optionz()
 	return GenerateHTML(c, db, data, "measles_cif")

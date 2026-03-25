@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"case/internal/config"
 	"case/internal/models"
 	"database/sql"
 	"fmt"
@@ -13,7 +14,7 @@ import (
 )
 
 // HandlerPolioCIF handles the Polio CIF form display
-func HandlerPolioCIF(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerPolioCIF(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	data := NewTemplateData(c, store)
 	data.Form = fiber.Map{
 		"Title": "Polio Case Investigation Form",
@@ -22,7 +23,7 @@ func HandlerPolioCIF(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.S
 }
 
 // HandlerPolioCIFSubmit handles the submission of the Polio CIF form
-func HandlerPolioCIFSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerPolioCIFSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	// Debug: Log that the handler was called
 	sl.Info("Polio CIF submit handler called", "method", c.Method(), "path", c.Path())
 	// Start a transaction
@@ -416,7 +417,7 @@ func HandlerPolioCIFSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 }
 
 // HandlerPolioCIFView handles viewing a polio CIF
-func HandlerPolioCIFView(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerPolioCIFView(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	idParam := c.Params("id")
 	if idParam == "" {
 		return c.Status(400).SendString("Case ID required")
@@ -425,7 +426,7 @@ func HandlerPolioCIFView(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 	// Determine if this is a numeric ID (primary key) or case_id (string)
 	var main models.PolioCaseInvestigation
 	var caseID string
-	
+
 	// Try querying by numeric ID first
 	if idInt, err := strconv.Atoi(idParam); err == nil {
 		// It's a numeric ID - query by primary key
@@ -541,7 +542,7 @@ func HandlerPolioCIFView(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 }
 
 // HandlerPolioCIFEdit handles editing a polio CIF
-func HandlerPolioCIFEdit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerPolioCIFEdit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	idParam := c.Params("id")
 	if idParam == "" {
 		return c.Status(400).SendString("Case ID required")
@@ -550,7 +551,7 @@ func HandlerPolioCIFEdit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 	// Determine if this is a numeric ID (primary key) or case_id (string)
 	var main models.PolioCaseInvestigation
 	var caseID string
-	
+
 	// Try querying by numeric ID first
 	if idInt, err := strconv.Atoi(idParam); err == nil {
 		// It's a numeric ID - query by primary key
@@ -667,7 +668,7 @@ func HandlerPolioCIFEdit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 }
 
 // HandlerPolioCIFSuccess handles the success page after Polio CIF submission
-func HandlerPolioCIFSuccess(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerPolioCIFSuccess(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	caseID := c.Query("case_id")
 
 	data := NewTemplateData(c, store)

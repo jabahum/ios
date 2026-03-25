@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"case/internal/config"
 	"database/sql"
 	"log/slog"
 
@@ -8,12 +9,12 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/session"
 )
 
-func HandlerRushForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerRushForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return nil
 }
-func HandlerRushSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerRushSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return nil
 }
-func HandlerRushList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerRushList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	return nil
 }

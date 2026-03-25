@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"case/internal/config"
 	"case/internal/models"
 	"case/internal/security"
 	"database/sql"
@@ -14,7 +15,7 @@ import (
 )
 
 // HandlerEmployeeForm handles the employee form display
-func HandlerEmployeeForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerEmployeeForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userName := GetUser(c, sl, store)
 	role := security.GetRoleID(db, userID, "admin")
 
@@ -161,7 +162,7 @@ func HandlerEmployeeForm(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessi
 }
 
 // HandlerGetEmployee handles getting a single employee by ID (API endpoint)
-func HandlerGetEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerGetEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	employeeID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid employee ID"})
@@ -211,7 +212,7 @@ func HandlerGetEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *sessio
 }
 
 // HandlerDeleteEmployee handles deleting an employee (API endpoint)
-func HandlerDeleteEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerDeleteEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	employeeID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid employee ID"})
@@ -240,7 +241,7 @@ func HandlerDeleteEmployee(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 }
 
 // HandlerEmployeeSubmit handles employee form submission
-func HandlerEmployeeSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerEmployeeSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	_, _ = GetUser(c, sl, store) // Get user info but not used in this function
 
 	// Parse form data
@@ -290,7 +291,7 @@ func HandlerEmployeeSubmit(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *ses
 }
 
 // HandlerEmployeeList handles the employee list display
-func HandlerEmployeeList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config Config) error {
+func HandlerEmployeeList(c *fiber.Ctx, db *sql.DB, sl *slog.Logger, store *session.Store, config config.Config) error {
 	userID, userName := GetUser(c, sl, store)
 	role := security.GetRoleID(db, userID, "admin")
 
