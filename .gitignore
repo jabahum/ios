@@ -2,15 +2,14 @@
 cmd/web/config.json
 configs.json
 *.md
-*.yml
 *.txt
 *.bat
 test_app
 test_build
 web.exe
 /cmd/web/web.exe
-docker-compose.yml
 /init
 .env
 /ios_rearranged
 .DS_Store
+.idea
