@@ -9,4 +9,5 @@ test_app
 test_build
 web.exe
 .idea
-.vscode
+.vscode/*
+.env
