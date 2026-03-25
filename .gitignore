@@ -11,3 +11,6 @@ web.exe
 /cmd/web/web.exe
 docker-compose.yml
 /init
+.env
+/ios_rearranged
+.DS_Store
