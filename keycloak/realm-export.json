@@ -269,13 +269,6 @@
       "firstName": "System",
       "lastName": "Admin",
       "email": "admin@moh.go.ug",
-      "credentials": [
-        {
-          "type": "password",
-          "value": "Admin@123",
-          "temporary": false
-        }
-      ],
       "realmRoles": [
         "admin"
       ],
@@ -293,13 +286,6 @@
       "firstName": "Test",
       "lastName": "User",
       "email": "user@moh.go.ug",
-      "credentials": [
-        {
-          "type": "password",
-          "value": "User@123",
-          "temporary": false
-        }
-      ],
       "realmRoles": [
         "user"
       ],
@@ -318,13 +304,6 @@
       "firstName": "System",
       "lastName": "Admin",
       "email": "admin@system.local",
-      "credentials": [
-        {
-          "type": "password",
-          "value": "password123",
-          "temporary": false
-        }
-      ],
       "realmRoles": [
         "user"
       ],
@@ -343,13 +322,6 @@
       "firstName": "Mbaka",
       "lastName": "Paul",
       "email": "paul.mbaka@gmail.com",
-      "credentials": [
-        {
-          "type": "password",
-          "value": "123456789=p",
-          "temporary": false
-        }
-      ],
       "realmRoles": [
         "user"
       ],
@@ -368,13 +340,6 @@
       "firstName": "Outbreak",
       "lastName": "Viewer",
       "email": "outbreak_viewer@example.com",
-      "credentials": [
-        {
-          "type": "password",
-          "value": "Viewer@123",
-          "temporary": false
-        }
-      ],
       "realmRoles": [
         "user"
       ],
