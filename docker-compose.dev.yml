@@ -67,17 +67,12 @@ services:
       - go-mod-cache:/go/pkg/mod
       - go-build-cache:/root/.cache/go-build
     command: air -c .air.toml
-    depends_on:
-      db:
-        condition: service_healthy
-      ios-keycloak:
-        condition: service_healthy
     networks:
       - ios_network
 
   db:
     ports:
-      - "5433:5432"
+      - "5435:5432"
 
 volumes:
   go-mod-cache:

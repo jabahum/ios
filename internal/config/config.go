@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -121,17 +122,21 @@ type Config struct {
 
 func LoadConfig(configPaths ...string) (Config, error) {
 	var cfg Config
-
 	v := viper.New()
 
 	v.SetConfigType("env")
 	v.AutomaticEnv()
+	// This ensures that "AUTH.CLIENT_ID" in code matches "AUTH_CLIENT_ID" in ENV
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AllowEmptyEnv(true)
+
+	// Viper needs to "know" about keys to pick them up from Env during Unmarshal.
+	// We use reflection to bind every mapstructure tag automatically.
+	bindEnvs(v, Config{})
 
 	// defaults
 	v.SetDefault("APP_ENV", "local")
 	v.SetDefault("PORT", "3000")
-
 	v.SetDefault("DB_HOST", "localhost")
 	v.SetDefault("DB_PORT", "5432")
 
@@ -168,7 +173,8 @@ func LoadConfig(configPaths ...string) (Config, error) {
 
 		v.SetConfigFile(path)
 		if err := v.MergeInConfig(); err != nil {
-			return cfg, fmt.Errorf("failed to read config file %s: %w", path, err)
+			// Non-blocking warning: useful for local dev where .env might be missing
+			fmt.Printf("Note: failed to read config file %s: %v\n", path, err)
 		}
 	}
 
@@ -218,6 +224,32 @@ func LoadConfig(configPaths ...string) (Config, error) {
 	}
 
 	return cfg, nil
+}
+
+// bindEnvs ensures Viper correctly maps environment variables to nested struct fields.
+func bindEnvs(v *viper.Viper, iface interface{}, parts ...string) {
+	ift := reflect.TypeOf(iface)
+
+	for i := 0; i < ift.NumField(); i++ {
+		field := ift.Field(i)
+		tagValue := field.Tag.Get("mapstructure")
+
+		// Skip fields without tags
+		if tagValue == "" || tagValue == "," {
+			continue
+		}
+
+		currentPath := append(parts, tagValue)
+		fullPath := strings.Join(currentPath, ".")
+
+		if field.Type.Kind() == reflect.Struct {
+			// Recurse into nested structs
+			bindEnvs(v, reflect.New(field.Type).Elem().Interface(), currentPath...)
+		} else {
+			// Bind the environmental variable to the path
+			v.BindEnv(fullPath)
+		}
+	}
 }
 
 func (c Config) DBSource() string {

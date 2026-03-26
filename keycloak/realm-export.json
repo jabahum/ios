@@ -329,10 +329,6 @@
         "user"
       ],
       "clientRoles": {
-        "dashboard-web": [
-          "dashboard-web_access",
-          "integrated-outbreak-system_access"
-        ],
         "integrated-outbreak-system": [
           "integrated-outbreak-system_access",
           "super_admin",
@@ -383,27 +379,8 @@
         "user"
       ],
       "clientRoles": {
-        "dashboard-web": [
-          "dashboard-web_access",
-          "integrated-outbreak-system_access"
-        ],
         "integrated-outbreak-system": [
           "viewer"
-        ]
-      }
-    },
-    {
-      "username": "service-account-dashboard-admin",
-      "enabled": true,
-      "serviceAccountClientId": "dashboard-admin",
-      "clientRoles": {
-        "realm-management": [
-          "realm-admin",
-          "view-clients",
-          "manage-clients",
-          "view-users",
-          "manage-users",
-          "view-realm"
         ]
       }
     },

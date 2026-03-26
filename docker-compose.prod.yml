@@ -16,13 +16,6 @@ services:
     ports:
       - "8081:8080"
     restart: unless-stopped
-    healthcheck:
-      test:
-        ["CMD-SHELL", "wget -qO- http://localhost:8080/health/ready || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 10
-      start_period: 40s
 
   web:
     image: ghcr.io/${GHCR_OWNER}/${GHCR_WEB_IMAGE:-integrated-outbreak-system}:${APP_TAG:-latest}
