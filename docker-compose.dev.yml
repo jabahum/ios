@@ -1,5 +1,5 @@
 services:
-  keycloak:
+  ios-keycloak:
     env_file:
       - dev.env
     command:
@@ -7,7 +7,7 @@ services:
       - --import-realm
     environment:
       KC_DB: ${KEYCLOAK_DB:-postgres}
-      KC_DB_URL_HOST: keycloak-db
+      KC_DB_URL_HOST: ios-keycloak-db
       KC_DB_URL_PORT: 5432
       KC_DB_URL_DATABASE: ${KEYCLOAK_DB_NAME}
       KC_DB_USERNAME: ${KEYCLOAK_DB_USER}
@@ -40,7 +40,7 @@ services:
       DB_NAME: ${DB_NAME}
       KEYCLOAK_INTERNAL_URL: ${KEYCLOAK_INTERNAL_URL}
       KEYCLOAK_PUBLIC_URL: ${KEYCLOAK_PUBLIC_URL}
-      KEYCLOAK_BASEURL: ${KEYCLOAK_BASEURL}
+      KEYCLOAK_BASE_URL: ${KEYCLOAK_BASE_URL}
       KEYCLOAK_REALM: ${KEYCLOAK_REALM}
       KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
@@ -70,14 +70,14 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      keycloak:
+      ios-keycloak:
         condition: service_healthy
     networks:
       - ios_network
 
   db:
     ports:
-      - "5432:5432"
+      - "5433:5432"
 
 volumes:
   go-mod-cache:

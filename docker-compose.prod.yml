@@ -1,5 +1,5 @@
 services:
-  keycloak:
+  ios-keycloak:
     env_file:
       - prod.env
     command:
@@ -38,7 +38,7 @@ services:
       DB_NAME: ${DB_NAME}
       KEYCLOAK_INTERNAL_URL: ${KEYCLOAK_INTERNAL_URL}
       KEYCLOAK_PUBLIC_URL: ${KEYCLOAK_PUBLIC_URL}
-      KEYCLOAK_BASEURL: ${KEYCLOAK_BASEURL}
+      KEYCLOAK_BASE_URL: ${KEYCLOAK_BASE_URL}
       KEYCLOAK_REALM: ${KEYCLOAK_REALM}
       KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
@@ -65,4 +65,4 @@ services:
     env_file:
       - prod.env
     ports:
-      - "5432:5432"
+      - "5433:5432"

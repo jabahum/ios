@@ -2,12 +2,12 @@ services:
   # --------------------------------------------------
   # Keycloak
   # --------------------------------------------------
-  keycloak:
+  ios-keycloak:
     image: quay.io/keycloak/keycloak:${KEYCLOAK_VERSION:-26.0.5}
-    container_name: keycloak
+    container_name: ios-keycloak
     environment:
       KC_DB: ${KEYCLOAK_DB:-postgres}
-      KC_DB_URL_HOST: keycloak-db
+      KC_DB_URL_HOST: ios-keycloak-db
       KC_DB_URL_PORT: 5432
       KC_DB_URL_DATABASE: ${KEYCLOAK_DB_NAME}
       KC_DB_USERNAME: ${KEYCLOAK_DB_USER}
@@ -21,7 +21,7 @@ services:
     volumes:
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
     depends_on:
-      keycloak-db:
+      ios-keycloak-db:
         condition: service_healthy
     networks:
       - ios_network
@@ -29,9 +29,9 @@ services:
   # --------------------------------------------------
   # Keycloak Database
   # --------------------------------------------------
-  keycloak-db:
+  ios-keycloak-db:
     image: postgres:15-alpine
-    container_name: keycloak-db
+    container_name: ios-keycloak-db
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${KEYCLOAK_DB_NAME}
@@ -43,7 +43,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${KEYCLOAK_DB_USER:-keycloak} -d ${KEYCLOAK_DB_NAME}",
+          "pg_isready -U ${KEYCLOAK_DB_USER} -d ${KEYCLOAK_DB_NAME}",
         ]
       interval: 10s
       timeout: 5s
@@ -71,7 +71,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      keycloak:
+      ios-keycloak:
         condition: service_started
     networks:
       - ios_network
